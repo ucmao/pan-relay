@@ -26,9 +26,15 @@
                 <button class="filter-btn active" data-netdisk="全部">全部</button>
             </div>
 
-            <div class="filter-and-count-container d-none mt-3 d-flex justify-content-between align-items-center">
-                <p class="result-count mb-0" id="resultCountText"></p>
-                <div id="advanced-filter-bar" class="mb-2">
+            <div class="filter-and-count-container d-none mt-3">
+                <div class="filter-toolbar">
+                    <p class="result-count mb-0" id="resultCountText"></p>
+                    <button class="btn btn-sm btn-outline-secondary filter-toggle-button" id="advancedFilterToggle" type="button" aria-expanded="false">
+                        <i class="fas fa-sliders-h me-1"></i> 筛选
+                    </button>
+                </div>
+                <div id="advancedFilterPanel" class="advanced-filter-panel d-none">
+                    <div id="advanced-filter-bar" class="mb-2">
                     <div class="input-group input-group-sm advanced-filter-group">
                         <span class="input-group-text advanced-filter-label">包含</span>
                         <input type="text" class="form-control form-control-sm advanced-filter-input" id="includeFilter" placeholder="关键词1 关键词2">
@@ -38,6 +44,7 @@
                         <input type="text" class="form-control form-control-sm advanced-filter-input" id="excludeFilter" placeholder="排除词1 排除词2">
                     </div>
                     <button class="btn btn-outline-primary btn-sm advanced-filter-apply" id="applyFilter">应用</button>
+                </div>
                 </div>
             </div>
 

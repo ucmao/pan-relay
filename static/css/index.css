@@ -140,11 +140,42 @@
     margin-bottom: 18px;
 }
 
+.filter-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
 .result-count {
     flex: 0 0 auto;
     color: #495057;
     font-size: 0.95rem;
     font-weight: 600;
+}
+
+.filter-toggle-button {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    padding: 0.45rem 0.85rem;
+    color: #6c757d;
+    border-color: #d9dee8;
+    background-color: #ffffff;
+}
+
+.filter-toggle-button:hover,
+.filter-toggle-button:focus {
+    color: #495057;
+    border-color: #c7d0df;
+    background-color: #f8f9fb;
+}
+
+.advanced-filter-panel {
+    padding: 12px 14px;
+    border: 1px solid #e7ebf2;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
 }
 
 #advanced-filter-bar {
@@ -298,9 +329,11 @@
 /* 响应式调整 */
 @media (min-width: 769px) {
     .filter-and-count-container {
-        display: grid !important;
-        grid-template-columns: auto minmax(0, 1fr);
-        align-items: center !important;
+        display: block !important;
+    }
+
+    .filter-toolbar {
+        justify-content: space-between;
     }
 
     #advanced-filter-bar {
@@ -333,16 +366,23 @@
     }
 
     .filter-and-count-container {
-        flex-direction: column;
-        align-items: stretch !important;
+        display: block !important;
     }
 
     .result-count {
-        width: 100%;
         text-align: left;
         white-space: normal;
         word-break: break-word;
         line-height: 1.5;
+    }
+
+    .filter-toolbar {
+        align-items: center;
+    }
+
+    .filter-toggle-button {
+        padding: 0.42rem 0.78rem;
+        font-size: 0.88rem;
     }
 
     #advanced-filter-bar {
@@ -366,6 +406,11 @@
     .advanced-filter-apply {
         width: 100%;
         min-height: 38px;
+    }
+
+    .advanced-filter-panel {
+        padding: 10px;
+        border-radius: 14px;
     }
 
     #scrollableResults {

@@ -24,6 +24,8 @@ const resultContainer = document.getElementById('resultContainer');
 const loadingMore = document.getElementById('loadingMore');
 const resultCountText = document.getElementById('resultCountText');
 const statusBar = document.getElementById('statusBar');
+const advancedFilterToggle = document.getElementById('advancedFilterToggle');
+const advancedFilterPanel = document.getElementById('advancedFilterPanel');
 const viewResultModalElement = document.getElementById('viewResultModal');
 const viewResultLoadingState = document.getElementById('viewResultLoadingState');
 const viewResultContentState = document.getElementById('viewResultContentState');
@@ -33,6 +35,22 @@ const copyViewResultButton = document.getElementById('copyViewResultButton');
 const openViewResultButton = document.getElementById('openViewResultButton');
 const viewResultModal = viewResultModalElement ? new bootstrap.Modal(viewResultModalElement) : null;
 let currentResolvedViewResult = null;
+let isAdvancedFilterOpen = false;
+
+function setAdvancedFilterOpen(isOpen) {
+    isAdvancedFilterOpen = isOpen;
+    if (!advancedFilterPanel || !advancedFilterToggle) return;
+
+    advancedFilterPanel.classList.toggle('d-none', !isOpen);
+    advancedFilterToggle.setAttribute('aria-expanded', String(isOpen));
+    advancedFilterToggle.innerHTML = isOpen
+        ? '<i class="fas fa-times me-1"></i> 收起筛选'
+        : '<i class="fas fa-sliders-h me-1"></i> 筛选';
+}
+
+advancedFilterToggle?.addEventListener('click', function () {
+    setAdvancedFilterOpen(!isAdvancedFilterOpen);
+});
 
 
 // --- 辅助函数：网盘颜色区分 (保持不变) ---
