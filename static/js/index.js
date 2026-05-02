@@ -24,6 +24,15 @@ const resultContainer = document.getElementById('resultContainer');
 const loadingMore = document.getElementById('loadingMore');
 const resultCountText = document.getElementById('resultCountText');
 const statusBar = document.getElementById('statusBar');
+const viewResultModalElement = document.getElementById('viewResultModal');
+const viewResultLoadingState = document.getElementById('viewResultLoadingState');
+const viewResultContentState = document.getElementById('viewResultContentState');
+const viewResultTitle = document.getElementById('viewResultTitle');
+const viewResultLink = document.getElementById('viewResultLink');
+const copyViewResultButton = document.getElementById('copyViewResultButton');
+const openViewResultButton = document.getElementById('openViewResultButton');
+const viewResultModal = viewResultModalElement ? new bootstrap.Modal(viewResultModalElement) : null;
+let currentResolvedViewResult = null;
 
 
 // --- 辅助函数：网盘颜色区分 (保持不变) ---
@@ -403,8 +412,13 @@ async function handleViewButtonClick(button) {
     const netdiskName = button.getAttribute('data-netdisk');
     const originalHtml = button.innerHTML;
 
+    if (viewResultModal) {
+        showViewResultLoading(title);
+        viewResultModal.show();
+    }
+
     button.disabled = true;
-    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> 查看中';
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> 获取中';
 
     try {
         const response = await fetch('/api/view-link', {
@@ -417,21 +431,75 @@ async function handleViewButtonClick(button) {
             })
         });
 
-        if (!response.ok) {
-            window.open(url, '_blank', 'noopener');
-            return;
+        let finalUrl = url;
+        if (response.ok) {
+            const data = await response.json();
+            finalUrl = data.url || url;
         }
 
-        const data = await response.json();
-        window.open(data.url || url, '_blank', 'noopener');
+        showViewResultContent(title, finalUrl, netdiskName);
     } catch (error) {
         console.error('查看模式生成链接失败:', error);
-        window.open(url, '_blank', 'noopener');
+        showViewResultContent(title, url, netdiskName);
     } finally {
         button.disabled = false;
         button.innerHTML = originalHtml;
     }
 }
+
+function showViewResultLoading(title) {
+    currentResolvedViewResult = null;
+    if (viewResultTitle) {
+        viewResultTitle.textContent = title || '';
+    }
+    if (viewResultLink) {
+        viewResultLink.textContent = '';
+        viewResultLink.href = '#';
+    }
+    viewResultLoadingState?.classList.remove('d-none');
+    viewResultContentState?.classList.add('d-none');
+    copyViewResultButton?.setAttribute('disabled', 'disabled');
+    openViewResultButton?.setAttribute('disabled', 'disabled');
+}
+
+function showViewResultContent(title, url, netdiskName) {
+    currentResolvedViewResult = { title, url, netdiskName };
+    if (viewResultTitle) {
+        viewResultTitle.textContent = title;
+    }
+    if (viewResultLink) {
+        viewResultLink.textContent = url;
+        viewResultLink.href = url;
+        viewResultLink.title = url;
+    }
+    viewResultLoadingState?.classList.add('d-none');
+    viewResultContentState?.classList.remove('d-none');
+    copyViewResultButton?.removeAttribute('disabled');
+    openViewResultButton?.removeAttribute('disabled');
+}
+
+copyViewResultButton?.addEventListener('click', async function () {
+    if (!currentResolvedViewResult) return;
+
+    const textToCopy = `标题: ${currentResolvedViewResult.title}
+分享链接: ${currentResolvedViewResult.url}`;
+
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        const originalHtml = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-check me-1"></i> 已复制';
+        setTimeout(() => {
+            this.innerHTML = originalHtml;
+        }, 1500);
+    } catch (error) {
+        alert('复制失败，请手动复制:\n\n' + textToCopy);
+    }
+});
+
+openViewResultButton?.addEventListener('click', function () {
+    if (!currentResolvedViewResult) return;
+    window.open(currentResolvedViewResult.url, '_blank', 'noopener');
+});
 
 
 // --- 网盘过滤事件监听器 (保持不变) ---

@@ -137,12 +137,14 @@
 
 .filter-and-count-container {
     gap: 16px;
+    margin-bottom: 18px;
 }
 
 .result-count {
     flex: 0 0 auto;
     color: #495057;
     font-size: 0.95rem;
+    font-weight: 600;
 }
 
 #advanced-filter-bar {
@@ -155,25 +157,70 @@
 }
 
 .advanced-filter-group {
-    width: 220px;
-    height: 30px;
+    width: 250px;
+    height: 42px;
 }
 
 .advanced-filter-label {
-    background-color: #f0f0f0;
-    border-color: #ddd;
-    min-width: 64px;
+    background-color: #f8f9fb;
+    border-color: #d9dee8;
+    min-width: 78px;
     justify-content: center;
-    padding: 0.25rem 0.75rem;
+    padding: 0.35rem 0.9rem;
+    font-weight: 600;
+    color: #495057;
 }
 
 .advanced-filter-input {
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-color: #d9dee8;
+    background-color: #ffffff;
 }
 
 .advanced-filter-apply {
-    height: 30px;
-    padding: 0.25rem 0.75rem;
+    height: 42px;
+    min-width: 84px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+}
+
+.view-result-modal {
+    border: none;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.view-result-loading p {
+    font-size: 0.95rem;
+}
+
+.view-result-field {
+    padding: 14px 16px;
+    border: 1px solid #e7ebf2;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+}
+
+.view-result-label {
+    font-size: 0.82rem;
+    color: #6c757d;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.view-result-title {
+    font-size: 1rem;
+    color: #212529;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+.view-result-link {
+    display: block;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    word-break: break-all;
+    text-decoration: underline;
 }
 
 /* --- 搜索结果容器 --- */
@@ -249,6 +296,28 @@
 }
 
 /* 响应式调整 */
+@media (min-width: 769px) {
+    .filter-and-count-container {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center !important;
+    }
+
+    #advanced-filter-bar {
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+    }
+
+    .advanced-filter-group {
+        flex: 1 1 280px;
+        max-width: 420px;
+    }
+
+    .advanced-filter-apply {
+        flex: 0 0 auto;
+    }
+}
+
 @media (max-width: 768px) {
     .search-area {
         margin-bottom: 20px;
