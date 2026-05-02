@@ -28,16 +28,16 @@
 
             <div class="filter-and-count-container d-none mt-3 d-flex justify-content-between align-items-center">
                 <p class="result-count mb-0" id="resultCountText"></p>
-                <div id="advanced-filter-bar" class="d-inline-flex gap-2 mb-2">
-                    <div class="input-group input-group-sm" style="height: 30px; width: 220px;">
-                        <span class="input-group-text" style="background-color: #f0f0f0; border-color: #ddd; height: 30px; padding: 0.25rem 0.75rem; min-width: 40px; text-align: center;">包含</span>
-                        <input type="text" class="form-control form-control-sm" id="includeFilter" placeholder="关键词1 关键词2" style="height: 30px; padding: 0.25rem 0.5rem;">
+                <div id="advanced-filter-bar" class="mb-2">
+                    <div class="input-group input-group-sm advanced-filter-group">
+                        <span class="input-group-text advanced-filter-label">包含</span>
+                        <input type="text" class="form-control form-control-sm advanced-filter-input" id="includeFilter" placeholder="关键词1 关键词2">
                     </div>
-                    <div class="input-group input-group-sm" style="height: 30px; width: 220px;">
-                        <span class="input-group-text" style="background-color: #f0f0f0; border-color: #ddd; height: 30px; padding: 0.25rem 0.75rem; min-width: 40px; text-align: center;">不包含</span>
-                        <input type="text" class="form-control form-control-sm" id="excludeFilter" placeholder="排除词1 排除词2" style="height: 30px; padding: 0.25rem 0.5rem;">
+                    <div class="input-group input-group-sm advanced-filter-group">
+                        <span class="input-group-text advanced-filter-label">不包含</span>
+                        <input type="text" class="form-control form-control-sm advanced-filter-input" id="excludeFilter" placeholder="排除词1 排除词2">
                     </div>
-                    <button class="btn btn-outline-primary btn-sm" id="applyFilter" style="height: 30px; padding: 0.25rem 0.75rem;">应用</button>
+                    <button class="btn btn-outline-primary btn-sm advanced-filter-apply" id="applyFilter">应用</button>
                 </div>
             </div>
 
@@ -63,5 +63,8 @@
 
 {% block scripts %}
     {{ super() }}
+    <script>
+        window.SEARCH_LINK_MODE = {{ frontend_link_mode | tojson }};
+    </script>
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

@@ -110,6 +110,12 @@
     gap: 10px;
     overflow-x: auto;
     white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+#netdisk-filter-bar::-webkit-scrollbar {
+    display: none;
 }
 .filter-btn {
     background-color: #ffffff;
@@ -127,6 +133,47 @@
     border-color: #007bff;
     font-weight: 600;
     box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.filter-and-count-container {
+    gap: 16px;
+}
+
+.result-count {
+    flex: 0 0 auto;
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+#advanced-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1 1 auto;
+}
+
+.advanced-filter-group {
+    width: 220px;
+    height: 30px;
+}
+
+.advanced-filter-label {
+    background-color: #f0f0f0;
+    border-color: #ddd;
+    min-width: 64px;
+    justify-content: center;
+    padding: 0.25rem 0.75rem;
+}
+
+.advanced-filter-input {
+    padding: 0.25rem 0.5rem;
+}
+
+.advanced-filter-apply {
+    height: 30px;
+    padding: 0.25rem 0.75rem;
 }
 
 /* --- 搜索结果容器 --- */
@@ -168,6 +215,11 @@
     margin-top: 2px;
 }
 
+.result-url-line a {
+    color: inherit;
+    text-decoration: underline;
+}
+
 /* --- Hot 资源定制样式 --- */
 .result-item.hot-result .result-title,
 .result-item.hot-result .result-url-line a {
@@ -184,6 +236,7 @@
     align-items: center;
     flex-shrink: 0;
     margin-left: 10px;
+    gap: 10px;
 }
 
 /* 网盘名称徽章 */
@@ -192,22 +245,126 @@
     padding: 4px 10px;
     border-radius: 15px;
     flex-shrink: 0;
-    margin-right: 10px;
     font-weight: 600;
 }
 
 /* 响应式调整 */
 @media (max-width: 768px) {
+    .search-area {
+        margin-bottom: 20px;
+    }
+
+    .input-group-custom {
+        border-radius: 14px;
+    }
+
+    #searchInput,
+    #searchButton {
+        height: 48px;
+    }
+
+    .filter-and-count-container {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    .result-count {
+        width: 100%;
+        text-align: left;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.5;
+    }
+
+    #advanced-filter-bar {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .advanced-filter-group {
+        width: 100%;
+        height: auto;
+    }
+
+    .advanced-filter-label {
+        min-width: 72px;
+    }
+
+    .advanced-filter-input {
+        min-height: 38px;
+    }
+
+    .advanced-filter-apply {
+        width: 100%;
+        min-height: 38px;
+    }
+
+    #scrollableResults {
+        padding: 0 14px;
+        border-radius: 12px;
+    }
+
     .result-item {
-        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px 0;
     }
+
     .result-info {
-        min-width: 70%;
+        width: 100%;
     }
+
+    .result-title,
+    .result-url-line {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: initial;
+        word-break: break-word;
+    }
+
     .result-actions {
         width: 100%;
-        justify-content: flex-end;
-        margin-top: 5px;
         margin-left: 0;
+        margin-top: 0;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .result-actions .btn {
+        min-width: 84px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container-fluid-custom {
+        padding: 0 12px;
+    }
+
+    #netdisk-filter-bar {
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .filter-btn {
+        padding: 6px 14px;
+        font-size: 0.82rem;
+    }
+
+    #scrollableResults {
+        padding: 0 12px;
+    }
+
+    .result-title {
+        font-size: 0.98rem;
+    }
+
+    .result-url-line {
+        font-size: 0.82rem;
+    }
+
+    .netdisk-badge {
+        font-size: 0.72rem;
+        padding: 4px 9px;
     }
 }

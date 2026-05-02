@@ -80,6 +80,40 @@ CREATE TABLE `cookie_config` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='云盘Cookie配置表';
 
 -- ----------------------------
+-- Table structure for `system_config`
+-- ----------------------------
+DROP TABLE IF EXISTS `system_config`;
+CREATE TABLE `system_config` (
+  `config_key` varchar(100) NOT NULL COMMENT '配置键',
+  `config_value` text DEFAULT NULL COMMENT '配置值(JSON字符串)',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`config_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
+
+-- ----------------------------
+-- Table structure for `temp_share`
+-- ----------------------------
+DROP TABLE IF EXISTS `temp_share`;
+CREATE TABLE `temp_share` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `original_url` text NOT NULL COMMENT '原始分享链接',
+  `title` varchar(255) DEFAULT NULL COMMENT '资源标题',
+  `cloud_name` varchar(100) NOT NULL COMMENT '网盘名称',
+  `temp_share_url` text NOT NULL COMMENT '临时分享链接',
+  `file_id` varchar(255) NOT NULL COMMENT '转存后的文件ID或路径',
+  `status` varchar(20) NOT NULL DEFAULT 'active' COMMENT '状态: active/deleted/failed',
+  `expires_at` datetime NOT NULL COMMENT '过期时间',
+  `last_accessed_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最后访问时间',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` datetime DEFAULT NULL COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_temp_share_lookup` (`cloud_name`, `status`, `expires_at`),
+  KEY `idx_temp_share_original` (`original_url`(255))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='搜索页动态转存临时分享表';
+
+-- ----------------------------
 -- Test data for `resources`
 -- ----------------------------
 INSERT INTO `resources` (`file_id`, `name`, `share_link`, `cloud_name`, `type`, `remarks`) VALUES

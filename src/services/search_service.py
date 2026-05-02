@@ -10,9 +10,30 @@ import requests
 
 from configs.app_config import user_agents
 from src.db.resources_dao import search_resources_by_keyword, search_resources_advanced
+from src.services.system_config_service import get_allowed_frontend_netdisks
 from utils.netdisk_utils import match_netdisk_link
 
 logger = logging.getLogger(__name__)
+
+
+def filter_results_by_frontend_netdisks(results):
+    """按后台配置过滤前端可见网盘。"""
+    allowed_netdisks = get_allowed_frontend_netdisks()
+    if not allowed_netdisks:
+        return results
+
+    filtered_results = []
+    for item in results:
+        if isinstance(item, (list, tuple)) and len(item) >= 4:
+            netdisk_name = item[3]
+            if netdisk_name in allowed_netdisks:
+                filtered_results.append(item)
+        elif isinstance(item, dict):
+            netdisk_name = item.get("cloud_name") or match_netdisk_link(item.get("share_link", ""))
+            if netdisk_name in allowed_netdisks:
+                filtered_results.append(item)
+
+    return filtered_results
 
 
 def read_all_api_configs_from_db():
@@ -226,6 +247,7 @@ def generate_search_stream_events(keyword):
 
     def _event_generator():
         db_results = search_in_database(keyword)
+        db_results = filter_results_by_frontend_netdisks(db_results)
         if db_results:
             yield json.dumps({"type": "initial", "results": db_results})
 
@@ -252,6 +274,7 @@ def generate_search_stream_events(keyword):
                 for future in done:
                     try:
                         results = future.result()
+                        results = filter_results_by_frontend_netdisks(results)
                         if results:
                             yield json.dumps({"type": "update", "results": results})
                     except Exception as e:
@@ -271,9 +294,18 @@ def search_resources(name="", cloud_name="", resource_type="", limit=100, sort="
     返回: (success: bool, message: str, results: list)
     """
     try:
-        return search_resources_advanced(name=name, cloud_name=cloud_name, resource_type=resource_type, limit=limit, sort=sort)
+        success, message, results = search_resources_advanced(
+            name=name,
+            cloud_name=cloud_name,
+            resource_type=resource_type,
+            limit=limit,
+            sort=sort,
+        )
+        if not success:
+            return success, message, results
+
+        return True, message, filter_results_by_frontend_netdisks(results)
     except Exception as e:
         logger.error(f"API错误: {e}")
         return False, f"API错误: {e}", []
-
 

@@ -9,6 +9,8 @@ from routes.search_routes import search_bp
 from routes.hot_resource_routes import resources_bp
 from routes.auth_routes import auth_bp
 from configs.app_config import SECRET_KEY
+from src.services.scheduler_service import start_scheduler
+from src.services.system_config_service import get_frontend_link_mode
 
 app = Flask(__name__)
 
@@ -20,6 +22,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(api_config_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(resources_bp)
+start_scheduler()
 
 # 上下文处理器，将登录状态传递给所有模板
 @app.context_processor
@@ -42,10 +45,9 @@ def inject_login_status():
 # 首页，返回 HTML 文件
 @app.route('/')
 def search_index():
-    return render_template('index.html')
+    return render_template('index.html', frontend_link_mode=get_frontend_link_mode())
 
 
 if __name__ == '__main__':
     logger.info("启动 Flask 应用")
     app.run(host='0.0.0.0', port=5004)
-

@@ -143,7 +143,7 @@
                     <i class="fas fa-cog"></i> 配置
                 </button>
                 <button class="btn {{ 'btn-primary' if active_page == 'resources' else 'btn-outline-secondary' }}" id="resourcesLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
-                    <i class="fas fa-fire"></i> 热门资源
+                    <i class="fas fa-fire"></i> 我的资源
                 </button>
                 <button class="btn btn-link text-muted" id="adminLoginLink" {% if is_logged_in %}style="display: none;"{% endif %}>
                     <i class="fas fa-user"></i> 登录
@@ -162,7 +162,7 @@
 <div class="footer-container">
     <div class="container-fluid-custom">
         <div class="footer-copyright">
-            &copy; 2024-2025 小青搜剧 | <a id="disclaimerLink">仅供学习交流使用</a>
+            &copy; 2024-2026 小青搜剧 | <a id="disclaimerLink">仅供学习交流使用</a>
         </div>
     </div>
 </div>
@@ -195,7 +195,7 @@
                 });
             }
 
-            // 热门资源按钮点击事件 - 移除密码验证
+            // 我的资源按钮点击事件 - 移除密码验证
             if (resourcesLink) {
                 resourcesLink.addEventListener('click', (e) => {
                     e.preventDefault();

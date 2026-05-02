@@ -11,6 +11,57 @@
 {% block content %}
     <div class="container-fluid-custom pt-4">
         <h2 class="text-center mb-4">搜索API配置管理</h2>
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <h5 class="mb-1">前端显示网盘</h5>
+                        <p class="text-muted mb-0">控制搜索页和公开搜索接口可展示的网盘类型。未选中的网盘仍可保留在后台数据里，但不会对前端返回。</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton" onclick="saveFrontendDisplayNetdisks()">
+                        <i class="fas fa-save me-1"></i> 保存显示配置
+                    </button>
+                </div>
+                <div class="row g-2" id="frontendDisplayNetdisksGroup">
+                    {% for netdisk_name in frontend_netdisk_options %}
+                    <div class="col-md-3 col-sm-4 col-6">
+                        <div class="form-check">
+                            <input class="form-check-input frontend-display-netdisk-checkbox" type="checkbox" id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
+                            <label class="form-check-label" for="frontendNetdisk{{ loop.index }}">
+                                {{ netdisk_name }}
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <h5 class="mb-1">前端出链策略</h5>
+                        <p class="text-muted mb-0">控制公开搜索页结果按钮的行为。普通用户不会看到切换开关，只会按这里的设置使用。</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton" onclick="saveFrontendLinkMode()">
+                        <i class="fas fa-save me-1"></i> 保存出链策略
+                    </button>
+                </div>
+                <div class="row g-3 align-items-center">
+                    <div class="col-lg-4 col-md-6">
+                        <select class="form-select" id="frontendLinkModeSelect">
+                            <option value="copy">复制原始链接</option>
+                            <option value="view">查看并动态转存</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-8">
+                        <div class="form-text mt-0">
+                            选择“查看并动态转存”后，前台会隐藏原始链接，点击“查看”时由后端动态生成你的分享链接；失败时静默回退原始链接。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="d-flex justify-content-between mb-3">
             <div>
                 <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addApiModal">

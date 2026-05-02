@@ -9,6 +9,7 @@ let isFullyLoaded = false;
 let currentFilter = '全部';
 let includeKeywords = [];
 let excludeKeywords = [];
+const isViewModeEnabled = window.SEARCH_LINK_MODE === 'view';
 
 const filterBar = document.getElementById('netdisk-filter-bar');
 const advancedFilterBar = document.getElementById('advanced-filter-bar');
@@ -317,15 +318,15 @@ function renderResults(reset = false) {
             <div class="result-item ${hotClass}">
                 <div class="result-info">
                     <span class="result-title" title="${titleText}">${titleText}</span>
-                    <div class="result-url-line">
+                    <div class="result-url-line ${isViewModeEnabled ? 'd-none' : ''}">
                         ${linkIconHtml}
                         <a href="${urlLink}" target="_blank" title="${urlLink}">${urlLink}</a>
                     </div>
                 </div>
                 <div class="result-actions">
                     <span class="netdisk-badge ${finalBadgeClass}">${netdiskName}</span>
-                    <button class="btn btn-sm copy-button btn-outline-secondary" data-title="${titleText}" data-url="${urlLink}" data-netdisk="${netdiskName}">
-                        <i class="far fa-copy"></i> 复制
+                    <button class="btn btn-sm ${isViewModeEnabled ? 'view-button btn-primary' : 'copy-button btn-outline-secondary'}" data-title="${titleText}" data-url="${urlLink}" data-netdisk="${netdiskName}">
+                        ${isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
                     </button>
                 </div>
             </div>
@@ -353,6 +354,12 @@ function renderResults(reset = false) {
                 .catch(() => {
                     alert('复制失败，请手动复制:\n\n' + textToCopy);
                 });
+        });
+    });
+
+    resultContainer.querySelectorAll('.view-button').forEach(button => {
+        button.addEventListener('click', function() {
+            handleViewButtonClick(this);
         });
     });
 
@@ -388,6 +395,42 @@ function loadNextPage() {
     setTimeout(() => {
         renderResults(false);
     }, 300);
+}
+
+async function handleViewButtonClick(button) {
+    const title = button.getAttribute('data-title');
+    const url = button.getAttribute('data-url');
+    const netdiskName = button.getAttribute('data-netdisk');
+    const originalHtml = button.innerHTML;
+
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> 查看中';
+
+    try {
+        const response = await fetch('/api/view-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: title,
+                url: url,
+                netdisk_name: netdiskName
+            })
+        });
+
+        if (!response.ok) {
+            window.open(url, '_blank', 'noopener');
+            return;
+        }
+
+        const data = await response.json();
+        window.open(data.url || url, '_blank', 'noopener');
+    } catch (error) {
+        console.error('查看模式生成链接失败:', error);
+        window.open(url, '_blank', 'noopener');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalHtml;
+    }
 }
 
 

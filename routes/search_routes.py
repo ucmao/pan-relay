@@ -10,6 +10,8 @@ from src.services.search_service import (
     generate_search_stream_events,
     search_resources,
 )
+from src.services.temp_share_service import cleanup_expired_temp_shares, resolve_view_url
+from utils.auth_utils import token_required
 
 logger = logging.getLogger(__name__)
 
@@ -88,3 +90,24 @@ def del_share_route():
     except Exception as e:
         logger.error(f"删除分享时发生未知错误: {str(e)}", exc_info=True)
         return jsonify({"error": f"发生未知错误: {str(e)}"}), 500
+
+
+@search_bp.route("/api/view-link", methods=["POST"])
+def resolve_view_link():
+    data = request.get_json() or {}
+    original_url = data.get("url", "")
+    title = data.get("title", "未命名资源")
+    netdisk_name = data.get("netdisk_name", "")
+
+    if not original_url:
+        return jsonify({"success": False, "message": "缺少链接参数"}), 400
+
+    resolved = resolve_view_url(title=title, original_url=original_url, netdisk_name=netdisk_name)
+    return jsonify({"success": True, **resolved})
+
+
+@search_bp.route("/api/temp-shares/cleanup", methods=["POST"])
+@token_required
+def cleanup_temp_shares():
+    cleaned_count = cleanup_expired_temp_shares()
+    return jsonify({"success": True, "cleaned_count": cleaned_count})

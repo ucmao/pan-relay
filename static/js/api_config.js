@@ -1,5 +1,105 @@
         let apiConfigs = [];
 
+        function getFrontendDisplayNetdiskCheckboxes() {
+            return Array.from(document.querySelectorAll('.frontend-display-netdisk-checkbox'));
+        }
+
+        async function loadFrontendLinkMode() {
+            try {
+                const response = await fetch('/api/frontend-link-mode');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const select = document.getElementById('frontendLinkModeSelect');
+                if (select) {
+                    select.value = data.mode || 'copy';
+                }
+            } catch (error) {
+                console.error('加载前端出链模式失败:', error);
+                showToast('加载前端出链模式失败，请检查后端日志。', 'danger');
+            }
+        }
+
+        async function saveFrontendLinkMode() {
+            const select = document.getElementById('frontendLinkModeSelect');
+            const saveButton = document.getElementById('saveFrontendLinkModeButton');
+            if (!select || !saveButton) return;
+
+            saveButton.disabled = true;
+            try {
+                const response = await fetch('/api/frontend-link-mode', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: select.value })
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+
+                showToast(data.message, 'success');
+            } catch (error) {
+                console.error('保存前端出链模式失败:', error);
+                showToast(`保存前端出链模式失败: ${error.message}`, 'danger');
+            } finally {
+                saveButton.disabled = false;
+            }
+        }
+
+        async function loadFrontendDisplayNetdisks() {
+            try {
+                const response = await fetch('/api/frontend-display-netdisks');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const enabledSet = new Set(data.enabled_netdisks || []);
+                getFrontendDisplayNetdiskCheckboxes().forEach((checkbox) => {
+                    checkbox.checked = enabledSet.has(checkbox.value);
+                });
+            } catch (error) {
+                console.error('加载前端显示网盘配置失败:', error);
+                showToast('加载前端显示网盘配置失败，请检查后端日志。', 'danger');
+            }
+        }
+
+        async function saveFrontendDisplayNetdisks() {
+            const saveButton = document.getElementById('saveFrontendNetdiskConfigButton');
+            const enabledNetdisks = getFrontendDisplayNetdiskCheckboxes()
+                .filter((checkbox) => checkbox.checked)
+                .map((checkbox) => checkbox.value);
+
+            if (enabledNetdisks.length === 0) {
+                showToast('前端显示网盘至少需要保留一个。', 'warning');
+                return;
+            }
+
+            saveButton.disabled = true;
+            try {
+                const response = await fetch('/api/frontend-display-netdisks', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled_netdisks: enabledNetdisks })
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+
+                showToast(data.message, 'success');
+            } catch (error) {
+                console.error('保存前端显示网盘配置失败:', error);
+                showToast(`保存前端显示网盘配置失败: ${error.message}`, 'danger');
+            } finally {
+                saveButton.disabled = false;
+            }
+        }
+
         /**
          * 显示 Toast 通知
          * @param {string} message - 提示消息
@@ -550,4 +650,6 @@
         }
 
         // 初始化加载数据
+        loadFrontendLinkMode();
+        loadFrontendDisplayNetdisks();
         loadApiConfigs();
