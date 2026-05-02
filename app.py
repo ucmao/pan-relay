@@ -8,6 +8,7 @@ from routes.api_config_routes import api_config_bp
 from routes.search_routes import search_bp
 from routes.hot_resource_routes import resources_bp
 from routes.auth_routes import auth_bp
+from routes.system_config_routes import system_config_bp
 from configs.app_config import SECRET_KEY
 from src.services.scheduler_service import start_scheduler
 from src.services.system_config_service import get_frontend_link_mode
@@ -22,6 +23,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(api_config_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(resources_bp)
+app.register_blueprint(system_config_bp)
 start_scheduler()
 
 # 上下文处理器，将登录状态传递给所有模板

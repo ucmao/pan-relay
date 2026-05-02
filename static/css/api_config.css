@@ -365,3 +365,256 @@
         .form-group.code-input textarea {
             rows: 3;
         }
+
+        .frontend-netdisk-config {
+            border: 1px solid #e7ebf3;
+            border-radius: 18px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+        }
+
+        .frontend-netdisk-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 22px;
+            border-bottom: 1px solid #edf1f7;
+        }
+
+        .frontend-netdisk-title-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .frontend-netdisk-title-row h5 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .frontend-netdisk-counter {
+            font-size: 0.98rem;
+            color: #667085;
+            font-weight: 600;
+        }
+
+        .frontend-netdisk-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .frontend-netdisk-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 14px;
+            padding: 20px 22px 22px;
+        }
+
+        .frontend-netdisk-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 92px;
+            border: 1.5px solid #dfe5ef;
+            border-radius: 16px;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            padding: 16px 14px 14px;
+            user-select: none;
+        }
+
+        .frontend-netdisk-card:hover {
+            border-color: #bed0ff;
+            background: #f9fbff;
+            transform: translateY(-1px);
+        }
+
+        .frontend-netdisk-card:has(.frontend-display-netdisk-checkbox:checked) {
+            border-color: #5b8cff;
+            background: #eef4ff;
+            box-shadow: inset 0 0 0 1px rgba(91, 140, 255, 0.18);
+        }
+
+        .frontend-display-netdisk-checkbox {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .frontend-netdisk-card-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1f2937;
+            text-align: center;
+            line-height: 1.35;
+            margin-bottom: 12px;
+        }
+
+        .frontend-netdisk-card-check {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid #d6ddea;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: transparent;
+            background: #ffffff;
+            transition: all 0.18s ease;
+            font-size: 0.9rem;
+        }
+
+        .frontend-netdisk-card:has(.frontend-display-netdisk-checkbox:checked) .frontend-netdisk-card-check {
+            background: #5b8cff;
+            border-color: #5b8cff;
+            color: #ffffff;
+        }
+
+        .frontend-link-mode-config {
+            min-height: 190px;
+            border: 1px solid #e7ebf3;
+            border-radius: 18px;
+            background:
+                radial-gradient(circle at top right, rgba(255, 188, 67, 0.12), transparent 34%),
+                linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+            padding: 20px 22px 22px;
+        }
+
+        .frontend-link-mode-config h5 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .frontend-link-mode-options {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .frontend-link-mode-card {
+            position: relative;
+            min-height: 104px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 20px;
+            border: 1.5px solid #dfe5ef;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.86);
+            cursor: pointer;
+            transition: all 0.18s ease;
+            user-select: none;
+        }
+
+        .frontend-link-mode-card:hover {
+            border-color: #f3c96e;
+            background: #fffdf8;
+            transform: translateY(-1px);
+        }
+
+        .frontend-link-mode-card:has(.frontend-link-mode-radio:checked) {
+            border-color: #f0b84d;
+            background: #fff7e6;
+            box-shadow: inset 0 0 0 1px rgba(240, 184, 77, 0.2);
+        }
+
+        .frontend-link-mode-radio {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .frontend-link-mode-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .frontend-link-mode-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .frontend-link-mode-desc {
+            color: #667085;
+            line-height: 1.45;
+        }
+
+        .frontend-link-mode-switch {
+            width: 48px;
+            height: 28px;
+            border-radius: 999px;
+            background: #e5eaf2;
+            position: relative;
+            flex: 0 0 auto;
+            transition: all 0.18s ease;
+        }
+
+        .frontend-link-mode-switch::after {
+            content: "";
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 2px 5px rgba(15, 23, 42, 0.18);
+            transition: all 0.18s ease;
+        }
+
+        .frontend-link-mode-card:has(.frontend-link-mode-radio:checked) .frontend-link-mode-switch {
+            background: #f2b43d;
+        }
+
+        .frontend-link-mode-card:has(.frontend-link-mode-radio:checked) .frontend-link-mode-switch::after {
+            transform: translateX(20px);
+        }
+
+        @media (max-width: 768px) {
+            .frontend-netdisk-header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 18px 16px;
+            }
+
+            .frontend-netdisk-actions {
+                justify-content: flex-end;
+            }
+
+            .frontend-netdisk-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+                padding: 16px;
+            }
+
+            .frontend-netdisk-card {
+                min-height: 84px;
+                border-radius: 14px;
+            }
+
+            .frontend-link-mode-config {
+                padding: 18px 16px;
+            }
+
+            .frontend-link-mode-options {
+                grid-template-columns: 1fr;
+            }
+
+            .frontend-link-mode-card {
+                min-height: 96px;
+                padding: 18px 16px;
+            }
+        }

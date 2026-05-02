@@ -4,9 +4,12 @@
 // 1. 全局变量与配置
 // ==========================================
 let currentPage = 1;
-const pageSize = 25;
+let pageSize = 50;
 let totalPages = 1;
+let totalCount = 0;
 let resourcesData = [];
+let batchResourceMode = 'import';
+const selectedResourceMap = new Map();
 
 // ==========================================
 // 2. DOM 元素获取
@@ -14,24 +17,32 @@ let resourcesData = [];
 const searchInput = document.getElementById('searchInput');
 const resourcesTableBody = document.getElementById('resourcesTableBody');
 const pagination = document.getElementById('pagination');
+const pageSizeSelect = document.getElementById('pageSizeSelect');
+const jumpPageInput = document.getElementById('jumpPageInput');
+const jumpPageBtn = document.getElementById('jumpPageBtn');
+const resourceTotalCount = document.getElementById('resourceTotalCount');
+const selectedResourceCount = document.getElementById('selectedResourceCount');
+const selectCurrentPageCheckbox = document.getElementById('selectCurrentPageCheckbox');
+const selectCurrentPageBtn = document.getElementById('selectCurrentPageBtn');
+const selectAllResourcesBtn = document.getElementById('selectAllResourcesBtn');
+const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+const exportSelectedBtn = document.getElementById('exportSelectedBtn');
+const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 
 // 模态框与表单
 const addResourceForm = document.getElementById('addResourceForm');
 const editResourceForm = document.getElementById('editResourceForm');
 const batchAddResourceForm = document.getElementById('batchAddResourceForm');
+const batchAddResourceModal = document.getElementById('batchAddResourceModal');
+const batchAddResourceModalLabel = document.getElementById('batchAddResourceModalLabel');
+const batchTransferOptions = document.getElementById('batchTransferOptions');
 
 // 按钮
 const saveResourceBtn = document.getElementById('saveResourceBtn');
 const updateResourceBtn = document.getElementById('updateResourceBtn');
 const batchSaveResourceBtn = document.getElementById('batchSaveResourceBtn');
-const exportCurrentPageBtn = document.getElementById('exportCurrentPageBtn');
-const exportAllPagesBtn = document.getElementById('exportAllPagesBtn');
-
-// Cookie 配置相关元素
-const cookieConfigModal = document.getElementById('cookieConfigModal');
-const saveCookieConfigBtn = document.getElementById('saveCookieConfigBtn');
-const baiduCookieInput = document.getElementById('baiduCookie');
-const quarkCookieInput = document.getElementById('quarkCookie');
+const batchImportResourceBtn = document.getElementById('batchImportResourceBtn');
+const batchTransferResourceBtn = document.getElementById('batchTransferResourceBtn');
 
 // ==========================================
 // 3. 核心工具函数
@@ -88,9 +99,19 @@ async function loadResources() {
 
         if (data.success) {
             resourcesData = data.data.items;
-            totalPages = data.data.total_pages;
+            totalPages = Math.max(1, data.data.total_pages || 1);
+            totalCount = data.data.total_count || 0;
+
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+                await loadResources();
+                return;
+            }
+
             renderTable();
             renderPagination();
+            updatePaginationControls();
+            updateSelectionUI();
         } else {
             showToast('加载资源失败: ' + (data.message || '未知错误'), 'danger');
         }
@@ -107,14 +128,18 @@ function renderTable() {
 
     if (!resourcesData || resourcesData.length === 0) {
         const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = '<td colspan="7" class="text-center">暂无数据</td>';
+        emptyRow.innerHTML = '<td colspan="8" class="text-center">暂无数据</td>';
         resourcesTableBody.appendChild(emptyRow);
         return;
     }
 
     resourcesData.forEach(resource => {
         const row = document.createElement('tr');
+        const isSelected = selectedResourceMap.has(resource.id);
         row.innerHTML = `
+            <td>
+                <input class="form-check-input resource-row-checkbox" type="checkbox" data-id="${resource.id}" ${isSelected ? 'checked' : ''} aria-label="选择资源 ${resource.id}">
+            </td>
             <td>${resource.id}</td>
             <td title="${resource.name}">${resource.name}</td>
             <td><a href="${resource.share_link}" target="_blank" class="text-truncate d-inline-block" style="max-width: 250px;">${resource.share_link}</a></td>
@@ -189,6 +214,45 @@ function renderPagination() {
     pagination.appendChild(nextLi);
 }
 
+function updatePaginationControls() {
+    if (resourceTotalCount) {
+        resourceTotalCount.textContent = `共 ${totalCount} 条`;
+    }
+
+    if (jumpPageInput) {
+        jumpPageInput.value = String(currentPage);
+        jumpPageInput.max = String(totalPages);
+        jumpPageInput.disabled = totalPages <= 1;
+    }
+
+    if (jumpPageBtn) {
+        jumpPageBtn.disabled = totalPages <= 1;
+    }
+
+    if (pageSizeSelect) {
+        pageSizeSelect.value = String(pageSize);
+    }
+}
+
+function jumpToPage() {
+    if (!jumpPageInput) return;
+
+    const rawPage = parseInt(jumpPageInput.value, 10);
+    if (Number.isNaN(rawPage)) {
+        showToast('请输入有效页码', 'warning');
+        jumpPageInput.value = String(currentPage);
+        return;
+    }
+
+    const targetPage = Math.min(Math.max(rawPage, 1), totalPages);
+    jumpPageInput.value = String(targetPage);
+
+    if (targetPage === currentPage) return;
+
+    currentPage = targetPage;
+    loadResources();
+}
+
 function createPageItem(page) {
     const li = document.createElement('li');
     li.className = `page-item ${page === currentPage ? 'active' : ''}`;
@@ -208,6 +272,10 @@ function createEllipsis() {
 // ==========================================
 
 function bindActionEvents() {
+    // 选择
+    document.querySelectorAll('.resource-row-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => toggleResourceSelection(parseInt(checkbox.getAttribute('data-id'), 10), checkbox.checked));
+    });
     // 编辑
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', () => editResource(parseInt(btn.getAttribute('data-id'))));
@@ -220,6 +288,64 @@ function bindActionEvents() {
     document.querySelectorAll('.copy-btn').forEach(btn => {
         btn.addEventListener('click', () => copyResource(parseInt(btn.getAttribute('data-id'))));
     });
+}
+
+function toggleResourceSelection(resourceId, checked) {
+    const resource = resourcesData.find(r => r.id === resourceId);
+    if (!resource) return;
+
+    if (checked) {
+        selectedResourceMap.set(resourceId, resource);
+    } else {
+        selectedResourceMap.delete(resourceId);
+    }
+
+    updateSelectionUI();
+}
+
+function updateSelectionUI() {
+    const selectedCount = selectedResourceMap.size;
+
+    if (selectedResourceCount) {
+        selectedResourceCount.textContent = String(selectedCount);
+    }
+
+    if (selectCurrentPageCheckbox) {
+        const currentPageIds = resourcesData.map(resource => resource.id);
+        const selectedOnPage = currentPageIds.filter(id => selectedResourceMap.has(id)).length;
+        selectCurrentPageCheckbox.checked = currentPageIds.length > 0 && selectedOnPage === currentPageIds.length;
+        selectCurrentPageCheckbox.indeterminate = selectedOnPage > 0 && selectedOnPage < currentPageIds.length;
+    }
+
+    if (exportSelectedBtn) {
+        exportSelectedBtn.classList.toggle('d-none', selectedCount === 0);
+        exportSelectedBtn.disabled = selectedCount === 0;
+    }
+
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.classList.toggle('d-none', selectedCount === 0);
+        deleteSelectedBtn.disabled = selectedCount === 0;
+    }
+
+    if (clearSelectionBtn) {
+        clearSelectionBtn.classList.toggle('d-none', selectedCount === 0);
+    }
+}
+
+function selectCurrentPageResources() {
+    resourcesData.forEach(resource => selectedResourceMap.set(resource.id, resource));
+    document.querySelectorAll('.resource-row-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateSelectionUI();
+}
+
+function clearResourceSelection() {
+    selectedResourceMap.clear();
+    document.querySelectorAll('.resource-row-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateSelectionUI();
 }
 
 // 复制资源信息
@@ -244,6 +370,8 @@ async function deleteResource(id) {
 
             if (data.success) {
                 showToast('删除成功');
+                selectedResourceMap.delete(id);
+                updateSelectionUI();
                 loadResources();
             } else {
                 showToast(data.message || '删除失败', 'danger');
@@ -292,23 +420,13 @@ async function saveResource() {
     const shareLink = document.getElementById('resourceShareLink').value.trim();
     const cloudName = matchNetdiskLink(shareLink);
 
-    const saveToNetdisk = {
-        quark: document.getElementById('resourceSaveToQuark').checked,
-        baidu: document.getElementById('resourceSaveToBaidu').checked,
-        ali: document.getElementById('resourceSaveToAli').checked,
-        xunlei: document.getElementById('resourceSaveToXunlei').checked,
-        uc: document.getElementById('resourceSaveToUc').checked,
-        wukong: document.getElementById('resourceSaveToWukong').checked,
-        // '115' removed based on commented out html, add back if needed
-    };
-
     const payload = {
         name: document.getElementById('resourceName').value.trim(),
         share_link: shareLink,
         cloud_name: cloudName,
         type: document.getElementById('resourceType').value,
         remarks: document.getElementById('resourceRemarks').value.trim(),
-        save_to_netdisk: saveToNetdisk
+        save_to_netdisk: {}
     };
 
     // 状态切换
@@ -324,7 +442,7 @@ async function saveResource() {
         const data = await response.json();
 
         if (data.success) {
-            showToast('资源添加成功');
+            showToast(data.message || '资源已直接入库');
             bootstrap.Modal.getInstance(document.getElementById('addResourceModal')).hide();
             addResourceForm.reset();
             loadResources();
@@ -337,7 +455,7 @@ async function saveResource() {
     } finally {
         // 关键：无论成功失败都恢复按钮
         saveResourceBtn.disabled = false;
-        saveResourceBtn.innerHTML = '<i class="fas fa-save"></i> 保存';
+        saveResourceBtn.innerHTML = '<i class="fas fa-save"></i> 直接入库';
     }
 }
 
@@ -391,6 +509,7 @@ function parseBatchResources(content) {
     const resources = [];
     const lines = content.split('\n');
     let currentResource = {};
+    let hasStructuredField = false;
 
     lines.forEach(line => {
         line = line.trim();
@@ -399,6 +518,7 @@ function parseBatchResources(content) {
         // 匹配标题 (支持中英文冒号)
         const titleMatch = line.match(/^(?:标题|name)[:：]\s*(.+)$/i);
         if (titleMatch) {
+            hasStructuredField = true;
             if (currentResource.name && currentResource.share_link) {
                 resources.push(currentResource);
                 currentResource = {};
@@ -410,6 +530,7 @@ function parseBatchResources(content) {
         // 匹配链接
         const linkMatch = line.match(/^(?:链接|分享链接|share_link)[:：]\s*(.+)$/i);
         if (linkMatch) {
+            hasStructuredField = true;
             currentResource.share_link = linkMatch[1].trim();
             if (!currentResource.cloud_name) {
                 currentResource.cloud_name = matchNetdiskLink(currentResource.share_link);
@@ -420,6 +541,7 @@ function parseBatchResources(content) {
         // 匹配类型
         const typeMatch = line.match(/^(?:类型|type)[:：]\s*(.+)$/i);
         if (typeMatch) {
+            hasStructuredField = true;
             currentResource.type = typeMatch[1].trim();
             return;
         }
@@ -427,6 +549,7 @@ function parseBatchResources(content) {
         // 匹配备注
         const remarkMatch = line.match(/^(?:备注|remark|remarks)[:：]\s*(.+)$/i);
         if (remarkMatch) {
+            hasStructuredField = true;
             currentResource.remarks = remarkMatch[1].trim();
             return;
         }
@@ -437,7 +560,58 @@ function parseBatchResources(content) {
         resources.push(currentResource);
     }
 
-    return resources;
+    if (resources.length > 0 || hasStructuredField) {
+        return resources;
+    }
+
+    return content
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(line => line.split(/\t|,/).map(part => part.trim()))
+        .filter(parts => parts.length >= 2 && parts[0] && parts[1])
+        .map(parts => ({
+            name: parts[0],
+            share_link: parts[1],
+            cloud_name: matchNetdiskLink(parts[1]),
+            type: parts[2] || '',
+            remarks: parts.slice(3).join(' ') || '',
+        }));
+}
+
+function setBatchResourceMode(mode) {
+    batchResourceMode = mode === 'transfer' ? 'transfer' : 'import';
+    const isTransferMode = batchResourceMode === 'transfer';
+
+    if (batchAddResourceModalLabel) {
+        batchAddResourceModalLabel.textContent = isTransferMode ? '批量转存入库' : '批量导入资源';
+    }
+
+    if (batchTransferOptions) {
+        batchTransferOptions.classList.toggle('d-none', !isTransferMode);
+    }
+
+    if (batchSaveResourceBtn) {
+        batchSaveResourceBtn.className = isTransferMode ? 'btn btn-warning btn-sm' : 'btn btn-success btn-sm';
+        batchSaveResourceBtn.innerHTML = isTransferMode
+            ? '<i class="fas fa-cloud-upload-alt"></i> 批量转存入库'
+            : '<i class="fas fa-save"></i> 批量导入';
+    }
+}
+
+function getBatchTransferNetdiskConfig() {
+    if (batchResourceMode !== 'transfer') {
+        return {};
+    }
+
+    return {
+        quark: document.getElementById('resourceSaveToQuark').checked,
+        baidu: document.getElementById('resourceSaveToBaidu').checked,
+        ali: document.getElementById('resourceSaveToAli').checked,
+        xunlei: document.getElementById('resourceSaveToXunlei').checked,
+        uc: document.getElementById('resourceSaveToUc').checked,
+        wukong: document.getElementById('resourceSaveToWukong').checked,
+    };
 }
 
 // 批量保存
@@ -454,23 +628,21 @@ async function batchSaveResources() {
         return;
     }
 
-    if (resources.length > 10) {
-        showToast('单次添加建议不超过10条', 'warning');
+    if (batchResourceMode === 'transfer' && resources.length > 10) {
+        showToast('批量转存建议单次不超过10条', 'warning');
+        return;
+    }
+
+    if (batchResourceMode === 'import' && resources.length > 500) {
+        showToast('批量导入建议单次不超过500条', 'warning');
         return;
     }
 
     const commonType = document.getElementById('batchResourceType').value;
     const commonRemarks = document.getElementById('batchResourceRemarks').value.trim();
 
-    const saveToNetdisk = {
-        quark: document.getElementById('resourceSaveToQuark').checked,
-        baidu: document.getElementById('resourceSaveToBaidu').checked,
-        ali: document.getElementById('resourceSaveToAli').checked,
-        xunlei: document.getElementById('resourceSaveToXunlei').checked,
-        uc: document.getElementById('resourceSaveToUc').checked,
-        wukong: document.getElementById('resourceSaveToWukong').checked,
-        // '115' removed based on commented out html, add back if needed
-    };
+    const saveToNetdisk = getBatchTransferNetdiskConfig();
+    const actionText = batchResourceMode === 'transfer' ? '转存入库' : '导入';
 
     // 锁定按钮
     batchSaveResourceBtn.disabled = true;
@@ -480,7 +652,7 @@ async function batchSaveResources() {
         for (let i = 0; i < resources.length; i++) {
             const res = resources[i];
             // 更新按钮文字显示进度
-            batchSaveResourceBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> 正在保存 ${i + 1}/${resources.length}`;
+            batchSaveResourceBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> 正在${actionText} ${i + 1}/${resources.length}`;
 
             const payload = {
                 name: res.name,
@@ -500,7 +672,7 @@ async function batchSaveResources() {
             if (data.success) successCount++;
         }
 
-        showToast(`批量处理完成：成功 ${successCount}，失败 ${resources.length - successCount}`, 'success');
+        showToast(`批量${actionText}完成：成功 ${successCount}，失败 ${resources.length - successCount}`, 'success');
         
         bootstrap.Modal.getInstance(document.getElementById('batchAddResourceModal')).hide();
         batchAddResourceForm.reset();
@@ -512,7 +684,7 @@ async function batchSaveResources() {
     } finally {
         // 恢复按钮
         batchSaveResourceBtn.disabled = false;
-        batchSaveResourceBtn.innerHTML = '<i class="fas fa-save"></i> 批量添加';
+        setBatchResourceMode(batchResourceMode);
     }
 }
 
@@ -550,99 +722,113 @@ function downloadCSV(csvContent, filename) {
     document.body.removeChild(link);
 }
 
-function exportCurrentPage() {
-    if (resourcesData.length === 0) {
-        showToast('当前页无数据', 'warning');
+async function fetchAllResourcesForCurrentSearch() {
+    const searchKeyword = searchInput ? searchInput.value.trim() : '';
+    const firstResponse = await fetch(`/api/resources?page=1&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`);
+    const firstData = await firstResponse.json();
+
+    if (!firstData.success) {
+        throw new Error(firstData.message || '获取资源失败');
+    }
+
+    let allItems = [...firstData.data.items];
+    const totalP = firstData.data.total_pages || 1;
+
+    if (totalP > 1) {
+        const promises = [];
+        for (let i = 2; i <= totalP; i++) {
+            promises.push(
+                fetch(`/api/resources?page=${i}&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`)
+                    .then(response => response.json())
+                    .then(data => data.success ? data.data.items : [])
+            );
+        }
+
+        const results = await Promise.all(promises);
+        results.forEach(items => {
+            allItems = allItems.concat(items);
+        });
+    }
+
+    return allItems;
+}
+
+async function selectAllResources() {
+    if (!selectAllResourcesBtn) return;
+
+    const originalText = selectAllResourcesBtn.innerHTML;
+    selectAllResourcesBtn.disabled = true;
+    selectAllResourcesBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 选择中';
+
+    try {
+        const allItems = await fetchAllResourcesForCurrentSearch();
+        allItems.forEach(resource => selectedResourceMap.set(resource.id, resource));
+        document.querySelectorAll('.resource-row-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateSelectionUI();
+        showToast(`已选择 ${allItems.length} 条资源`, 'success');
+    } catch (error) {
+        showToast('选择全部失败: ' + error.message, 'danger');
+    } finally {
+        selectAllResourcesBtn.disabled = false;
+        selectAllResourcesBtn.innerHTML = originalText;
+    }
+}
+
+function exportSelectedResources() {
+    const selectedResources = Array.from(selectedResourceMap.values());
+    if (selectedResources.length === 0) {
+        showToast('请先选择要导出的资源', 'warning');
         return;
     }
-    const csv = convertToCSV(resourcesData);
-    downloadCSV(csv, `资源列表_第${currentPage}页_${new Date().toISOString().slice(0, 10)}.csv`);
+
+    const csv = convertToCSV(selectedResources);
+    downloadCSV(csv, `资源列表_已选${selectedResources.length}条_${new Date().toISOString().slice(0, 10)}.csv`);
+    showToast(`成功导出 ${selectedResources.length} 条资源`, 'success');
 }
 
-async function exportAllPages() {
-    if (await showConfirm('确定要导出全部数据吗？数据量大时可能需要较长时间。')) {
-        const exportBtn = document.getElementById('exportAllPagesBtn');
-        const originalText = exportBtn.innerHTML;
-        exportBtn.disabled = true;
-        exportBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 导出中...';
+async function deleteSelectedResources() {
+    const selectedIds = Array.from(selectedResourceMap.keys());
+    if (selectedIds.length === 0) {
+        showToast('请先选择要删除的资源', 'warning');
+        return;
+    }
 
-        try {
-            // 先获取第一页以确定总数
-            const searchKeyword = searchInput ? searchInput.value.trim() : '';
-            const res1 = await fetch(`/api/resources?page=1&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`);
-            const data1 = await res1.json();
-            
-            if (!data1.success) throw new Error(data1.message);
+    if (!await showConfirm(`确定删除已选择的 ${selectedIds.length} 条资源吗？此操作不可撤销。`, 'danger')) {
+        return;
+    }
 
-            let allItems = [...data1.data.items];
-            const totalP = data1.data.total_pages;
+    const originalText = deleteSelectedBtn ? deleteSelectedBtn.innerHTML : '';
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.disabled = true;
+        deleteSelectedBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 删除中';
+    }
 
-            if (totalP > 1) {
-                const promises = [];
-                for (let i = 2; i <= totalP; i++) {
-                    promises.push(
-                        fetch(`/api/resources?page=${i}&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`)
-                            .then(r => r.json())
-                            .then(d => d.success ? d.data.items : [])
-                    );
-                }
-                const results = await Promise.all(promises);
-                results.forEach(items => allItems = allItems.concat(items));
+    let successCount = 0;
+
+    try {
+        for (const id of selectedIds) {
+            const response = await fetch(`/api/resources/${id}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                successCount++;
+                selectedResourceMap.delete(id);
             }
-
-            const csv = convertToCSV(allItems);
-            downloadCSV(csv, `资源列表_全部_${new Date().toISOString().slice(0, 10)}.csv`);
-            showToast(`成功导出 ${allItems.length} 条数据`);
-
-        } catch (error) {
-            showToast('导出失败: ' + error.message, 'danger');
-        } finally {
-            exportBtn.disabled = false;
-            exportBtn.innerHTML = originalText;
         }
-    }
-}
 
-// 加载现有的 Cookie 配置
-async function loadCookieConfig() {
-    try {
-        const response = await fetch('/cookie-config');
-        const data = await response.json();
-        if (baiduCookieInput) baiduCookieInput.value = data.baidu_cookie || '';
-        if (quarkCookieInput) quarkCookieInput.value = data.quark_cookie || '';
+        showToast(`删除完成：成功 ${successCount} 条，失败 ${selectedIds.length - successCount} 条`, successCount === selectedIds.length ? 'success' : 'warning');
+        await loadResources();
     } catch (error) {
-        console.error('加载Cookie失败:', error);
-    }
-}
-
-// 保存 Cookie 配置
-async function saveCookieConfig() {
-    const payload = {
-        baidu_cookie: baiduCookieInput.value.trim(),
-        quark_cookie: quarkCookieInput.value.trim()
-    };
-
-    try {
-        const response = await fetch('/cookie-config', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-
-        if (data.success) {
-            showToast('Cookie配置保存成功', 'success');
-            // 关闭模态框 (使用 Bootstrap 原生方法)
-            const modalInstance = bootstrap.Modal.getInstance(cookieConfigModal);
-            if (modalInstance) modalInstance.hide();
-        } else {
-            showToast('保存失败: ' + data.message, 'error');
+        showToast('批量删除失败: ' + error.message, 'danger');
+    } finally {
+        if (deleteSelectedBtn) {
+            deleteSelectedBtn.disabled = false;
+            deleteSelectedBtn.innerHTML = originalText;
         }
-    } catch (error) {
-        showToast('请求失败，请检查网络', 'error');
+        updateSelectionUI();
     }
 }
-
 
 // ==========================================
 // 8. 初始化入口 (统一)
@@ -651,6 +837,7 @@ async function saveCookieConfig() {
 document.addEventListener('DOMContentLoaded', () => {
     // 初始加载
     loadResources();
+    setBatchResourceMode('import');
 
     // 绑定分页点击事件 (委托)
     if (pagination) {
@@ -667,32 +854,78 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (selectCurrentPageCheckbox) {
+        selectCurrentPageCheckbox.addEventListener('change', () => {
+            if (selectCurrentPageCheckbox.checked) {
+                selectCurrentPageResources();
+            } else {
+                resourcesData.forEach(resource => selectedResourceMap.delete(resource.id));
+                document.querySelectorAll('.resource-row-checkbox').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                updateSelectionUI();
+            }
+        });
+    }
+
+    if (selectCurrentPageBtn) selectCurrentPageBtn.addEventListener('click', selectCurrentPageResources);
+    if (selectAllResourcesBtn) selectAllResourcesBtn.addEventListener('click', selectAllResources);
+    if (clearSelectionBtn) clearSelectionBtn.addEventListener('click', clearResourceSelection);
+    if (exportSelectedBtn) exportSelectedBtn.addEventListener('click', exportSelectedResources);
+    if (deleteSelectedBtn) deleteSelectedBtn.addEventListener('click', deleteSelectedResources);
+
+    if (batchImportResourceBtn) {
+        batchImportResourceBtn.addEventListener('click', () => setBatchResourceMode('import'));
+    }
+
+    if (batchTransferResourceBtn) {
+        batchTransferResourceBtn.addEventListener('click', () => setBatchResourceMode('transfer'));
+    }
+
+    if (batchAddResourceModal) {
+        batchAddResourceModal.addEventListener('hidden.bs.modal', () => {
+            batchAddResourceForm.reset();
+            setBatchResourceMode('import');
+        });
+    }
+
+    if (pageSizeSelect) {
+        pageSizeSelect.value = String(pageSize);
+        pageSizeSelect.addEventListener('change', () => {
+            pageSize = parseInt(pageSizeSelect.value, 10) || 50;
+            currentPage = 1;
+            loadResources();
+        });
+    }
+
+    if (jumpPageBtn) {
+        jumpPageBtn.addEventListener('click', jumpToPage);
+    }
+
+    if (jumpPageInput) {
+        jumpPageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                jumpToPage();
+            }
+        });
+    }
+
     // 绑定搜索
     if (searchInput) {
         let timeout = null;
         searchInput.addEventListener('input', () => {
             clearTimeout(timeout);
             timeout = setTimeout(() => {
+                clearResourceSelection();
                 currentPage = 1;
                 loadResources();
             }, 300); // 防抖
         });
     }
 
-    // 绑定 Cookie 模态框显示时加载数据
-    if (cookieConfigModal) {
-        cookieConfigModal.addEventListener('show.bs.modal', loadCookieConfig);
-    }
-
-    // 绑定保存按钮
-    if (saveCookieConfigBtn) {
-        saveCookieConfigBtn.addEventListener('click', saveCookieConfig);
-    }
-
     // 绑定按钮事件
     if (saveResourceBtn) saveResourceBtn.addEventListener('click', saveResource);
     if (updateResourceBtn) updateResourceBtn.addEventListener('click', updateResource);
     if (batchSaveResourceBtn) batchSaveResourceBtn.addEventListener('click', batchSaveResources);
-    if (exportCurrentPageBtn) exportCurrentPageBtn.addEventListener('click', exportCurrentPage);
-    if (exportAllPagesBtn) exportAllPagesBtn.addEventListener('click', exportAllPages);
 });

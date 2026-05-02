@@ -142,6 +142,9 @@
                 <button class="btn {{ 'btn-primary' if active_page == 'config' else 'btn-outline-secondary' }}" id="configLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
                     <i class="fas fa-cog"></i> 配置
                 </button>
+                <button class="btn {{ 'btn-primary' if active_page == 'api' else 'btn-outline-secondary' }}" id="apiConfigLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
+                    <i class="fas fa-code"></i> API
+                </button>
                 <button class="btn {{ 'btn-primary' if active_page == 'resources' else 'btn-outline-secondary' }}" id="resourcesLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
                     <i class="fas fa-fire"></i> 我的资源
                 </button>
@@ -180,6 +183,7 @@
     // 检查是否有JWT令牌来确定用户是否登录
         document.addEventListener('DOMContentLoaded', () => {
             const configLink = document.getElementById('configLink');
+            const apiConfigLink = document.getElementById('apiConfigLink');
             const resourcesLink = document.getElementById('resourcesLink');
             const adminLoginLink = document.getElementById('adminLoginLink');
             const adminLogoutLink = document.getElementById('adminLogoutLink');
@@ -191,7 +195,15 @@
             if (configLink) {
                 configLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    window.location.href = '/api_config';
+                    window.location.href = '/system-config';
+                });
+            }
+
+            // API 配置按钮点击事件
+            if (apiConfigLink) {
+                apiConfigLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.location.href = '/api-config';
                 });
             }
 
@@ -199,7 +211,7 @@
             if (resourcesLink) {
                 resourcesLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    window.location.href = '/hot_resource';
+                    window.location.href = '/hot-resource';
                 });
             }
 

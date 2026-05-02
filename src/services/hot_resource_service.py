@@ -37,6 +37,12 @@ def add_resource_and_share(resource_data: dict):
 
     logger.info(f"成功直接添加资源到数据库，标题: {resource_data['name']}")
 
+    save_to_netdisk = resource_data.get("save_to_netdisk", {}) or {}
+    should_create_share = any(save_to_netdisk.values())
+
+    if not should_create_share:
+        return True, "资源已直接入库", new_id
+
     # 调用 create_share 处理网盘替换
     share_data = {
         "id": new_id,
@@ -45,7 +51,7 @@ def add_resource_and_share(resource_data: dict):
         "cloud_name": resource_data.get("cloud_name", ""),
         "resource_type": resource_data.get("type", ""),
         "remark": resource_data.get("remarks", ""),
-        "save_to_netdisk": resource_data.get("save_to_netdisk", {}),
+        "save_to_netdisk": save_to_netdisk,
     }
 
     try:
@@ -86,5 +92,4 @@ def delete_resource_and_share(resource_id: int):
         logger.error(f"调用del_share处理资源分享链接时出错: {share_err}")
 
     return True, "资源删除成功"
-
 

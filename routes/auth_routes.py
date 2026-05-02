@@ -22,8 +22,8 @@ def login():
             # 创建JWT令牌
             token = create_jwt_token()
             
-            # 创建响应对象，重定向到配置管理页面
-            response = redirect(url_for('api_config.config_page'))
+            # 创建响应对象，重定向到系统配置页面
+            response = redirect(url_for('system_config.system_config_page'))
             # 设置JWT令牌到cookie
             response.set_cookie('token', token, httponly=True)
             

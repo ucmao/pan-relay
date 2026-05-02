@@ -352,7 +352,7 @@ function renderResults(reset = false) {
                 </div>
                 <div class="result-actions">
                     <span class="netdisk-badge ${finalBadgeClass}">${netdiskName}</span>
-                    <button class="btn btn-sm ${isViewModeEnabled ? 'view-button btn-primary' : 'copy-button btn-outline-secondary'}" data-title="${titleText}" data-url="${urlLink}" data-netdisk="${netdiskName}">
+                    <button class="btn btn-sm ${isViewModeEnabled ? 'view-button btn-outline-secondary' : 'copy-button btn-outline-secondary'}" data-title="${titleText}" data-url="${urlLink}" data-netdisk="${netdiskName}">
                         ${isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
                     </button>
                 </div>
@@ -428,7 +428,6 @@ async function handleViewButtonClick(button) {
     const title = button.getAttribute('data-title');
     const url = button.getAttribute('data-url');
     const netdiskName = button.getAttribute('data-netdisk');
-    const originalHtml = button.innerHTML;
 
     if (viewResultModal) {
         showViewResultLoading(title);
@@ -436,7 +435,6 @@ async function handleViewButtonClick(button) {
     }
 
     button.disabled = true;
-    button.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> 获取中';
 
     try {
         const response = await fetch('/api/view-link', {
@@ -461,7 +459,6 @@ async function handleViewButtonClick(button) {
         showViewResultContent(title, url, netdiskName);
     } finally {
         button.disabled = false;
-        button.innerHTML = originalHtml;
     }
 }
 

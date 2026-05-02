@@ -1,0 +1,113 @@
+{% extends "_layout.html" %}
+{% set active_page = 'config' %}
+
+{% block head %}
+    <title>小青搜剧 - 配置</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/api_config.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid-custom pt-4">
+        <h2 class="text-center mb-4">配置</h2>
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="frontend-link-mode-config">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+                        <div>
+                            <h5 class="mb-2">搜索出链策略</h5>
+                            <p class="text-muted mb-0">控制搜索结果按钮行为：可直接复制原始链接，或点击“查看”后动态转存分享，失败时自动回退原始链接。</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton" onclick="saveFrontendLinkMode()">
+                            <i class="fas fa-save me-1"></i> 保存出链策略
+                        </button>
+                    </div>
+                    <div class="frontend-link-mode-options">
+                        <label class="frontend-link-mode-card" for="frontendLinkModeCopy">
+                            <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeCopy" value="copy" checked>
+                            <span class="frontend-link-mode-copy">
+                                <span class="frontend-link-mode-title">原始链接模式</span>
+                                <span class="frontend-link-mode-desc">前台展示原始链接，用户点击“复制”即可使用。</span>
+                            </span>
+                            <span class="frontend-link-mode-switch"></span>
+                        </label>
+                        <label class="frontend-link-mode-card" for="frontendLinkModeView">
+                            <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeView" value="view">
+                            <span class="frontend-link-mode-copy">
+                                <span class="frontend-link-mode-title">动态转存模式</span>
+                                <span class="frontend-link-mode-desc">前台隐藏原始链接，用户点击“查看”后生成你的分享链接。</span>
+                            </span>
+                            <span class="frontend-link-mode-switch"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="frontend-netdisk-config">
+                    <div class="frontend-netdisk-header">
+                        <div>
+                            <div class="frontend-netdisk-title-row">
+                                <h5 class="mb-0">网盘类型配置</h5>
+                                <span class="frontend-netdisk-counter">已选 <span id="frontendNetdiskSelectedCount">0</span> / <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></span>
+                            </div>
+                            <p class="text-muted mb-0 mt-2">控制搜索页和公开搜索接口可展示的网盘类型。未选中的网盘仍可保留在后台数据里，但不会对前端返回。</p>
+                        </div>
+                        <div class="frontend-netdisk-actions">
+                            <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button" onclick="toggleAllFrontendDisplayNetdisks()">全选</button>
+                            <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton" onclick="saveFrontendDisplayNetdisks()">
+                                <i class="fas fa-save me-1"></i> 保存显示配置
+                            </button>
+                        </div>
+                    </div>
+                    <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
+                    {% for netdisk_name in frontend_netdisk_options %}
+                    <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
+                        <input class="frontend-display-netdisk-checkbox" type="checkbox" id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
+                        <span class="frontend-netdisk-card-name">{{ netdisk_name }}</span>
+                        <span class="frontend-netdisk-card-check">
+                            <i class="fas fa-check"></i>
+                        </span>
+                    </label>
+                    {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <div>
+                        <h5 class="mb-1">云盘 Cookie</h5>
+                        <p class="text-muted mb-0">用于后台转存、动态查看和临时分享。Cookie 只在服务端保存和使用。</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
+                        <i class="fas fa-save me-1"></i> 保存 Cookie
+                    </button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label for="baiduCookie" class="form-label fw-semibold">百度网盘 Cookie</label>
+                        <textarea class="form-control" id="baiduCookie" rows="8" placeholder="请输入百度网盘的 Cookie"></textarea>
+                    </div>
+                    <div class="col-lg-6">
+                        <label for="quarkCookie" class="form-label fw-semibold">夸克网盘 Cookie</label>
+                        <textarea class="form-control" id="quarkCookie" rows="8" placeholder="请输入夸克网盘的 Cookie"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/system_config.js') }}"></script>
+{% endblock %}

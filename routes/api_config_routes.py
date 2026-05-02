@@ -1,6 +1,6 @@
 # routes/api_config_routes.py
 
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, jsonify, render_template, request
 
 import logging
 
@@ -18,74 +18,19 @@ from src.services.api_config_service import (
     test_single_api,
     test_all_apis_and_update_status,
 )
-from src.services.system_config_service import (
-    get_frontend_display_netdisk_config,
-    get_frontend_link_mode,
-    save_frontend_link_mode,
-    save_frontend_display_netdisk_config,
-)
-from utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
 
 logger = logging.getLogger(__name__)
 
 api_config_bp = Blueprint("api_config", __name__)
 
 
-@api_config_bp.route("/api_config", methods=["GET"])
+@api_config_bp.route("/api-config", methods=["GET"])
 @token_required
 def config_page():
-    """配置页面 (需要 JWT 验证)"""
+    """API 管理页面 (需要 JWT 验证)"""
     configs = read_api_configs_from_db()
-    frontend_netdisk_options = FRONTEND_DISPLAY_NETDISK_OPTIONS
-    logger.info("已验证管理员访问配置页面")
-    return render_template(
-        "api_config.html",
-        configs=configs,
-        frontend_netdisk_options=frontend_netdisk_options,
-    )
-
-
-@api_config_bp.route("/api/frontend-display-netdisks", methods=["GET"])
-@token_required
-def get_frontend_display_netdisks():
-    config = get_frontend_display_netdisk_config()
-    return jsonify(
-        {
-            "success": True,
-            "options": FRONTEND_DISPLAY_NETDISK_OPTIONS,
-            "enabled_netdisks": config["enabled_netdisks"],
-        }
-    )
-
-
-@api_config_bp.route("/api/frontend-display-netdisks", methods=["PUT"])
-@token_required
-def update_frontend_display_netdisks():
-    data = request.get_json() or {}
-    enabled_netdisks = data.get("enabled_netdisks", [])
-
-    if not save_frontend_display_netdisk_config(enabled_netdisks):
-        return jsonify({"success": False, "message": "前端显示网盘配置保存失败，请至少选择一个网盘"}), 400
-
-    return jsonify({"success": True, "message": "前端显示网盘配置保存成功"})
-
-
-@api_config_bp.route("/api/frontend-link-mode", methods=["GET"])
-@token_required
-def get_frontend_link_mode_config():
-    return jsonify({"success": True, "mode": get_frontend_link_mode()})
-
-
-@api_config_bp.route("/api/frontend-link-mode", methods=["PUT"])
-@token_required
-def update_frontend_link_mode_config():
-    data = request.get_json() or {}
-    mode = data.get("mode", "")
-
-    if not save_frontend_link_mode(mode):
-        return jsonify({"success": False, "message": "前端出链模式保存失败"}), 400
-
-    return jsonify({"success": True, "message": "前端出链模式保存成功"})
+    logger.info("已验证管理员访问 API 管理页面")
+    return render_template("api_config.html", configs=configs)
 
 
 @api_config_bp.route("/api/configs", methods=["GET"])

@@ -58,23 +58,23 @@
     font-size: 1.1rem;
 }
 
-/* --- 自定义网盘颜色 (将所有自定义颜色放入子模板，避免污染布局) --- */
-.bg-purple { background-color: #8c5dff !important; color: white !important; }
-.bg-orange { background-color: #f09516 !important; color: white !important; }
-.bg-teal { background-color: #32a8a8 !important; color: white !important; }
-.bg-mid-blue { background-color: #4f74d9 !important; color: white !important; }
-.bg-light-green { background-color: #99cc33 !important; color: white !important; }
-.bg-salmon { background-color: #ff8c64 !important; color: white !important; }
-.bg-slate-blue { background-color: #4e749c !important; color: white !important; }
-.bg-deep-violet { background-color: #6a3de8 !important; color: white !important; }
-.bg-coral { background-color: #ff6b6b !important; color: white !important; }
-.bg-navy-blue { background-color: #2c3e50 !important; color: white !important; }
-.bg-rose { background-color: #e64a73 !important; color: white !important; }
-.bg-dark-mint { background-color: #2da885 !important; color: white !important; }
-.bg-warm-gold { background-color: #d9a426 !important; color: white !important; }
-.bg-olive { background-color: #708238 !important; color: white !important; }
-.bg-grape { background-color: #6e5d7e !important; color: white !important; }
-.bg-terracotta { background-color: #c05a44 !important; color: white !important; }
+/* --- 结果区网盘徽章颜色（弱化显示，不与主按钮竞争） --- */
+.result-actions .bg-purple { background-color: #f1eaff !important; color: #7a56d6 !important; }
+.result-actions .bg-orange { background-color: #fff2e2 !important; color: #c97f12 !important; }
+.result-actions .bg-teal { background-color: #e8f8f6 !important; color: #24897f !important; }
+.result-actions .bg-mid-blue { background-color: #eaf0ff !important; color: #4768c7 !important; }
+.result-actions .bg-light-green { background-color: #edf8e2 !important; color: #6f9f1e !important; }
+.result-actions .bg-salmon { background-color: #fff0eb !important; color: #d06f4c !important; }
+.result-actions .bg-slate-blue { background-color: #edf2f7 !important; color: #51687f !important; }
+.result-actions .bg-deep-violet { background-color: #efe8ff !important; color: #6c43d7 !important; }
+.result-actions .bg-coral { background-color: #ffeded !important; color: #d85e5e !important; }
+.result-actions .bg-navy-blue { background-color: #edf1f5 !important; color: #3f5265 !important; }
+.result-actions .bg-rose { background-color: #ffeaf1 !important; color: #ca557d !important; }
+.result-actions .bg-dark-mint { background-color: #e9f8f2 !important; color: #2a8d71 !important; }
+.result-actions .bg-warm-gold { background-color: #fff5df !important; color: #be8b1f !important; }
+.result-actions .bg-olive { background-color: #eff4e6 !important; color: #6b7f38 !important; }
+.result-actions .bg-grape { background-color: #f2eef5 !important; color: #6e5d7e !important; }
+.result-actions .bg-terracotta { background-color: #fdf0ec !important; color: #b86450 !important; }
 
 /* --- 初始提示区域 --- */
 .initial-prompt-area {
@@ -119,20 +119,28 @@
 }
 .filter-btn {
     background-color: #ffffff;
-    color: #555;
-    border: 1px solid #ddd;
+    color: #5b6472;
+    border: 1px solid #d8dee8;
     padding: 6px 18px;
     border-radius: 20px;
     cursor: pointer;
     font-size: 0.85rem;
     flex-shrink: 0;
+    font-weight: 500;
+    transition: all 0.18s ease;
+}
+
+.filter-btn:hover {
+    color: #4a5361;
+    border-color: #c8d0dc;
+    background-color: #fafbfd;
 }
 .filter-btn.active {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
+    background-color: #fff4de;
+    color: #d69a2d;
+    border-color: #f1d7a0;
     font-weight: 600;
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+    box-shadow: none;
 }
 
 .filter-and-count-container {
@@ -319,11 +327,14 @@
 
 /* 网盘名称徽章 */
 .netdisk-badge {
-    font-size: 0.75rem;
-    padding: 4px 10px;
-    border-radius: 15px;
+    font-size: 0.72rem;
+    padding: 4px 9px;
+    border-radius: 999px;
     flex-shrink: 0;
     font-weight: 600;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: none;
+    letter-spacing: 0.01em;
 }
 
 /* 响应式调整 */

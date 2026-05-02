@@ -128,30 +128,6 @@
     <div class="container-fluid-custom pt-4">
         <h2 class="text-center mb-4">我的资源管理</h2>
         
-        <!-- 功能按钮 -->
-        <div class="row mb-3 justify-content-center">
-            <div class="col-auto">
-                <button class="btn btn-info btn-sm" id="viewApiBtn" data-bs-toggle="modal" data-bs-target="#apiModal">
-                    <i class="fas fa-code"></i> 查看API
-                </button>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-warning btn-sm" id="exportCurrentPageBtn">
-                    <i class="fas fa-file-export"></i> 导出当前页
-                </button>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-success btn-sm" id="exportAllPagesBtn">
-                    <i class="fas fa-file-download"></i> 导出全部
-                </button>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-primary btn-sm" id="configCookieBtn" data-bs-toggle="modal" data-bs-target="#cookieConfigModal">
-                    <i class="fas fa-cog"></i> 配置Cookie
-                </button>
-            </div>
-        </div>
-        
         <div class="table-container mb-4">
             <!-- 搜索框和新增按钮 -->
             <div class="d-flex justify-content-between mb-3">
@@ -160,21 +136,50 @@
                     </div>
                     <div class="btn-group">
                         <button class="btn btn-primary btn-sm" id="addResourceBtn" data-bs-toggle="modal" data-bs-target="#addResourceModal">
-                            <i class="fas fa-plus"></i> 新增资源
+                            <i class="fas fa-plus"></i> 新增入库
                         </button>
-                        <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#batchAddResourceModal">
-                            <i class="fas fa-plus-circle"></i> 批量添加
+                        <button type="button" class="btn btn-success btn-sm" id="batchImportResourceBtn" data-bs-toggle="modal" data-bs-target="#batchAddResourceModal">
+                            <i class="fas fa-file-import"></i> 批量导入
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm" id="batchTransferResourceBtn" data-bs-toggle="modal" data-bs-target="#batchAddResourceModal">
+                            <i class="fas fa-cloud-upload-alt"></i> 批量转存入库
                         </button>
                     </div>
                 </div>
+
+            <div class="resource-batch-toolbar" id="resourceBatchToolbar">
+                <div class="resource-batch-summary">
+                    已选择 <strong id="selectedResourceCount">0</strong> 条资源
+                </div>
+                <div class="resource-batch-actions">
+                    <button class="btn btn-outline-primary btn-sm" id="selectCurrentPageBtn" type="button">
+                        <i class="fas fa-check-square"></i> 选择当前页
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" id="selectAllResourcesBtn" type="button">
+                        <i class="fas fa-layer-group"></i> 选择全部
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm d-none" id="clearSelectionBtn" type="button">
+                        <i class="fas fa-times"></i> 清空选择
+                    </button>
+                    <button class="btn btn-warning btn-sm d-none" id="exportSelectedBtn" type="button">
+                        <i class="fas fa-file-export"></i> 导出
+                    </button>
+                    <button class="btn btn-danger btn-sm d-none" id="deleteSelectedBtn" type="button">
+                        <i class="fas fa-trash"></i> 删除
+                    </button>
+                </div>
+            </div>
             
             <!-- 数据表格 -->
             <table class="table table-bordered table-hover">
                 <thead class="table-light">
                     <tr>
+                        <th style="width: 4%;">
+                            <input class="form-check-input" type="checkbox" id="selectCurrentPageCheckbox" aria-label="选择当前页资源">
+                        </th>
                         <th style="width: 5%;">ID</th>
-                        <th style="width: 30%;">标题</th>
-                        <th style="width: 28%;">分享链接</th>
+                        <th style="width: 29%;">标题</th>
+                        <th style="width: 27%;">分享链接</th>
                         <th style="width: 10%;">云盘名称</th>
                         <th style="width: 9%;">类型</th>
                         <th style="width: 7%;">同步状态</th>
@@ -187,21 +192,39 @@
             </table>
             
             <!-- 分页控件 -->
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center" id="pagination">
-                    <!-- 分页按钮将通过JavaScript动态生成 -->
-                </ul>
-            </nav>
+            <div class="resource-pagination-bar">
+                <div class="resource-page-size">
+                    <span class="text-muted">每页</span>
+                    <select class="form-select form-select-sm" id="pageSizeSelect" aria-label="选择每页数量">
+                        <option value="20">20</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="text-muted">条</span>
+                    <span class="resource-total-count" id="resourceTotalCount">共 0 条</span>
+                </div>
+                <nav aria-label="Page navigation" class="resource-pagination-nav">
+                    <ul class="pagination justify-content-center mb-0" id="pagination">
+                        <!-- 分页按钮将通过JavaScript动态生成 -->
+                    </ul>
+                </nav>
+                <div class="resource-page-jump">
+                    <span class="text-muted">跳至</span>
+                    <input type="number" class="form-control form-control-sm" id="jumpPageInput" min="1" value="1" aria-label="跳转页码">
+                    <span class="text-muted">页</span>
+                    <button class="btn btn-outline-primary btn-sm" id="jumpPageBtn" type="button">跳转</button>
+                </div>
+            </div>
         </div>
     </div>
     
-    <!-- 新增资源模态框 -->
+    <!-- 新增入库模态框 -->
     <div class="modal fade" id="addResourceModal" tabindex="-1" aria-labelledby="addResourceModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addResourceModalLabel">
-                        <i class="fas fa-plus-circle me-2"></i> 新增资源
+                        <i class="fas fa-plus-circle me-2"></i> 新增入库
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
                 </div>
@@ -233,20 +256,6 @@
                                 <label for="resourceRemarks" class="form-label">备注（可选，默认不设置）</label>
                                 <textarea class="form-control" id="resourceRemarks" rows="1"></textarea>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label"><strong>转存并入库策略 (高级)</strong></label>
-                                <div class="form-text text-muted mb-2" style="font-size: 0.85rem; line-height: 1.5;">
-                                    <div>
-                                        <i class="bi bi-info-circle"></i> 
-                                        <strong>同盘转存：</strong>若资源链接与勾选网盘匹配，系统将自动转存并生成您的分享链接，<strong>以您的新链接替换原链接</strong>保存入库。
-                                    </div>
-                                    <div class="mt-1 text-warning">
-                                        <i class="bi bi-exclamation-triangle"></i> 
-                                        <strong>前提：</strong>需提前在“配置Cookie”中配置对应网盘的 <strong>Cookie</strong> 才能生效。
-                                    </div>
-                                </div>
-                                {{ cloud_disk_checkboxes('resourceSaveTo') }}
-                            </div>
                         </fieldset>
                     </form>
                 </div>
@@ -255,7 +264,7 @@
                         <i class="fas fa-times"></i> 关闭
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" id="saveResourceBtn">
-                        <i class="fas fa-save"></i> 保存
+                        <i class="fas fa-save"></i> 直接入库
                     </button>
                 </div>
             </div>
@@ -314,12 +323,12 @@
         </div>
     </div>
     
-    <!-- 批量添加资源模态框 -->
+    <!-- 批量导入/转存资源模态框 -->
     <div class="modal fade" id="batchAddResourceModal" tabindex="-1" aria-labelledby="batchAddResourceModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="batchAddResourceModalLabel">批量添加资源（云盘自动检测）</h5>
+                    <h5 class="modal-title" id="batchAddResourceModalLabel">批量导入资源</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -327,8 +336,12 @@
                         <fieldset>
                             <legend>批量资源信息</legend>
                             <div class="mb-3">
-                            <label for="batchResourceContent" class="form-label">资源内容 <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="batchResourceContent" rows="6" placeholder="请输入资源内容，格式如下：
+                                <label for="batchResourceContent" class="form-label">资源内容 <span class="text-danger">*</span></label>
+                                <div class="form-text text-muted mb-2">
+                                    批量导入不会转存，直接保存原链接；批量转存入库会按下方策略生成你的分享链接后再入库。
+                                </div>
+                                <textarea class="form-control" id="batchResourceContent" rows="7" placeholder="支持两种格式：
+1）字段格式：
 标题: 资源标题1
 分享链接: https://example.com/link1
 类型: 视频
@@ -338,8 +351,12 @@
 分享链接: https://example.com/link2
 类型: 文档
 备注: 这是另一个示例资源
+
+2）一行一条，逗号或 Tab 分隔：
+资源标题1,https://example.com/link1,视频,备注
+资源标题2,https://example.com/link2,文档,备注
 " required></textarea >
-                        </div>
+                            </div>
                             <div class="mb-3">
                                 <label for="batchResourceType" class="form-label">类型（可选，默认不设置）</label>
                                 {{ resource_type_select('batchResourceType') }}
@@ -348,8 +365,8 @@
                                 <label for="batchResourceRemarks" class="form-label">备注（可选，默认不设置）</label>
                                 <textarea class="form-control" id="batchResourceRemarks" rows="1"></textarea>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label"><strong>转存并入库策略 (高级)</strong></label>
+                            <div class="mb-3 d-none" id="batchTransferOptions">
+                                <label class="form-label"><strong>转存并入库策略</strong></label>
                                 <div class="form-text text-muted mb-2" style="font-size: 0.85rem; line-height: 1.5;">
                                     <div>
                                         <i class="bi bi-info-circle"></i> 
@@ -357,7 +374,7 @@
                                     </div>
                                     <div class="mt-1 text-warning">
                                         <i class="bi bi-exclamation-triangle"></i> 
-                                        <strong>前提：</strong>需提前在“配置Cookie”中配置对应网盘的 <strong>Cookie</strong> 才能生效。
+                                        <strong>前提：</strong>需提前在“配置”页配置对应网盘的 <strong>Cookie</strong> 才能生效。
                                     </div>
                                 </div>
                                 {{ cloud_disk_checkboxes('resourceSaveTo') }}
@@ -370,7 +387,7 @@
                         <i class="fas fa-times"></i> 关闭
                     </button>
                     <button type="button" class="btn btn-success btn-sm" id="batchSaveResourceBtn">
-                        <i class="fas fa-save"></i> 批量添加
+                        <i class="fas fa-save"></i> 批量导入
                     </button>
                 </div>
             </div>
@@ -380,91 +397,6 @@
     <!-- Toast 消息容器 -->
     <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
     
-    <!-- API文档模态框 -->
-    <div class="modal fade" id="apiModal" tabindex="-1" aria-labelledby="apiModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="apiModalLabel">API文档</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h6>资源搜索接口</h6>
-                    <p><strong>接口地址：</strong> <code>/api</code></p>
-                    <p><strong>请求方法：</strong> GET</p>
-                    <p><strong>参数说明：</strong></p>
-                    <ul>
-                        <li><code>name</code>：按资源名称搜索（可选）</li>
-                        <li><code>cloud_name</code>：按云盘名称搜索（可选）</li>
-                        <li><code>type</code>：按资源类型搜索（可选）</li>
-                        <li><code>limit</code>：返回结果数量限制（默认100）</li>
-                        <li><code>sort</code>：结果排序方式（可选，默认default）
-                            <ul>
-                                <li><code>default</code>：按创建时间倒序</li>
-                                <li><code>asc</code>：按ID正序</li>
-                                <li><code>desc</code>：按ID倒序</li>
-                                <li><code>random</code>：随机排序</li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <p><strong>返回格式：</strong></p>
-                    <pre><code>{"success": true,
- "total": 5,
- "results": [{
-   "id": 1,
-   "name": "资源名称",
-   "share_link": "https://example.com/link",
-   "cloud_name": "百度网盘",
-   "type": "电影",
-   "remarks": "备注信息"
- }]}</code></pre>
-                    <p><strong>使用示例：</strong></p>
-                    <pre><code>GET /api?name=电影&limit=10
-GET /api?cloud_name=百度网盘&type=软件
-GET /api?name=资源名称&cloud_name=阿里云盘&limit=5
-GET /api?name=资源名称&sort=asc
-GET /api?cloud_name=夸克&sort=random&limit=1
-GET /api?type=音乐&sort=desc</code></pre>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Cookie配置模态框 -->
-    <div class="modal fade" id="cookieConfigModal" tabindex="-1" aria-labelledby="cookieConfigModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="cookieConfigModalLabel">云盘Cookie配置</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-4">
-                        <h6>百度网盘</h6>
-                        <div class="form-group">
-                            <label for="baiduCookie">百度网盘Cookie</label>
-                            <textarea class="form-control" id="baiduCookie" rows="5" placeholder="请输入百度网盘的Cookie"></textarea>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <h6>夸克网盘</h6>
-                        <div class="form-group">
-                            <label for="quarkCookie">夸克网盘Cookie</label>
-                            <textarea class="form-control" id="quarkCookie" rows="5" placeholder="请输入夸克网盘的Cookie"></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                    <button type="button" class="btn btn-primary" id="saveCookieConfigBtn">保存配置</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 {% endblock %}
 
 {% block scripts %}
