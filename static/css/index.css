@@ -3,6 +3,26 @@
     padding-top: 18px;
 }
 
+.search-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.search-hero {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 8px;
+}
+
+.search-hero-image {
+    display: block;
+    width: min(100%, 420px);
+    height: auto;
+    object-fit: contain;
+}
+
 .search-shell,
 .login-panel {
     background: var(--panel-bg);
@@ -68,11 +88,13 @@
 }
 
 .search-area {
-    margin-bottom: 24px;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0;
 }
 
 .input-group-custom {
-    max-width: none;
+    width: min(70%, 1080px);
     margin: 0;
     padding: 10px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.88));
@@ -104,7 +126,10 @@
     color: #1f2937;
     padding: 0;
     height: 58px;
-    border-radius: 18px !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-top-right-radius: 18px !important;
+    border-bottom-right-radius: 18px !important;
     box-shadow: 0 14px 30px rgba(245, 191, 96, 0.3);
     transition: all 0.2s ease;
 }
@@ -113,9 +138,11 @@
     0% {
         transform: translate(0, 0) rotate(0deg);
     }
+
     50% {
         transform: translate(3px, -3px) rotate(15deg);
     }
+
     100% {
         transform: translate(0, 0) rotate(0deg);
     }
@@ -139,22 +166,85 @@
 }
 
 /* --- 结果区网盘徽章颜色（弱化显示，不与主按钮竞争） --- */
-.result-actions .bg-purple { background-color: #f1eaff !important; color: #7a56d6 !important; }
-.result-actions .bg-orange { background-color: #fff2e2 !important; color: #c97f12 !important; }
-.result-actions .bg-teal { background-color: #e8f8f6 !important; color: #24897f !important; }
-.result-actions .bg-mid-blue { background-color: #eaf0ff !important; color: #4768c7 !important; }
-.result-actions .bg-light-green { background-color: #edf8e2 !important; color: #6f9f1e !important; }
-.result-actions .bg-salmon { background-color: #fff0eb !important; color: #d06f4c !important; }
-.result-actions .bg-slate-blue { background-color: #edf2f7 !important; color: #51687f !important; }
-.result-actions .bg-deep-violet { background-color: #efe8ff !important; color: #6c43d7 !important; }
-.result-actions .bg-coral { background-color: #ffeded !important; color: #d85e5e !important; }
-.result-actions .bg-navy-blue { background-color: #edf1f5 !important; color: #3f5265 !important; }
-.result-actions .bg-rose { background-color: #ffeaf1 !important; color: #ca557d !important; }
-.result-actions .bg-dark-mint { background-color: #e9f8f2 !important; color: #2a8d71 !important; }
-.result-actions .bg-warm-gold { background-color: #fff5df !important; color: #be8b1f !important; }
-.result-actions .bg-olive { background-color: #eff4e6 !important; color: #6b7f38 !important; }
-.result-actions .bg-grape { background-color: #f2eef5 !important; color: #6e5d7e !important; }
-.result-actions .bg-terracotta { background-color: #fdf0ec !important; color: #b86450 !important; }
+.result-actions .bg-purple {
+    background-color: #f1eaff !important;
+    color: #7a56d6 !important;
+}
+
+.result-actions .bg-orange {
+    background-color: #fff2e2 !important;
+    color: #c97f12 !important;
+}
+
+.result-actions .bg-teal {
+    background-color: #e8f8f6 !important;
+    color: #24897f !important;
+}
+
+.result-actions .bg-mid-blue {
+    background-color: #eaf0ff !important;
+    color: #4768c7 !important;
+}
+
+.result-actions .bg-light-green {
+    background-color: #edf8e2 !important;
+    color: #6f9f1e !important;
+}
+
+.result-actions .bg-salmon {
+    background-color: #fff0eb !important;
+    color: #d06f4c !important;
+}
+
+.result-actions .bg-slate-blue {
+    background-color: #edf2f7 !important;
+    color: #51687f !important;
+}
+
+.result-actions .bg-deep-violet {
+    background-color: #efe8ff !important;
+    color: #6c43d7 !important;
+}
+
+.result-actions .bg-coral {
+    background-color: #ffeded !important;
+    color: #d85e5e !important;
+}
+
+.result-actions .bg-navy-blue {
+    background-color: #edf1f5 !important;
+    color: #3f5265 !important;
+}
+
+.result-actions .bg-rose {
+    background-color: #ffeaf1 !important;
+    color: #ca557d !important;
+}
+
+.result-actions .bg-dark-mint {
+    background-color: #e9f8f2 !important;
+    color: #2a8d71 !important;
+}
+
+.result-actions .bg-warm-gold {
+    background-color: #fff5df !important;
+    color: #be8b1f !important;
+}
+
+.result-actions .bg-olive {
+    background-color: #eff4e6 !important;
+    color: #6b7f38 !important;
+}
+
+.result-actions .bg-grape {
+    background-color: #f2eef5 !important;
+    color: #6e5d7e !important;
+}
+
+.result-actions .bg-terracotta {
+    background-color: #fdf0ec !important;
+    color: #b86450 !important;
+}
 
 /* --- 初始提示区域 --- */
 .initial-prompt-area {
@@ -162,6 +252,7 @@
     padding-bottom: 64px;
     color: var(--text-secondary);
 }
+
 .initial-icon-wrapper {
     display: inline-flex;
     justify-content: center;
@@ -173,10 +264,12 @@
     border: 1px solid rgba(148, 163, 184, 0.18);
     margin-bottom: 18px;
 }
+
 .initial-icon-wrapper i {
     font-size: 1.75rem;
     color: var(--brand);
 }
+
 .initial-prompt-area h3 {
     font-size: 1.05rem;
     font-weight: 600;
@@ -199,6 +292,7 @@
 #netdisk-filter-bar::-webkit-scrollbar {
     display: none;
 }
+
 .filter-btn {
     background-color: rgba(255, 255, 255, 0.88);
     color: #475569;
@@ -217,6 +311,7 @@
     border-color: rgba(245, 191, 96, 0.28);
     background-color: rgba(255, 255, 255, 0.98);
 }
+
 .filter-btn.active {
     background: rgba(245, 191, 96, 0.16);
     color: #b7791f;
@@ -290,12 +385,20 @@
     padding: 0.35rem 0.9rem;
     font-weight: 600;
     color: #475569;
+    border-top-left-radius: 14px !important;
+    border-bottom-left-radius: 14px !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
 }
 
 .advanced-filter-input {
     padding: 0.5rem 0.75rem;
     border-color: rgba(148, 163, 184, 0.18);
     background-color: rgba(255, 255, 255, 0.98);
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-top-right-radius: 14px !important;
+    border-bottom-right-radius: 14px !important;
 }
 
 .advanced-filter-apply {
@@ -375,7 +478,8 @@
     text-align: left;
 }
 
-.result-title, .result-url-line {
+.result-title,
+.result-url-line {
     display: block;
     max-width: 100%;
     white-space: nowrap;
@@ -590,11 +694,20 @@
         padding-right: 20px;
     }
 
-    .search-area {
-        margin-bottom: 20px;
+    .search-layout {
+        gap: 14px;
+    }
+
+    .search-hero {
+        padding-top: 0;
+    }
+
+    .search-hero-image {
+        width: min(100%, 280px);
     }
 
     .input-group-custom {
+        width: 100%;
         border-radius: 18px;
         padding: 8px;
     }

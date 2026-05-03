@@ -2,32 +2,32 @@
 {% set active_page = 'search' %}
 
 {% block head %}
-    <title>小青搜剧 - 搜索页面</title>
-    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<title>小青搜剧 - 搜索页面</title>
+<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 {% endblock %}
 
 {% block content %}
-    <div class="main-content-wrapper search-page-wrapper">
-        <div class="container-fluid-custom">
-            <section class="search-shell">
-                <div class="search-shell-intro">
-                    <span class="hero-kicker">多源搜索</span>
-                    <span class="hero-kicker">结果去重</span>
-                    <span class="hero-kicker">网盘筛选</span>
-                    <span class="hero-kicker">一键查看</span>
-<!--                    <h3 class="search-shell-title">网盘资源，瞬息即达。</h3>-->
-<!--                    <p class="search-shell-description">多源聚合去重，为你开启高效搜索新体验。</p>-->
+<div class="main-content-wrapper search-page-wrapper">
+    <div class="container-fluid-custom">
+        <div class="search-layout">
+            <div class="search-hero">
+                <img
+                    src="{{ url_for('static', filename='images/hero_search_top.png') }}"
+                    alt="小青搜剧"
+                    class="search-hero-image"
+                >
+            </div>
+            <div class="search-area">
+                <div class="input-group input-group-custom">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜索资源 电影 电视剧 音乐 软件...">
+                    <button class="btn" id="searchButton" aria-label="开始搜索">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
                 </div>
-                <div class="search-area">
-                    <div class="input-group input-group-custom">
-                        <input type="text" class="form-control" id="searchInput" placeholder="搜索资源 电影 电视剧 音乐 软件...">
-                        <button class="btn" id="searchButton" aria-label="开始搜索">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                </div>
+            </div>
 
+            <section class="search-shell">
                 <div id="statusBar" class="d-none text-center mb-3 p-2 bg-warning bg-opacity-25 text-dark rounded-3">
                 </div>
 
@@ -38,7 +38,8 @@
                 <div class="filter-and-count-container d-none mt-3">
                     <div class="filter-toolbar">
                         <p class="result-count mb-0" id="resultCountText"></p>
-                        <button class="btn btn-sm btn-outline-secondary filter-toggle-button" id="advancedFilterToggle" type="button" aria-expanded="false">
+                        <button class="btn btn-sm btn-outline-secondary filter-toggle-button" id="advancedFilterToggle"
+                            type="button" aria-expanded="false">
                             <i class="fas fa-sliders-h me-1"></i> 筛选
                         </button>
                     </div>
@@ -46,13 +47,16 @@
                         <div id="advanced-filter-bar" class="mb-2">
                             <div class="input-group input-group-sm advanced-filter-group">
                                 <span class="input-group-text advanced-filter-label">包含</span>
-                                <input type="text" class="form-control form-control-sm advanced-filter-input" id="includeFilter" placeholder="关键词1 关键词2">
+                                <input type="text" class="form-control form-control-sm advanced-filter-input"
+                                    id="includeFilter" placeholder="关键词1 关键词2">
                             </div>
                             <div class="input-group input-group-sm advanced-filter-group">
                                 <span class="input-group-text advanced-filter-label">不包含</span>
-                                <input type="text" class="form-control form-control-sm advanced-filter-input" id="excludeFilter" placeholder="排除词1 排除词2">
+                                <input type="text" class="form-control form-control-sm advanced-filter-input"
+                                    id="excludeFilter" placeholder="排除词1 排除词2">
                             </div>
-                            <button class="btn btn-outline-primary btn-sm advanced-filter-apply" id="applyFilter">应用</button>
+                            <button class="btn btn-outline-primary btn-sm advanced-filter-apply"
+                                id="applyFilter">应用</button>
                         </div>
                     </div>
                 </div>
@@ -75,50 +79,52 @@
             </section>
         </div>
     </div>
+</div>
 
-    <div class="modal fade" id="viewResultModal" tabindex="-1" aria-labelledby="viewResultModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content view-result-modal">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewResultModalLabel">资源链接</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="viewResultLoadingState" class="view-result-loading text-center py-4">
-                        <div class="spinner-border text-primary mb-3" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mb-0 text-muted">正在获取可访问链接，请稍候...</p>
+<div class="modal fade" id="viewResultModal" tabindex="-1" aria-labelledby="viewResultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content view-result-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewResultModalLabel">资源链接</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <div id="viewResultLoadingState" class="view-result-loading text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
-                    <div id="viewResultContentState" class="d-none">
-                        <div class="view-result-field mb-3">
-                            <div class="view-result-label">名称</div>
-                            <div class="view-result-title" id="viewResultTitle"></div>
-                        </div>
-                        <div class="view-result-field">
-                            <div class="view-result-label">链接</div>
-                            <a href="#" target="_blank" rel="noopener" class="view-result-link" id="viewResultLink"></a>
-                        </div>
+                    <p class="mb-0 text-muted">正在获取可访问链接，请稍候...</p>
+                </div>
+                <div id="viewResultContentState" class="d-none">
+                    <div class="view-result-field mb-3">
+                        <div class="view-result-label">名称</div>
+                        <div class="view-result-title" id="viewResultTitle"></div>
+                    </div>
+                    <div class="view-result-field">
+                        <div class="view-result-label">链接</div>
+                        <a href="#" target="_blank" rel="noopener" class="view-result-link" id="viewResultLink"></a>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">关闭</button>
-                    <button type="button" class="btn btn-outline-primary" id="copyViewResultButton" disabled>
-                        <i class="far fa-copy me-1"></i> 复制
-                    </button>
-                    <button type="button" class="btn btn-primary" id="openViewResultButton" disabled>
-                        <i class="fas fa-arrow-up-right-from-square me-1"></i> 跳转
-                    </button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-outline-primary" id="copyViewResultButton" disabled>
+                    <i class="far fa-copy me-1"></i> 复制
+                </button>
+                <button type="button" class="btn btn-primary" id="openViewResultButton" disabled>
+                    <i class="fas fa-arrow-up-right-from-square me-1"></i> 跳转
+                </button>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    {{ super() }}
-    <script>
-        window.SEARCH_LINK_MODE = {{ frontend_link_mode | tojson }};
-    </script>
-    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{{ super() }}
+<script>
+    window.SEARCH_LINK_MODE = {{ frontend_link_mode | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
 {% endblock %}

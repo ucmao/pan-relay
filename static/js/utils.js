@@ -1,5 +1,18 @@
 // 通用工具函数
 
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatModalMessage(message) {
+    return escapeHtml(message).replace(/\n/g, '<br>');
+}
+
 /**
  * 显示提示消息
  * @param {string} message - 消息内容
@@ -47,6 +60,59 @@ function showToast(message, type = 'success', delay = 3000) {
 }
 
 /**
+ * 显示提示对话框：替代浏览器原生 alert 的统一模态框
+ * @param {string} message - 提示内容
+ * @param {string} type - 对话框类型：primary, danger, warning, success, info
+ * @param {string} title - 对话框标题
+ * @param {string} confirmText - 确认按钮文案
+ * @returns {Promise<void>}
+ */
+function showAlertModal(message, type = 'primary', title = '提示', confirmText = '我知道了') {
+    return new Promise((resolve) => {
+        const modalContainer = document.createElement('div');
+        modalContainer.className = 'modal fade';
+        modalContainer.setAttribute('tabindex', '-1');
+
+        const iconMap = {
+            danger: '<i class="fas fa-circle-xmark text-danger me-2"></i>',
+            warning: '<i class="fas fa-triangle-exclamation text-warning me-2"></i>',
+            success: '<i class="fas fa-circle-check text-success me-2"></i>',
+            info: '<i class="fas fa-circle-info text-primary me-2"></i>',
+            primary: '<i class="fas fa-circle-info text-primary me-2"></i>'
+        };
+
+        modalContainer.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered alert-modal-dialog">
+                <div class="modal-content shadow border-0">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title" style="font-size: 1.1rem; font-weight: 600;">
+                            ${iconMap[type] || iconMap.primary}${escapeHtml(title)}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body py-3 text-secondary" style="line-height: 1.7; word-break: break-word;">
+                        ${formatModalMessage(message)}
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-${type === 'info' ? 'primary' : type} btn-sm px-3" data-bs-dismiss="modal">${escapeHtml(confirmText)}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modalContainer);
+        const bsModal = new bootstrap.Modal(modalContainer);
+
+        modalContainer.addEventListener('hidden.bs.modal', () => {
+            modalContainer.remove();
+            resolve();
+        }, { once: true });
+
+        bsModal.show();
+    });
+}
+
+/**
  * 显示确认对话框：支持异步与样式的通用确认对话框
  * @param {string} message - 确认消息内容
  * @param {string} type - 对话框类型：primary, danger, warning（可选，默认"primary"）
@@ -75,12 +141,12 @@ function showConfirm(message, type = 'primary', title = '确认操作') {
                 <div class="modal-content shadow border-0">
                     <div class="modal-header border-0 pb-0">
                         <h5 class="modal-title" style="font-size: 1.1rem; font-weight: 600;">
-                            ${iconMap[type] || ''}${title}
+                            ${iconMap[type] || ''}${escapeHtml(title)}
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body py-3 text-secondary">
-                        ${message}
+                        ${formatModalMessage(message)}
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">取消</button>

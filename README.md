@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="static/images/search_logo.png" width="120" height="auto" alt="小青搜剧 Logo">
+<img src="static/images/hero_search_top.png" width="auto" height="200" alt="小青搜剧 Logo">
 
 # 🚀 小青搜剧 (search-ucmao)
 

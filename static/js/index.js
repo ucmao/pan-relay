@@ -71,7 +71,7 @@ function getNetdiskColorClass(netdiskName) {
     else if (netdiskName.includes('123云盘')) badgeClass = 'bg-purple';
     else if (netdiskName.includes('阿里云盘')) badgeClass = 'bg-dark-mint';
     else if (netdiskName.includes('联通云盘')) badgeClass = 'bg-olive';
-        else if (netdiskName.includes('PikPak')) badgeClass = 'bg-salmon';
+    else if (netdiskName.includes('PikPak')) badgeClass = 'bg-salmon';
     // 链接类型
     else if (netdiskName.includes('磁力链接') || netdiskName.includes('迅雷链接') || netdiskName.includes('电驴链接')) badgeClass = 'bg-dark';
 
@@ -124,7 +124,7 @@ function updateFilterButtons() {
     if (allResults.length > 0) {
         filterBar.classList.remove('d-none');
     } else {
-         filterBar.classList.add('d-none');
+        filterBar.classList.add('d-none');
     }
 
     // 1. 过滤出需要动态添加的网盘名称，并排除“全部”和“其他”
@@ -176,7 +176,7 @@ function performSearch() {
 
     const keyword = searchInput.value;
     if (!keyword) {
-        alert('请输入搜索关键词');
+        showAlertModal('请输入搜索关键词', 'warning', '搜索提示');
         return;
     }
 
@@ -199,20 +199,20 @@ function performSearch() {
     currentPage = 1;
     currentFilter = '全部';
     filterBar.classList.add('d-none');
-    
+
     // 重置筛选框
     includeFilterInput.value = '';
     excludeFilterInput.value = '';
     includeKeywords = [];
     excludeKeywords = [];
 
-    resultContainer.innerHTML = '<p class="text-center text-muted p-4">正在连接并等待结果流...</p>';
+    resultContainer.innerHTML = '<p class="text-center text-muted p-4">资源正在路上，马上就来啦...</p > ';
     scrollableResultsDiv.removeEventListener('scroll', infiniteScrollHandler);
 
     // 2. 创建 EventSource 连接
     const eventSource = new EventSource(`/api/search_stream?keyword=${encodeURIComponent(keyword)}`);
 
-    eventSource.onmessage = function(event) {
+    eventSource.onmessage = function (event) {
         try {
             const data = JSON.parse(event.data);
 
@@ -236,7 +236,7 @@ function performSearch() {
         }
     };
 
-    eventSource.onerror = function(error) {
+    eventSource.onerror = function (error) {
         console.error('EventSource 错误:', error);
         eventSource.close();
         resultContainer.innerHTML = '<p class="text-center text-danger p-4">❌ 搜索连接出错或服务器异常。</p>';
@@ -286,16 +286,16 @@ function renderResults(reset = false) {
     let filteredResults = allResults.filter(result => {
         // 云盘过滤
         const matchesNetdisk = currentFilter === '全部' || result[3] === currentFilter;
-        
+
         // 筛选关键词过滤
         const title = result[1].toLowerCase();
         const matchesInclude = includeKeywords.length === 0 ||
             includeKeywords.every(keyword => title.toLowerCase().includes(keyword.toLowerCase()));
-        
+
         // 排除关键词过滤
-        const matchesExclude = excludeKeywords.length === 0 || 
-                              !excludeKeywords.some(keyword => title.includes(keyword.toLowerCase()));
-        
+        const matchesExclude = excludeKeywords.length === 0 ||
+            !excludeKeywords.some(keyword => title.includes(keyword.toLowerCase()));
+
         return matchesNetdisk && matchesInclude && matchesExclude;
     });
 
@@ -311,7 +311,7 @@ function renderResults(reset = false) {
     // 总是显示结果计数，即使为0
     resultCountText.textContent = `共找到 ${filteredResults.length} 个结果 (${currentFilter})`;
     resultCountText.classList.remove('d-none');
-    
+
     if (filteredResults.length > 0) {
         resultContainer.querySelector('p.text-center.text-muted')?.remove();
     } else if (!isSearchRunning && reset) {
@@ -365,7 +365,7 @@ function renderResults(reset = false) {
 
     // 绑定复制按钮事件
     resultContainer.querySelectorAll('.copy-button').forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function () {
             const title = this.getAttribute('data-title');
             const url = this.getAttribute('data-url');
             const netdisk = this.getAttribute('data-netdisk');
@@ -379,13 +379,13 @@ function renderResults(reset = false) {
                     setTimeout(() => { this.innerHTML = '<i class="far fa-copy"></i> 复制'; }, 1500);
                 })
                 .catch(() => {
-                    alert('复制失败，请手动复制:\n\n' + textToCopy);
+                    showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
                 });
         });
     });
 
     resultContainer.querySelectorAll('.view-button').forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function () {
             handleViewButtonClick(this);
         });
     });
@@ -507,7 +507,7 @@ copyViewResultButton?.addEventListener('click', async function () {
             this.innerHTML = originalHtml;
         }, 1500);
     } catch (error) {
-        alert('复制失败，请手动复制:\n\n' + textToCopy);
+        showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
     }
 });
 
@@ -540,13 +540,13 @@ filterBar.addEventListener('click', (event) => {
 applyFilterButton.addEventListener('click', applyAdvancedFilter);
 
 // 添加回车键支持
-includeFilterInput.addEventListener('keydown', function(event) {
+includeFilterInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         applyAdvancedFilter();
     }
 });
 
-excludeFilterInput.addEventListener('keydown', function(event) {
+excludeFilterInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         applyAdvancedFilter();
     }
@@ -561,13 +561,13 @@ function applyAdvancedFilter() {
         .split(/\s+/)
         .map(kw => kw.trim())
         .filter(kw => kw.length > 0);
-    
+
     // 获取并处理排除关键词
     excludeKeywords = excludeFilterInput.value
         .split(/\s+/)
         .map(kw => kw.trim())
         .filter(kw => kw.length > 0);
-    
+
     // 重新渲染结果
     renderResults(true);
     scrollableResultsDiv.scrollTop = 0;
