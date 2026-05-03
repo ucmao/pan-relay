@@ -145,9 +145,9 @@ function renderTable() {
             <td><a href="${resource.share_link}" target="_blank" class="text-truncate d-inline-block" style="max-width: 250px;">${resource.share_link}</a></td>
             <td>${resource.cloud_name || '-'}</td>
             <td>${resource.type || '-'}</td>
-            <td>${resource.is_replaced ? '<span class="badge bg-success">已同步</span>' : '-'}</td>
+            <td>${resource.is_replaced ? '<span class="status-synced">已同步</span>' : '-'}</td>
             <td class="action-buttons d-flex justify-content-center align-items-center">
-                <button class="btn btn-secondary btn-sm copy-btn me-2" data-id="${resource.id}" title="复制链接">
+                <button class="btn btn-secondary btn-sm copy-btn" data-id="${resource.id}" title="复制链接">
                     <i class="fas fa-copy"></i> 复制
                 </button>
                 <div class="dropdown">
@@ -582,6 +582,11 @@ function parseBatchResources(content) {
 function setBatchResourceMode(mode) {
     batchResourceMode = mode === 'transfer' ? 'transfer' : 'import';
     const isTransferMode = batchResourceMode === 'transfer';
+
+    if (batchAddResourceModal) {
+        batchAddResourceModal.classList.toggle('mode-import', !isTransferMode);
+        batchAddResourceModal.classList.toggle('mode-transfer', isTransferMode);
+    }
 
     if (batchAddResourceModalLabel) {
         batchAddResourceModalLabel.textContent = isTransferMode ? '批量转存入库' : '批量导入资源';

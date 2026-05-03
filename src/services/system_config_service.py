@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 FRONTEND_DISPLAY_NETDISKS_KEY = "frontend_display_netdisks"
 FRONTEND_LINK_MODE_KEY = "frontend_link_mode"
+PUBLIC_SEARCH_API_KEY = "public_search_api"
 FRONTEND_LINK_MODE_OPTIONS = {"copy", "view"}
 
 
@@ -84,4 +85,29 @@ def save_frontend_link_mode(mode: str) -> bool:
     return set_config_value(
         FRONTEND_LINK_MODE_KEY,
         {"mode": mode},
+    )
+
+
+def get_public_search_api_config() -> Dict[str, bool]:
+    raw_value = get_config_value(PUBLIC_SEARCH_API_KEY)
+    if not raw_value:
+        return {"enabled": True}
+
+    try:
+        parsed = json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("公开聚合接口配置格式无效，已回退到默认值")
+        return {"enabled": True}
+
+    return {"enabled": bool(parsed.get("enabled", True))}
+
+
+def is_public_search_api_enabled() -> bool:
+    return get_public_search_api_config()["enabled"]
+
+
+def save_public_search_api_config(enabled: bool) -> bool:
+    return set_config_value(
+        PUBLIC_SEARCH_API_KEY,
+        {"enabled": bool(enabled)},
     )

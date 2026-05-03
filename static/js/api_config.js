@@ -176,7 +176,7 @@
                                 onclick="toggleEnabled(${api.id}, ${nextAction})" ${isToggleDisabled}>
                             <i class="fas ${toggleBtnIcon}"></i> ${toggleBtnText}
                         </button>
-                        <button class="btn btn-sm btn-info text-white" onclick="testApi(${api.id})" title="测试单个 API" ${isTestDisabled}>
+                        <button class="btn btn-sm btn-info text-white" onclick="testApi(${api.id}, this)" title="测试单个 API" ${isTestDisabled}>
                             <i class="fas fa-play"></i> 测试
                         </button>
                         <div class="dropdown">
@@ -454,9 +454,16 @@
         }
 
         // 测试 API (单个)
-        async function testApi(apiId) {
+        async function testApi(apiId, triggerButton = null) {
             const { api } = getApiConfigById(apiId);
             if (!api) return;
+            const testButton = triggerButton;
+            const originalButtonHtml = testButton ? testButton.innerHTML : '';
+
+            if (testButton) {
+                testButton.disabled = true;
+                testButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 测试中';
+            }
 
             try {
                 const apiWithId = { ...api, id: apiId };
@@ -487,34 +494,10 @@
             } catch (error) {
                 showToast(`API ${api.name} 测试失败！错误：${error.message}`, 'danger');
                 loadApiConfigs();
-            }
-        }
-
-        // 一键测试所有 API
-        async function testAllApis() {
-            const testAllButton = document.getElementById('testAllButton');
-            if (await showConfirm('该操作可能会耗时较久，您确定要测试所有 API 吗？（包括已禁止的）')) {
-                testAllButton.disabled = true;
-
-                try {
-                    const response = await fetch('/api/test-all');
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        try {
-                            const errorJson = JSON.parse(errorText);
-                            throw new Error(errorJson.message || `HTTP error! status: ${response.status}`);
-                        } catch {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                    }
-                    const data = await response.json();
-                    showToast(data.message, 'info');
-                    loadApiConfigs();
-                } catch (error) {
-                    console.error('一键测试所有 API 时出错:', error);
-                    showToast(`一键测试所有 API 失败: ${error.message}`, 'danger');
-                } finally {
-                    testAllButton.disabled = false;
+            } finally {
+                if (testButton) {
+                    testButton.disabled = false;
+                    testButton.innerHTML = originalButtonHtml;
                 }
             }
         }
@@ -547,6 +530,24 @@
                     showToast(`复制 API 配置失败: ${error.message}`, 'danger');
                 }
             }
+        }
+
+        window.enableAllApis = enableAllApis;
+        window.disableAllApis = disableAllApis;
+        window.testApi = testApi;
+        window.editApi = editApi;
+        window.copyApi = copyApi;
+        window.deleteApi = deleteApi;
+        window.toggleEnabled = toggleEnabled;
+
+        const enableAllButton = document.getElementById('enableAllButton');
+        if (enableAllButton) {
+            enableAllButton.addEventListener('click', enableAllApis);
+        }
+
+        const disableAllButton = document.getElementById('disableAllButton');
+        if (disableAllButton) {
+            disableAllButton.addEventListener('click', disableAllApis);
         }
 
         // 初始化加载数据

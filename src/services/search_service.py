@@ -4,6 +4,7 @@ import logging
 import random
 import re
 import time
+from urllib.parse import urlparse
 
 import jmespath
 import requests
@@ -288,6 +289,74 @@ def generate_search_stream_events(keyword):
     return _event_generator()
 
 
+def dedupe_search_results(results):
+    deduped = []
+    seen = set()
+
+    for item in results:
+        if not isinstance(item, (list, tuple)) or len(item) < 4:
+            continue
+
+        title = str(item[1]).strip()
+        url = str(item[2]).strip()
+        hostname = url
+
+        try:
+            parsed = urlparse(url)
+            if parsed.hostname:
+                hostname = parsed.hostname
+        except Exception:
+            hostname = url
+
+        key = f"{title}|{hostname}"
+        if key in seen:
+            continue
+
+        seen.add(key)
+        deduped.append(item)
+
+    return deduped
+
+
+def search_public_resources(keyword="", limit=100):
+    keyword = (keyword or "").strip()
+    if not keyword:
+        return False, "请提供搜索关键词", []
+
+    aggregated_results = []
+
+    db_results = search_in_database(keyword)
+    aggregated_results.extend(filter_results_by_frontend_netdisks(db_results))
+
+    urls_config = read_all_api_configs_from_db()
+    enabled_configs = [c for c in urls_config if c.get("status", False) and c.get("is_enabled", False)]
+    enabled_configs.sort(key=lambda x: x.get("response_time_ms", 9999))
+    urls_config_search = replace_keyword_in_config(enabled_configs, "[[keyword]]", keyword)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(process_config, config, keyword) for config in urls_config_search]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                results = future.result()
+                if results:
+                    aggregated_results.extend(filter_results_by_frontend_netdisks(results))
+            except Exception as err:
+                logger.error(f"公开聚合接口收集结果时发生异常: {err}")
+
+    deduped_results = dedupe_search_results(aggregated_results)
+    limited_results = deduped_results[: max(limit, 1)]
+
+    return True, "聚合搜索成功", [
+        {
+            "source": item[0],
+            "name": item[1],
+            "share_link": item[2],
+            "cloud_name": item[3],
+        }
+        for item in limited_results
+    ]
+
+
 def search_resources(name="", cloud_name="", resource_type="", limit=100, sort="default"):
     """
     通过名称、云名称或类型搜索资源
@@ -308,4 +377,3 @@ def search_resources(name="", cloud_name="", resource_type="", limit=100, sort="
     except Exception as e:
         logger.error(f"API错误: {e}")
         return False, f"API错误: {e}", []
-

@@ -2,112 +2,223 @@
 {% set active_page = 'config' %}
 
 {% block head %}
-    <title>小青搜剧 - 配置</title>
-    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/api_config.css') }}">
+<title>小青搜剧 - 配置</title>
+<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/api_config.css') }}">
 {% endblock %}
 
 {% block content %}
-    <div class="container-fluid-custom pt-4">
-        <h2 class="text-center mb-4">配置</h2>
+<div class="container-fluid-custom pt-4">
+    <section class="admin-hero admin-hero-config">
+        <div class="admin-hero-main">
+            <span class="admin-kicker">System Controls</span>
+            <h2 class="admin-title">配置中心</h2>
+            <p class="admin-description">统一调度出链逻辑、云盘范围与Cookie状态。在直观面板中收拢核心决策，确保系统配置精准生效。</p>
+            <div class="admin-hero-tags">
+                <span class="admin-tag">出链模式</span>
+                <span class="admin-tag">网盘显示</span>
+                <span class="admin-tag">公开接口</span>
+                <span class="admin-tag">Cookie管理</span>
+            </div>
+        </div>
+        <div class="admin-hero-side">
+            <div class="admin-stat-card">
+                <span class="admin-stat-label">System Policy</span>
+                <strong class="admin-stat-value">Delivery Rules</strong>
+                <span class="admin-stat-note">全局配置将同步作用于前台搜索链路与后台转存引擎。</span>
+            </div>
+        </div>
+    </section>
 
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="frontend-link-mode-config">
-                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-                        <div>
-                            <h5 class="mb-2">搜索出链策略</h5>
-                            <p class="text-muted mb-0">控制搜索结果按钮行为：可直接复制原始链接，或点击“查看”后动态转存分享，失败时自动回退原始链接。</p>
-                        </div>
-                        <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton" onclick="saveFrontendLinkMode()">
-                            <i class="fas fa-save me-1"></i> 保存出链策略
+    <section class="admin-panel mb-4">
+        <div class="card-body">
+            <div class="frontend-link-mode-config">
+                <div class="panel-header panel-header-inline">
+                    <div>
+                        <h2 class="panel-title">公开聚合搜索接口</h2>
+                        <p class="panel-description">用于外部程序接入，返回与搜索页同源的聚合结果。你可以在这里查看文档，并控制该接口是否对外开放。</p>
+                    </div>
+                    <div class="frontend-netdisk-actions">
+                        <button class="btn btn-outline-primary btn-sm" id="viewPublicSearchApiDocBtn"
+                            data-bs-toggle="modal" data-bs-target="#publicSearchApiModal">
+                            <i class="fas fa-code me-1"></i> 查看文档
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="savePublicSearchApiButton"
+                            onclick="savePublicSearchApiConfig()">
+                            <i class="fas fa-save me-1"></i> 保存接口状态
                         </button>
                     </div>
-                    <div class="frontend-link-mode-options">
-                        <label class="frontend-link-mode-card" for="frontendLinkModeCopy">
-                            <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeCopy" value="copy" checked>
-                            <span class="frontend-link-mode-copy">
-                                <span class="frontend-link-mode-title">原始链接模式</span>
-                                <span class="frontend-link-mode-desc">前台展示原始链接，用户点击“复制”即可使用。</span>
-                            </span>
-                            <span class="frontend-link-mode-switch"></span>
-                        </label>
-                        <label class="frontend-link-mode-card" for="frontendLinkModeView">
-                            <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeView" value="view">
-                            <span class="frontend-link-mode-copy">
-                                <span class="frontend-link-mode-title">动态转存模式</span>
-                                <span class="frontend-link-mode-desc">前台隐藏原始链接，用户点击“查看”后生成你的分享链接。</span>
-                            </span>
-                            <span class="frontend-link-mode-switch"></span>
-                        </label>
-                    </div>
+                </div>
+                <div class="frontend-link-mode-options">
+                    <label class="frontend-link-mode-card" for="publicSearchApiEnabledOn">
+                        <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled"
+                            id="publicSearchApiEnabledOn" value="true" checked>
+                        <span class="frontend-link-mode-copy">
+                            <span class="frontend-link-mode-title">开启公开访问</span>
+                            <span class="frontend-link-mode-desc">允许外部通过 <code>/api</code> 获取与搜索页同源的聚合搜索结果。</span>
+                        </span>
+                        <span class="frontend-link-mode-switch"></span>
+                    </label>
+                    <label class="frontend-link-mode-card" for="publicSearchApiEnabledOff">
+                        <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled"
+                            id="publicSearchApiEnabledOff" value="false">
+                        <span class="frontend-link-mode-copy">
+                            <span class="frontend-link-mode-title">关闭公开访问</span>
+                            <span class="frontend-link-mode-desc">外部访问 <code>/api</code> 时将返回关闭提示，但前台搜索页仍可正常使用。</span>
+                        </span>
+                        <span class="frontend-link-mode-switch"></span>
+                    </label>
                 </div>
             </div>
         </div>
+    </section>
 
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="frontend-netdisk-config">
-                    <div class="frontend-netdisk-header">
-                        <div>
-                            <div class="frontend-netdisk-title-row">
-                                <h5 class="mb-0">网盘类型配置</h5>
-                                <span class="frontend-netdisk-counter">已选 <span id="frontendNetdiskSelectedCount">0</span> / <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></span>
-                            </div>
-                            <p class="text-muted mb-0 mt-2">控制搜索页和公开搜索接口可展示的网盘类型。未选中的网盘仍可保留在后台数据里，但不会对前端返回。</p>
-                        </div>
-                        <div class="frontend-netdisk-actions">
-                            <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button" onclick="toggleAllFrontendDisplayNetdisks()">全选</button>
-                            <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton" onclick="saveFrontendDisplayNetdisks()">
-                                <i class="fas fa-save me-1"></i> 保存显示配置
-                            </button>
-                        </div>
+    <section class="admin-panel mb-4">
+        <div class="card-body">
+            <div class="frontend-link-mode-config">
+                <div class="panel-header panel-header-inline">
+                    <div>
+                        <h2 class="panel-title">搜索出链策略</h2>
+                        <p class="panel-description">控制搜索结果按钮行为：可直接复制原始链接，或点击“查看”后动态转存分享，失败时自动回退原始链接。</p>
                     </div>
-                    <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
+                    <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton"
+                        onclick="saveFrontendLinkMode()">
+                        <i class="fas fa-save me-1"></i> 保存出链策略
+                    </button>
+                </div>
+                <div class="frontend-link-mode-options">
+                    <label class="frontend-link-mode-card" for="frontendLinkModeCopy">
+                        <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode"
+                            id="frontendLinkModeCopy" value="copy" checked>
+                        <span class="frontend-link-mode-copy">
+                            <span class="frontend-link-mode-title">原始链接模式</span>
+                            <span class="frontend-link-mode-desc">前台展示原始链接，用户点击“复制”即可使用。</span>
+                        </span>
+                        <span class="frontend-link-mode-switch"></span>
+                    </label>
+                    <label class="frontend-link-mode-card" for="frontendLinkModeView">
+                        <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode"
+                            id="frontendLinkModeView" value="view">
+                        <span class="frontend-link-mode-copy">
+                            <span class="frontend-link-mode-title">动态转存模式</span>
+                            <span class="frontend-link-mode-desc">前台隐藏原始链接，用户点击“查看”后生成你的分享链接。</span>
+                        </span>
+                        <span class="frontend-link-mode-switch"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-panel mb-4">
+        <div class="card-body">
+            <div class="frontend-netdisk-config">
+                <div class="frontend-netdisk-header">
+                    <div>
+                        <div class="frontend-netdisk-title-row">
+                            <h2 class="panel-title">网盘类型配置</h2>
+                            <span class="frontend-netdisk-counter">已选 <span id="frontendNetdiskSelectedCount">0</span> /
+                                <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></span>
+                        </div>
+                        <p class="panel-description mt-2">控制搜索页和公开搜索接口可展示的网盘类型。未选中的网盘仍可保留在后台数据里，但不会对前端返回。</p>
+                    </div>
+                    <div class="frontend-netdisk-actions">
+                        <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton"
+                            type="button" onclick="toggleAllFrontendDisplayNetdisks()">全选</button>
+                        <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton"
+                            onclick="saveFrontendDisplayNetdisks()">
+                            <i class="fas fa-save me-1"></i> 保存显示配置
+                        </button>
+                    </div>
+                </div>
+                <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
                     {% for netdisk_name in frontend_netdisk_options %}
                     <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
-                        <input class="frontend-display-netdisk-checkbox" type="checkbox" id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
+                        <input class="frontend-display-netdisk-checkbox" type="checkbox"
+                            id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
                         <span class="frontend-netdisk-card-name">{{ netdisk_name }}</span>
                         <span class="frontend-netdisk-card-check">
                             <i class="fas fa-check"></i>
                         </span>
                     </label>
                     {% endfor %}
-                    </div>
                 </div>
             </div>
         </div>
+    </section>
 
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                    <div>
-                        <h5 class="mb-1">云盘 Cookie</h5>
-                        <p class="text-muted mb-0">用于后台转存、动态查看和临时分享。Cookie 只在服务端保存和使用。</p>
-                    </div>
-                    <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
-                        <i class="fas fa-save me-1"></i> 保存 Cookie
-                    </button>
+    <section class="admin-panel mb-4">
+        <div class="card-body">
+            <div class="panel-header panel-header-inline">
+                <div>
+                    <h2 class="panel-title">云盘 Cookie</h2>
+                    <p class="panel-description">用于后台转存、动态查看和临时分享。Cookie 只在服务端保存和使用。</p>
                 </div>
-                <div class="row g-3">
-                    <div class="col-lg-6">
-                        <label for="baiduCookie" class="form-label fw-semibold">百度网盘 Cookie</label>
-                        <textarea class="form-control" id="baiduCookie" rows="8" placeholder="请输入百度网盘的 Cookie"></textarea>
-                    </div>
-                    <div class="col-lg-6">
-                        <label for="quarkCookie" class="form-label fw-semibold">夸克网盘 Cookie</label>
-                        <textarea class="form-control" id="quarkCookie" rows="8" placeholder="请输入夸克网盘的 Cookie"></textarea>
-                    </div>
+                <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
+                    <i class="fas fa-save me-1"></i> 保存 Cookie
+                </button>
+            </div>
+            <div class="row g-3 cookie-grid">
+                <div class="col-lg-6">
+                    <label for="baiduCookie" class="form-label fw-semibold">百度网盘 Cookie</label>
+                    <textarea class="form-control" id="baiduCookie" rows="8" placeholder="请输入百度网盘的 Cookie"></textarea>
+                </div>
+                <div class="col-lg-6">
+                    <label for="quarkCookie" class="form-label fw-semibold">夸克网盘 Cookie</label>
+                    <textarea class="form-control" id="quarkCookie" rows="8" placeholder="请输入夸克网盘的 Cookie"></textarea>
                 </div>
             </div>
         </div>
+    </section>
 
-        <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
+    <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
+</div>
+
+<div class="modal fade" id="publicSearchApiModal" tabindex="-1" aria-labelledby="publicSearchApiModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="publicSearchApiModalLabel">公开聚合搜索接口</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body api-doc-modal">
+                <div class="modal-doc-intro">
+                    <span class="doc-badge">Public Endpoint</span>
+                    <h6>与搜索页同源的聚合搜索结果</h6>
+                </div>
+                <p><strong>接口地址：</strong> <code>/api</code></p>
+                <p><strong>请求方法：</strong> GET</p>
+                <p><strong>参数说明：</strong></p>
+                <ul>
+                    <li><code>keyword</code>：搜索关键词，和搜索页输入框一致（必填）</li>
+                    <li><code>limit</code>：返回结果数量限制（默认 100）</li>
+                </ul>
+                <p><strong>说明：</strong>该接口会聚合内部资源库与已启用、已测试正常的第三方搜索源，并按前台显示网盘配置过滤结果。</p>
+                <p><strong>返回格式：</strong></p>
+                <pre><code>{"success": true,
+ "total": 3,
+ "results": [{
+   "source": "hot",
+   "name": "凡人修仙传",
+   "share_link": "https://pan.quark.cn/s/xxxx",
+   "cloud_name": "夸克网盘"
+ }]}</code></pre>
+                <p><strong>使用示例：</strong></p>
+                <pre><code>GET /api?keyword=凡人修仙传
+GET /api?keyword=庆余年&limit=20
+GET /api?keyword=周杰伦&limit=10</code></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
     </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    {{ super() }}
-    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/system_config.js') }}"></script>
+{{ super() }}
+<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
+<script src="{{ url_for('static', filename='js/system_config.js') }}"></script>
 {% endblock %}

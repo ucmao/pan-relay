@@ -8,8 +8,9 @@ import logging
 from src.pan_operator import create_share, del_share
 from src.services.search_service import (
     generate_search_stream_events,
-    search_resources,
+    search_public_resources,
 )
+from src.services.system_config_service import is_public_search_api_enabled
 from src.services.temp_share_service import cleanup_expired_temp_shares, resolve_view_url
 from utils.auth_utils import token_required
 
@@ -39,20 +40,18 @@ def search_stream():
 @search_bp.route("/api", methods=["GET"])
 def search_api():
     """
-    通过名称、云名称或类型搜索资源的API接口
+    对外公开的聚合搜索接口
     """
-    name = request.args.get("name", "", type=str)
-    cloud_name = request.args.get("cloud_name", "", type=str)
-    resource_type = request.args.get("type", "", type=str)
-    limit = request.args.get("limit", 100, type=int)
-    sort = request.args.get("sort", "default")
+    if not is_public_search_api_enabled():
+        return jsonify({"success": False, "message": "公开聚合接口当前已关闭"}), 403
 
-    success, message, results = search_resources(
-        name=name, cloud_name=cloud_name, resource_type=resource_type, limit=limit, sort=sort
-    )
+    keyword = request.args.get("keyword", "", type=str)
+    limit = request.args.get("limit", 100, type=int)
+
+    success, message, results = search_public_resources(keyword=keyword, limit=limit)
 
     if not success:
-        status_code = 400 if "至少需要提供" in message else 500
+        status_code = 400 if "请提供搜索关键词" in message else 500
         return jsonify({"success": False, "message": message}), status_code
 
     return jsonify({"success": True, "total": len(results), "results": results})

@@ -23,6 +23,52 @@ function bindFrontendNetdiskCheckboxEvents() {
     });
 }
 
+async function loadPublicSearchApiConfig() {
+    try {
+        const response = await fetch('/api/public-search-api-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const targetValue = data.enabled ? 'true' : 'false';
+        const radio = document.querySelector(`.frontend-link-mode-radio[name="publicSearchApiEnabled"][value="${targetValue}"]`);
+        if (radio) {
+            radio.checked = true;
+        }
+    } catch (error) {
+        console.error('加载公开聚合接口配置失败:', error);
+        showToast('加载公开聚合接口配置失败，请检查后端日志。', 'danger');
+    }
+}
+
+async function savePublicSearchApiConfig() {
+    const saveButton = document.getElementById('savePublicSearchApiButton');
+    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="publicSearchApiEnabled"]:checked');
+    const enabled = selectedMode ? selectedMode.value === 'true' : true;
+
+    saveButton.disabled = true;
+    try {
+        const response = await fetch('/api/public-search-api-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message, 'success');
+    } catch (error) {
+        console.error('保存公开聚合接口配置失败:', error);
+        showToast(`保存公开聚合接口配置失败: ${error.message}`, 'danger');
+    } finally {
+        saveButton.disabled = false;
+    }
+}
+
 function toggleAllFrontendDisplayNetdisks() {
     const checkboxes = getFrontendDisplayNetdiskCheckboxes();
     const allChecked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
@@ -92,7 +138,7 @@ async function loadFrontendLinkMode() {
         }
 
         const data = await response.json();
-        const radio = document.querySelector(`.frontend-link-mode-radio[value="${data.mode || 'copy'}"]`);
+        const radio = document.querySelector(`.frontend-link-mode-radio[name="frontendLinkMode"][value="${data.mode || 'copy'}"]`);
         if (radio) {
             radio.checked = true;
         }
@@ -103,7 +149,7 @@ async function loadFrontendLinkMode() {
 }
 
 async function saveFrontendLinkMode() {
-    const selectedMode = document.querySelector('.frontend-link-mode-radio:checked');
+    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="frontendLinkMode"]:checked');
     const saveButton = document.getElementById('saveFrontendLinkModeButton');
 
     saveButton.disabled = true;
@@ -170,6 +216,7 @@ async function saveCookieConfig() {
 
 document.addEventListener('DOMContentLoaded', () => {
     bindFrontendNetdiskCheckboxEvents();
+    loadPublicSearchApiConfig();
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();
     loadCookieConfig();

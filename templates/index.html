@@ -8,61 +8,71 @@
 {% endblock %}
 
 {% block content %}
-    <div class="main-content-wrapper">
+    <div class="main-content-wrapper search-page-wrapper">
         <div class="container-fluid-custom">
-            <div class="search-area">
-                <div class="input-group input-group-custom">
-                    <input type="text" class="form-control" id="searchInput" placeholder="搜索资源 电影 电视剧 音乐 软件...">
-                    <button class="btn" id="searchButton">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
+            <section class="search-shell">
+                <div class="search-shell-intro">
+                    <span class="hero-kicker">多源搜索</span>
+                    <span class="hero-kicker">结果去重</span>
+                    <span class="hero-kicker">网盘筛选</span>
+                    <span class="hero-kicker">一键查看</span>
+<!--                    <h3 class="search-shell-title">网盘资源，瞬息即达。</h3>-->
+<!--                    <p class="search-shell-description">多源聚合去重，为你开启高效搜索新体验。</p>-->
                 </div>
-            </div>
-
-            <div id="statusBar" class="d-none text-center mb-3 p-2 bg-warning bg-opacity-25 text-dark rounded-3">
-                </div>
-
-            <div id="netdisk-filter-bar" class="d-none">
-                <button class="filter-btn active" data-netdisk="全部">全部</button>
-            </div>
-
-            <div class="filter-and-count-container d-none mt-3">
-                <div class="filter-toolbar">
-                    <p class="result-count mb-0" id="resultCountText"></p>
-                    <button class="btn btn-sm btn-outline-secondary filter-toggle-button" id="advancedFilterToggle" type="button" aria-expanded="false">
-                        <i class="fas fa-sliders-h me-1"></i> 筛选
-                    </button>
-                </div>
-                <div id="advancedFilterPanel" class="advanced-filter-panel d-none">
-                    <div id="advanced-filter-bar" class="mb-2">
-                    <div class="input-group input-group-sm advanced-filter-group">
-                        <span class="input-group-text advanced-filter-label">包含</span>
-                        <input type="text" class="form-control form-control-sm advanced-filter-input" id="includeFilter" placeholder="关键词1 关键词2">
+                <div class="search-area">
+                    <div class="input-group input-group-custom">
+                        <input type="text" class="form-control" id="searchInput" placeholder="搜索资源 电影 电视剧 音乐 软件...">
+                        <button class="btn" id="searchButton" aria-label="开始搜索">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
                     </div>
-                    <div class="input-group input-group-sm advanced-filter-group">
-                        <span class="input-group-text advanced-filter-label">不包含</span>
-                        <input type="text" class="form-control form-control-sm advanced-filter-input" id="excludeFilter" placeholder="排除词1 排除词2">
-                    </div>
-                    <button class="btn btn-outline-primary btn-sm advanced-filter-apply" id="applyFilter">应用</button>
-                </div>
-                </div>
-            </div>
-
-            <div id="scrollableResults">
-                <div id="resultContainer" class="text-center initial-prompt-area">
-                    <div class="initial-icon-wrapper">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <h3 class="mt-3 text-muted">输入关键词开始搜索</h3>
                 </div>
 
-                <div id="loadingMore" class="d-none text-center p-3">
-                    <div class="spinner-border spinner-border-sm me-2" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    加载更多结果...
+                <div id="statusBar" class="d-none text-center mb-3 p-2 bg-warning bg-opacity-25 text-dark rounded-3">
                 </div>
-            </div>
+
+                <div id="netdisk-filter-bar" class="d-none">
+                    <button class="filter-btn active" data-netdisk="全部">全部</button>
+                </div>
+
+                <div class="filter-and-count-container d-none mt-3">
+                    <div class="filter-toolbar">
+                        <p class="result-count mb-0" id="resultCountText"></p>
+                        <button class="btn btn-sm btn-outline-secondary filter-toggle-button" id="advancedFilterToggle" type="button" aria-expanded="false">
+                            <i class="fas fa-sliders-h me-1"></i> 筛选
+                        </button>
+                    </div>
+                    <div id="advancedFilterPanel" class="advanced-filter-panel d-none">
+                        <div id="advanced-filter-bar" class="mb-2">
+                            <div class="input-group input-group-sm advanced-filter-group">
+                                <span class="input-group-text advanced-filter-label">包含</span>
+                                <input type="text" class="form-control form-control-sm advanced-filter-input" id="includeFilter" placeholder="关键词1 关键词2">
+                            </div>
+                            <div class="input-group input-group-sm advanced-filter-group">
+                                <span class="input-group-text advanced-filter-label">不包含</span>
+                                <input type="text" class="form-control form-control-sm advanced-filter-input" id="excludeFilter" placeholder="排除词1 排除词2">
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm advanced-filter-apply" id="applyFilter">应用</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="scrollableResults">
+                    <div id="resultContainer" class="text-center initial-prompt-area">
+                        <div class="initial-icon-wrapper">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3 class="mt-3 text-muted">输入关键词开始搜索</h3>
+                    </div>
+
+                    <div id="loadingMore" class="d-none text-center p-3">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        加载更多结果...
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 

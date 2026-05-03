@@ -62,7 +62,6 @@ function showConfirm(message, type = 'primary', title = '确认操作') {
         modalContainer.className = 'modal fade';
         modalContainer.id = modalId;
         modalContainer.setAttribute('tabindex', '-1');
-        modalContainer.style.zIndex = '1070'; // 略高于普通 Modal (1050) 和 Toast (1060)
 
         // 映射图标样式
         const iconMap = {

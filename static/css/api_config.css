@@ -1,523 +1,679 @@
-        .action-buttons.btn {
-            margin: 2px;
-        }
-
-        .modal-body.form-group {
-            margin-bottom: 15px;
-        }
-
-        table {
-            table-layout: fixed;
-        }
-
-        table th,
-        table td {
-            word-wrap: break-word;
-            white-space: normal;
-            text-align: center;
-            vertical-align: middle;
-            font-size: 0.875rem;
-        }
-
-        /* 优化：被禁用的 API 行样式 */
-        .disabled-api {
-            background-color: #f7f7f7 !important;
-            font-style: italic !important;
-        }
-
-        .disabled-api td {
-            color: #999999 !important;
-        }
-
-        .disabled-api pre {
-            color: #777 !important;
-            background-color: transparent !important;
-        }
-
-        .disabled-api .status-button {
-            background-color: #bbbbbb !important;
-            color: #444444 !important;
-            font-style: normal !important;
-        }
-
-        .disabled-api .btn-danger[disabled] {
-            background-color: #bbbbbb !important;
-            border-color: #bbbbbb !important;
-            color: #444444 !important;
-        }
-
-        table th:nth-child(1) { width: 4%; }
-        table th:nth-child(2) { width: 6%; }
-        table th:nth-child(3) { width: 9%; }
-        table th:nth-child(4) { width: 35%; }
-        table th:nth-child(5) { width: 6%; }
-        table th:nth-child(6) { width: 7%; }
-        table th:nth-child(7) { width: 6%; }
-        table th:nth-child(8) { width: 6%; }
-        table th:nth-child(9) { width: 16%; }
-
-        .status-button {
-            display: inline-block;
-            padding: 0.25em 0.5em;
-            border-radius: 0.25rem;
-            color: white;
-            font-size: 0.8em;
-        }
-
-        .status-available { background-color: green; }
-        .status-unavailable { background-color: red; }
-
-        .action-buttons { gap: 4px; display: flex; align-items: center; justify-content: center; height: 100%; min-height: 60px; }
-        .action-buttons .btn {
-            padding: 0.2rem 0.35rem !important;
-            font-size: 0.75rem !important;
-            line-height: 1.5 !important;
-            border-radius: 0.2rem !important;
-            color: white !important;
-        }
-
-        .action-buttons .dropdown-toggle {
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
-        }
-
-        .dropdown-menu .dropdown-item {
-            font-size: 0.8rem;
-            padding: 0.3rem 1rem;
-        }
-
-        @media (max-width: 992px) {
-            table th:nth-child(7),
-            table td:nth-child(7),
-            table th:nth-child(8),
-            table td:nth-child(8) {
-                display: none;
-            }
-            table th:nth-child(3) { width: 15%; }
-            table th:nth-child(4) { width: 40%; }
-            table th:nth-child(9) { width: 25%; }
-        }
-
-        /* Toast 容器样式 */
-        #toastContainer {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1050;
-        }
-
-        /* 新增：美化代码块输入框 */
-        .form-group.code-input textarea {
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.85rem;
-            background-color: #f8f9fa;
-            border: 1px solid #ced4da;
-            resize: vertical;
-        }
-
-        /* 移除单独色块设计，改为整个模态框背景大色块 */
-        fieldset {
-            border: none;
-            padding: 0;
-            margin-bottom: 16px;
-            background-color: transparent;
-        }
-
-        legend {
-            background: none;
-            border-radius: 0;
-            padding: 0 8px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            border: none;
-            margin-bottom: 8px;
-            margin-left: 16px;
-        }
-
-        #addApiModal legend {
-            color: #1d4ed8;
-            font-size: 1.1rem;
-        }
-
-        #editApiModal legend {
-            color: #b45309;
-            font-size: 1.1rem;
-        }
-
-        /* 为整个modal-body添加大色块背景 */
-        #addApiModal .modal-body {
-            background-color: #eff6ff;
-            padding: 16px;
-        }
-
-        #editApiModal .modal-body {
-            background-color: #fffbeb;
-            padding: 16px;
-        }
-
-        /* JSON 格式化按钮的样式微调 */
-        .form-group.code-input label .btn-outline-secondary {
-            padding: 0.1rem 0.35rem;
-            font-size: 0.75rem;
-            vertical-align: top;
-        }
-
-        /* 缩小输入框行高，减少垂直空间 */
-        .modal-body .form-control {
-            padding: 0.3rem 0.6rem;
-            height: auto;
-            border-radius: 6px;
-            font-size: 0.85rem;
-        }
-
-        /* 新增：模态框头部配色 */
-        #addApiModal .modal-header {
-            background: linear-gradient(135deg, #1976d2, #42a5f5);
-            color: white;
-            border-bottom: 3px solid #1565c0;
-            padding: 0.75rem 1rem;
-        }
-
-        #editApiModal .modal-header {
-            background: linear-gradient(135deg, #f57c00, #ffb74d);
-            color: #212121;
-            border-bottom: 3px solid #ef6c00;
-            padding: 0.75rem 1rem;
-        }
-
-        #editApiModal .modal-header .btn-close {
-            filter: brightness(0) saturate(100%) invert(0);
-        }
-
-        /* 新增：模态框整体样式优化 */
-        .modal-content {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-            font-size: 0.85rem;
-        }
-
-        /* 新增：标签样式优化 */
-        .form-group label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-            font-size: 0.85rem;
-            white-space: nowrap;
-        }
-
-        /* 确保标签内元素保持在同一行 */
-        .form-group label span, .form-group label i {
-            display: inline;
-            vertical-align: middle;
-        }
-
-        #addApiModal .form-group label {
-            color: #1976d2;
-        }
-
-        #editApiModal .form-group label {
-            color: #f57c00;
-        }
-
-        /* 新增：提示文本样式 */
-        .form-text {
-            font-size: 0.75rem;
-            color: #666;
-            margin-top: 3px;
-        }
-
-        /* 新增：按钮样式优化 */
-        #addApiModal .modal-footer .btn-primary {
-            background: linear-gradient(135deg, #1976d2, #42a5f5);
-            border: none;
-            font-size: 0.85rem;
-            padding: 0.35rem 0.75rem;
-        }
-
-        #editApiModal .modal-footer .btn-primary {
-            background: linear-gradient(135deg, #f57c00, #ff9800);
-            border: none;
-            font-size: 0.85rem;
-            padding: 0.35rem 0.75rem;
-        }
-
-        #addApiModal .modal-footer .btn-warning {
-            background: linear-gradient(135deg, #ff9800, #ffb74d);
-            border: none;
-            color: #212121;
-            font-size: 0.85rem;
-            padding: 0.35rem 0.75rem;
-        }
-
-        #editApiModal .modal-footer .btn-warning {
-            background: linear-gradient(135deg, #1976d2, #42a5f5);
-            border: none;
-            color: white;
-            font-size: 0.85rem;
-            padding: 0.35rem 0.75rem;
-        }
-
-        /* 新增：输入框聚焦效果 */
-        #addApiModal .form-control:focus {
-            border-color: #42a5f5;
-            box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
-        }
-
-        #editApiModal .form-control:focus {
-            border-color: #ffb74d;
-            box-shadow: 0 0 0 0.2rem rgba(255, 167, 38, 0.25);
-        }
-
-        /* 新增：必填字段星号样式 */
-        .text-danger {
-            color: #dc3545 !important;
-            font-size: 0.9em;
-        }
-
-        /* 新增：下拉框样式 */
-        select.form-control {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236c757d' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.6rem center;
-            background-size: 10px;
-            padding-right: 1.8rem;
-        }
-
-        /* 新增：问号提示图标样式 */
-        .help-tooltip {
-            display: inline-block;
-            margin-left: 4px;
-            color: #6c757d;
-            cursor: help;
-            position: relative;
-        }
-
-        .help-tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 5px;
-            min-width: 180px;
-            text-align: center;
-        }
-
-        .help-tooltip:hover::before {
-            content: '';
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 5px solid transparent;
-            border-top-color: #333;
-            margin-bottom: -5px;
-            z-index: 1000;
-        }
-
-        /* 新增：响应式调整 */
-        @media (max-width: 576px) {
-            .modal-dialog {
-                margin: 0.5rem;
-            }
-
-            .modal-body {
-                padding: 0.8rem;
-            }
-
-            .row {
-                margin-bottom: 0.4rem;
-            }
-
-            .col-md-6, .col-md-9, .col-md-3 {
-                margin-bottom: 0.6rem;
-            }
-        }
-
-        /* 新增：模态框底部调整 */
-        .modal-footer {
-            padding: 0.6rem 1rem;
-            font-size: 0.85rem;
-        }
-
-        /* 新增：模态框标题调整 */
-        .modal-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-        }
-
-        /* 新增：表单组间距调整 */
-        .form-group {
-            margin-bottom: 0.8rem;
-        }
-
-        /* 新增：代码输入框行数调整 */
-        .form-group.code-input textarea {
-            rows: 3;
-        }
-
-        .frontend-netdisk-config {
-            border: 1px solid #e7ebf3;
-            border-radius: 18px;
-            overflow: hidden;
-            background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
-        }
-
-        .frontend-netdisk-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-            padding: 20px 22px;
-            border-bottom: 1px solid #edf1f7;
-        }
-
-        .frontend-netdisk-title-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .frontend-netdisk-title-row h5 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        .frontend-netdisk-counter {
-            font-size: 0.98rem;
-            color: #667085;
-            font-weight: 600;
-        }
-
-        .frontend-netdisk-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        .frontend-netdisk-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            gap: 14px;
-            padding: 20px 22px 22px;
-        }
-
-        .frontend-netdisk-card {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 92px;
-            border: 1.5px solid #dfe5ef;
-            border-radius: 16px;
-            background: #ffffff;
-            cursor: pointer;
-            transition: all 0.18s ease;
-            padding: 16px 14px 14px;
-            user-select: none;
-        }
-
-        .frontend-netdisk-card:hover {
-            border-color: #bed0ff;
-            background: #f9fbff;
-            transform: translateY(-1px);
-        }
-
-        .frontend-netdisk-card:has(.frontend-display-netdisk-checkbox:checked) {
-            border-color: #5b8cff;
-            background: #eef4ff;
-            box-shadow: inset 0 0 0 1px rgba(91, 140, 255, 0.18);
-        }
-
-        .frontend-display-netdisk-checkbox {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .frontend-netdisk-card-name {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #1f2937;
-            text-align: center;
-            line-height: 1.35;
-            margin-bottom: 12px;
-        }
-
-        .frontend-netdisk-card-check {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            border: 1px solid #d6ddea;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: transparent;
-            background: #ffffff;
-            transition: all 0.18s ease;
-            font-size: 0.9rem;
-        }
-
-        .frontend-netdisk-card:has(.frontend-display-netdisk-checkbox:checked) .frontend-netdisk-card-check {
-            background: #5b8cff;
-            border-color: #5b8cff;
-            color: #ffffff;
-        }
-
-        .frontend-link-mode-config {
-            min-height: 190px;
-            border: 1px solid #e7ebf3;
-            border-radius: 18px;
-            background:
-                radial-gradient(circle at top right, rgba(255, 188, 67, 0.12), transparent 34%),
-                linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
-            padding: 20px 22px 22px;
-        }
-
-        .frontend-link-mode-config h5 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        .frontend-link-mode-options {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px;
-        }
-
-        .frontend-link-mode-card {
-            position: relative;
-            min-height: 104px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-            padding: 20px;
-            border: 1.5px solid #dfe5ef;
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.86);
-            cursor: pointer;
-            transition: all 0.18s ease;
-            user-select: none;
-        }
-
-        .frontend-link-mode-card:hover {
-            border-color: #f3c96e;
+ .admin-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.admin-hero-api .admin-hero-main,
+.admin-hero-config .admin-hero-main,
+.admin-panel {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.admin-hero-side .admin-stat-card {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 28px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.admin-hero-main {
+    padding: 30px 32px;
+}
+
+.admin-hero-api .admin-hero-main {
+    background:
+        radial-gradient(circle at top right, rgba(245, 191, 96, 0.18), transparent 30%),
+        radial-gradient(circle at left bottom, rgba(100, 116, 139, 0.12), transparent 28%),
+        rgba(255, 255, 255, 0.84);
+}
+
+.admin-hero-config .admin-hero-main {
+    background:
+        radial-gradient(circle at top right, rgba(245, 191, 96, 0.18), transparent 32%),
+        radial-gradient(circle at left bottom, rgba(100, 116, 139, 0.12), transparent 28%),
+        rgba(255, 255, 255, 0.84);
+}
+
+.admin-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(245, 191, 96, 0.14);
+    color: #b7791f;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.admin-title {
+    margin: 16px 0 10px;
+    font-size: clamp(2rem, 3vw, 3rem);
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #0f172a;
+}
+
+.admin-description {
+    margin: 0;
+    max-width: 48rem;
+    color: #64748b;
+    line-height: 1.8;
+}
+
+.admin-hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.admin-tag,
+.doc-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    color: #334155;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.admin-stat-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 100%;
+    padding: 28px;
+    background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(71, 85, 105, 0.96));
+    color: #e2e8f0;
+}
+
+.admin-stat-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(226, 232, 240, 0.76);
+}
+
+.admin-stat-value {
+    margin-top: 14px;
+    font-size: 2rem;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+}
+
+.admin-stat-note {
+    margin-top: 12px;
+    color: rgba(226, 232, 240, 0.8);
+    line-height: 1.75;
+}
+
+.admin-panel {
+    overflow: visible;
+}
+
+.panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 24px 18px;
+    flex-wrap: wrap;
+}
+
+.panel-header-inline {
+    padding: 0 0 20px;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+}
+
+.panel-description {
+    margin: 8px 0 0;
+    color: #64748b;
+    line-height: 1.75;
+}
+
+.panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.data-table-shell {
+    padding: 0 24px 24px;
+    overflow-x: auto;
+    overflow-y: visible;
+    position: relative;
+}
+
+.data-table-shell .table {
+    table-layout: fixed;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 20px;
+    overflow: visible;
+}
+
+.data-table-shell .table thead th {
+    background: rgba(248, 250, 252, 0.98);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.data-table-shell table th,
+.data-table-shell table td {
+    word-wrap: break-word;
+    white-space: normal;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+
+.api-table-shell table th:nth-child(1) { width: 4%; }
+.api-table-shell table th:nth-child(2) { width: 6%; }
+.api-table-shell table th:nth-child(3) { width: 9%; }
+.api-table-shell table th:nth-child(4) { width: 35%; }
+.api-table-shell table th:nth-child(5) { width: 6%; }
+.api-table-shell table th:nth-child(6) { width: 7%; }
+.api-table-shell table th:nth-child(7) { width: 6%; }
+.api-table-shell table th:nth-child(8) { width: 6%; }
+.api-table-shell table th:nth-child(9) { width: 16%; }
+
+.disabled-api {
+    background-color: rgba(248, 250, 252, 0.8) !important;
+}
+
+.disabled-api td {
+    color: #94a3b8 !important;
+}
+
+.disabled-api pre {
+    color: #64748b !important;
+    background-color: transparent !important;
+}
+
+.disabled-api .status-button {
+    background-color: #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+.disabled-api .btn-danger[disabled] {
+    background: #cbd5e1 !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+.status-button,
+.status-synced {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    min-width: 48px;
+    padding: 0.22rem 0.55rem;
+    border-radius: 10px;
+    color: white;
+    font-size: 0.74rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.status-available { background: linear-gradient(135deg, #16a34a, #22c55e); }
+.status-unavailable { background: linear-gradient(135deg, #dc2626, #ef4444); }
+
+.action-buttons {
+    gap: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    min-height: auto;
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    white-space: nowrap;
+}
+
+.action-buttons .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-height: 32px;
+    padding: 0.34rem 0.62rem !important;
+    font-size: 0.74rem !important;
+    border-radius: 10px !important;
+    width: auto;
+    justify-content: center;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.action-buttons .btn-success,
+.action-buttons .btn-danger,
+.action-buttons .btn-info,
+.action-buttons .btn-secondary {
+    color: #fff !important;
+}
+
+.action-buttons .dropdown {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.action-buttons .dropdown-toggle {
+    width: auto;
+    min-width: 32px;
+    padding-left: 0.6rem !important;
+    padding-right: 0.6rem !important;
+}
+
+.dropdown-menu .dropdown-item {
+    font-size: 0.82rem;
+}
+
+#toastContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1200;
+}
+
+.form-group.code-input textarea {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.85rem;
+    background-color: rgba(248, 250, 252, 0.95);
+    resize: vertical;
+}
+
+.form-section {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 22px;
+    padding: 18px;
+    margin-bottom: 18px;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.form-section legend {
+    padding: 0 10px;
+    font-weight: 700;
+    font-size: 0.96rem;
+}
+
+.modal-form-cool .form-section legend {
+    color: #b7791f;
+}
+
+.modal-form-warm .form-section legend {
+    color: #b45309;
+}
+
+.modal-form {
+    padding: 18px;
+}
+
+.modal-form-cool {
+    background: linear-gradient(180deg, rgba(255, 248, 232, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+}
+
+.modal-form-warm {
+    background: linear-gradient(180deg, rgba(255, 251, 235, 0.96) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+#addApiModal .modal-header {
+    background: linear-gradient(135deg, #f8ca72, #eeaf46);
+    color: #1f2937;
+}
+
+#editApiModal .modal-header {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    color: #1f2937;
+}
+
+#addApiModal .modal-header .btn-close,
+#editApiModal .modal-header .btn-close {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.api-doc-modal {
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+.modal-doc-intro {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.api-doc-modal h6 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.help-tooltip {
+    display: inline-block;
+    margin-left: 4px;
+    color: #64748b;
+    cursor: help;
+    position: relative;
+}
+
+.help-tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: white;
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+    margin-bottom: 8px;
+    min-width: 180px;
+    text-align: center;
+}
+
+.help-tooltip:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #0f172a;
+    margin-bottom: -4px;
+    z-index: 1000;
+}
+
+.frontend-netdisk-config,
+.frontend-link-mode-config {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 22px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+}
+
+.frontend-netdisk-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 22px;
+    border-bottom: 1px solid #edf1f7;
+}
+
+.frontend-netdisk-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.frontend-netdisk-counter {
+    font-size: 0.95rem;
+    color: #667085;
+    font-weight: 600;
+}
+
+.frontend-netdisk-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.frontend-netdisk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    padding: 20px 22px 22px;
+}
+
+.frontend-netdisk-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 92px;
+    border: 1.5px solid #dfe5ef;
+    border-radius: 16px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    padding: 16px 14px 14px;
+    user-select: none;
+}
+
+.frontend-netdisk-card:hover {
+    border-color: #eed08c;
+    background: #fffbf1;
+    transform: translateY(-1px);
+}
+
+.frontend-netdisk-card:has(.frontend-display-netdisk-checkbox:checked) {
+    border-color: #e2ab42;
+    background: #fff7e7;
+    box-shadow: inset 0 0 0 1px rgba(226, 171, 66, 0.18);
+}
+
+.frontend-display-netdisk-checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.frontend-netdisk-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1f2937;
+    text-align: center;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.frontend-netdisk-card-check {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid #d6ddea;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    background: #ffffff;
+    transition: all 0.18s ease;
+    font-size: 0.9rem;
+}
+
+.frontend-netdisk-card:has(.frontend-display-netdisk-checkbox:checked) .frontend-netdisk-card-check {
+    background: #e2ab42;
+    border-color: #e2ab42;
+    color: #ffffff;
+}
+
+.frontend-link-mode-config {
+    min-height: 190px;
+    background:
+        radial-gradient(circle at top right, rgba(255, 188, 67, 0.12), transparent 34%),
+        linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+    padding: 20px 22px 22px;
+}
+
+.frontend-link-mode-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.frontend-link-mode-card {
+    position: relative;
+    min-height: 104px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 20px;
+    border: 1.5px solid #dfe5ef;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.86);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    user-select: none;
+}
+
+.frontend-link-mode-card:hover {
+    border-color: #f3c96e;
+    background: #fffdf7;
+}
+
+.frontend-link-mode-radio {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.frontend-link-mode-card:has(.frontend-link-mode-radio:checked) {
+    border-color: #e4a846;
+    background: #fff7e7;
+    box-shadow: inset 0 0 0 1px rgba(240, 182, 61, 0.16);
+}
+
+.frontend-link-mode-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.frontend-link-mode-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.frontend-link-mode-desc {
+    color: #64748b;
+    line-height: 1.65;
+    font-size: 0.9rem;
+}
+
+.frontend-link-mode-switch {
+    width: 48px;
+    height: 28px;
+    border-radius: 999px;
+    background: #dfe5ef;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.18s ease;
+}
+
+.frontend-link-mode-switch::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.14);
+    transition: transform 0.18s ease;
+}
+
+.frontend-link-mode-card:has(.frontend-link-mode-radio:checked) .frontend-link-mode-switch {
+    background: #e4a846;
+}
+
+.frontend-link-mode-card:has(.frontend-link-mode-radio:checked) .frontend-link-mode-switch::after {
+    transform: translateX(20px);
+}
+
+.cookie-grid textarea.form-control {
+    min-height: 220px;
+}
+
+@media (max-width: 992px) {
+    .admin-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .api-table-shell table th:nth-child(7),
+    .api-table-shell table td:nth-child(7),
+    .api-table-shell table th:nth-child(8),
+    .api-table-shell table td:nth-child(8) {
+        display: none;
+    }
+
+    .api-table-shell table th:nth-child(3) { width: 15%; }
+    .api-table-shell table th:nth-child(4) { width: 40%; }
+    .api-table-shell table th:nth-child(9) { width: 25%; }
+}
+
+@media (max-width: 768px) {
+    .admin-hero-main,
+    .admin-stat-card,
+    .panel-header,
+    .data-table-shell {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .panel-header,
+    .frontend-netdisk-header {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .frontend-netdisk-grid,
+    .frontend-link-mode-config,
+    .modal-form {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .frontend-link-mode-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .modal-body {
+        padding: 0.9rem;
+    }
+
+    .col-md-6, .col-md-9, .col-md-3 {
+        margin-bottom: 0.6rem;
+    }
+}
             background: #fffdf8;
             transform: translateY(-1px);
         }

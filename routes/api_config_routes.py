@@ -135,9 +135,10 @@ def disable_all_apis():
 def test_api():
     """测试单个 API (需要 JWT 验证)"""
     api_config = request.get_json()
+    api_id = api_config.get("id", "未知ID") if isinstance(api_config, dict) else "未知ID"
     api_config = update_config_with_keyword(api_config, "[[keyword]]", "凡人修仙传")
     logger.info(f"开始测试单个 API，配置: {api_config}")
-    url, new_status, status_code, response_rule_status, response_time_ms = test_single_api("未知ID", api_config)
+    url, new_status, status_code, response_rule_status, response_time_ms = test_single_api(api_id, api_config)
 
     if status_code is None:
         return (

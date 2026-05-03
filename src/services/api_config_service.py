@@ -203,11 +203,10 @@ def test_all_apis_and_update_status():
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         # 提交所有 API 配置进行测试
-        futures = [executor.submit(test_single_api, config) for config in api_configs]
+        futures = [executor.submit(test_single_api, config.get("id"), config) for config in api_configs]
         for _ in concurrent.futures.as_completed(futures):
             pass
 
     logger.info("所有 API 测试并更新状态完毕 (失败的 API 已自动禁止)")
     return True, "所有 API 测试并更新状态成功 (异常的已自动禁止)"
-
 

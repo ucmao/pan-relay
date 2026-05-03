@@ -2,8 +2,10 @@ from flask import Blueprint, jsonify, render_template, request
 
 from src.db.cookie_config_dao import get_cookie_by_cloud_name, save_cookie
 from src.services.system_config_service import (
+    get_public_search_api_config,
     get_frontend_display_netdisk_config,
     get_frontend_link_mode,
+    save_public_search_api_config,
     save_frontend_display_netdisk_config,
     save_frontend_link_mode,
 )
@@ -63,6 +65,30 @@ def update_frontend_link_mode_config():
         return jsonify({"success": False, "message": "前端出链模式保存失败"}), 400
 
     return jsonify({"success": True, "message": "前端出链模式保存成功"})
+
+
+@system_config_bp.route("/api/public-search-api-config", methods=["GET"])
+@token_required
+def get_public_search_api():
+    config = get_public_search_api_config()
+    return jsonify({"success": True, "enabled": config["enabled"]})
+
+
+@system_config_bp.route("/api/public-search-api-config", methods=["PUT"])
+@token_required
+def update_public_search_api():
+    data = request.get_json() or {}
+    enabled = bool(data.get("enabled", True))
+
+    if not save_public_search_api_config(enabled):
+        return jsonify({"success": False, "message": "公开聚合接口配置保存失败"}), 400
+
+    return jsonify(
+        {
+            "success": True,
+            "message": "公开聚合接口已开启" if enabled else "公开聚合接口已关闭",
+        }
+    )
 
 
 @system_config_bp.route("/cookie-config", methods=["GET"])

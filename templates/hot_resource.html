@@ -126,26 +126,55 @@
         </div>
     {% endmacro %}
     <div class="container-fluid-custom pt-4">
-        <h2 class="text-center mb-4">我的资源管理</h2>
-        
-        <div class="table-container mb-4">
-            <!-- 搜索框和新增按钮 -->
-            <div class="d-flex justify-content-between mb-3">
-                    <div class="col-md-4">
+        <section class="resource-hero">
+            <div class="admin-hero-main">
+                <span class="admin-kicker">Resource Library</span>
+                <h2 class="admin-title">我的资源管理</h2>
+                <p class="admin-description">打造专业级运营体验，支持海量资源的批量导入、转存与检索。让私有池的管理如同成熟后台系统般稳健。</p>
+                <div class="admin-hero-tags">
+                    <span class="admin-tag">资源入库</span>
+                    <span class="admin-tag">批量转存</span>
+                    <span class="admin-tag">导出清理</span>
+                    <span class="admin-tag">分页检索</span>
+                </div>
+            </div>
+            <div class="admin-hero-side">
+                <div class="admin-stat-card">
+                    <span class="admin-stat-label">Owned Inventory</span>
+                    <strong class="admin-stat-value">Resource Pool</strong>
+                    <span class="admin-stat-note">集导入、调度、检索于一体，工业级的资源运营工作台。</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="table-container mb-4 resource-panel">
+            <div class="panel-header resource-panel-header">
+                <div>
+                    <h2 class="panel-title">资源列表</h2>
+                    <p class="panel-description">搜索已有资源、维护标题与链接、批量导入并管理资源状态。</p>
+                </div>
+                <div class="btn-group resource-cta-group">
+                    <button class="btn btn-sm resource-cta-btn is-add" id="addResourceBtn" data-bs-toggle="modal" data-bs-target="#addResourceModal">
+                        <i class="fas fa-plus"></i> 新增入库
+                    </button>
+                    <button type="button" class="btn btn-sm resource-cta-btn is-import" id="batchImportResourceBtn" data-bs-toggle="modal" data-bs-target="#batchAddResourceModal">
+                        <i class="fas fa-file-import"></i> 批量导入
+                    </button>
+                    <button type="button" class="btn btn-sm resource-cta-btn is-transfer" id="batchTransferResourceBtn" data-bs-toggle="modal" data-bs-target="#batchAddResourceModal">
+                        <i class="fas fa-cloud-upload-alt"></i> 批量转存入库
+                    </button>
+                </div>
+            </div>
+
+            <div class="resource-search-row">
+                <div class="resource-search-field">
+                    <label for="searchInput" class="form-label">资源搜索</label>
+                    <div class="resource-search-input-wrap">
                         <input type="text" class="form-control" id="searchInput" placeholder="按标题搜索">
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-primary btn-sm" id="addResourceBtn" data-bs-toggle="modal" data-bs-target="#addResourceModal">
-                            <i class="fas fa-plus"></i> 新增入库
-                        </button>
-                        <button type="button" class="btn btn-success btn-sm" id="batchImportResourceBtn" data-bs-toggle="modal" data-bs-target="#batchAddResourceModal">
-                            <i class="fas fa-file-import"></i> 批量导入
-                        </button>
-                        <button type="button" class="btn btn-warning btn-sm" id="batchTransferResourceBtn" data-bs-toggle="modal" data-bs-target="#batchAddResourceModal">
-                            <i class="fas fa-cloud-upload-alt"></i> 批量转存入库
-                        </button>
+                        <i class="fas fa-search resource-search-icon"></i>
                     </div>
                 </div>
+            </div>
 
             <div class="resource-batch-toolbar" id="resourceBatchToolbar">
                 <div class="resource-batch-summary">
@@ -170,28 +199,28 @@
                 </div>
             </div>
             
-            <!-- 数据表格 -->
-            <table class="table table-bordered table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th style="width: 4%;">
-                            <input class="form-check-input" type="checkbox" id="selectCurrentPageCheckbox" aria-label="选择当前页资源">
-                        </th>
-                        <th style="width: 5%;">ID</th>
-                        <th style="width: 29%;">标题</th>
-                        <th style="width: 27%;">分享链接</th>
-                        <th style="width: 10%;">云盘名称</th>
-                        <th style="width: 9%;">类型</th>
-                        <th style="width: 7%;">同步状态</th>
-                        <th style="width: 11%;">操作</th>
-                    </tr>
-                </thead>
-                <tbody id="resourcesTableBody">
-                    <!-- 数据将通过JavaScript动态加载 -->
-                </tbody>
-            </table>
+            <div class="data-table-shell resource-table-shell">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 4%;">
+                                <input class="form-check-input" type="checkbox" id="selectCurrentPageCheckbox" aria-label="选择当前页资源">
+                            </th>
+                            <th style="width: 5%;">ID</th>
+                            <th style="width: 29%;">标题</th>
+                            <th style="width: 27%;">分享链接</th>
+                            <th style="width: 10%;">云盘名称</th>
+                            <th style="width: 9%;">类型</th>
+                            <th style="width: 7%;">同步状态</th>
+                            <th style="width: 11%;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resourcesTableBody">
+                        <!-- 数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+            </div>
             
-            <!-- 分页控件 -->
             <div class="resource-pagination-bar">
                 <div class="resource-page-size">
                     <span class="text-muted">每页</span>
@@ -215,7 +244,7 @@
                     <button class="btn btn-outline-primary btn-sm" id="jumpPageBtn" type="button">跳转</button>
                 </div>
             </div>
-        </div>
+        </section>
     </div>
     
     <!-- 新增入库模态框 -->
@@ -369,11 +398,11 @@
                                 <label class="form-label"><strong>转存并入库策略</strong></label>
                                 <div class="form-text text-muted mb-2" style="font-size: 0.85rem; line-height: 1.5;">
                                     <div>
-                                        <i class="bi bi-info-circle"></i> 
+                                        <i class="fas fa-info-circle"></i>
                                         <strong>同盘转存：</strong>若资源链接与勾选网盘匹配，系统将自动转存并生成您的分享链接，<strong>以您的新链接替换原链接</strong>保存入库。
                                     </div>
                                     <div class="mt-1 text-warning">
-                                        <i class="bi bi-exclamation-triangle"></i> 
+                                        <i class="fas fa-exclamation-triangle"></i>
                                         <strong>前提：</strong>需提前在“配置”页配置对应网盘的 <strong>Cookie</strong> 才能生效。
                                     </div>
                                 </div>
@@ -393,7 +422,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Toast 消息容器 -->
     <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
     

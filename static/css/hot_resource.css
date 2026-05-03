@@ -1,74 +1,289 @@
-.table-container {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    padding: 20px;
+.resource-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.8fr);
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.admin-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(245, 191, 96, 0.14);
+    color: #b7791f;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.admin-title {
+    margin: 16px 0 10px;
+    font-size: clamp(2rem, 3vw, 3rem);
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #0f172a;
+}
+
+.admin-description {
+    margin: 0;
+    max-width: 48rem;
+    color: #64748b;
+    line-height: 1.8;
+}
+
+.admin-hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.admin-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    color: #334155;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.admin-stat-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(226, 232, 240, 0.76);
+}
+
+.admin-stat-value {
+    margin-top: 14px;
+    font-size: 2rem;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+}
+
+.admin-stat-note {
+    margin-top: 12px;
+    color: rgba(226, 232, 240, 0.8);
+    line-height: 1.75;
+}
+
+.panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+}
+
+.panel-description {
+    margin: 8px 0 0;
+    color: #64748b;
+    line-height: 1.75;
+}
+
+.resource-hero .admin-hero-main,
+.resource-panel {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.resource-hero .admin-stat-card {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 28px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+.resource-hero .admin-hero-main {
+    padding: 30px 32px;
+    background:
+        radial-gradient(circle at top right, rgba(245, 191, 96, 0.18), transparent 30%),
+        radial-gradient(circle at left bottom, rgba(100, 116, 139, 0.12), transparent 26%),
+        rgba(255, 255, 255, 0.84);
+}
+
+.resource-hero .admin-stat-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 100%;
+    padding: 28px;
+    background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(71, 85, 105, 0.96));
+    color: #e2e8f0;
+}
+
+.resource-panel {
+    padding: 24px;
+    overflow: visible;
+    min-height: 400px;
+}
+
+.resource-panel-header {
+    padding: 0 0 20px;
+}
+
+.resource-cta-group {
+    gap: 10px;
+}
+
+.resource-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 42px;
+    padding: 0 1rem;
+    border: 1px solid transparent;
+    border-radius: 12px !important;
+    font-weight: 700;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+}
+
+.resource-cta-btn.is-add {
+    background: linear-gradient(135deg, #f6c769, #e9a73c);
+    color: #1f2937 !important;
+}
+
+.resource-cta-btn.is-import {
+    background: linear-gradient(135deg, #4fb968, #2e9d4b);
+    color: #ffffff !important;
+}
+
+.resource-cta-btn.is-transfer {
+    background: linear-gradient(135deg, #5a7de6, #3f63cf);
+    color: #ffffff !important;
+}
+
+.resource-cta-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
+}
+
+.resource-search-row {
+    margin-bottom: 16px;
+}
+
+.resource-search-field {
+    max-width: 420px;
+}
+
+.resource-search-input-wrap {
+    position: relative;
+}
+
+.resource-search-input-wrap .form-control {
+    padding-right: 42px;
+}
+
+.resource-search-icon {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+}
+
+.data-table-shell {
     overflow-x: auto;
-    margin-bottom: 20px;
-    min-height: 400px; /* 设置最小高度，避免搜索时页面抖动 */
+    overflow-y: visible;
+    position: relative;
 }
 
-/* 表格内容居中 */
-table {
-    width: 100%;
+.data-table-shell .table {
     table-layout: fixed;
-    border-collapse: separate;
-    border-spacing: 0;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 20px;
+    overflow: visible;
 }
 
-table th,
-table td {
+.data-table-shell .table thead th {
+    background: rgba(248, 250, 252, 0.98);
+}
+
+.data-table-shell table th,
+.data-table-shell table td {
     text-align: center;
     vertical-align: middle;
-    padding: 8px 12px;
-    border-bottom: 1px solid #dee2e6;
+    padding: 10px 12px;
     word-break: break-word;
 }
-.btn-sm {
-    margin-right: 5px;
-}
-/* 自定义小按钮样式 */
-.btn-xs-custom {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    border-radius: 0.2rem;
-}
-/* 自定义textarea placeholder颜色 */
+
 textarea::placeholder {
     color: #9ca3af !important;
 }
 
-/* 已同步状态样式 */
 .status-synced {
-    display: inline-block;
-    padding: 0.25em 0.5em;
-    border-radius: 0.25rem;
-    color: white;
-    font-size: 0.8em;
-    background-color: #28a745;
-}
-
-/* 操作按钮容器样式 */
-.action-buttons {
-    gap: 4px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 100%;
-    min-height: 60px;
+    min-height: 24px;
+    min-width: 58px;
+    padding: 0.22rem 0.5rem;
+    border-radius: 10px;
+    color: white;
+    font-size: 0.74rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+}
+
+.action-buttons {
+    gap: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    min-height: auto;
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    white-space: nowrap;
 }
 
 .action-buttons .btn {
-    padding: 0.2rem 0.35rem !important;
-    font-size: 0.75rem !important;
-    line-height: 1.5 !important;
-    border-radius: 0.2rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-height: 32px;
+    padding: 0.34rem 0.62rem !important;
+    font-size: 0.74rem !important;
+    border-radius: 10px !important;
+    width: auto;
+    justify-content: center;
+    white-space: nowrap;
+    flex: 0 0 auto;
 }
 
-.dropdown-menu .dropdown-item {
-    font-size: 0.8rem;
-    padding: 0.3rem 1rem;
+.action-buttons .dropdown {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.action-buttons .dropdown-toggle {
+    width: auto;
+    min-width: 32px;
+    padding-left: 0.6rem !important;
+    padding-right: 0.6rem !important;
 }
 
 .resource-batch-toolbar {
@@ -76,16 +291,16 @@ textarea::placeholder {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 12px 14px;
-    margin-bottom: 14px;
-    border: 1px solid #dbeafe;
-    border-radius: 10px;
-    background: #eff6ff;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(245, 191, 96, 0.18);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255, 248, 232, 0.96), rgba(248, 250, 252, 0.9));
 }
 
 .resource-batch-summary {
     color: #1f2937;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .resource-batch-actions {
@@ -106,7 +321,7 @@ textarea::placeholder {
     align-items: center;
     gap: 16px;
     margin-top: 18px;
-    padding-top: 16px;
+    padding-top: 18px;
     border-top: 1px solid #edf1f5;
 }
 
@@ -141,7 +356,91 @@ textarea::placeholder {
     justify-content: center;
 }
 
+#addResourceModal .modal-header {
+    background: linear-gradient(135deg, #f8ca72, #eeaf46);
+    color: #1f2937;
+}
+
+#editResourceModal .modal-header {
+    background: linear-gradient(135deg, #f4bd5b, #e39c2a);
+    color: #1f2937;
+}
+
+#batchAddResourceModal.mode-import .modal-header {
+    background: linear-gradient(135deg, #4fb968, #2e9d4b);
+    color: white;
+}
+
+#batchAddResourceModal.mode-transfer .modal-header {
+    background: linear-gradient(135deg, #5a7de6, #3f63cf);
+    color: white;
+}
+
+#addResourceModal fieldset,
+#editResourceModal fieldset,
+#batchAddResourceModal fieldset {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 22px;
+    padding: 18px;
+    margin-bottom: 18px;
+}
+
+#addResourceModal fieldset {
+    background: rgba(255, 248, 232, 0.98);
+}
+
+#editResourceModal fieldset {
+    background: rgba(255, 251, 235, 0.96);
+}
+
+#batchAddResourceModal.mode-import fieldset {
+    background: rgba(236, 253, 245, 0.96);
+}
+
+#batchAddResourceModal.mode-transfer fieldset {
+    background: rgba(238, 244, 255, 0.98);
+}
+
+#addResourceModal legend,
+#editResourceModal legend,
+#batchAddResourceModal legend {
+    padding: 0 10px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+#addResourceModal legend {
+    color: #b7791f;
+}
+
+#editResourceModal legend {
+    color: #b45309;
+}
+
+#batchAddResourceModal.mode-import legend {
+    color: #065f46;
+}
+
+#batchAddResourceModal.mode-transfer legend {
+    color: #3451b2;
+}
+
+.modal-body .form-control {
+    font-size: 0.86rem;
+}
+
+#toastContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1200;
+}
+
 @media (max-width: 992px) {
+    .resource-hero {
+        grid-template-columns: 1fr;
+    }
+
     .resource-pagination-bar {
         grid-template-columns: 1fr;
         justify-items: center;
@@ -154,6 +453,13 @@ textarea::placeholder {
 }
 
 @media (max-width: 768px) {
+    .resource-panel,
+    .resource-hero .admin-hero-main,
+    .resource-hero .admin-stat-card {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
     .resource-batch-toolbar {
         flex-direction: column;
         align-items: stretch;
@@ -162,88 +468,4 @@ textarea::placeholder {
     .resource-batch-actions {
         justify-content: flex-start;
     }
-}
-
-/* 模态框配色 */
-/* 新建资源模态框（蓝色主题） */
-#addResourceModal .modal-header {
-    background-color: #3b82f6;
-    color: white;
-    border-bottom: 1px solid #2563eb;
-}
-
-#addResourceModal fieldset {
-    border: 1px solid #bfdbfe;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
-    background-color: #eff6ff;
-}
-
-#addResourceModal legend {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #1d4ed8;
-    padding: 0 8px;
-    margin-left: 16px;
-}
-
-/* 编辑资源模态框（橙色主题） */
-#editResourceModal .modal-header {
-    background-color: #f59e0b;
-    color: white;
-    border-bottom: 1px solid #d97706;
-}
-
-#editResourceModal fieldset {
-    border: 1px solid #fcd34d;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
-    background-color: #fffbeb;
-}
-
-#editResourceModal legend {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #b45309;
-    padding: 0 8px;
-    margin-left: 16px;
-}
-
-/* 批量添加资源模态框（绿色主题） */
-#batchAddResourceModal .modal-header {
-    background-color: #10b981;
-    color: white;
-    border-bottom: 1px solid #059669;
-}
-
-#batchAddResourceModal fieldset {
-    border: 1px solid #6ee7b7;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 16px;
-    background-color: #ecfdf5;
-}
-
-#batchAddResourceModal legend {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #065f46;
-    padding: 0 8px;
-    margin-left: 16px;
-}
-
-/* 模态框表单元素样式 */
-.modal-body .form-control {
-    border-radius: 4px;
-    border: 1px solid #d1d5db;
-    padding: 8px 12px;
-    font-size: 0.8rem;
-}
-
-.modal-body .form-label {
-    font-weight: 500;
-    margin-bottom: 4px;
-    display: block;
 }

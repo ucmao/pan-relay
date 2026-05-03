@@ -10,97 +10,66 @@
 
 {% block content %}
     <div class="container-fluid-custom pt-4">
-        <h2 class="text-center mb-4">API 管理</h2>
-        <div class="d-flex justify-content-between mb-3">
-            <div>
-                <button class="btn btn-primary btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addApiModal">
+        <section class="admin-hero admin-hero-api">
+            <div class="admin-hero-main">
+                <span class="admin-kicker">API Workspace</span>
+                <h2 class="admin-title">API 管理</h2>
+                <p class="admin-description">告别堆砌的表格，在纯净的工作区内完成搜索源的配置、测试与启停。让接口调度变得直观、优雅。</p>
+                <div class="admin-hero-tags">
+                    <span class="admin-tag">接口配置</span>
+                    <span class="admin-tag">状态测试</span>
+                    <span class="admin-tag">批量启停</span>
+                    <span class="admin-tag">规则提取</span>
+                </div>
+            </div>
+            <div class="admin-hero-side">
+                <div class="admin-stat-card">
+                    <span class="admin-stat-label">Control Surface</span>
+                    <strong class="admin-stat-value">Search Source Ops</strong>
+                    <span class="admin-stat-note">调试、复制、管控，所有原子操作均在纯净的工作区内完成。</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-panel">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title">接口列表</h2>
+                    <p class="panel-description">在这里管理第三方搜索接口、调试请求配置，并根据测试结果决定是否对前台开放。</p>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addApiModal">
                     <i class="fas fa-plus"></i> 新建API
-                </button>
-                <button class="btn btn-info btn-sm text-white me-2" id="viewResourceApiBtn" data-bs-toggle="modal" data-bs-target="#resourceApiModal">
-                    <i class="fas fa-code"></i> 我的资源 API
-                </button>
-
-                <button class="btn btn-success btn-sm me-2" id="enableAllButton" onclick="enableAllApis()">
+                    </button>
+                    <button class="btn btn-success btn-sm" id="enableAllButton">
                     <i class="fas fa-power-off"></i> 全部启用
-                </button>
-                <button class="btn btn-secondary btn-sm" id="disableAllButton" onclick="disableAllApis()">
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="disableAllButton">
                     <i class="fas fa-ban"></i> 全部禁用
-                </button>
+                    </button>
+                </div>
             </div>
-            <button class="btn btn-info btn-sm text-white" id="testAllButton" onclick="testAllApis()">
-                <i class="fas fa-play"></i> 测试所有API
-            </button>
-        </div>
-        <table class="table table-bordered table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th>序号</th>
-                    <th>状态</th>
-                    <th>名字</th>
-                    <th>接口</th>
-                    <th>方法</th>
-                    <th>耗时(ms)</th>
-                    <th>请求体</th>
-                    <th>提取规则</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="apiTableBody">
-            </tbody>
-        </table>
-    </div>
 
-    <!-- 我的资源 API 文档模态框 -->
-    <div class="modal fade" id="resourceApiModal" tabindex="-1" aria-labelledby="resourceApiModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="resourceApiModalLabel">我的资源 API</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h6>资源搜索接口</h6>
-                    <p><strong>接口地址：</strong> <code>/api</code></p>
-                    <p><strong>请求方法：</strong> GET</p>
-                    <p><strong>参数说明：</strong></p>
-                    <ul>
-                        <li><code>name</code>：按资源名称搜索（可选）</li>
-                        <li><code>cloud_name</code>：按云盘名称搜索（可选）</li>
-                        <li><code>type</code>：按资源类型搜索（可选）</li>
-                        <li><code>limit</code>：返回结果数量限制（默认100）</li>
-                        <li><code>sort</code>：结果排序方式（可选，默认default）
-                            <ul>
-                                <li><code>default</code>：按创建时间倒序</li>
-                                <li><code>asc</code>：按ID正序</li>
-                                <li><code>desc</code>：按ID倒序</li>
-                                <li><code>random</code>：随机排序</li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <p><strong>返回格式：</strong></p>
-                    <pre><code>{"success": true,
- "total": 5,
- "results": [{
-   "id": 1,
-   "name": "资源名称",
-   "share_link": "https://example.com/link",
-   "cloud_name": "百度网盘",
-   "type": "电影",
-   "remarks": "备注信息"
- }]}</code></pre>
-                    <p><strong>使用示例：</strong></p>
-                    <pre><code>GET /api?name=电影&limit=10
-GET /api?cloud_name=百度网盘&type=软件
-GET /api?name=资源名称&cloud_name=阿里云盘&limit=5
-GET /api?name=资源名称&sort=asc
-GET /api?cloud_name=夸克&sort=random&limit=1
-GET /api?type=音乐&sort=desc</code></pre>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                </div>
+            <div class="data-table-shell api-table-shell">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>序号</th>
+                            <th>状态</th>
+                            <th>名字</th>
+                            <th>接口</th>
+                            <th>方法</th>
+                            <th>耗时(ms)</th>
+                            <th>请求体</th>
+                            <th>提取规则</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="apiTableBody">
+                    </tbody>
+                </table>
             </div>
-        </div>
+        </section>
     </div>
 
     <!-- 新建API模态框 - 蓝色主题 -->
@@ -113,9 +82,9 @@ GET /api?type=音乐&sort=desc</code></pre>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="关闭"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body modal-form modal-form-cool">
                     <form id="addApiForm">
-                        <fieldset>
+                        <fieldset class="form-section">
                             <legend>基础信息</legend>
                             <div class="row mb-2">
                                 <div class="col-md-6 form-group">
@@ -158,7 +127,7 @@ GET /api?type=音乐&sort=desc</code></pre>
                             </div>
                         </fieldset>
 
-                        <fieldset>
+                        <fieldset class="form-section">
                             <legend>请求配置</legend>
                             <div class="form-group mb-2 code-input">
                                 <label for="apiRequest">
@@ -172,7 +141,7 @@ GET /api?type=音乐&sort=desc</code></pre>
                             </div>
                         </fieldset>
 
-                        <fieldset>
+                        <fieldset class="form-section">
                             <legend>响应配置</legend>
                             <div class="form-group mb-2 code-input">
                                 <label for="apiResponse">
@@ -219,10 +188,10 @@ GET /api?type=音乐&sort=desc</code></pre>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body modal-form modal-form-warm">
                     <form id="editApiForm">
                         <input type="hidden" id="editApiId">
-                        <fieldset>
+                        <fieldset class="form-section">
                             <legend>基础信息</legend>
                             <div class="row mb-2">
                                 <div class="col-md-6 form-group">
@@ -264,7 +233,7 @@ GET /api?type=音乐&sort=desc</code></pre>
                             </div>
                         </fieldset>
 
-                        <fieldset>
+                        <fieldset class="form-section">
                             <legend>请求配置</legend>
                             <div class="form-group mb-2 code-input">
                                 <label for="editApiRequest">
@@ -278,7 +247,7 @@ GET /api?type=音乐&sort=desc</code></pre>
                             </div>
                         </fieldset>
 
-                        <fieldset>
+                        <fieldset class="form-section">
                             <legend>响应配置</legend>
                             <div class="form-group mb-2 code-input">
                                 <label for="editApiResponse">

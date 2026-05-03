@@ -5,123 +5,274 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            corePlugins: {
+                preflight: false
+            },
+            theme: {
+                extend: {
+                    colors: {
+                        ink: '#0f172a',
+                        mist: '#f5f7fb',
+                        line: '#dbe4f0',
+                        brand: '#f5bf60',
+                        accent: '#e7a93a',
+                        panel: '#ffffff',
+                        muted: '#64748b'
+                    },
+                    boxShadow: {
+                        soft: '0 18px 45px rgba(15, 23, 42, 0.08)',
+                        float: '0 24px 60px rgba(15, 23, 42, 0.12)'
+                    },
+                    borderRadius: {
+                        '4xl': '2rem'
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
     {% block head %}{% endblock %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
     <style>
-        /* ------------------------------------- */
-        /* 1. 全局美化和底部固定布局 (公共样式) */
-        /* ------------------------------------- */
+        :root {
+            --app-bg: #f3f6fb;
+            --app-bg-accent: radial-gradient(circle at top left, rgba(245, 191, 96, 0.18), transparent 34%), radial-gradient(circle at top right, rgba(100, 116, 139, 0.14), transparent 26%), linear-gradient(180deg, #fbfcfe 0%, #f5f7fb 42%, #eef2f7 100%);
+            --panel-bg: rgba(255, 255, 255, 0.82);
+            --panel-border: rgba(148, 163, 184, 0.18);
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --brand: #f5bf60;
+            --brand-deep: #de9f2d;
+            --accent: #f8d79a;
+            --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+            --shadow-float: 0 24px 60px rgba(15, 23, 42, 0.12);
+            --radius-xl: 24px;
+            --radius-2xl: 32px;
+        }
+
         body {
-            font-size: 0.9rem;
-            background-color: #f7f9fc;
+            font-size: 0.95rem;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
             min-width: 320px;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            /* 头部固定后，body需要内边距避让 */
             padding-top: 86px;
+            color: var(--text-primary);
+            background: var(--app-bg-accent);
         }
 
-        /* 整体容器宽度放大到 1200px，负责居中和最大宽度 */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.26), transparent 78%);
+        }
+
         .container-fluid-custom {
-            max-width: 1200px;
-            padding: 0 15px;
+            max-width: 1240px;
+            padding: 0 20px;
             margin: auto;
             width: 100%;
+            position: relative;
+            z-index: 1;
         }
 
-        /* 主内容区域，占据剩余空间，将底部推下去 */
         .main-content-wrapper {
             flex-grow: 1;
             width: 100%;
         }
 
-        /* Footer 和 Header 包装器 */
         .header-wrapper, .footer-container {
             width: 100%;
             flex-shrink: 0;
         }
 
-        /* --- 头部导航/Logo (固定位置) --- */
         .header-wrapper {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1030;
-            background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
         }
 
         .header-bar {
-            padding: 15px 0;
-        }
-
-        .header-divider {
-            border-top: 1px solid #e0e0e0;
-            margin-bottom: 0;
+            padding: 0;
         }
 
         .search-logo-container {
             display: flex;
             align-items: center;
             text-decoration: none;
+            gap: 14px;
         }
 
         .search-logo {
-            max-width: 35px;
-            height: auto;
-            margin-right: 10px;
+            width: 42px;
+            height: 42px;
+            object-fit: cover;
+            border-radius: 14px;
+            box-shadow: 0 12px 26px rgba(245, 191, 96, 0.26);
         }
 
         .logo-text {
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             font-weight: 700;
-            color: #F5BF60;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
         }
 
-        .top-right-nav .btn {
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-left: 15px;
-            border-radius: 8px;
-        }
-        
-        .top-right-nav .btn-primary {
-            background-color: #FFB300;
-            border-color: #FFB300;
-        }
-        
-        .top-right-nav .btn-primary:hover {
-            background-color: #C78C2B;
-            border-color: #C78C2B;
+        .logo-subtitle {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
+        .header-shell {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            min-height: 86px;
+            padding: 14px 0;
+        }
 
-        /* --- 底部版权 --- */
+        .top-right-nav {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 0 16px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            color: var(--text-primary);
+            background: rgba(245, 191, 96, 0.08);
+            border-color: rgba(148, 163, 184, 0.18);
+        }
+
+        .nav-btn.is-active {
+            background: linear-gradient(135deg, rgba(248, 204, 114, 0.98), rgba(239, 177, 71, 0.98));
+            color: #1f2937;
+            box-shadow: 0 10px 24px rgba(245, 191, 96, 0.28);
+        }
+
+        .nav-btn.is-login {
+            border-color: rgba(245, 191, 96, 0.26);
+            color: #b7791f;
+            background: rgba(245, 191, 96, 0.12);
+        }
+
+        .nav-btn.is-logout {
+            border-color: rgba(203, 213, 225, 0.4);
+            color: #475569;
+            background: rgba(248, 250, 252, 0.82);
+        }
+
         .footer-container {
-            flex-shrink: 0;
-            width: 100%;
-            margin-top: 30px;
+            margin-top: 44px;
         }
 
         .footer-copyright {
             text-align: center;
-            padding: 20px 0;
-            border-top: 1px solid #e9ecef;
-            color: #6c757d;
-            font-size: 0.8rem;
+            padding: 22px 0 30px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
         }
 
-        /* 响应式调整 */
+        .footer-copyright a {
+            color: var(--brand);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .footer-copyright a:hover {
+            color: var(--brand-deep);
+        }
+
         @media (max-width: 768px) {
+            body {
+                padding-top: 124px;
+            }
+
+            .header-shell {
+                min-height: 72px;
+                padding: 12px 0;
+            }
+
+            .top-right-nav {
+                justify-content: flex-start;
+            }
+
+            .nav-btn {
+                min-height: 38px;
+                padding: 0 14px;
+            }
+
             .logo-text {
+                font-size: 1.12rem;
+            }
+
+            .logo-subtitle {
                 display: none;
+            }
+        }
+
+        @media (max-width: 540px) {
+            .container-fluid-custom {
+                padding: 0 14px;
+            }
+
+            body {
+                padding-top: 152px;
+            }
+
+            .search-logo {
+                width: 38px;
+                height: 38px;
+            }
+
+            .top-right-nav {
+                gap: 8px;
+            }
+
+            .nav-btn {
+                font-size: 0.88rem;
+                padding: 0 12px;
             }
         }
     </style>
@@ -130,34 +281,36 @@
 
 <div class="header-wrapper">
     <div class="container-fluid-custom header-bar">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="header-shell">
             <a href="{{ url_for('search_index') }}" class="search-logo-container">
                 <img src="{{ url_for('static', filename='images/search_logo.png') }}" alt="小青搜剧" class="search-logo">
-                <span class="logo-text">小青搜剧</span>
+                <span>
+                    <span class="logo-text">小青搜剧</span>
+                    <span class="logo-subtitle">XiaoQing Media Search</span>
+                </span>
             </a>
             <div class="top-right-nav">
-                <button class="btn {{ 'btn-primary' if active_page == 'search' else 'btn-outline-secondary' }}" id="searchLink">
+                <button class="nav-btn {{ 'is-active' if active_page == 'search' else '' }}" id="searchLink">
                     <i class="fas fa-search"></i> 搜索
                 </button>
-                <button class="btn {{ 'btn-primary' if active_page == 'config' else 'btn-outline-secondary' }}" id="configLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
+                <button class="nav-btn {{ 'is-active' if active_page == 'config' else '' }}" id="configLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
                     <i class="fas fa-cog"></i> 配置
                 </button>
-                <button class="btn {{ 'btn-primary' if active_page == 'api' else 'btn-outline-secondary' }}" id="apiConfigLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
+                <button class="nav-btn {{ 'is-active' if active_page == 'api' else '' }}" id="apiConfigLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
                     <i class="fas fa-code"></i> API
                 </button>
-                <button class="btn {{ 'btn-primary' if active_page == 'resources' else 'btn-outline-secondary' }}" id="resourcesLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
+                <button class="nav-btn {{ 'is-active' if active_page == 'resources' else '' }}" id="resourcesLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
                     <i class="fas fa-fire"></i> 我的资源
                 </button>
-                <button class="btn btn-link text-muted" id="adminLoginLink" {% if is_logged_in %}style="display: none;"{% endif %}>
+                <button class="nav-btn is-login" id="adminLoginLink" {% if is_logged_in %}style="display: none;"{% endif %}>
                     <i class="fas fa-user"></i> 登录
                 </button>
-                <button class="btn btn-link text-muted" id="adminLogoutLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
+                <button class="nav-btn is-logout" id="adminLogoutLink" {% if not is_logged_in %}style="display: none;"{% endif %}>
                     <i class="fas fa-sign-out-alt"></i> 退出
                 </button>
             </div>
         </div>
     </div>
-    <div class="header-divider"></div>
 </div>
 
 {% block content %}{% endblock %}
@@ -165,14 +318,39 @@
 <div class="footer-container">
     <div class="container-fluid-custom">
         <div class="footer-copyright">
-            &copy; 2024-2026 小青搜剧 | <a id="disclaimerLink">仅供学习交流使用</a>
+            &copy; 小青搜剧 - 网盘资源，瞬息即达 | <a id="disclaimerLink">仅供学习交流使用</a>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-    crossorigin="anonymous"></script>
+<div class="modal fade" id="disclaimerModal" tabindex="-1" aria-labelledby="disclaimerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content disclaimer-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="disclaimerModalLabel">免责声明</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body disclaimer-modal-body">
+                <p>小青搜剧是一款基于多源API的自动化检索工具。本项目已在GitHub开源：</p>
+                <div class="disclaimer-link-chip">
+                    <a href="https://github.com/ucmao/search-ucmao" target="_blank" rel="noopener">🔗 github.com/ucmao/search-ucmao</a>
+                </div>
+                <div class="disclaimer-note-block">
+                    <p>1、本工具仅作为资源检索的辅助工具，所有搜索结果均实时调用第三方公开API自动生成，本站不存储、不上传、不分发任何实质资源内容。</p>
+                    <p>2、搜索结果指向的第三方链接内容由原平台负责。小青搜剧无法控制其内容，不对其合法性、准确性或安全性负责。</p>
+                    <p>3、本工具仅供技术研究、学习与交流使用，严禁用于任何形式的商业牟利行为。</p>
+                    <p>4、请在法律允许的范围内合理使用。因用户违规使用所产生的法律后果，由用户自行承担。</p>
+                </div>
+                <p class="disclaimer-thanks">感谢您的支持与关注！</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-sm disclaimer-confirm-btn" data-bs-dismiss="modal">我知道了</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/bootstrap-lite.js') }}"></script>
 
 {% block scripts %}
 <script>
@@ -248,10 +426,12 @@
 
         // 底部免责声明点击事件
         const disclaimerLink = document.getElementById('disclaimerLink');
+        const disclaimerModalElement = document.getElementById('disclaimerModal');
+        const disclaimerModal = disclaimerModalElement ? new bootstrap.Modal(disclaimerModalElement) : null;
         if (disclaimerLink) {
             disclaimerLink.addEventListener('click', function (e) {
                 e.preventDefault();
-                alert('\n小青搜剧整合多源影视资源 API，提供高效影视检索服务。\n\n声明：\n1. 本工具仅作为影视资源检索的辅助工具，不存储任何资源内容。\n2. 所有数据来源于第三方 API，仅供学习与交流使用，请勿用于商业用途。\n\n感谢您的使用！');
+                disclaimerModal?.show();
             });
         }
     });
