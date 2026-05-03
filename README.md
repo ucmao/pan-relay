@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="static/images/hero_search_top.png" width="auto" height="200" alt="小青搜剧 Logo">
-
-# 🚀 小青搜剧 (search-ucmao)
+<img src="static/images/hero_search_top.png" width="auto" height="300" alt="小青搜剧 Logo">
 
 **全能网盘推广与自动化变现管理系统**
 
