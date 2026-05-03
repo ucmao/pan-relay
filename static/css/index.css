@@ -18,7 +18,7 @@
 
 .search-hero-image {
     display: block;
-    width: min(100%, 420px);
+    width: min(100%, 480px);
     height: auto;
     object-fit: contain;
 }
