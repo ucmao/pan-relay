@@ -415,14 +415,25 @@
 }
 
 #viewResultModal.show {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    align-content: start;
+    justify-items: center;
+    padding-top: 20vh;
 }
 
-#viewResultModal .modal-dialog {
+#viewResultModal .modal-dialog,
+#viewResultModal .modal-dialog.modal-dialog-centered {
     width: min(calc(100vw - 3rem), 520px);
-    margin: 0;
+    max-width: 520px;
+    min-height: auto;
+    margin: 0 auto;
+    transform: none;
+}
+
+@media (max-width: 768px) {
+    #viewResultModal.show {
+        padding-top: 10vh;
+    }
 }
 
 .view-result-modal .modal-header,
