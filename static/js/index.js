@@ -104,6 +104,25 @@ function filterUnique2ndDomainFront(lst) {
     return result;
 }
 
+/**
+ * 根据内容高度动态切换滚动条
+ */
+function toggleScrollbarBasedOnContent() {
+    // 确保DOM已经渲染完成
+    setTimeout(() => {
+        if (!scrollableResultsDiv) return;
+        const contentHeight = scrollableResultsDiv.scrollHeight;
+        const containerHeight = scrollableResultsDiv.clientHeight;
+
+        // 如果内容高度超过容器高度，显示滚动条；否则隐藏
+        if (contentHeight > containerHeight) {
+            scrollableResultsDiv.style.overflowY = 'auto';
+        } else {
+            scrollableResultsDiv.style.overflowY = 'hidden';
+        }
+    }, 100); // 给一点延迟确保渲染完成
+}
+
 // --- 搜索和结果管理 (已修改) ---
 searchButton.addEventListener('click', performSearch);
 searchInput.addEventListener('keydown', function (event) {
@@ -185,6 +204,9 @@ function performSearch() {
     isFullyLoaded = false;
     searchButton.disabled = true;
 
+    // 开始时隐藏滚动条
+    scrollableResultsDiv.style.overflowY = 'hidden';
+
     // 启动纸飞机动画
     searchButton.classList.add('is-flying');
     searchButton.classList.add('searching');
@@ -228,6 +250,8 @@ function performSearch() {
                     updateFilterButtons();
                     if (allResults.length <= itemsPerPage) {
                         renderResults(true);
+                        // 有结果时，根据内容高度决定是否显示滚动条
+                        toggleScrollbarBasedOnContent();
                     }
                 }
             }
@@ -270,11 +294,18 @@ function finalizeSearch(hasError = false) {
         // 即使没有结果也显示计数
         document.querySelector('.filter-and-count-container').classList.remove('d-none');
         resultCountText.textContent = `共找到 0 个结果 (${currentFilter})`;
+
+        // 没有结果时，保持隐藏滚动条
+        scrollableResultsDiv.style.overflowY = 'hidden';
     } else if (!hasError) {
         updateFilterButtons();
         // 显示筛选和计数容器
         document.querySelector('.filter-and-count-container').classList.remove('d-none');
         renderResults(true);
+
+        // 搜索完成时，根据内容高度决定是否显示滚动条
+        toggleScrollbarBasedOnContent();
+
         scrollableResultsDiv.addEventListener('scroll', infiniteScrollHandler);
     }
 }
@@ -421,6 +452,8 @@ function loadNextPage() {
 
     setTimeout(() => {
         renderResults(false);
+        // 加载更多后，重新判断是否需要滚动条
+        toggleScrollbarBasedOnContent();
     }, 300);
 }
 
@@ -533,6 +566,8 @@ filterBar.addEventListener('click', (event) => {
 
         renderResults(true);
         scrollableResultsDiv.scrollTop = 0;
+        // 过滤后重新判断是否需要滚动条
+        toggleScrollbarBasedOnContent();
     }
 });
 
@@ -571,4 +606,7 @@ function applyAdvancedFilter() {
     // 重新渲染结果
     renderResults(true);
     scrollableResultsDiv.scrollTop = 0;
+
+    // 筛选后重新判断是否需要滚动条
+    toggleScrollbarBasedOnContent();
 }
