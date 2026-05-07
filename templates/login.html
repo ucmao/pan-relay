@@ -2,41 +2,41 @@
 {% set active_page = 'login' %}
 
 {% block head %}
-    <title>小青搜剧 - 登录页面</title>
-    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<title>小青搜剧 - 登录页面</title>
+<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 {% endblock %}
 
 {% block content %}
-    <div class="main-content-wrapper">
-        <div class="container-fluid-custom">
-            <section class="login-shell">
-                <div class="login-panel">
-                    <div class="login-copy">
-                        <span class="hero-kicker">Admin Console</span>
-                        <h2 class="login-title">管理员登录</h2>
-                        <p class="login-description">进入配置中心、API 管理和资源工作台。保留原有权限逻辑，只升级界面体验。</p>
-                    </div>
-                    {% if error %}
-                        <div class="error-message">{{ error }}</div>
-                    {% endif %}
-                    <form method="POST" class="login-form">
-                        <div class="form-group">
-                            <label for="username">账号</label>
-                            <input type="text" id="username" name="username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="password">密码</label>
-                            <input type="password" id="password" name="password" required>
-                        </div>
-                        <button type="submit" class="btn-login">登录</button>
-                    </form>
+<div class="main-content-wrapper">
+    <div class="container-fluid-custom">
+        <section class="login-shell">
+            <div class="login-panel">
+                <div class="login-copy">
+                    <span class="hero-kicker">Admin Console</span>
+                    <h2 class="login-title">管理员登录</h2>
+                    <p class="login-description">进入配置中心、API 管理和资源工作台。</p>
                 </div>
-            </section>
-        </div>
+                {% if error %}
+                <div class="error-message">{{ error }}</div>
+                {% endif %}
+                <form method="POST" class="login-form">
+                    <div class="form-group">
+                        <label for="username">账号</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">密码</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-login">登录</button>
+                </form>
+            </div>
+        </section>
     </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    {{ super() }}
+{{ super() }}
 {% endblock %}
