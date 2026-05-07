@@ -78,7 +78,7 @@
             const apiName = api.name;
 
             try {
-                const response = await fetch('/api/test', {
+                const response = await fetch('/admin/api/test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(api)
@@ -111,7 +111,7 @@
         // 从服务器获取 API 配置
         async function loadApiConfigs() {
             try {
-                const response = await fetch('/api/configs');
+                const response = await fetch('/admin/api/configs');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -238,7 +238,7 @@
             }
 
             try {
-                const response = await fetch(`/api/configs/${apiId}/enabled`, {
+                const response = await fetch(`/admin/api/configs/${apiId}/enabled`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ is_enabled: isEnabled })
@@ -269,7 +269,7 @@
                 enableAllButton.disabled = true;
 
                 try {
-                    const response = await fetch('/api/configs/enable-all', { method: 'PUT' });
+                    const response = await fetch('/admin/api/configs/enable-all', { method: 'PUT' });
 
                     if (!response.ok) {
                         const errorText = await response.text();
@@ -300,7 +300,7 @@
                 disableAllButton.disabled = true;
 
                 try {
-                    const response = await fetch('/api/configs/disable-all', { method: 'PUT' });
+                    const response = await fetch('/admin/api/configs/disable-all', { method: 'PUT' });
 
                     if (!response.ok) {
                         const errorText = await response.text();
@@ -330,7 +330,7 @@
             if (!api) return;
 
             try {
-                const response = await fetch('/api/configs', {
+                const response = await fetch('/admin/api/configs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(api)
@@ -398,7 +398,7 @@
             api.status = originalApi.status;
 
             try {
-                const response = await fetch(`/api/configs/${apiId}`, {
+                const response = await fetch(`/admin/api/configs/${apiId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(api)
@@ -431,7 +431,7 @@
 
             if (await showConfirm(`确定删除 API "${api.name}" 吗？此操作不可撤销。`, 'danger')) {
                 try {
-                    const response = await fetch(`/api/configs/${apiId}`, { method: 'DELETE' });
+                    const response = await fetch(`/admin/api/configs/${apiId}`, { method: 'DELETE' });
 
                     if (!response.ok) {
                         const errorText = await response.text();
@@ -467,7 +467,7 @@
 
             try {
                 const apiWithId = { ...api, id: apiId };
-                const response = await fetch('/api/test', {
+                const response = await fetch('/admin/api/test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(apiWithId)
@@ -507,7 +507,7 @@
             // 添加确认提示
             if (await showConfirm('确定要复制此API配置吗？')) {
                 try {
-                    const response = await fetch(`/api/configs/copy/${apiId}`, {
+                    const response = await fetch(`/admin/api/configs/copy/${apiId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' }
                     });

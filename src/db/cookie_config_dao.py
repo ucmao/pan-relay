@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def get_all_cookies() -> List[Dict[str, Any]]:
     """
-    从数据库中读取所有云盘Cookie配置。
+    从数据库中读取所有云盘凭证配置。
     """
     conn = get_db_connection()
     if not conn:
@@ -33,7 +33,7 @@ def get_all_cookies() -> List[Dict[str, Any]]:
             }
             cookies.append(cookie_config)
     except Error as err:
-        logger.error(f"查询云盘Cookie配置时出错: {err}")
+        logger.error(f"查询云盘凭证配置时出错: {err}")
     finally:
         if conn.is_connected():
             cursor.close()
@@ -43,7 +43,7 @@ def get_all_cookies() -> List[Dict[str, Any]]:
 
 def get_cookie_by_cloud_name(cloud_name: str) -> Optional[str]:
     """
-    根据云盘名称获取对应的Cookie内容。
+    根据云盘名称获取对应的凭证内容。
     """
     conn = get_db_connection()
     if not conn:
@@ -57,7 +57,7 @@ def get_cookie_by_cloud_name(cloud_name: str) -> Optional[str]:
         result = cursor.fetchone()
         return result["cookie"] if result else None
     except Error as err:
-        logger.error(f"根据云盘名称查询Cookie时出错: {err}")
+        logger.error(f"根据云盘名称查询凭证时出错: {err}")
         return None
     finally:
         if conn.is_connected():
@@ -66,7 +66,7 @@ def get_cookie_by_cloud_name(cloud_name: str) -> Optional[str]:
 
 def save_cookie(cloud_name: str, cookie: str) -> Tuple[bool, str]:
     """
-    保存或更新云盘Cookie配置。
+    保存或更新云盘凭证配置。
     如果存在相同的cloud_name，则更新；否则插入新记录。
     """
     conn = get_db_connection()
@@ -91,12 +91,12 @@ def save_cookie(cloud_name: str, cookie: str) -> Tuple[bool, str]:
         
         cursor.execute(query, params)
         conn.commit()
-        logger.info(f"成功{action}云盘'{cloud_name}'的Cookie配置")
-        return True, f"云盘Cookie配置{action}成功"
+        logger.info(f"成功{action}云盘'{cloud_name}'的凭证配置")
+        return True, f"云盘凭证配置{action}成功"
     except Error as err:
-        logger.error(f"{action}云盘Cookie配置时出错: {err}")
+        logger.error(f"{action}云盘凭证配置时出错: {err}")
         conn.rollback()
-        return False, f"云盘Cookie配置{action}失败: {err}"
+        return False, f"云盘凭证配置{action}失败: {err}"
     finally:
         if conn.is_connected():
             cursor.close()
@@ -104,7 +104,7 @@ def save_cookie(cloud_name: str, cookie: str) -> Tuple[bool, str]:
 
 def delete_cookie(cloud_name: str) -> Tuple[bool, str]:
     """
-    根据云盘名称删除Cookie配置。
+    根据云盘名称删除凭证配置。
     """
     conn = get_db_connection()
     if not conn:
@@ -118,15 +118,15 @@ def delete_cookie(cloud_name: str) -> Tuple[bool, str]:
         conn.commit()
         
         if cursor.rowcount > 0:
-            logger.info(f"成功删除云盘'{cloud_name}'的Cookie配置")
-            return True, "云盘Cookie配置删除成功"
+            logger.info(f"成功删除云盘'{cloud_name}'的凭证配置")
+            return True, "云盘凭证配置删除成功"
         else:
-            logger.warning(f"尝试删除云盘'{cloud_name}'的Cookie配置，但未找到该记录")
-            return False, "未找到该云盘的Cookie配置"
+            logger.warning(f"尝试删除云盘'{cloud_name}'的凭证配置，但未找到该记录")
+            return False, "未找到该云盘的凭证配置"
     except Error as err:
-        logger.error(f"删除云盘Cookie配置时出错: {err}")
+        logger.error(f"删除云盘凭证配置时出错: {err}")
         conn.rollback()
-        return False, f"云盘Cookie配置删除失败: {err}"
+        return False, f"云盘凭证配置删除失败: {err}"
     finally:
         if conn.is_connected():
             cursor.close()

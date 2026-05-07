@@ -25,7 +25,7 @@ function bindFrontendNetdiskCheckboxEvents() {
 
 async function loadPublicSearchApiConfig() {
     try {
-        const response = await fetch('/api/public-search-api-config');
+        const response = await fetch('/admin/api/public-search-api-config');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -49,7 +49,7 @@ async function savePublicSearchApiConfig() {
 
     saveButton.disabled = true;
     try {
-        const response = await fetch('/api/public-search-api-config', {
+        const response = await fetch('/admin/api/public-search-api-config', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ enabled })
@@ -80,7 +80,7 @@ function toggleAllFrontendDisplayNetdisks() {
 
 async function loadFrontendDisplayNetdisks() {
     try {
-        const response = await fetch('/api/frontend-display-netdisks');
+        const response = await fetch('/admin/api/frontend-display-netdisks');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -110,7 +110,7 @@ async function saveFrontendDisplayNetdisks() {
 
     saveButton.disabled = true;
     try {
-        const response = await fetch('/api/frontend-display-netdisks', {
+        const response = await fetch('/admin/api/frontend-display-netdisks', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ enabled_netdisks: enabledNetdisks })
@@ -132,7 +132,7 @@ async function saveFrontendDisplayNetdisks() {
 
 async function loadFrontendLinkMode() {
     try {
-        const response = await fetch('/api/frontend-link-mode');
+        const response = await fetch('/admin/api/frontend-link-mode');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -154,7 +154,7 @@ async function saveFrontendLinkMode() {
 
     saveButton.disabled = true;
     try {
-        const response = await fetch('/api/frontend-link-mode', {
+        const response = await fetch('/admin/api/frontend-link-mode', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: selectedMode ? selectedMode.value : 'copy' })
@@ -176,13 +176,18 @@ async function saveFrontendLinkMode() {
 
 async function loadCookieConfig() {
     try {
-        const response = await fetch('/cookie-config');
+        const response = await fetch('/admin/api/credential-config');
         const data = await response.json();
         document.getElementById('baiduCookie').value = data.baidu_cookie || '';
         document.getElementById('quarkCookie').value = data.quark_cookie || '';
+        document.getElementById('aliyunToken').value = data.aliyun_token || '';
+        document.getElementById('ucCookie').value = data.uc_cookie || '';
+        document.getElementById('xunleiRefreshToken').value = data.xunlei_refresh_token || '';
+        document.getElementById('xunleiCaptchaSign').value = data.xunlei_captcha_sign || '';
+        document.getElementById('xunleiUserId').value = data.xunlei_user_id || '';
     } catch (error) {
-        console.error('加载 Cookie 失败:', error);
-        showToast('加载 Cookie 失败，请检查后端日志。', 'danger');
+        console.error('加载云盘凭证失败:', error);
+        showToast('加载云盘凭证失败，请检查后端日志。', 'danger');
     }
 }
 
@@ -191,11 +196,16 @@ async function saveCookieConfig() {
     const payload = {
         baidu_cookie: document.getElementById('baiduCookie').value.trim(),
         quark_cookie: document.getElementById('quarkCookie').value.trim(),
+        aliyun_token: document.getElementById('aliyunToken').value.trim(),
+        uc_cookie: document.getElementById('ucCookie').value.trim(),
+        xunlei_refresh_token: document.getElementById('xunleiRefreshToken').value.trim(),
+        xunlei_captcha_sign: document.getElementById('xunleiCaptchaSign').value.trim(),
+        xunlei_user_id: document.getElementById('xunleiUserId').value.trim(),
     };
 
     saveButton.disabled = true;
     try {
-        const response = await fetch('/cookie-config', {
+        const response = await fetch('/admin/api/credential-config', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
@@ -206,9 +216,9 @@ async function saveCookieConfig() {
             throw new Error(data.message || `HTTP error! status: ${response.status}`);
         }
 
-        showToast('Cookie配置保存成功', 'success');
+        showToast(data.message || '云盘凭证保存成功', 'success');
     } catch (error) {
-        showToast(`Cookie配置保存失败: ${error.message}`, 'danger');
+        showToast(`云盘凭证保存失败: ${error.message}`, 'danger');
     } finally {
         saveButton.disabled = false;
     }

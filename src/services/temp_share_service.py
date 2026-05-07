@@ -8,13 +8,19 @@ from src.db.temp_share_dao import (
     mark_temp_share_deleted,
     touch_temp_share,
 )
-from src.pan_operator import create_share, del_share, get_and_validate_cookie
+from src.pan_operator import create_share, del_share, get_and_validate_credential
 from utils.netdisk_utils import match_netdisk_link
 
 logger = logging.getLogger(__name__)
 
 TEMP_SHARE_EXPIRE_HOURS = 6
-SUPPORTED_DYNAMIC_NETDISKS = {"百度网盘": "baidu", "夸克网盘": "quark"}
+SUPPORTED_DYNAMIC_NETDISKS = {
+    "百度网盘": "baidu",
+    "夸克网盘": "quark",
+    "阿里云盘": "aliyun",
+    "UC网盘": "uc",
+    "迅雷网盘": "xunlei",
+}
 
 
 def resolve_view_url(title: str, original_url: str, netdisk_name: str = "") -> Dict[str, str]:
@@ -38,7 +44,7 @@ def resolve_view_url(title: str, original_url: str, netdisk_name: str = "") -> D
             "netdisk_name": resolved_netdisk_name,
         }
 
-    if not get_and_validate_cookie(resolved_netdisk_name):
+    if not get_and_validate_credential(resolved_netdisk_name):
         return fallback
 
     share_result = create_share(

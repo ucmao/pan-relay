@@ -1,4 +1,4 @@
-{% extends "_layout.html" %}
+{% extends "admin_layout.html" %}
 {% set active_page = 'resources' %}
 
 {% block head %}
@@ -45,7 +45,7 @@
             </div>
             <div class="col-md-4">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Ali" value="ali" disabled>
+                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Ali" value="aliyun" checked>
                     <label class="form-check-label" for="{{ prefix }}Ali">
                         阿里云盘
                     </label>
@@ -53,7 +53,7 @@
             </div>
             <div class="col-md-4">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Xunlei" value="xunlei" disabled>
+                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Xunlei" value="xunlei" checked>
                     <label class="form-check-label" for="{{ prefix }}Xunlei">
                         迅雷网盘
                     </label>
@@ -61,17 +61,9 @@
             </div>
             <div class="col-md-4">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Uc" value="uc" disabled>
+                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Uc" value="uc" checked>
                     <label class="form-check-label" for="{{ prefix }}Uc">
                         UC网盘
-                    </label>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Wukong" value="wukong" disabled>
-                    <label class="form-check-label" for="{{ prefix }}Wukong">
-                        悟空网盘
                     </label>
                 </div>
             </div>

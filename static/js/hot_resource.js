@@ -94,7 +94,7 @@ async function loadResources() {
     const searchKeyword = searchInput ? searchInput.value.trim() : '';
 
     try {
-        const response = await fetch(`/api/resources?page=${currentPage}&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`);
+        const response = await fetch(`/admin/api/resources?page=${currentPage}&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`);
         const data = await response.json();
 
         if (data.success) {
@@ -365,7 +365,7 @@ function copyResource(id) {
 async function deleteResource(id) {
     if (await showConfirm('确定要删除这条资源吗？此操作不可恢复。', 'danger')) {
         try {
-            const response = await fetch(`/api/resources/${id}`, { method: 'DELETE' });
+            const response = await fetch(`/admin/api/resources/${id}`, { method: 'DELETE' });
             const data = await response.json();
 
             if (data.success) {
@@ -385,7 +385,7 @@ async function deleteResource(id) {
 // 获取详情并打开编辑框
 async function editResource(id) {
     try {
-        const response = await fetch(`/api/resources/${id}`);
+        const response = await fetch(`/admin/api/resources/${id}`);
         const data = await response.json();
 
         if (data.success) {
@@ -434,7 +434,7 @@ async function saveResource() {
     saveResourceBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 保存中...';
 
     try {
-        const response = await fetch('/api/resources', {
+        const response = await fetch('/admin/api/resources', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -482,7 +482,7 @@ async function updateResource() {
     updateResourceBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 更新中...';
 
     try {
-        const response = await fetch(`/api/resources/${id}`, {  // 这里应该是PUT请求，路径是/api/resources/:id
+        const response = await fetch(`/admin/api/resources/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -612,7 +612,7 @@ function getBatchTransferNetdiskConfig() {
     return {
         quark: document.getElementById('resourceSaveToQuark').checked,
         baidu: document.getElementById('resourceSaveToBaidu').checked,
-        ali: document.getElementById('resourceSaveToAli').checked,
+        aliyun: document.getElementById('resourceSaveToAli').checked,
         xunlei: document.getElementById('resourceSaveToXunlei').checked,
         uc: document.getElementById('resourceSaveToUc').checked,
         wukong: document.getElementById('resourceSaveToWukong').checked,
@@ -668,7 +668,7 @@ async function batchSaveResources() {
                 save_to_netdisk: saveToNetdisk
             };
 
-            const response = await fetch('/api/resources', {
+            const response = await fetch('/admin/api/resources', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -729,7 +729,7 @@ function downloadCSV(csvContent, filename) {
 
 async function fetchAllResourcesForCurrentSearch() {
     const searchKeyword = searchInput ? searchInput.value.trim() : '';
-    const firstResponse = await fetch(`/api/resources?page=1&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`);
+    const firstResponse = await fetch(`/admin/api/resources?page=1&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`);
     const firstData = await firstResponse.json();
 
     if (!firstData.success) {
@@ -743,7 +743,7 @@ async function fetchAllResourcesForCurrentSearch() {
         const promises = [];
         for (let i = 2; i <= totalP; i++) {
             promises.push(
-                fetch(`/api/resources?page=${i}&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`)
+                fetch(`/admin/api/resources?page=${i}&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`)
                     .then(response => response.json())
                     .then(data => data.success ? data.data.items : [])
             );
@@ -814,7 +814,7 @@ async function deleteSelectedResources() {
 
     try {
         for (const id of selectedIds) {
-            const response = await fetch(`/api/resources/${id}`, { method: 'DELETE' });
+            const response = await fetch(`/admin/api/resources/${id}`, { method: 'DELETE' });
             const data = await response.json();
             if (response.ok && data.success) {
                 successCount++;

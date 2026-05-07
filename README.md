@@ -4,7 +4,7 @@
 
 **全能网盘推广与自动化变现管理系统**
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![MySQL](https://img.shields.io/badge/database-MySQL-orange.svg)](https://www.mysql.com/) [![Support](https://img.shields.io/badge/support-Quark%20%7C%20Baidu-brightgreen.svg)](#💾-网盘支持矩阵)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![MySQL](https://img.shields.io/badge/database-MySQL-orange.svg)](https://www.mysql.com/) [![Support](https://img.shields.io/badge/support-Quark%20%7C%20Baidu%20%7C%20Aliyun%20%7C%20UC%20%7C%20Xunlei-brightgreen.svg)](#💾-网盘支持矩阵)
 
 <p align="center">
   <a href="#-在线演示-demo">在线演示</a> •
@@ -23,18 +23,18 @@
 
 为了方便您快速了解系统逻辑，我们提供了全功能的在线测试环境：
 
-* **🔍 用户搜索端**：[https://search.ucmao.cn](https://search.ucmao.cn) （无需登录，直接体验极简搜索与资源分发）
-* **⚙️ 管理后台**: [https://search.ucmao.cn/admin](https://search.ucmao.cn/admin)
+* **🔍 用户搜索端**：[https://so.ucmao.cn](https://so.ucmao.cn)
+* **⚙️ 管理后台**: [https://so.ucmao.cn/admin](https://so.ucmao.cn/admin)
   * **管理账号**: `admin`
   * **管理密码**: `admin123`
 
-> **安全提示**：演示环境仅供功能体验。为了您的账号安全，请勿在演示站后台填入您真实的网盘 Cookie。
+> **安全提示**：演示环境仅供功能体验。为了您的账号安全，请勿在演示站后台填入您真实的云盘凭证。
 
 ---
 
 ## 💎 核心变现逻辑
 
-* **自动化链接洗白**：深度适配 **百度网盘、夸克网盘**。批量导入他人分享链接，系统自动执行“转存至个人盘 -> 生成个人分享链 -> 替换入库”，实现收益权转移。
+* **自动化链接洗白**：已接入 **夸克网盘、百度网盘、阿里云盘、UC网盘、迅雷网盘**。批量导入他人分享链接，系统自动执行“转存至个人盘 -> 生成个人分享链 -> 替换入库”，实现收益权转移。
 * **私有资源池**：资源存入本地 MySQL 数据库，支持后台批量管理、资源标注及一键导出 Excel，方便全网分发。
 * **多维分发模式**：
     * **前台搜索**：极简搜索首页，优先展示您的收益链接，后聚合展示第三方 API 结果。
@@ -44,11 +44,15 @@
 
 ## 💾 网盘支持矩阵
 
-| 平台        | 识别状态 | 自动转存/洗白 | 推广优势                                                   |
-| :---------- | :------: | :-----------: | :--------------------------------------------------------- |
-| **夸克网盘**  |   ✅ 识别   |  ✅ 完美支持   | 推广佣金高，拉新效果极佳                                   |
-| **百度网盘**  |   ✅ 识别   |  ✅ 完美支持   | 用户覆盖广，资源转存率高                                   |
-| **其他10种** |   ✅ 识别   |  🚧 持续开发中 | 涵盖以下网盘：<br>UC网盘、迅雷网盘、阿里云盘、悟空网盘、快兔网盘<br>移动云盘、联通云盘、115网盘、123云盘、天翼云盘 |
+| 平台 | 识别状态 | 自动转存/洗白 | 动态查看/临时分享 | 凭证类型 |
+| :--- | :------: | :-----------: | :---------------: | :------- |
+| **夸克网盘** | ✅ 识别 | ✅ 已支持 | ✅ 已支持 | Cookie |
+| **百度网盘** | ✅ 识别 | ✅ 已支持 | ✅ 已支持 | Cookie |
+| **阿里云盘** | ✅ 识别 | ✅ 已支持 | ✅ 已支持 | Refresh Token |
+| **UC网盘** | ✅ 识别 | ✅ 已支持 | ✅ 已支持 | Cookie |
+| **迅雷网盘** | ✅ 识别 | ✅ 已支持 | ✅ 已支持 | Refresh Token + Captcha Sign + User ID |
+| **其他网盘** | ✅ 识别 | 🚧 持续开发中 | 🚧 持续开发中 | 视平台而定 |
+
 
 ---
 
@@ -58,11 +62,28 @@
 
 | 参数 | 描述 | 示例值 |
 | --- | --- | --- |
-| `name` | 搜索关键词 | `复仇者联盟` |
+| `keyword` | 搜索关键词 | `复仇者联盟` |
 | `cloud_name` | 筛选网盘 | `夸克网盘` |
 | `type` | 资源类型 | `电影` |
 | `limit` | 返回数量 | `100` |
-| **`sort`** | **排序方式** | `default`(时间倒序) / `random`(随机) / `asc` / `desc` |
+| `sort` | 排序方式 | `default`(时间倒序) / `random`(随机) / `asc` / `desc` |
+
+返回示例：
+
+```json
+{
+  "success": true,
+  "total": 2,
+  "results": [
+    {
+      "source": "hot",
+      "name": "凡人修仙传",
+      "share_link": "https://pan.quark.cn/s/xxxx",
+      "cloud_name": "夸克网盘"
+    }
+  ]
+}
+```
 
 ---
 
@@ -147,13 +168,48 @@ python app.py
 
 ---
 
-## 💡 推广员必看：如何获取 Cookie？
+## ⚙️ 部署后第一件事
 
-1. **登录网页版**：在浏览器打开 **百度网盘** 或 **夸克网盘** 官网并登录。
+启动成功后，请先登录后台完成以下配置：
+
+1. 进入 `配置中心`
+2. 填写你准备启用的网盘凭证
+3. 保存后再去 `我的资源管理` 测试转存入库
+4. 最后去前台搜索页测试动态查看
+
+---
+
+## 🔐 云盘凭证说明
+
+项目后台现在统一使用“云盘凭证”概念，而不再只限定为 Cookie。不同平台需要填写的内容如下：
+
+| 平台 | 后台字段 | 说明 |
+| --- | --- | --- |
+| 百度网盘 | `百度网盘 Cookie` | 登录网页版后复制整段 Cookie |
+| 夸克网盘 | `夸克网盘 Cookie` | 登录网页版后复制整段 Cookie |
+| 阿里云盘 | `阿里云盘 Refresh Token` | 使用阿里云盘登录态提取 refresh_token |
+| UC网盘 | `UC网盘 Cookie` | 登录网页版后复制整段 Cookie |
+| 迅雷网盘 | `Refresh Token` + `Captcha Sign` + `User ID` | 3 个字段必须同时填写，缺一不可 |
+
+---
+
+## 💡 如何获取 Cookie / Token？
+
+### 百度网盘 / 夸克网盘 / UC 网盘 Cookie
+
+1. **登录网页版**：在浏览器打开对应平台官网并登录。
 2. **进入开发者模式**：按下 `F12`，切换到 **Network (网络)** 标签页。
 3. **刷新页面**：按 `F5` 刷新，在左侧列表中找到第一个请求。
 4. **复制 Cookie**：在右侧 **Headers (标头)** 中找到 `Cookie:` 字段，复制整段字符串。
-5. **完成配置**：登录推广后台，进入**我的资源**管理界面，点击**配置Cookie**，粘贴保存以激活功能。
+5. **完成配置**：登录后台，进入 `配置中心`，粘贴保存。
+
+### 阿里云盘 Refresh Token
+
+阿里云盘不是直接使用 Cookie，而是使用 `refresh_token`。你需要通过自己的抓包方式或现有工具提取登录态中的 refresh token，然后填入后台的 `阿里云盘 Refresh Token`。
+
+### 迅雷网盘三件套
+
+迅雷网盘需要同时准备：`refresh_token`、`captcha_sign`、`user_id`
 
 ---
 
@@ -165,7 +221,7 @@ search-ucmao/
 ├── configs/              # 应用与日志配置
 ├── routes/               # 路由层 (API、认证、搜索、资源管理)
 ├── src/
-│   ├── clients/          # 网盘底层客户端 (百度/夸克 API 协议实现)
+│   ├── clients/          # 网盘底层客户端 (夸克/百度/阿里/UC/迅雷)
 │   ├── db/               # 数据库交互层 (DAO模式)
 │   ├── services/         # 业务逻辑层 (API聚合、资源处理)
 │   └── pan_operator.py   # 核心操作器：执行转存与洗白逻辑

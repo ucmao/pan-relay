@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            corePlugins: {
+                preflight: false
+            }
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    {% block head %}{% endblock %}
+    <style>
+        body {
+            font-size: 0.95rem;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+            min-width: 320px;
+            min-height: 100vh;
+            color: #0f172a;
+            background:
+                radial-gradient(circle at top left, rgba(245, 191, 96, 0.18), transparent 34%),
+                radial-gradient(circle at top right, rgba(100, 116, 139, 0.14), transparent 26%),
+                linear-gradient(180deg, #fbfcfe 0%, #f5f7fb 42%, #eef2f7 100%);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.26), transparent 78%);
+        }
+
+        .container-fluid-custom {
+            max-width: 1240px;
+            padding: 0 20px;
+            margin: auto;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-container {
+            margin-top: 44px;
+        }
+
+        .footer-copyright {
+            text-align: center;
+            padding: 22px 0 30px;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+
+        .footer-copyright a {
+            color: #de9f2d;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .footer-copyright a:hover {
+            color: #b7791f;
+        }
+
+        .footer-divider {
+            margin: 0 8px;
+            color: #94a3b8;
+        }
+
+        @media (max-width: 540px) {
+            .container-fluid-custom {
+                padding: 0 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+{% block content %}{% endblock %}
+
+<div class="footer-container">
+    <div class="container-fluid-custom">
+        <div class="footer-copyright">
+            <a id="disclaimerLink">&copy; 小青搜剧</a>
+            <span class="footer-divider">|</span>
+            <a href="https://github.com/ucmao/search-ucmao" target="_blank" rel="noopener">GitHub</a>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="disclaimerModal" tabindex="-1" aria-labelledby="disclaimerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content disclaimer-modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="disclaimerModalLabel">免责声明</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body disclaimer-modal-body">
+                <p>小青搜剧是一款基于多源 API 的自动化检索工具。本项目已在 GitHub 开源：</p>
+                <div class="disclaimer-link-chip">
+                    <a href="https://github.com/ucmao/search-ucmao" target="_blank" rel="noopener">github.com/ucmao/search-ucmao</a>
+                </div>
+                <div class="disclaimer-note-block">
+                    <p>1、本工具仅作为资源检索的辅助工具，所有搜索结果均实时调用第三方公开 API 自动生成，本站不存储、不上传、不分发任何实质资源内容。</p>
+                    <p>2、搜索结果指向的第三方链接内容由原平台负责。小青搜剧无法控制其内容，不对其合法性、准确性或安全性负责。</p>
+                    <p>3、本工具仅供技术研究、学习与交流使用，严禁用于任何形式的商业牟利行为。</p>
+                    <p>4、请在法律允许的范围内合理使用。因用户违规使用所产生的法律后果，由用户自行承担。</p>
+                </div>
+                <p class="disclaimer-thanks">感谢您的支持与关注。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">我知道了</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/bootstrap-lite.js') }}"></script>
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const disclaimerLink = document.getElementById('disclaimerLink');
+        const disclaimerModalElement = document.getElementById('disclaimerModal');
+        const disclaimerModal = disclaimerModalElement ? new bootstrap.Modal(disclaimerModalElement) : null;
+
+        if (disclaimerLink) {
+            disclaimerLink.addEventListener('click', (event) => {
+                event.preventDefault();
+                disclaimerModal?.show();
+            });
+        }
+    });
+</script>
+{% endblock %}
+</body>
+</html>

@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 api_config_bp = Blueprint("api_config", __name__)
 
 
-@api_config_bp.route("/api-config", methods=["GET"])
+@api_config_bp.route("/admin/api-config", methods=["GET"])
 @token_required
 def config_page():
     """API 管理页面 (需要 JWT 验证)"""
@@ -33,7 +33,7 @@ def config_page():
     return render_template("api_config.html", configs=configs)
 
 
-@api_config_bp.route("/api/configs", methods=["GET"])
+@api_config_bp.route("/admin/api/configs", methods=["GET"])
 @token_required
 def get_api_configs():
     """获取所有 API 配置 (需要 JWT 验证)"""
@@ -41,7 +41,7 @@ def get_api_configs():
     return jsonify(configs)
 
 
-@api_config_bp.route("/api/configs", methods=["POST"])
+@api_config_bp.route("/admin/api/configs", methods=["POST"])
 @token_required
 def add_api_config():
     """新增一条 API 配置 (需要 JWT 验证)"""
@@ -52,7 +52,7 @@ def add_api_config():
     return jsonify({"message": message, "id": new_id}), 201
 
 
-@api_config_bp.route("/api/configs/copy/<int:api_id>", methods=["POST"])
+@api_config_bp.route("/admin/api/configs/copy/<int:api_id>", methods=["POST"])
 @token_required
 def copy_api_config(api_id):
     """复制一条 API 配置 (需要 JWT 验证)"""
@@ -63,7 +63,7 @@ def copy_api_config(api_id):
     return jsonify({"message": message, "id": new_id})
 
 
-@api_config_bp.route("/api/configs/<int:api_id>", methods=["PUT"])
+@api_config_bp.route("/admin/api/configs/<int:api_id>", methods=["PUT"])
 @token_required
 def update_api_config(api_id):
     """更新一条 API 配置 (需要 JWT 验证)"""
@@ -81,7 +81,7 @@ def update_api_config(api_id):
     return jsonify({"message": message})
 
 
-@api_config_bp.route("/api/configs/<int:api_id>", methods=["DELETE"])
+@api_config_bp.route("/admin/api/configs/<int:api_id>", methods=["DELETE"])
 @token_required
 def delete_api_config(api_id):
     """删除一条 API 配置 (需要 JWT 验证)"""
@@ -92,7 +92,7 @@ def delete_api_config(api_id):
     return jsonify({"message": message})
 
 
-@api_config_bp.route("/api/configs/<int:api_id>/enabled", methods=["PUT"])
+@api_config_bp.route("/admin/api/configs/<int:api_id>/enabled", methods=["PUT"])
 @token_required
 def toggle_api_enabled(api_id):
     """切换单个 API 的启用状态，限制异常状态下启用 (需要 JWT 验证)"""
@@ -110,7 +110,7 @@ def toggle_api_enabled(api_id):
     return jsonify({"message": message})
 
 
-@api_config_bp.route("/api/configs/enable-all", methods=["PUT"])
+@api_config_bp.route("/admin/api/configs/enable-all", methods=["PUT"])
 @token_required
 def enable_all_apis():
     """一键启用所有【状态正常 (status=1)】的 API (需要 JWT 验证)"""
@@ -120,7 +120,7 @@ def enable_all_apis():
     return jsonify({"message": message})
 
 
-@api_config_bp.route("/api/configs/disable-all", methods=["PUT"])
+@api_config_bp.route("/admin/api/configs/disable-all", methods=["PUT"])
 @token_required
 def disable_all_apis():
     """一键禁用所有 API (需要 JWT 验证)"""
@@ -130,7 +130,7 @@ def disable_all_apis():
     return jsonify({"message": message})
 
 
-@api_config_bp.route("/api/test", methods=["POST"])
+@api_config_bp.route("/admin/api/test", methods=["POST"])
 @token_required
 def test_api():
     """测试单个 API (需要 JWT 验证)"""
@@ -168,7 +168,7 @@ def test_api():
     )
 
 
-@api_config_bp.route("/api/test-all", methods=["GET"])
+@api_config_bp.route("/admin/api/test-all", methods=["GET"])
 @token_required
 def test_all_apis():
     """测试所有API配置并更新其状态 (需要 JWT 验证)"""

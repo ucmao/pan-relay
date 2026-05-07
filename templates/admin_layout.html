@@ -1,0 +1,304 @@
+{% set active_page = active_page or 'admin' %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            corePlugins: {
+                preflight: false
+            },
+            theme: {
+                extend: {
+                    colors: {
+                        ink: '#0f172a',
+                        mist: '#f5f7fb',
+                        line: '#dbe4f0',
+                        brand: '#f5bf60',
+                        accent: '#e7a93a',
+                        panel: '#ffffff',
+                        muted: '#64748b'
+                    },
+                    boxShadow: {
+                        soft: '0 18px 45px rgba(15, 23, 42, 0.08)',
+                        float: '0 24px 60px rgba(15, 23, 42, 0.12)'
+                    },
+                    borderRadius: {
+                        '4xl': '2rem'
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
+    {% block head %}{% endblock %}
+
+    <style>
+        :root {
+            --app-bg: #f3f6fb;
+            --app-bg-accent: radial-gradient(circle at top left, rgba(245, 191, 96, 0.18), transparent 34%), radial-gradient(circle at top right, rgba(100, 116, 139, 0.14), transparent 26%), linear-gradient(180deg, #fbfcfe 0%, #f5f7fb 42%, #eef2f7 100%);
+            --panel-bg: rgba(255, 255, 255, 0.82);
+            --panel-border: rgba(148, 163, 184, 0.18);
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --brand: #f5bf60;
+            --brand-deep: #de9f2d;
+            --accent: #f8d79a;
+        }
+
+        body {
+            font-size: 0.95rem;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-top: 86px;
+            color: var(--text-primary);
+            background: var(--app-bg-accent);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.26), transparent 78%);
+        }
+
+        .container-fluid-custom {
+            max-width: 1240px;
+            padding: 0 20px;
+            margin: auto;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content-wrapper {
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .header-wrapper, .footer-container {
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .header-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+        }
+
+        .header-shell {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            min-height: 86px;
+            padding: 14px 0;
+        }
+
+        .search-logo-container {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            gap: 14px;
+        }
+
+        .search-logo {
+            width: 42px;
+            height: 42px;
+            object-fit: cover;
+            border-radius: 14px;
+            box-shadow: 0 12px 26px rgba(245, 191, 96, 0.26);
+        }
+
+        .logo-text {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .logo-subtitle {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .top-right-nav {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 42px;
+            padding: 0 16px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            position: relative;
+            text-decoration: none;
+        }
+
+        .nav-btn:hover {
+            color: var(--text-primary);
+            background: rgba(245, 191, 96, 0.06);
+            border-color: transparent;
+        }
+
+        .nav-btn.is-active {
+            color: var(--brand-deep);
+            font-weight: 700;
+        }
+
+        .nav-btn.is-active::after {
+            content: "";
+            position: absolute;
+            left: 16px;
+            right: 16px;
+            bottom: 5px;
+            height: 2px;
+            border-radius: 999px;
+            background: rgba(222, 159, 45, 0.9);
+        }
+
+        .footer-container {
+            margin-top: 44px;
+        }
+
+        .footer-copyright {
+            text-align: center;
+            padding: 22px 0 30px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .footer-copyright a {
+            color: var(--brand);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding-top: 124px;
+            }
+
+            .header-shell {
+                min-height: 72px;
+                padding: 12px 0;
+            }
+
+            .top-right-nav {
+                justify-content: flex-start;
+            }
+
+            .nav-btn {
+                min-height: 38px;
+                padding: 0 14px;
+            }
+
+            .logo-text {
+                font-size: 1.12rem;
+            }
+
+            .logo-subtitle {
+                display: none;
+            }
+        }
+
+        @media (max-width: 540px) {
+            .container-fluid-custom {
+                padding: 0 14px;
+            }
+
+            body {
+                padding-top: 152px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-wrapper">
+    <div class="container-fluid-custom header-bar">
+        <div class="header-shell">
+            <a href="{{ url_for('resources.resources_page') if is_logged_in else url_for('auth.login') }}" class="search-logo-container">
+                <img src="{{ url_for('static', filename='images/search_logo.png') }}" alt="小青搜剧" class="search-logo">
+                <span>
+                    <span class="logo-text">小青搜剧后台</span>
+                    <span class="logo-subtitle">Admin Console</span>
+                </span>
+            </a>
+            <div class="top-right-nav">
+                {% if is_logged_in %}
+                <a class="nav-btn {{ 'is-active' if active_page == 'resources' else '' }}" href="{{ url_for('resources.resources_page') }}">
+                    <i class="fas fa-fire"></i> 我的资源
+                </a>
+                <a class="nav-btn {{ 'is-active' if active_page == 'config' else '' }}" href="{{ url_for('system_config.system_config_page') }}">
+                    <i class="fas fa-cog"></i> 配置
+                </a>
+                <a class="nav-btn {{ 'is-active' if active_page == 'api' else '' }}" href="{{ url_for('api_config.config_page') }}">
+                    <i class="fas fa-code"></i> API
+                </a>
+                <a class="nav-btn" href="{{ url_for('auth.logout') }}">
+                    <i class="fas fa-sign-out-alt"></i> 退出
+                </a>
+                {% else %}
+                <a class="nav-btn" href="{{ url_for('search_index') }}">
+                    <i class="fas fa-arrow-left"></i> 返回前台
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block content %}{% endblock %}
+
+<div class="footer-container">
+    <div class="container-fluid-custom">
+        <div class="footer-copyright">
+            &copy; 小青搜剧后台管理
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/bootstrap-lite.js') }}"></script>
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

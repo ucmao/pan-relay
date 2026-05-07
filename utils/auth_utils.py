@@ -40,4 +40,3 @@ def token_required(f):
 
     return decorated
 
-

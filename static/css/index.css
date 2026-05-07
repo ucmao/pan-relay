@@ -52,17 +52,6 @@
     border-radius: var(--radius-2xl);
 }
 
-.search-shell::before {
-    content: "";
-    position: absolute;
-    inset: auto -80px -110px auto;
-    width: 280px;
-    height: 280px;
-    border-radius: 999px;
-    background: radial-gradient(circle, rgba(245, 191, 96, 0.22), transparent 68%);
-    pointer-events: none;
-}
-
 .search-shell-intro {
     position: relative;
     z-index: 1;
@@ -162,7 +151,15 @@
 }
 
 #searchButton i {
-    font-size: 1rem;
+    font-size: 1.1rem;
+    /* 稍微调大一点点更有力量感 */
+    color: #4A3728;
+    /* 这里替换成我上面建议的颜色，比如深棕色 */
+    transition: color 0.3s ease;
+}
+
+#searchButton:hover i {
+    color: #ffffff;
 }
 
 /* --- 结果区网盘徽章颜色（弱化显示，不与主按钮竞争） --- */
@@ -267,13 +264,15 @@
 
 .initial-icon-wrapper i {
     font-size: 1.75rem;
-    color: var(--brand);
+    /* color: var(--brand); */
+    color: #b7791f;
 }
 
 .initial-prompt-area h3 {
     font-size: 1.05rem;
     font-weight: 600;
-    color: var(--text-secondary) !important;
+    /* color: var(--text-secondary) !important; */
+    color: #64748b !important;
 }
 
 
@@ -455,13 +454,32 @@
 
 /* --- 搜索结果容器 --- */
 #scrollableResults {
+    position: relative;
     max-height: 80vh;
-    overflow-y: auto;
+    overflow-y: hidden;
+    overflow-x: hidden;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(248, 250, 252, 0.68));
     border: 1px solid rgba(148, 163, 184, 0.14);
     padding: 0 24px;
     border-radius: 24px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+#scrollableResults::after {
+    content: "";
+    position: absolute;
+    right: -72px;
+    bottom: -96px;
+    width: 280px;
+    height: 280px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(245, 191, 96, 0.2), transparent 68%);
+    pointer-events: none;
+}
+
+#scrollableResults>* {
+    position: relative;
+    z-index: 1;
 }
 
 .result-item {

@@ -1,90 +1,255 @@
-import requests
 import json
-import time
+import logging
 import re
+import time
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
+
+logger = logging.getLogger(__name__)
 
 
-class XunleiFinalBot:
-    def __init__(self, access_token, captcha_sign, user_id):
-        self.access_token = access_token
-        self.captcha_sign = captcha_sign
-        self.user_id = user_id  # 刚才抓包看到的 1409868053
+class XunleiDrive:
+    client_id = "Xqp0kJBXWhwaTpB6"
+    device_id = "925b7631473a13716b791d7f28289cad"
 
-        self.client_id = "Xqp0kJBXWhwaTpB6"
-        self.device_id = "579dad27c8640632b55cd2eaa3df9d47"
-
-        self.base_headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-            'x-client-id': self.client_id,
-            'x-device-id': self.device_id,
-        }
-
-    def _get_fresh_token(self, action):
-        """核心：用 Sign 自动换取最新的 Token"""
-        url = "https://xluser-ssl.xunlei.com/v1/shield/captcha/init"
-        payload = {
-            "client_id": self.client_id,
-            "action": action,
-            "device_id": self.device_id,
-            "meta": {
-                "package_name": "pan.xunlei.com",
-                "client_version": "1.92.23",
-                "captcha_sign": self.captcha_sign,
-                "timestamp": str(int(time.time() * 1000)),
-                "user_id": self.user_id
+    def __init__(self, credential: Dict[str, str]) -> None:
+        self.refresh_token = (credential.get("refresh_token") or "").strip()
+        self.captcha_sign = (credential.get("captcha_sign") or "").strip()
+        self.user_id = str(credential.get("user_id") or "").strip()
+        self.session = requests.Session()
+        self.session.headers.update(
+            {
+                "Accept": "*/*",
+                "Content-Type": "application/json",
+                "Origin": "https://pan.xunlei.com",
+                "Referer": "https://pan.xunlei.com/",
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/139.0.0.0 Safari/537.36"
+                ),
+                "x-client-id": self.client_id,
+                "x-device-id": self.device_id,
             }
-        }
-        res = requests.post(url, json=payload, headers=self.base_headers).json()
-        token = res.get('captcha_token')
-        if not token:
-            print(f"❌ 换取 Token 失败，Sign 可能已过期: {res}")
-        return token
+        )
+        self.access_token = ""
 
-    def run_transfer(self, target_url):
-        # 1. 自动生成第一个操作的 Token
-        token = self._get_fresh_token("get:/drive/v1/share")
-        headers = self.base_headers.copy()
-        headers['Authorization'] = f"Bearer {self.access_token}"
-        headers['x-captcha-token'] = token
+    def store(
+        self, share_url: str, to_dir: str = ""
+    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        share_id, pwd = self._parse_share_url(share_url)
+        if not share_id:
+            logger.error("迅雷网盘链接解析失败: %s", share_url)
+            return None, None, None
 
-        # 2. 解析链接
-        sid = re.search(r'/s/([^?#/]+)', target_url).group(1)
-        pwd = re.search(r'pwd=([a-zA-Z0-9]+)', target_url).group(1) if 'pwd=' in target_url else ""
+        access_token = self._get_access_token()
+        if not access_token:
+            logger.error("迅雷网盘获取 access_token 失败")
+            return None, None, None
 
-        # 3. 获取详情
-        print(f"📡 正在获取资源信息...")
-        detail = requests.get(f"https://api-pan.xunlei.com/drive/v1/share?share_id={sid}&pass_code={pwd}",
-                              headers=headers).json()
+        detail = self._request_pan(
+            "GET",
+            "https://api-pan.xunlei.com/drive/v1/share",
+            params={
+                "share_id": share_id,
+                "pass_code": pwd,
+                "limit": 100,
+                "pass_code_token": "",
+                "page_token": "",
+                "thumbnail_size": "SIZE_SMALL",
+            },
+            action="get:/drive/v1/share",
+        )
+        if not detail or detail.get("error_code"):
+            logger.error("迅雷网盘获取分享信息失败: %s", detail)
+            return None, None, None
+        if detail.get("share_status") and detail.get("share_status") != "OK":
+            logger.error("迅雷网盘分享状态异常: %s", detail)
+            return None, None, None
 
-        if 'pass_code_token' not in detail:
-            print(f"❌ 获取失败: {detail}")
-            return
+        file_ids = [item["id"] for item in detail.get("files", []) if item.get("id")]
+        if not file_ids or not detail.get("pass_code_token"):
+            logger.error("迅雷网盘分享详情缺少必要字段")
+            return None, None, None
 
-        # 4. 执行转存 (需要重新换一个 Restore 动作的 Token)
-        print(f"📦 正在转存文件: {detail['files'][0]['name']}")
-        headers['x-captcha-token'] = self._get_fresh_token("post:/drive/v1/share/restore")
+        restore_result = self._request_pan(
+            "POST",
+            "https://api-pan.xunlei.com/drive/v1/share/restore",
+            payload={
+                "parent_id": to_dir or "",
+                "share_id": share_id,
+                "pass_code_token": detail["pass_code_token"],
+                "ancestor_ids": [],
+                "specify_parent_id": True,
+                "file_ids": file_ids,
+            },
+            action="post:/drive/v1/share/restore",
+        )
+        if not restore_result or restore_result.get("error_code"):
+            logger.error("迅雷网盘转存失败: %s", restore_result)
+            return None, None, None
 
-        restore_payload = {
-            "parent_id": "", "share_id": sid, "pass_code_token": detail['pass_code_token'],
-            "file_ids": [f['id'] for f in detail['files']], "specify_parent_id": True
-        }
-        res_restore = requests.post("https://api-pan.xunlei.com/drive/v1/share/restore", json=restore_payload,
-                                    headers=headers).json()
+        task_result = self._wait_task(restore_result.get("restore_task_id"))
+        if not task_result or task_result.get("progress") != 100:
+            logger.error("迅雷网盘转存任务未完成: %s", task_result)
+            return None, None, None
 
-        # 5. 检查结果 (空间不足或异步等待)
-        if 'error' in res_restore:
-            print(f"❌ 转存失败: {res_restore.get('error_description')}")
-            return
+        trace_file_ids = []
+        raw_trace = ((task_result.get("params") or {}).get("trace_file_ids")) or ""
+        if raw_trace:
+            try:
+                parsed = json.loads(raw_trace)
+                if isinstance(parsed, dict):
+                    trace_file_ids = list(parsed.values())
+                elif isinstance(parsed, list):
+                    trace_file_ids = parsed
+            except json.JSONDecodeError:
+                trace_file_ids = []
 
-        print("✅ 任务已提交！请在 5 分钟后检查云盘。")
+        if not trace_file_ids:
+            logger.error("迅雷网盘未解析出转存后的文件 ID")
+            return None, None, None
 
+        share_result = self._request_pan(
+            "POST",
+            "https://api-pan.xunlei.com/drive/v1/share",
+            payload={
+                "file_ids": trace_file_ids,
+                "share_to": "copy",
+                "params": {
+                    "subscribe_push": "false",
+                    "WithPassCodeInLink": "true",
+                },
+                "title": "云盘资源分享",
+                "restore_limit": "-1",
+                "expiration_days": "-1",
+            },
+            action="post:/drive/v1/share",
+        )
+        if not share_result or share_result.get("error_code") or not share_result.get("share_url"):
+            logger.error("迅雷网盘创建分享失败: %s", share_result)
+            return None, None, None
 
-# --- 填入你的真实数据 ---
-# 注意：captcha_sign 建议使用你刚抓到的那个
-ACCESS_TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjFhOGQ5NWE3LTEyN2ItNDQwNC1hY2E5LWEyNWVkMGVlNzE0ZSJ9.eyJpc3MiOiJodHRwczovL3hsdXNlci1zc2wueHVubGVpLmNvbSIsInN1YiI6IjE0MDk4NjgwNTMiLCJhdWQiOiJYcXAwa0pCWFdod2FUcEI2IiwiZXhwIjoxNzY2NjIwNTM5LCJpYXQiOjE3NjY1NzczMzksImF0X2hhc2giOiJyLmZoakdVZWw2UjlPU0YtT29wVG1wZnciLCJzY29wZSI6InByb2ZpbGUgcGFuIHNzbyB1c2VyIiwicHJvamVjdF9pZCI6IjJydms0ZTNna2RubDd1MWtsMGsiLCJtZXRhIjp7ImEiOiIwdlo0akhhdWF1WC9KY0pjRzNHbDhqYUU1TjVBeGwraGxjK25nWWdkZU5rPSJ9fQ.Gw-ryA1QT2zj1FXXd9w6Hu8w7lb1m1EVIacx6A0XaEnwqDJ7rBrgjEljP35mYcY1IV5q3_cWhnq80TWjIOF5O6cC38Zux6rKIFLjD1ncvwvbW3pchKduMutDkvMcRJZNV8cQrgO-0bHuVDuYMuXBOTjIa_uV2IbKcAeA8Fx26Ie_MCCxPMd3zMFxFOKMfk_q-nRgIxDpwxb5aqnKB6ECFHAanvprAtVa0hx6wLvIeeH3WKSiKiOAZKwvaTjEkmdD_46fZYUX4gd1EFwMNkf6xM76nocnuCZEq9ZiZRqjJeDFV085FO2N3K0dhmuWWId8ZkRBSdqeMBNQgNSgZD-Kjg"
-CAPTCHA_SIGN = "1.6da918dc3271201eba8168c3b0f2ca8e"
-USER_ID = "1409868053"
+        final_url = share_result["share_url"]
+        if share_result.get("pass_code"):
+            final_url = f"{final_url}?pwd={share_result['pass_code']}"
 
-bot = XunleiFinalBot(ACCESS_TOKEN, CAPTCHA_SIGN, USER_ID)
-bot.run_transfer("https://pan.xunlei.com/s/VOMBtWJjnAyAySJUsQTGuMdhA1?pwd=fprf")
+        title = (detail.get("files") or [{}])[0].get("name") or "迅雷网盘资源"
+        return json.dumps(trace_file_ids, ensure_ascii=False), title, final_url
+
+    def del_file(self, file_ids: List[str]) -> bool:
+        normalized_ids = [item for item in file_ids if item]
+        if not normalized_ids:
+            return False
+
+        result = self._request_pan(
+            "POST",
+            "https://api-pan.xunlei.com/drive/v1/files:batchDelete",
+            payload={"ids": normalized_ids, "space": ""},
+            action="post:/drive/v1/files:batchDelete",
+        )
+        if result is None:
+            return False
+        return not bool(result.get("error_code"))
+
+    def _get_access_token(self) -> str:
+        if self.access_token:
+            return self.access_token
+
+        response = requests.post(
+            "https://xluser-ssl.xunlei.com/v1/auth/token",
+            json={
+                "client_id": self.client_id,
+                "grant_type": "refresh_token",
+                "refresh_token": self.refresh_token,
+            },
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": self.session.headers["User-Agent"],
+                "x-client-id": self.client_id,
+                "x-device-id": self.device_id,
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        data = response.json()
+        self.access_token = data.get("access_token", "")
+        return self.access_token
+
+    def _get_captcha_token(self, action: str) -> str:
+        response = requests.post(
+            "https://xluser-ssl.xunlei.com/v1/shield/captcha/init",
+            json={
+                "client_id": self.client_id,
+                "action": action,
+                "device_id": self.device_id,
+                "meta": {
+                    "package_name": "pan.xunlei.com",
+                    "client_version": "1.92.23",
+                    "captcha_sign": self.captcha_sign,
+                    "timestamp": str(int(time.time() * 1000)),
+                    "user_id": self.user_id,
+                },
+            },
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": self.session.headers["User-Agent"],
+                "x-client-id": self.client_id,
+                "x-device-id": self.device_id,
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        return response.json().get("captcha_token", "")
+
+    def _wait_task(self, task_id: str, retries: int = 20) -> Optional[Dict[str, Any]]:
+        if not task_id:
+            return None
+        for _ in range(retries):
+            result = self._request_pan(
+                "GET",
+                f"https://api-pan.xunlei.com/drive/v1/tasks/{task_id}",
+                action="get:/drive/v1/tasks",
+            )
+            if result and not result.get("error_code") and result.get("progress") == 100:
+                return result
+            time.sleep(0.5)
+        return result if "result" in locals() else None
+
+    def _request_pan(
+        self,
+        method: str,
+        url: str,
+        payload: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        action: str = "get:/drive/v1/share",
+    ) -> Optional[Dict[str, Any]]:
+        access_token = self._get_access_token()
+        captcha_token = self._get_captcha_token(action)
+        if not access_token or not captcha_token:
+            return None
+
+        headers = dict(self.session.headers)
+        headers["Authorization"] = f"Bearer {access_token}"
+        headers["x-captcha-token"] = captcha_token
+
+        response = self.session.request(
+            method,
+            url,
+            json=payload if payload is not None else None,
+            params=params,
+            headers=headers,
+            timeout=20,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    @staticmethod
+    def _parse_share_url(url: str) -> Tuple[str, str]:
+        share_match = re.search(r"/s/([^?#/]+)", url)
+        pwd_match = re.search(r"pwd=([a-zA-Z0-9]+)", url)
+        return (
+            share_match.group(1) if share_match else "",
+            pwd_match.group(1) if pwd_match else "",
+        )

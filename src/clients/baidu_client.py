@@ -1,317 +1,288 @@
-import requests
+import logging
+import random
 import re
 import time
-import json
-import random
-import logging
-from typing import Tuple, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+
+import requests
 
 logger = logging.getLogger(__name__)
 
 
 class Baidu:
-    """
-    百度网盘客户端封装
-    """
-
-    def __init__(self, cookie: str) -> None:
+    def __init__(self, credential: str) -> None:
         self.session = requests.Session()
-        self.headers = {
-            'Host': 'pan.baidu.com',
-            'Connection': 'keep-alive',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
-            'Referer': 'https://pan.baidu.com/disk/home',
-            'Cookie': cookie
-        }
-        self.session.headers.update(self.headers)
-        # 获取 bdstoken 用于后续操作（部分操作需要，部分不需要，预留）
+        self.session.headers.update(
+            {
+                "Host": "pan.baidu.com",
+                "Connection": "keep-alive",
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/114.0.0.0 Safari/537.36"
+                ),
+                "Referer": "https://pan.baidu.com/disk/home",
+                "Cookie": credential,
+            }
+        )
         self.bdstoken = self._get_bdstoken()
 
-    def store(self, share_url: str, to_dir: str = '/') -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        """
-        转存分享链接并重新分享
-        :param share_url: 原始分享链接 (支持标准格式和带空格提取码格式)
-        :param to_dir: 转存目标目录，默认为根目录
-        :return: (文件路径, 文件名, 新分享链接)
-        """
+    def store(
+        self, share_url: str, to_dir: str = "/"
+    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         try:
-            # 1. 解析链接和提取码
             surl, pwd = self._parse_share_url(share_url)
             if not surl:
-                logger.error(f"百度链接解析失败: {share_url}")
+                logger.error("百度网盘链接解析失败: %s", share_url)
                 return None, None, None
 
-            # 2. 验证提取码 (如果有)
-            if pwd:
-                if not self._verify_pwd(surl, pwd):
-                    logger.error(f"百度提取码验证失败: {surl} {pwd}")
-                    return None, None, None
-
-            # 3. 获取分享文件详情 (解析HTML)
-            info = self._get_share_page_info(surl)
-            if not info:
-                logger.error("无法获取百度分享页面详情")
+            if pwd and not self._verify_pwd(surl, pwd):
+                logger.error("百度网盘提取码验证失败: surl=%s", surl)
                 return None, None, None
 
-            shareid, from_uk, fs_id_list, file_names = info
+            share_info = self._get_share_page_info(surl)
+            if not share_info:
+                logger.error("百度网盘无法获取分享页面详情")
+                return None, None, None
 
-            # 目前逻辑只处理单文件转存，取第一个
+            share_id, from_uk, fs_id_list, file_names = share_info
             target_fs_id = fs_id_list[0]
             file_name = file_names[0]
 
-            # 4. 执行转存
-            if not self._transfer_file(shareid, from_uk, [target_fs_id], to_dir):
-                logger.error(f"转存文件失败: {file_name}")
+            if not self._transfer_file(share_id, from_uk, [target_fs_id], to_dir):
+                logger.error("百度网盘转存失败: %s", file_name)
                 return None, None, None
 
-            # 5. 获取转存后的新文件信息 (为了获取新的 fs_id 用于分享)
-            # 百度转存后 fs_id 会变，且转存接口不直接返回新 fs_id，需要去目标目录查询
-            full_path = f"{to_dir.rstrip('/')}/{file_name}" if to_dir != '/' else f"/{file_name}"
+            full_path = f"{to_dir.rstrip('/')}/{file_name}" if to_dir != "/" else f"/{file_name}"
             new_fs_id = self._get_file_id_by_path(full_path)
-
             if not new_fs_id:
-                logger.error(f"无法获取转存后的文件ID: {full_path}")
-                # 尝试用原始路径返回，虽然可能导致后续分享失败，但文件已存
+                logger.error("百度网盘未找到转存后的文件 ID: %s", full_path)
                 return full_path, file_name, ""
 
-            # 6. 创建新的分享链接
             new_share_link = self._create_share(new_fs_id)
             if not new_share_link:
-                logger.error("创建新分享失败")
+                logger.error("百度网盘创建新分享失败: %s", full_path)
                 return full_path, file_name, ""
 
-            # 注意：这里返回 full_path 作为 file_id，因为百度的删除接口通常需要路径
             return full_path, file_name, new_share_link
-
-        except Exception as e:
-            logger.error(f"百度网盘 Store 操作异常: {e}")
+        except Exception as exc:
+            logger.exception("百度网盘 store 异常: %s", exc)
             return None, None, None
 
     def del_file(self, file_path_list: List[str]) -> bool:
-        """
-        删除文件
-        :param file_path_list: 文件路径列表 ["/我的资源/1.mp4"]
-        """
-        logger.info(f"正在删除百度网盘文件: {file_path_list}")
-        url = "https://pan.baidu.com/api/filemanager"
+        logger.info("正在删除百度网盘文件: %s", file_path_list)
         params = {
-            # 使用您实测成功的参数
             "async": 2,
             "onnest": "fail",
-            # 使用您实测成功的 opera 参数
             "opera": "delete",
             "bdstoken": self.bdstoken,
-            # 新增实测 URL 中的参数
             "newVerify": 1,
             "clienttype": 0,
             "web": 1,
             "app_id": 250528,
-            # 删除了 dp-logid，因为它通常是动态生成且非必需
         }
-
-        # 修正 payload 格式：使用 json.dumps 确保路径中的特殊字符正确转义，
-        # 并保持 ensure_ascii=False 以避免中文问题。
-        payload = {"filelist": json.dumps(file_path_list, ensure_ascii=False)}
+        payload = {"filelist": self._to_json(file_path_list)}
 
         try:
-            # 百度删除接口通常需要 POST 表单数据
-            res = self.session.post(url, params=params, data=payload)
-            data = res.json()
-
-            if data.get("errno") == 0:
-                # errno 0 表示删除请求已成功提交，即使是异步任务也视为成功
-                logger.info(f"文件删除请求提交成功 (Task ID: {data.get('taskid')})")
+            data = self._request(
+                "POST",
+                "https://pan.baidu.com/api/filemanager",
+                params=params,
+                data=payload,
+            )
+            errno = data.get("errno")
+            if errno == 0:
+                logger.info("百度网盘删除请求已提交: task=%s", data.get("taskid"))
                 return True
-            # errno 2: 文件不存在，可能是重复删除，也可以视为成功
-            elif data.get("errno") == 2:
-                logger.warning(f"文件不存在 (errno: 2)，可能已被删除: {file_path_list}")
+            if errno == 2:
+                logger.warning("百度网盘文件不存在，按删除成功处理: %s", file_path_list)
                 return True
-            else:
-                logger.error(f"文件删除请求失败, errno: {data.get('errno')}, 错误详情: {data}")
-                return False
-        except Exception as e:
-            logger.error(f"删除请求异常: {e}")
+            logger.error("百度网盘删除失败: %s", data)
+            return False
+        except Exception as exc:
+            logger.error("百度网盘删除请求异常: %s", exc)
             return False
 
-    # ================= 内部辅助方法 =================
-
     def _get_bdstoken(self) -> str:
-        """简单的获取 bdstoken，如果失败返回空字符串，不影响大部分操作"""
         try:
-            url = "https://pan.baidu.com/api/gettemplatevariable?fields=[%22bdstoken%22]"
-            res = self.session.get(url)
-            return res.json().get("result", {}).get("bdstoken", "")
-        except:
+            data = self._request(
+                "GET",
+                "https://pan.baidu.com/api/gettemplatevariable?fields=[%22bdstoken%22]",
+            )
+            return (data.get("result") or {}).get("bdstoken", "")
+        except Exception:
             return ""
 
     def _parse_share_url(self, url: str) -> Tuple[str, str]:
-        """解析链接，返回 (surl, pwd)"""
-        # 提取 surl (1xxxxxx)
-        m_surl = re.search(r's/1([a-zA-Z0-9-_]+)', url)
-        if not m_surl:
-            m_surl = re.search(r'surl=([a-zA-Z0-9-_]+)', url)  # 兼容 old format
+        surl_match = re.search(r"s/1([a-zA-Z0-9-_]+)", url) or re.search(
+            r"surl=([a-zA-Z0-9-_]+)", url
+        )
+        surl = surl_match.group(1) if surl_match else ""
+        if not surl and "baidu.com/s/" in url:
+            candidate = url.split("baidu.com/s/")[-1].split(" ")[0]
+            surl = candidate[1:] if candidate.startswith("1") else candidate
 
-        surl = m_surl.group(1) if m_surl else ""
-        if not surl:
-            # 尝试直接从完整链接截取
-            if 'baidu.com/s/' in url:
-                surl = url.split('baidu.com/s/')[-1].split(' ')[0]
-                if surl.startswith('1'):
-                    surl = surl[1:]  # 百度API通常只要 s/1 后面的部分
+        pwd_match = re.search(r"[?&]pwd=([a-zA-Z0-9]{4})", url)
+        if pwd_match:
+            return surl, pwd_match.group(1)
 
-        # 提取提取码
-        pwd = ""
-        if 'pwd=' in url:
-            pwd = url.split('pwd=')[-1].split('&')[0].strip()[:4]
-        elif '提取码' in url:
-            # 简单粗暴提取最后4位，或按空格分割
-            parts = url.split(' ')
-            for p in parts:
-                if len(p.strip()) == 4 and p.isalnum():
-                    pwd = p.strip()
+        code_match = re.search(r"提取码[:： ]*([a-zA-Z0-9]{4})", url)
+        if code_match:
+            return surl, code_match.group(1)
 
-        return surl, pwd
+        return surl, ""
 
     def _verify_pwd(self, surl: str, pwd: str) -> bool:
-        """验证提取码并设置 Cookie"""
-        url = "https://pan.baidu.com/share/verify"
         params = {
             "surl": surl,
             "t": int(time.time() * 1000),
             "bdstoken": self.bdstoken,
             "channel": "chunlei",
             "clienttype": 0,
-            "web": 1
+            "web": 1,
         }
-        data = {"pwd": pwd, "vcode": "", "vcode_str": ""}
+        payload = {"pwd": pwd, "vcode": "", "vcode_str": ""}
         try:
-            res = self.session.post(url, params=params, data=data)
-            js = res.json()
-            if js.get("errno") == 0:
+            data = self._request(
+                "POST",
+                "https://pan.baidu.com/share/verify",
+                params=params,
+                data=payload,
+            )
+            if data.get("errno") == 0:
                 return True
-            logger.warning(f"验证码错误: {js}")
+            logger.warning("百度网盘提取码校验失败: %s", data)
             return False
-        except Exception as e:
-            logger.error(f"验证请求异常: {e}")
+        except Exception as exc:
+            logger.error("百度网盘提取码验证异常: %s", exc)
             return False
 
-    def _get_share_page_info(self, surl: str) -> Optional[tuple]:
-        """访问分享页 HTML 提取必要参数"""
-        url = f"https://pan.baidu.com/s/1{surl}"
+    def _get_share_page_info(
+        self, surl: str
+    ) -> Optional[Tuple[str, str, List[str], List[str]]]:
         try:
-            res = self.session.get(url)
-            html = res.text
+            response = self.session.get(f"https://pan.baidu.com/s/1{surl}", timeout=20)
+            response.raise_for_status()
+            html = response.text
 
-            # 正则提取
-            shareid = re.search(r'"shareid":(\d+),', html)
-            uk = re.search(r'"share_uk":"?(\d+)"?,', html)
-            fs_ids = re.findall(r'"fs_id":(\d+),', html)
-            filenames = re.findall(r'"server_filename":"(.+?)",', html)
+            share_id = re.search(r'"shareid":(\d+),', html)
+            share_uk = re.search(r'"share_uk":"?(\d+)"?,', html)
+            fs_ids = list(dict.fromkeys(re.findall(r'"fs_id":(\d+),', html)))
+            file_names = list(dict.fromkeys(re.findall(r'"server_filename":"(.+?)",', html)))
 
-            if shareid and uk and fs_ids:
-                # 去重 fs_ids 和 filenames
-                fs_ids = list(dict.fromkeys(fs_ids))
-                filenames = list(dict.fromkeys(filenames))
-                return shareid.group(1), uk.group(1), fs_ids, filenames
+            if share_id and share_uk and fs_ids and file_names:
+                return share_id.group(1), share_uk.group(1), fs_ids, file_names
             return None
-        except Exception as e:
-            logger.error(f"解析页面异常: {e}")
+        except Exception as exc:
+            logger.error("百度网盘解析分享页面异常: %s", exc)
             return None
 
-    def _transfer_file(self, shareid: str, from_uk: str, fs_id_list: list, to_path: str) -> bool:
-        """转存文件"""
-        url = "https://pan.baidu.com/share/transfer"
+    def _transfer_file(self, share_id: str, from_uk: str, fs_id_list: List[str], to_path: str) -> bool:
         params = {
-            "shareid": shareid,
+            "shareid": share_id,
             "from": from_uk,
-            "ondup": "newcopy",  # 遇到重名自动重命名
+            "ondup": "newcopy",
             "async": 1,
             "bdstoken": self.bdstoken,
             "channel": "chunlei",
             "clienttype": 0,
             "web": 1,
-            "app_id": 250528
+            "app_id": 250528,
         }
-        data = {
-            "fsidlist": f"[{','.join(str(x) for x in fs_id_list)}]",
-            "path": to_path
+        payload = {
+            "fsidlist": f"[{','.join(str(item) for item in fs_id_list)}]",
+            "path": to_path,
         }
         try:
-            res = self.session.post(url, params=params, data=data)
-            js = res.json()
-            if js.get("errno") == 0:
+            data = self._request(
+                "POST",
+                "https://pan.baidu.com/share/transfer",
+                params=params,
+                data=payload,
+            )
+            if data.get("errno") == 0:
                 return True
-            logger.error(f"转存API返回错误: {js}")
+            logger.error("百度网盘转存接口返回错误: %s", data)
             return False
-        except Exception as e:
-            logger.error(f"转存请求异常: {e}")
+        except Exception as exc:
+            logger.error("百度网盘转存请求异常: %s", exc)
             return False
 
     def _get_file_id_by_path(self, path: str) -> Optional[int]:
-        """根据路径获取文件的 fs_id (用于转存后分享)"""
-        # 获取父目录和文件名
-        if path == '/': return None
-        if path.endswith('/'): path = path[:-1]
+        if path == "/":
+            return None
 
-        dir_path, filename = path.rsplit('/', 1)
-        if not dir_path: dir_path = '/'
+        normalized_path = path[:-1] if path.endswith("/") else path
+        dir_path, filename = normalized_path.rsplit("/", 1)
+        dir_path = dir_path or "/"
 
-        url = "https://pan.baidu.com/api/list"
         params = {
             "dir": dir_path,
             "bdstoken": self.bdstoken,
             "clienttype": 0,
             "web": 1,
             "page": 1,
-            "num": 1000,  # 假设文件在前1000个
+            "num": 1000,
             "order": "time",
-            "desc": 1
+            "desc": 1,
         }
         try:
-            res = self.session.get(url, params=params)
-            js = res.json()
-            if js.get("errno") != 0:
+            data = self._request("GET", "https://pan.baidu.com/api/list", params=params)
+            if data.get("errno") != 0:
                 return None
-
-            file_list = js.get("list", [])
-            for f in file_list:
-                if f.get("server_filename") == filename:
-                    return f.get("fs_id")
+            for item in data.get("list", []):
+                if item.get("server_filename") == filename:
+                    return item.get("fs_id")
             return None
-        except Exception as e:
-            logger.error(f"查询文件ID异常: {e}")
+        except Exception as exc:
+            logger.error("百度网盘按路径查询文件 ID 异常: %s", exc)
             return None
 
     def _create_share(self, fs_id: int) -> Optional[str]:
-        """创建分享链接"""
-        url = "https://pan.baidu.com/share/set"
         params = {
             "bdstoken": self.bdstoken,
             "channel": "chunlei",
             "clienttype": 0,
             "web": 1,
-            "app_id": 250528
+            "app_id": 250528,
         }
-        data = {
+        pwd = "".join(random.sample("0123456789abcdefghijklmnopqrstuvwxyz", 4))
+        payload = {
             "fid_list": f"[{fs_id}]",
             "schannel": 4,
             "channel_list": "[]",
-            "period": 0  # 0 为永久
+            "period": 0,
+            "pwd": pwd,
         }
 
-        # 生成4位随机提取码
-        pwd = ''.join(random.sample('0123456789abcdefghijklmnopqrstuvwxyz', 4))
-        data["pwd"] = pwd
-
         try:
-            res = self.session.post(url, params=params, data=data)
-            js = res.json()
-            if js.get("errno") == 0:
-                short_link = js.get("shorturl")
-                # 组合成完整链接
-                return f"{short_link}?pwd={pwd}"  # 或者返回 "link pwd" 格式，根据需求调整
-            logger.error(f"创建分享失败: {js}")
+            data = self._request(
+                "POST",
+                "https://pan.baidu.com/share/set",
+                params=params,
+                data=payload,
+            )
+            if data.get("errno") == 0 and data.get("shorturl"):
+                return f"{data['shorturl']}?pwd={pwd}"
+            logger.error("百度网盘创建分享失败: %s", data)
             return None
-        except Exception as e:
-            logger.error(f"创建分享请求异常: {e}")
+        except Exception as exc:
+            logger.error("百度网盘创建分享请求异常: %s", exc)
             return None
+
+    def _request(
+        self,
+        method: str,
+        url: str,
+        params: Optional[Dict[str, Any]] = None,
+        data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        response = self.session.request(method, url, params=params, data=data, timeout=20)
+        response.raise_for_status()
+        return response.json()
+
+    @staticmethod
+    def _to_json(value: Any) -> str:
+        import json
+
+        return json.dumps(value, ensure_ascii=False)

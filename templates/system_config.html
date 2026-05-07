@@ -1,4 +1,4 @@
-{% extends "_layout.html" %}
+{% extends "admin_layout.html" %}
 {% set active_page = 'config' %}
 
 {% block head %}
@@ -151,13 +151,13 @@
         <div class="card-body">
             <div class="panel-header panel-header-inline">
                 <div>
-                    <h2 class="panel-title">云盘 Cookie</h2>
-                    <p class="panel-description">用于后台转存、动态查看和临时分享。Cookie 只在服务端保存和使用。</p>
+                        <h2 class="panel-title">云盘凭证</h2>
+                        <p class="panel-description">用于后台转存、动态查看和临时分享。不同网盘可填写 Cookie 或 refresh token，均只在服务端保存和使用。</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
+                    <i class="fas fa-save me-1"></i> 保存凭证
+                    </button>
                 </div>
-                <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
-                    <i class="fas fa-save me-1"></i> 保存 Cookie
-                </button>
-            </div>
             <div class="row g-3 cookie-grid">
                 <div class="col-lg-6">
                     <label for="baiduCookie" class="form-label fw-semibold">百度网盘 Cookie</label>
@@ -166,6 +166,26 @@
                 <div class="col-lg-6">
                     <label for="quarkCookie" class="form-label fw-semibold">夸克网盘 Cookie</label>
                     <textarea class="form-control" id="quarkCookie" rows="8" placeholder="请输入夸克网盘的 Cookie"></textarea>
+                </div>
+                <div class="col-lg-6">
+                    <label for="aliyunToken" class="form-label fw-semibold">阿里云盘 Refresh Token</label>
+                    <textarea class="form-control" id="aliyunToken" rows="8" placeholder="请输入阿里云盘的 refresh_token"></textarea>
+                </div>
+                <div class="col-lg-6">
+                    <label for="ucCookie" class="form-label fw-semibold">UC 网盘 Cookie</label>
+                    <textarea class="form-control" id="ucCookie" rows="8" placeholder="请输入 UC 网盘的 Cookie"></textarea>
+                </div>
+                <div class="col-lg-6">
+                    <label for="xunleiRefreshToken" class="form-label fw-semibold">迅雷网盘 Refresh Token</label>
+                    <textarea class="form-control" id="xunleiRefreshToken" rows="5" placeholder="请输入迅雷网盘的 refresh_token"></textarea>
+                </div>
+                <div class="col-lg-6">
+                    <label for="xunleiCaptchaSign" class="form-label fw-semibold">迅雷网盘 Captcha Sign</label>
+                    <textarea class="form-control" id="xunleiCaptchaSign" rows="5" placeholder="请输入 captcha_sign"></textarea>
+                </div>
+                <div class="col-lg-6">
+                    <label for="xunleiUserId" class="form-label fw-semibold">迅雷网盘 User ID</label>
+                    <input class="form-control" id="xunleiUserId" placeholder="请输入 user_id">
                 </div>
             </div>
         </div>

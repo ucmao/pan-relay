@@ -1,12 +1,14 @@
 # routes/auth.py
 
 from flask import Blueprint, render_template, redirect, request, url_for
+import jwt
 import logging
 
 logger = logging.getLogger(__name__)
 
 # 导入应用配置
 from configs.app_config import ADMIN_USERNAME, ADMIN_PASSWORD
+from configs.app_config import SECRET_KEY
 from utils.auth_utils import create_jwt_token
 
 auth_bp = Blueprint('auth', __name__)
@@ -14,6 +16,14 @@ auth_bp = Blueprint('auth', __name__)
 # 登录页面路由
 @auth_bp.route('/admin', methods=['GET', 'POST'])
 def login():
+    token = request.cookies.get('token')
+    if request.method == 'GET' and token:
+        try:
+            jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            return redirect(url_for('resources.resources_page'))
+        except jwt.PyJWTError:
+            pass
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -22,8 +32,8 @@ def login():
             # 创建JWT令牌
             token = create_jwt_token()
             
-            # 创建响应对象，重定向到系统配置页面
-            response = redirect(url_for('system_config.system_config_page'))
+            # 创建响应对象，重定向到后台资源页
+            response = redirect(url_for('resources.resources_page'))
             # 设置JWT令牌到cookie
             response.set_cookie('token', token, httponly=True)
             
@@ -37,6 +47,7 @@ def login():
 
 # 登出路由
 @auth_bp.route('/logout')
+@auth_bp.route('/admin/logout')
 def logout():
     response = redirect(url_for('search_index'))
     # 删除JWT令牌cookie

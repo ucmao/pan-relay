@@ -15,14 +15,14 @@ logger = logging.getLogger(__name__)
 resources_bp = Blueprint("resources", __name__)
 
 
-@resources_bp.route("/hot-resource")
+@resources_bp.route("/admin/resources")
 @token_required
 def resources_page():
     """资源管理页面，需要JWT验证"""
     return render_template("hot_resource.html")
 
 
-@resources_bp.route("/api/resources", methods=["GET"])
+@resources_bp.route("/admin/api/resources", methods=["GET"])
 @token_required
 def get_resources():
     """获取资源列表，支持分页和搜索功能"""
@@ -36,7 +36,7 @@ def get_resources():
     return jsonify({"success": True, "data": data})
 
 
-@resources_bp.route("/api/resources/<int:resource_id>", methods=["GET"])
+@resources_bp.route("/admin/api/resources/<int:resource_id>", methods=["GET"])
 @token_required
 def get_resource(resource_id):
     """获取单个资源详情"""
@@ -47,7 +47,7 @@ def get_resource(resource_id):
     return jsonify({"success": True, "data": resource})
 
 
-@resources_bp.route("/api/resources", methods=["POST"])
+@resources_bp.route("/admin/api/resources", methods=["POST"])
 @token_required
 def add_resource():
     """添加新资源"""
@@ -59,7 +59,7 @@ def add_resource():
     return jsonify({"success": True, "message": message, "id": new_id}), 201
 
 
-@resources_bp.route("/api/resources/<int:resource_id>", methods=["PUT"])
+@resources_bp.route("/admin/api/resources/<int:resource_id>", methods=["PUT"])
 @token_required
 def update_resource(resource_id):
     """更新资源信息"""
@@ -71,7 +71,7 @@ def update_resource(resource_id):
     return jsonify({"success": True, "message": message})
 
 
-@resources_bp.route("/api/resources/<int:resource_id>", methods=["DELETE"])
+@resources_bp.route("/admin/api/resources/<int:resource_id>", methods=["DELETE"])
 @token_required
 def delete_resource(resource_id):
     """删除资源"""
