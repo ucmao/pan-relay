@@ -1,9 +1,9 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from mysql.connector import Error
+from pymysql.cursors import DictCursor
 
-from src.db.connection import get_db_connection
+from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def get_all_cookies() -> List[Dict[str, Any]]:
     query = "SELECT id, cloud_name, cookie, created_at, updated_at FROM cookie_config ORDER BY created_at DESC"
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         cursor.execute(query)
         results = cursor.fetchall()
 
@@ -35,9 +35,8 @@ def get_all_cookies() -> List[Dict[str, Any]]:
     except Error as err:
         logger.error(f"查询云盘凭证配置时出错: {err}")
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
     return cookies
 
@@ -52,7 +51,7 @@ def get_cookie_by_cloud_name(cloud_name: str) -> Optional[str]:
     query = "SELECT cookie FROM cookie_config WHERE cloud_name = %s"
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         cursor.execute(query, (cloud_name,))
         result = cursor.fetchone()
         return result["cookie"] if result else None
@@ -60,9 +59,8 @@ def get_cookie_by_cloud_name(cloud_name: str) -> Optional[str]:
         logger.error(f"根据云盘名称查询凭证时出错: {err}")
         return None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 def save_cookie(cloud_name: str, cookie: str) -> Tuple[bool, str]:
     """
@@ -98,9 +96,8 @@ def save_cookie(cloud_name: str, cookie: str) -> Tuple[bool, str]:
         conn.rollback()
         return False, f"云盘凭证配置{action}失败: {err}"
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 def delete_cookie(cloud_name: str) -> Tuple[bool, str]:
     """
@@ -128,6 +125,5 @@ def delete_cookie(cloud_name: str) -> Tuple[bool, str]:
         conn.rollback()
         return False, f"云盘凭证配置删除失败: {err}"
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()

@@ -1,9 +1,9 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from mysql.connector import Error
+from pymysql.cursors import DictCursor
 
-from src.db.connection import get_db_connection
+from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -43,9 +43,8 @@ def ensure_temp_share_table() -> bool:
         conn.rollback()
         return False
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def get_active_temp_share(original_url: str, cloud_name: str) -> Optional[Dict[str, Any]]:
@@ -57,7 +56,7 @@ def get_active_temp_share(original_url: str, cloud_name: str) -> Optional[Dict[s
         return None
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         cursor.execute(
             """
             SELECT id, original_url, title, cloud_name, temp_share_url, file_id, status, expires_at
@@ -76,9 +75,8 @@ def get_active_temp_share(original_url: str, cloud_name: str) -> Optional[Dict[s
         logger.error(f"查询有效临时分享失败: {err}")
         return None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def touch_temp_share(record_id: int) -> bool:
@@ -99,9 +97,8 @@ def touch_temp_share(record_id: int) -> bool:
         conn.rollback()
         return False
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def create_temp_share_record(
@@ -137,9 +134,8 @@ def create_temp_share_record(
         conn.rollback()
         return None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def list_expired_temp_shares(limit: int = 50) -> List[Dict[str, Any]]:
@@ -151,7 +147,7 @@ def list_expired_temp_shares(limit: int = 50) -> List[Dict[str, Any]]:
         return []
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         cursor.execute(
             """
             SELECT id, original_url, title, cloud_name, temp_share_url, file_id
@@ -168,9 +164,8 @@ def list_expired_temp_shares(limit: int = 50) -> List[Dict[str, Any]]:
         logger.error(f"查询过期临时分享失败: {err}")
         return []
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def mark_temp_share_deleted(record_id: int) -> bool:
@@ -195,6 +190,5 @@ def mark_temp_share_deleted(record_id: int) -> bool:
         conn.rollback()
         return False
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()

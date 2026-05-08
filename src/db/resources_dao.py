@@ -1,9 +1,9 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from mysql.connector import Error
+from pymysql.cursors import DictCursor
 
-from src.db.connection import db_cursor, get_db_connection
+from src.db.connection import Error, db_cursor, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +146,7 @@ def list_resources(
         return False, "数据库连接失败", None
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
 
         where_clause = " WHERE 1=1 "
         params: List[Any] = []
@@ -191,9 +191,8 @@ def list_resources(
         logger.error(f"获取资源列表时出错: {err}")
         return False, f"获取资源列表失败: {err}", None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
@@ -203,7 +202,7 @@ def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, 
         return False, "数据库连接失败", None
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         sql = """
         SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, created_at, updated_at
         FROM resources WHERE id = %s
@@ -223,9 +222,8 @@ def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, 
         logger.error(f"获取资源时出错: {err}")
         return False, f"获取资源失败: {err}", None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def insert_resource_simple(resource_data: Dict[str, Any]) -> Tuple[bool, str, Optional[int]]:
@@ -259,9 +257,8 @@ def insert_resource_simple(resource_data: Dict[str, Any]) -> Tuple[bool, str, Op
         conn.rollback()
         return False, f"资源添加失败: {err}", None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def update_resource_basic_info(resource_id: int, resource_data: Dict[str, Any]) -> Tuple[bool, str]:
@@ -299,9 +296,8 @@ def update_resource_basic_info(resource_id: int, resource_data: Dict[str, Any]) 
         conn.rollback()
         return False, f"资源更新失败: {err}"
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def delete_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
@@ -314,7 +310,7 @@ def delete_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[st
         return False, "数据库连接失败", None
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
 
         check_sql = "SELECT share_link, file_id FROM resources WHERE id = %s"
         cursor.execute(check_sql, (resource_id,))
@@ -336,9 +332,8 @@ def delete_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[st
         conn.rollback()
         return False, f"资源删除失败: {err}", None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def search_resources_by_keyword(keyword: str) -> List[Tuple[str, str, Optional[str]]]:
@@ -360,9 +355,8 @@ def search_resources_by_keyword(keyword: str) -> List[Tuple[str, str, Optional[s
         logger.error(f"搜索资源时出错: {err}")
         return []
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def search_resources_advanced(
@@ -380,7 +374,7 @@ def search_resources_advanced(
         return False, "数据库连接失败", []
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
 
         conditions = []
         params = []
@@ -424,8 +418,6 @@ def search_resources_advanced(
         logger.error(f"数据库查询错误: {err}")
         return False, f"数据库查询错误: {err}", []
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
-
+        cursor.close()
+        conn.close()
 

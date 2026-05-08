@@ -2,9 +2,9 @@ import json
 import logging
 from typing import Any, Dict, Optional
 
-from mysql.connector import Error
+from pymysql.cursors import DictCursor
 
-from src.db.connection import get_db_connection
+from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +34,8 @@ def ensure_system_config_table() -> bool:
         conn.rollback()
         return False
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def get_config_value(config_key: str) -> Optional[str]:
@@ -48,7 +47,7 @@ def get_config_value(config_key: str) -> Optional[str]:
         return None
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         cursor.execute(
             "SELECT config_value FROM system_config WHERE config_key = %s",
             (config_key,),
@@ -59,9 +58,8 @@ def get_config_value(config_key: str) -> Optional[str]:
         logger.error(f"读取系统配置 {config_key} 失败: {err}")
         return None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def set_config_value(config_key: str, config_value: Dict[str, Any]) -> bool:
@@ -89,6 +87,5 @@ def set_config_value(config_key: str, config_value: Dict[str, Any]) -> bool:
         conn.rollback()
         return False
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()

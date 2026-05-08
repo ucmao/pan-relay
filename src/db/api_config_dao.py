@@ -1,9 +1,9 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from mysql.connector import Error
+from pymysql.cursors import DictCursor
 
-from src.db.connection import get_db_connection
+from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def get_all_configs(order_by_created: bool = True) -> List[Dict[str, Any]]:
         )
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         cursor.execute(query)
         results = cursor.fetchall()
 
@@ -55,9 +55,8 @@ def get_all_configs(order_by_created: bool = True) -> List[Dict[str, Any]]:
     except Error as err:
         logger.error(f"查询 API 配置时出错: {err}")
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
     return configs
 
@@ -69,7 +68,7 @@ def get_config_by_id(api_id: int) -> Optional[Dict[str, Any]]:
         return None
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         cursor.execute("SELECT * FROM api_config WHERE id = %s", (api_id,))
         config = cursor.fetchone()
         return config
@@ -77,9 +76,8 @@ def get_config_by_id(api_id: int) -> Optional[Dict[str, Any]]:
         logger.error(f"查询 API 配置时出错: {err}")
         return None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def get_config_status(api_id: int) -> Optional[Dict[str, bool]]:
@@ -90,7 +88,7 @@ def get_config_status(api_id: int) -> Optional[Dict[str, bool]]:
 
     query = "SELECT status, is_enabled FROM api_config WHERE id = %s"
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         cursor.execute(query, (api_id,))
         result = cursor.fetchone()
         if result:
@@ -101,9 +99,8 @@ def get_config_status(api_id: int) -> Optional[Dict[str, bool]]:
         logger.error(f"查询 API 状态时出错: {err}")
         return None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def insert_config(new_config: Dict[str, Any]) -> Tuple[bool, str, Optional[int]]:
@@ -139,9 +136,8 @@ def insert_config(new_config: Dict[str, Any]) -> Tuple[bool, str, Optional[int]]
         conn.rollback()
         return False, f"API 配置添加失败: {err}", None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def copy_config(api_id: int) -> Tuple[bool, str, Optional[int]]:
@@ -156,7 +152,7 @@ def copy_config(api_id: int) -> Tuple[bool, str, Optional[int]]:
     )
 
     try:
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(DictCursor)
         cursor.execute(select_query, (api_id,))
         original_config = cursor.fetchone()
 
@@ -191,9 +187,8 @@ def copy_config(api_id: int) -> Tuple[bool, str, Optional[int]]:
         conn.rollback()
         return False, f"API 配置复制失败: {err}", None
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def update_config(api_id: int, updated_config: Dict[str, Any]) -> Tuple[bool, str]:
@@ -244,9 +239,8 @@ def update_config(api_id: int, updated_config: Dict[str, Any]) -> Tuple[bool, st
         conn.rollback()
         return False, f"API 配置修改失败: {err}"
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def delete_config(api_id: int) -> Tuple[bool, str]:
@@ -272,9 +266,8 @@ def delete_config(api_id: int) -> Tuple[bool, str]:
         conn.rollback()
         return False, f"API 配置删除失败: {err}"
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def update_status(api_id: int, new_status: bool, response_time_ms: int = 0) -> bool:
@@ -297,9 +290,8 @@ def update_status(api_id: int, new_status: bool, response_time_ms: int = 0) -> b
         conn.rollback()
         return False
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def update_enabled_status(
@@ -338,9 +330,8 @@ def update_enabled_status(
         conn.rollback()
         return False
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def set_enabled(api_id: int, is_enabled: bool) -> Tuple[bool, str]:
@@ -379,9 +370,8 @@ def set_enabled(api_id: int, is_enabled: bool) -> Tuple[bool, str]:
         conn.rollback()
         return False, f"API 启用状态更新失败: {err}"
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def enable_all_normal() -> Tuple[bool, str, int]:
@@ -403,9 +393,8 @@ def enable_all_normal() -> Tuple[bool, str, int]:
         conn.rollback()
         return False, f"一键启用失败: {err}", 0
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        cursor.close()
+        conn.close()
 
 
 def disable_all() -> Tuple[bool, str, int]:
@@ -427,7 +416,5 @@ def disable_all() -> Tuple[bool, str, int]:
         conn.rollback()
         return False, f"一键禁用失败: {err}", 0
     finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
-
+        cursor.close()
+        conn.close()

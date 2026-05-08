@@ -62,7 +62,7 @@
 
 | 参数 | 描述 | 示例值 |
 | --- | --- | --- |
-| `keyword` | 搜索关键词 | `复仇者联盟` |
+| `keyword` | 搜索关键词 | `凡人修仙传` |
 | `cloud_name` | 筛选网盘 | `夸克网盘` |
 | `type` | 资源类型 | `电影` |
 | `limit` | 返回数量 | `100` |
@@ -238,9 +238,9 @@ search-ucmao/
 
 如果您在安装、使用过程中遇到问题，或有定制需求，请通过以下方式联系：
 
-* **微信 (WeChat)**：csdnxr
+* **微信**：csdnxr
 * **QQ**：294323976
-* **邮箱 (Email)**：leoucmao@gmail.com
+* **邮箱**：leoucmao@gmail.com
 * **Bug反馈**：[GitHub Issues](https://github.com/ucmao/search-ucmao/issues)
 
 ---
