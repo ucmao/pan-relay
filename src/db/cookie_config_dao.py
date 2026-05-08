@@ -76,7 +76,7 @@ def save_cookie(cloud_name: str, cookie: str) -> Tuple[bool, str]:
     
     try:
         cursor = conn.cursor()
-        if existing_cookie:
+        if existing_cookie is not None:
             # 更新现有记录
             query = "UPDATE cookie_config SET cookie = %s WHERE cloud_name = %s"
             params = (cookie, cloud_name)

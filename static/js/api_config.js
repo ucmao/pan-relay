@@ -181,7 +181,7 @@
                         </button>
                         <div class="dropdown">
                             <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
-                                data-bs-toggle="dropdown" aria-expanded="false" title="更多操作">
+                                data-ui-dropdown-toggle aria-expanded="false" title="更多操作">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -220,6 +220,11 @@
         function getApiConfigById(apiId) {
             const index = apiConfigs.findIndex(api => api.id == apiId);
             return { api: apiConfigs[index], index: index };
+        }
+
+        function normalizeApiId(apiId) {
+            const normalizedId = Number.parseInt(apiId, 10);
+            return Number.isInteger(normalizedId) && normalizedId > 0 ? normalizedId : null;
         }
 
         // 切换单个 API 的启用/禁用状态
@@ -350,7 +355,7 @@
                 showToast(data.message, 'success');
                 loadApiConfigs();
                 document.getElementById('addApiForm').reset();
-                bootstrap.Modal.getInstance(document.getElementById('addApiModal')).hide();
+                window.AppUI.closeModal('addApiModal');
             } catch (error) {
                 console.error('添加 API 配置时出错:', error);
                 showToast(`添加 API 配置失败: ${error.message}`, 'danger');
@@ -372,12 +377,16 @@
             document.getElementById('editApiResponse').value = api.response;
             document.getElementById('editApiIsEnabled').value = api.is_enabled ? 'true' : 'false';
 
-            new bootstrap.Modal(document.getElementById('editApiModal')).show();
+            window.AppUI.openModal('editApiModal');
         }
 
         // 保存修改
         async function saveEditedApi() {
-            const apiId = document.getElementById('editApiId').value;
+            const apiId = normalizeApiId(document.getElementById('editApiId').value);
+            if (!apiId) {
+                showToast('未获取到有效的 API ID，无法保存修改。', 'danger');
+                return;
+            }
             const isEnabledValue = document.getElementById('editApiIsEnabled').value;
 
             const { api: originalApi } = getApiConfigById(apiId);
@@ -417,7 +426,7 @@
                 const data = await response.json();
                 showToast(data.message, 'success');
                 loadApiConfigs();
-                bootstrap.Modal.getInstance(document.getElementById('editApiModal')).hide();
+                window.AppUI.closeModal('editApiModal');
             } catch (error) {
                 console.error('修改 API 配置时出错:', error);
                 showToast(`修改 API 配置失败: ${error.message}`, 'danger');
@@ -426,6 +435,12 @@
 
         // 删除 API
         async function deleteApi(apiId) {
+            apiId = normalizeApiId(apiId);
+            if (!apiId) {
+                showToast('未获取到有效的 API ID，无法删除。', 'danger');
+                return;
+            }
+
             const { api } = getApiConfigById(apiId);
             if (!api) return;
 

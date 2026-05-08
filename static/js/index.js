@@ -33,7 +33,10 @@ const viewResultTitle = document.getElementById('viewResultTitle');
 const viewResultLink = document.getElementById('viewResultLink');
 const copyViewResultButton = document.getElementById('copyViewResultButton');
 const openViewResultButton = document.getElementById('openViewResultButton');
-const viewResultModal = viewResultModalElement ? new bootstrap.Modal(viewResultModalElement) : null;
+const viewResultModal = viewResultModalElement ? {
+    show: () => window.AppUI.openModal(viewResultModalElement),
+    hide: () => window.AppUI.closeModal(viewResultModalElement),
+} : null;
 let currentResolvedViewResult = null;
 let isAdvancedFilterOpen = false;
 

@@ -152,7 +152,7 @@ function renderTable() {
                 </button>
                 <div class="dropdown">
                     <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
-                        data-bs-toggle="dropdown" aria-expanded="false" title="更多操作">
+                        data-ui-dropdown-toggle aria-expanded="false" title="更多操作">
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -397,7 +397,7 @@ async function editResource(id) {
             document.getElementById('editResourceType').value = res.type || '';
             document.getElementById('editResourceRemarks').value = res.remarks || '';
 
-            new bootstrap.Modal(document.getElementById('editResourceModal')).show();
+            window.AppUI.openModal('editResourceModal');
         } else {
             showToast(data.message, 'danger');
         }
@@ -443,7 +443,7 @@ async function saveResource() {
 
         if (data.success) {
             showToast(data.message || '资源已直接入库');
-            bootstrap.Modal.getInstance(document.getElementById('addResourceModal')).hide();
+            window.AppUI.closeModal('addResourceModal');
             addResourceForm.reset();
             loadResources();
         } else {
@@ -491,7 +491,7 @@ async function updateResource() {
 
         if (data.success) {
             showToast('更新成功');
-            bootstrap.Modal.getInstance(document.getElementById('editResourceModal')).hide();
+            window.AppUI.closeModal('editResourceModal');
             loadResources();
         } else {
             showToast(data.message || '更新失败', 'danger');
@@ -679,7 +679,7 @@ async function batchSaveResources() {
 
         showToast(`批量${actionText}完成：成功 ${successCount}，失败 ${resources.length - successCount}`, 'success');
         
-        bootstrap.Modal.getInstance(document.getElementById('batchAddResourceModal')).hide();
+        window.AppUI.closeModal('batchAddResourceModal');
         batchAddResourceForm.reset();
         loadResources();
 

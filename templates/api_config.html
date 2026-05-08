@@ -38,7 +38,7 @@
                     <p class="panel-description">在这里管理第三方搜索接口、调试请求配置，并根据测试结果决定是否对前台开放。</p>
                 </div>
                 <div class="panel-actions">
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addApiModal">
+                    <button class="btn btn-primary btn-sm" data-ui-modal-target="#addApiModal">
                     <i class="fas fa-plus"></i> 新建API
                     </button>
                     <button class="btn btn-success btn-sm" id="enableAllButton">
@@ -80,7 +80,7 @@
                     <h5 class="modal-title" id="addApiModalLabel">
                         <i class="fas fa-plus-circle me-2"></i> 新建 API 配置
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="关闭"></button>
+                    <button type="button" class="btn-close btn-close-white" data-ui-dismiss="modal" aria-label="关闭"></button>
                 </div>
                 <div class="modal-body modal-form modal-form-cool">
                     <form id="addApiForm">
@@ -166,7 +166,7 @@
                         <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="document.getElementById('addApiForm').reset()">
                             <i class="fas fa-undo me-1"></i> 重置
                         </button>
-                        <button type="button" class="btn btn-secondary btn-sm me-2" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-secondary btn-sm me-2" data-ui-dismiss="modal">
                             <i class="fas fa-times me-1"></i> 关闭
                         </button>
                         <button type="button" class="btn btn-primary btn-sm" onclick="addApi()">
@@ -186,7 +186,7 @@
                     <h5 class="modal-title" id="editApiModalLabel">
                         <i class="fas fa-edit me-2"></i> 修改 API 配置
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
                 </div>
                 <div class="modal-body modal-form modal-form-warm">
                     <form id="editApiForm">
@@ -269,7 +269,7 @@
                         </button>
                     </div>
                     <div>
-                        <button type="button" class="btn btn-secondary btn-sm me-2" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-secondary btn-sm me-2" data-ui-dismiss="modal">
                             <i class="fas fa-times me-1"></i> 关闭
                         </button>
                         <button type="button" class="btn btn-primary btn-sm" onclick="saveEditedApi()">

@@ -146,13 +146,13 @@
                     <p class="panel-description">搜索已有资源、维护标题与链接、批量导入并管理资源状态。</p>
                 </div>
                 <div class="btn-group resource-cta-group">
-                    <button class="btn btn-sm resource-cta-btn is-add" id="addResourceBtn" data-bs-toggle="modal" data-bs-target="#addResourceModal">
+                    <button class="btn btn-sm resource-cta-btn is-add" id="addResourceBtn" data-ui-modal-target="#addResourceModal">
                         <i class="fas fa-plus"></i> 新增入库
                     </button>
-                    <button type="button" class="btn btn-sm resource-cta-btn is-import" id="batchImportResourceBtn" data-bs-toggle="modal" data-bs-target="#batchAddResourceModal">
+                    <button type="button" class="btn btn-sm resource-cta-btn is-import" id="batchImportResourceBtn" data-ui-modal-target="#batchAddResourceModal">
                         <i class="fas fa-file-import"></i> 批量导入
                     </button>
-                    <button type="button" class="btn btn-sm resource-cta-btn is-transfer" id="batchTransferResourceBtn" data-bs-toggle="modal" data-bs-target="#batchAddResourceModal">
+                    <button type="button" class="btn btn-sm resource-cta-btn is-transfer" id="batchTransferResourceBtn" data-ui-modal-target="#batchAddResourceModal">
                         <i class="fas fa-cloud-upload-alt"></i> 批量转存入库
                     </button>
                 </div>
@@ -247,7 +247,7 @@
                     <h5 class="modal-title" id="addResourceModalLabel">
                         <i class="fas fa-plus-circle me-2"></i> 新增入库
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addResourceForm">
@@ -281,7 +281,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-secondary btn-sm" data-ui-dismiss="modal">
                         <i class="fas fa-times"></i> 关闭
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" id="saveResourceBtn">
@@ -300,7 +300,7 @@
                     <h5 class="modal-title" id="editResourceModalLabel">
                         <i class="fas fa-edit me-2"></i> 编辑资源
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
                 </div>
                 <div class="modal-body">
                     <form id="editResourceForm">
@@ -333,7 +333,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-secondary btn-sm" data-ui-dismiss="modal">
                         <i class="fas fa-times"></i> 关闭
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" id="updateResourceBtn">
@@ -350,7 +350,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="batchAddResourceModalLabel">批量导入资源</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="batchAddResourceForm">
@@ -404,7 +404,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-secondary btn-sm" data-ui-dismiss="modal">
                         <i class="fas fa-times"></i> 关闭
                     </button>
                     <button type="button" class="btn btn-success btn-sm" id="batchSaveResourceBtn">

@@ -2,6 +2,67 @@ function getFrontendDisplayNetdiskCheckboxes() {
     return Array.from(document.querySelectorAll('.frontend-display-netdisk-checkbox'));
 }
 
+function getFrontendLinkModeRadios() {
+    return Array.from(document.querySelectorAll('.frontend-link-mode-radio[name="frontendLinkMode"]'));
+}
+
+function updateDynamicTransferStatusVisibility() {
+    const panel = document.getElementById('dynamicTransferStatusPanel');
+    if (!panel) {
+        return;
+    }
+
+    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="frontendLinkMode"]:checked');
+    panel.classList.toggle('d-none', !selectedMode || selectedMode.value !== 'view');
+}
+
+function bindFrontendLinkModeEvents() {
+    getFrontendLinkModeRadios().forEach((radio) => {
+        radio.addEventListener('change', updateDynamicTransferStatusVisibility);
+    });
+}
+
+function renderDynamicTransferStatuses(statuses, summary) {
+    const summaryEl = document.getElementById('dynamicTransferStatusSummary');
+    const gridEl = document.getElementById('dynamicTransferStatusGrid');
+
+    if (!summaryEl || !gridEl) {
+        return;
+    }
+
+    const safeStatuses = Array.isArray(statuses) ? statuses : [];
+    const enabledCount = Number(summary?.enabled_count || 0);
+    const totalCount = Number(summary?.total_count || safeStatuses.length || 5);
+
+    summaryEl.textContent = `当前有 ${enabledCount} / ${totalCount} 个云盘具备自动转存替换条件。未配置或基础校验未通过的平台，查看时会自动回退原始链接。`;
+
+    gridEl.innerHTML = safeStatuses.map((item) => {
+        const statusClass = item.status || 'missing';
+        const badgeTextMap = {
+            enabled: '已启用',
+            invalid: '待处理',
+            missing: '未配置',
+        };
+        const badgeText = badgeTextMap[statusClass] || '未配置';
+
+        return `
+            <article class="dynamic-transfer-status-card status-${statusClass}">
+                <div class="dynamic-transfer-status-card-top">
+                    <div>
+                        <h4 class="dynamic-transfer-status-card-title">${item.cloud_name || ''}</h4>
+                        <p class="dynamic-transfer-status-card-meta">${item.credential_type || ''}</p>
+                    </div>
+                    <span class="dynamic-transfer-status-badge">${badgeText}</span>
+                </div>
+                <div class="dynamic-transfer-status-card-body">
+                    <strong>${item.title || ''}</strong>
+                    <p>${item.description || ''}</p>
+                </div>
+            </article>
+        `;
+    }).join('');
+}
+
 function updateFrontendNetdiskSelectionUI() {
     const checkboxes = getFrontendDisplayNetdiskCheckboxes();
     const selectedCount = checkboxes.filter((checkbox) => checkbox.checked).length;
@@ -142,6 +203,7 @@ async function loadFrontendLinkMode() {
         if (radio) {
             radio.checked = true;
         }
+        updateDynamicTransferStatusVisibility();
     } catch (error) {
         console.error('加载前端出链模式失败:', error);
         showToast('加载前端出链模式失败，请检查后端日志。', 'danger');
@@ -185,6 +247,7 @@ async function loadCookieConfig() {
         document.getElementById('xunleiRefreshToken').value = data.xunlei_refresh_token || '';
         document.getElementById('xunleiCaptchaSign').value = data.xunlei_captcha_sign || '';
         document.getElementById('xunleiUserId').value = data.xunlei_user_id || '';
+        renderDynamicTransferStatuses(data.dynamic_transfer_statuses, data.dynamic_transfer_summary);
     } catch (error) {
         console.error('加载云盘凭证失败:', error);
         showToast('加载云盘凭证失败，请检查后端日志。', 'danger');
@@ -217,6 +280,7 @@ async function saveCookieConfig() {
         }
 
         showToast(data.message || '云盘凭证保存成功', 'success');
+        await loadCookieConfig();
     } catch (error) {
         showToast(`云盘凭证保存失败: ${error.message}`, 'danger');
     } finally {
@@ -226,10 +290,12 @@ async function saveCookieConfig() {
 
 document.addEventListener('DOMContentLoaded', () => {
     bindFrontendNetdiskCheckboxEvents();
+    bindFrontendLinkModeEvents();
     loadPublicSearchApiConfig();
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();
     loadCookieConfig();
+    updateDynamicTransferStatusVisibility();
 
     const saveCookieConfigBtn = document.getElementById('saveCookieConfigBtn');
     if (saveCookieConfigBtn) {

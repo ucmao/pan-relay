@@ -193,17 +193,16 @@ def copy_config(api_id: int) -> Tuple[bool, str, Optional[int]]:
 
 def update_config(api_id: int, updated_config: Dict[str, Any]) -> Tuple[bool, str]:
     """更新一条 API 配置记录"""
+    current_api_status = get_config_status(api_id)
+    if current_api_status is None:
+        return False, "未找到该 API 配置"
+
     new_is_enabled = bool(updated_config.get("is_enabled"))
 
     # 1. 检查是否尝试启用异常状态的 API
-    if new_is_enabled:
-        current_api_status = get_config_status(api_id)
-        if current_api_status is None:
-            return False, "未找到该 API 配置"
-
-        if not current_api_status["status"]:  # status=0 (异常)
-            logger.warning(f"尝试修改 API ID:{api_id}，但无法在异常状态下启用")
-            return False, "API 状态异常，无法启用。请先测试并修复。"
+    if new_is_enabled and not current_api_status["status"]:  # status=0 (异常)
+        logger.warning(f"尝试修改 API ID:{api_id}，但无法在异常状态下启用")
+        return False, "API 状态异常，无法启用。请先测试并修复。"
 
     conn = get_db_connection()
     if not conn:
@@ -232,8 +231,8 @@ def update_config(api_id: int, updated_config: Dict[str, Any]) -> Tuple[bool, st
         if cursor.rowcount > 0:
             logger.info(f"成功修改 ID 为 {api_id} 的 API 配置")
             return True, "API 配置修改成功"
-        logger.warning(f"尝试修改 ID 为 {api_id} 的 API 配置，但未找到或数据未变化")
-        return False, "未找到该 API 配置或数据未变化"
+        logger.info(f"修改 ID 为 {api_id} 的 API 配置时未检测到字段变化")
+        return True, "API 配置未发生变化"
     except Error as err:
         logger.error(f"修改 API 配置时出错: {err}")
         conn.rollback()

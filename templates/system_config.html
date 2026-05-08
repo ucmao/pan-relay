@@ -40,7 +40,7 @@
                     </div>
                     <div class="frontend-netdisk-actions">
                         <button class="btn btn-outline-primary btn-sm" id="viewPublicSearchApiDocBtn"
-                            data-bs-toggle="modal" data-bs-target="#publicSearchApiModal">
+                            data-ui-modal-target="#publicSearchApiModal">
                             <i class="fas fa-code me-1"></i> 查看文档
                         </button>
                         <button class="btn btn-primary btn-sm" id="savePublicSearchApiButton"
@@ -105,6 +105,16 @@
                         </span>
                         <span class="frontend-link-mode-switch"></span>
                     </label>
+                </div>
+                <div class="dynamic-transfer-status-panel d-none" id="dynamicTransferStatusPanel">
+                    <div class="dynamic-transfer-status-header">
+                        <div>
+                            <span class="dynamic-transfer-status-kicker">Dynamic Transfer Status</span>
+                            <h3 class="dynamic-transfer-status-title">自动转存替换状态</h3>
+                            <p class="dynamic-transfer-status-summary" id="dynamicTransferStatusSummary">正在检测 5 个云盘凭证的可用状态...</p>
+                        </div>
+                    </div>
+                    <div class="dynamic-transfer-status-grid" id="dynamicTransferStatusGrid"></div>
                 </div>
             </div>
         </div>
@@ -200,7 +210,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="publicSearchApiModalLabel">公开聚合搜索接口</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body api-doc-modal">
                 <div class="modal-doc-intro">
@@ -230,7 +240,7 @@ GET /api?keyword=庆余年&limit=20
 GET /api?keyword=周杰伦&limit=10</code></pre>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-secondary" data-ui-dismiss="modal">关闭</button>
             </div>
         </div>
     </div>

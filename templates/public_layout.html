@@ -103,7 +103,7 @@
         <div class="modal-content disclaimer-modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="disclaimerModalLabel">免责声明</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body disclaimer-modal-body">
                 <p>小青搜剧是一款基于多源 API 的自动化检索工具。本项目已在 GitHub 开源：</p>
@@ -119,24 +119,22 @@
                 <p class="disclaimer-thanks">感谢您的支持与关注。</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">我知道了</button>
+                <button type="button" class="btn btn-primary btn-sm" data-ui-dismiss="modal">我知道了</button>
             </div>
         </div>
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/bootstrap-lite.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const disclaimerLink = document.getElementById('disclaimerLink');
-        const disclaimerModalElement = document.getElementById('disclaimerModal');
-        const disclaimerModal = disclaimerModalElement ? new bootstrap.Modal(disclaimerModalElement) : null;
 
         if (disclaimerLink) {
             disclaimerLink.addEventListener('click', (event) => {
                 event.preventDefault();
-                disclaimerModal?.show();
+                window.AppUI?.openModal('disclaimerModal');
             });
         }
     });

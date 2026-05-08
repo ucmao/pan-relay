@@ -613,6 +613,136 @@
     transform: translateX(20px);
 }
 
+.dynamic-transfer-status-panel {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #edf1f7;
+}
+
+.dynamic-transfer-status-header {
+    margin-bottom: 14px;
+}
+
+.dynamic-transfer-status-kicker {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f3f6fb;
+    color: #475467;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.dynamic-transfer-status-title {
+    margin: 12px 0 6px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.dynamic-transfer-status-summary {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.7;
+    font-size: 0.92rem;
+}
+
+.dynamic-transfer-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.dynamic-transfer-status-card {
+    border: 1.5px solid #dfe5ef;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dynamic-transfer-status-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.dynamic-transfer-status-card-title {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.dynamic-transfer-status-card-meta {
+    margin: 6px 0 0;
+    color: #667085;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.dynamic-transfer-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 66px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.dynamic-transfer-status-card-body strong {
+    display: block;
+    font-size: 0.92rem;
+    color: #1f2937;
+    margin-bottom: 6px;
+}
+
+.dynamic-transfer-status-card-body p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.65;
+    font-size: 0.88rem;
+}
+
+.dynamic-transfer-status-card.status-enabled {
+    border-color: #b8e2c4;
+    background: linear-gradient(180deg, #f7fff8 0%, #ffffff 100%);
+}
+
+.dynamic-transfer-status-card.status-enabled .dynamic-transfer-status-badge {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.dynamic-transfer-status-card.status-invalid {
+    border-color: #f4d6a3;
+    background: linear-gradient(180deg, #fffaf0 0%, #ffffff 100%);
+}
+
+.dynamic-transfer-status-card.status-invalid .dynamic-transfer-status-badge {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.dynamic-transfer-status-card.status-missing {
+    border-color: #dfe5ef;
+    background: linear-gradient(180deg, #fbfcfe 0%, #ffffff 100%);
+}
+
+.dynamic-transfer-status-card.status-missing .dynamic-transfer-status-badge {
+    background: #eef2f7;
+    color: #475467;
+}
+
 .cookie-grid textarea.form-control {
     min-height: 220px;
 }

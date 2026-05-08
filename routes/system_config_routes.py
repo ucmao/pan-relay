@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, render_template, request
 import json
 
-from src.db.cookie_config_dao import get_cookie_by_cloud_name, save_cookie
+from src.db.cookie_config_dao import delete_cookie, get_cookie_by_cloud_name, save_cookie
 from src.services.system_config_service import (
     get_public_search_api_config,
     get_frontend_display_netdisk_config,
@@ -14,6 +14,125 @@ from utils.auth_utils import token_required
 from utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
 
 system_config_bp = Blueprint("system_config", __name__)
+
+DYNAMIC_TRANSFER_STATUS_CONFIGS = [
+    {
+        "cloud_name": "百度网盘",
+        "credential_type": "Cookie",
+        "min_length": 50,
+    },
+    {
+        "cloud_name": "夸克网盘",
+        "credential_type": "Cookie",
+        "min_length": 50,
+    },
+    {
+        "cloud_name": "阿里云盘",
+        "credential_type": "Refresh Token",
+        "min_length": 20,
+    },
+    {
+        "cloud_name": "UC网盘",
+        "credential_type": "Cookie",
+        "min_length": 50,
+    },
+    {
+        "cloud_name": "迅雷网盘",
+        "credential_type": "Refresh Token / Captcha Sign / User ID",
+    },
+]
+
+
+def save_or_delete_credential(cloud_name: str, credential: str):
+    """
+    有值则保存，无值则删除对应凭证。
+    删除不存在的记录也视为成功，便于前端直接通过清空输入框来移除配置。
+    """
+    if credential:
+        return save_cookie(cloud_name, credential)
+
+    if get_cookie_by_cloud_name(cloud_name) is None:
+        return True, "云盘凭证已清空"
+
+    return delete_cookie(cloud_name)
+
+
+def _build_dynamic_transfer_statuses():
+    statuses = []
+    enabled_count = 0
+
+    for config in DYNAMIC_TRANSFER_STATUS_CONFIGS:
+        cloud_name = config["cloud_name"]
+        credential_type = config["credential_type"]
+        raw_credential = (get_cookie_by_cloud_name(cloud_name) or "").strip()
+
+        status = {
+            "cloud_name": cloud_name,
+            "credential_type": credential_type,
+            "status": "missing",
+            "title": "未配置凭证",
+            "description": f"未填写 {credential_type}，动态转存时会回退原始链接。",
+        }
+
+        if cloud_name == "迅雷网盘":
+            if raw_credential:
+                try:
+                    parsed = json.loads(raw_credential)
+                except json.JSONDecodeError:
+                    parsed = {}
+
+                required_fields = ("refresh_token", "captcha_sign", "user_id")
+                has_all_fields = isinstance(parsed, dict) and all(str(parsed.get(field, "")).strip() for field in required_fields)
+
+                if has_all_fields:
+                    status = {
+                        "cloud_name": cloud_name,
+                        "credential_type": credential_type,
+                        "status": "enabled",
+                        "title": "已启用自动转存",
+                        "description": "已检测到完整凭证，动态查看时会优先生成临时分享链接。",
+                    }
+                    enabled_count += 1
+                else:
+                    status = {
+                        "cloud_name": cloud_name,
+                        "credential_type": credential_type,
+                        "status": "invalid",
+                        "title": "凭证不完整",
+                        "description": "需要同时填写 refresh_token、captcha_sign 和 user_id。",
+                    }
+
+            statuses.append(status)
+            continue
+
+        if raw_credential:
+            if len(raw_credential) >= config["min_length"]:
+                status = {
+                    "cloud_name": cloud_name,
+                    "credential_type": credential_type,
+                    "status": "enabled",
+                    "title": "已启用自动转存",
+                    "description": "已检测到可用凭证，动态查看时会优先生成临时分享链接。",
+                }
+                enabled_count += 1
+            else:
+                status = {
+                    "cloud_name": cloud_name,
+                    "credential_type": credential_type,
+                    "status": "invalid",
+                    "title": "凭证可能失效",
+                    "description": "已保存凭证，但基础校验未通过，建议重新获取后保存。",
+                }
+
+        statuses.append(status)
+
+    return {
+        "statuses": statuses,
+        "summary": {
+            "enabled_count": enabled_count,
+            "total_count": len(DYNAMIC_TRANSFER_STATUS_CONFIGS),
+        },
+    }
 
 
 @system_config_bp.route("/admin/system-config", methods=["GET"])
@@ -105,6 +224,7 @@ def get_credential_config():
         xunlei_config = json.loads(xunlei_raw) if xunlei_raw else {}
     except json.JSONDecodeError:
         xunlei_config = {}
+    dynamic_transfer_status = _build_dynamic_transfer_statuses()
     return jsonify(
         {
             "baidu_cookie": baidu_cookie,
@@ -114,6 +234,8 @@ def get_credential_config():
             "xunlei_refresh_token": xunlei_config.get("refresh_token", ""),
             "xunlei_captcha_sign": xunlei_config.get("captcha_sign", ""),
             "xunlei_user_id": xunlei_config.get("user_id", ""),
+            "dynamic_transfer_statuses": dynamic_transfer_status["statuses"],
+            "dynamic_transfer_summary": dynamic_transfer_status["summary"],
         }
     )
 
@@ -131,23 +253,13 @@ def save_credential_config():
     xunlei_captcha_sign = data.get("xunlei_captcha_sign", "")
     xunlei_user_id = data.get("xunlei_user_id", "")
 
-    if baidu_cookie:
-        success, message = save_cookie("百度网盘", baidu_cookie)
-        if not success:
-            return jsonify({"success": False, "message": message}), 500
-
-    if quark_cookie:
-        success, message = save_cookie("夸克网盘", quark_cookie)
-        if not success:
-            return jsonify({"success": False, "message": message}), 500
-
-    if aliyun_token:
-        success, message = save_cookie("阿里云盘", aliyun_token)
-        if not success:
-            return jsonify({"success": False, "message": message}), 500
-
-    if uc_cookie:
-        success, message = save_cookie("UC网盘", uc_cookie)
+    for cloud_name, credential in [
+        ("百度网盘", baidu_cookie),
+        ("夸克网盘", quark_cookie),
+        ("阿里云盘", aliyun_token),
+        ("UC网盘", uc_cookie),
+    ]:
+        success, message = save_or_delete_credential(cloud_name, credential)
         if not success:
             return jsonify({"success": False, "message": message}), 500
 
@@ -156,19 +268,19 @@ def save_credential_config():
     if has_any_xunlei_field and not has_all_xunlei_fields:
         return jsonify({"success": False, "message": "迅雷网盘凭证需要同时填写 refresh_token、captcha_sign 和 user_id"}), 400
 
+    xunlei_credential = ""
     if has_all_xunlei_fields:
-        success, message = save_cookie(
-            "迅雷网盘",
-            json.dumps(
-                {
-                    "refresh_token": xunlei_refresh_token,
-                    "captcha_sign": xunlei_captcha_sign,
-                    "user_id": xunlei_user_id,
-                },
-                ensure_ascii=False,
-            ),
+        xunlei_credential = json.dumps(
+            {
+                "refresh_token": xunlei_refresh_token,
+                "captcha_sign": xunlei_captcha_sign,
+                "user_id": xunlei_user_id,
+            },
+            ensure_ascii=False,
         )
-        if not success:
-            return jsonify({"success": False, "message": message}), 500
+
+    success, message = save_or_delete_credential("迅雷网盘", xunlei_credential)
+    if not success:
+        return jsonify({"success": False, "message": message}), 500
 
     return jsonify({"success": True, "message": "云盘凭证保存成功"})

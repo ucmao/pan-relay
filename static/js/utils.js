@@ -34,7 +34,7 @@ function showToast(message, type = 'success', delay = 3000) {
     toast.innerHTML = `
         <div class="d-flex">
             <div class="toast-body">${message}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-ui-dismiss="toast" aria-label="Close"></button>
         </div>
     `;
 
@@ -45,18 +45,26 @@ function showToast(message, type = 'success', delay = 3000) {
     toast.style.bottom = `${bottomOffset}px`;
 
     toastContainer.appendChild(toast);
-    const bootstrapToast = new bootstrap.Toast(toast, { delay });
-    bootstrapToast.show();
+    toast.classList.add('show');
+    toast.style.display = 'block';
 
-    // 自动移除元素，避免DOM堆积
-    toast.addEventListener('hidden.bs.toast', () => {
+    const hideToast = () => {
+        toast.classList.remove('show');
+        toast.style.display = 'none';
         toast.remove();
-        // 重新计算并调整剩余toast的位置
+
         const remainingToasts = document.querySelectorAll('.toast.show');
         remainingToasts.forEach((t, index) => {
             t.style.bottom = `${index * toastHeight + 10}px`;
         });
-    });
+    };
+
+    const autoHideTimer = window.setTimeout(hideToast, delay);
+    const closeButton = toast.querySelector('[data-ui-dismiss="toast"]');
+    closeButton?.addEventListener('click', () => {
+        window.clearTimeout(autoHideTimer);
+        hideToast();
+    }, { once: true });
 }
 
 /**
@@ -88,27 +96,49 @@ function showAlertModal(message, type = 'primary', title = '提示', confirmText
                         <h5 class="modal-title" style="font-size: 1.1rem; font-weight: 600;">
                             ${iconMap[type] || iconMap.primary}${escapeHtml(title)}
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body py-3 text-secondary" style="line-height: 1.7; word-break: break-word;">
                         ${formatModalMessage(message)}
                     </div>
                     <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-${type === 'info' ? 'primary' : type} btn-sm px-3" data-bs-dismiss="modal">${escapeHtml(confirmText)}</button>
+                        <button type="button" class="btn btn-${type === 'info' ? 'primary' : type} btn-sm px-3" data-ui-dismiss="modal">${escapeHtml(confirmText)}</button>
                     </div>
                 </div>
             </div>
         `;
 
         document.body.appendChild(modalContainer);
-        const bsModal = new bootstrap.Modal(modalContainer);
+        const dismissButtons = modalContainer.querySelectorAll('[data-ui-dismiss="modal"]');
 
-        modalContainer.addEventListener('hidden.bs.modal', () => {
+        let settled = false;
+        const cleanup = () => {
+            if (settled) return;
+            settled = true;
+            document.removeEventListener('keydown', onKeyDown);
+            window.AppUI.closeModal(modalContainer);
             modalContainer.remove();
             resolve();
+        };
+
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                cleanup();
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+
+        dismissButtons.forEach((button) => {
+            button.addEventListener('click', cleanup, { once: true });
+        });
+
+        modalContainer.addEventListener('click', (event) => {
+            if (event.target === modalContainer) {
+                cleanup();
+            }
         }, { once: true });
 
-        bsModal.show();
+        window.AppUI.openModal(modalContainer);
     });
 }
 
@@ -121,12 +151,12 @@ function showAlertModal(message, type = 'primary', title = '提示', confirmText
  */
 function showConfirm(message, type = 'primary', title = '确认操作') {
     return new Promise((resolve) => {
-        const modalId = 'dynamicConfirmModal';
+        let confirmed = false;
+        let settled = false;
         
         // 创建模态框容器
         const modalContainer = document.createElement('div');
         modalContainer.className = 'modal fade';
-        modalContainer.id = modalId;
         modalContainer.setAttribute('tabindex', '-1');
 
         // 映射图标样式
@@ -143,13 +173,13 @@ function showConfirm(message, type = 'primary', title = '确认操作') {
                         <h5 class="modal-title" style="font-size: 1.1rem; font-weight: 600;">
                             ${iconMap[type] || ''}${escapeHtml(title)}
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body py-3 text-secondary">
                         ${formatModalMessage(message)}
                     </div>
                     <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-light btn-sm px-3" data-ui-dismiss="modal">取消</button>
                         <button type="button" class="btn btn-${type} btn-sm px-3" id="confirmActionBtn">确认</button>
                     </div>
                 </div>
@@ -157,22 +187,45 @@ function showConfirm(message, type = 'primary', title = '确认操作') {
         `;
 
         document.body.appendChild(modalContainer);
-        const bsModal = new bootstrap.Modal(modalContainer);
-
         const confirmBtn = modalContainer.querySelector('#confirmActionBtn');
+        const cancelButtons = modalContainer.querySelectorAll('[data-ui-dismiss="modal"]');
+
+        const cleanup = (result) => {
+            if (settled) return;
+            settled = true;
+            document.removeEventListener('keydown', onKeyDown);
+            if (typeof result === 'boolean') {
+                resolve(result);
+            }
+            window.AppUI.closeModal(modalContainer);
+            modalContainer.remove();
+        };
+
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                cleanup(false);
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
 
         // 核心逻辑：点击确认返回 true
         confirmBtn.onclick = () => {
-            bsModal.hide();
-            resolve(true);
+            confirmed = true;
+            cleanup(true);
         };
 
-        // 隐藏即销毁：无论点击背景、取消、还是确认，最终都会触发 hidden
-        modalContainer.addEventListener('hidden.bs.modal', () => {
-            resolve(false); // 如果 resolve 已经触发过 true，这里再次 resolve 不会生效
-            modalContainer.remove();
+        cancelButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                cleanup(confirmed ? true : false);
+            }, { once: true });
         });
 
-        bsModal.show();
+        modalContainer.addEventListener('click', (event) => {
+            if (event.target === modalContainer) {
+                cleanup(confirmed ? true : false);
+            }
+        }, { once: true });
+
+        window.AppUI.openModal(modalContainer);
     });
 }
