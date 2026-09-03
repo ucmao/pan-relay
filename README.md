@@ -143,7 +143,7 @@ DB_CHARSET = utf8mb4
 
 # Telegram 公开频道搜索（多个频道使用英文逗号分隔）
 TG_SEARCH_ENABLED = true
-TG_CHANNELS = tgsearchers7
+TG_CHANNELS = tgsearchers7,tgsearchers3,tgsearchers6
 TG_SEARCH_TIMEOUT = 10
 TG_SEARCH_MAX_WORKERS = 4
 # 海外服务器通常留空；无法直连 t.me 时填写 HTTP/SOCKS5 代理

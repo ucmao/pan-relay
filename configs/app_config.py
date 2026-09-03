@@ -39,7 +39,7 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
 TG_SEARCH_ENABLED = _get_bool_env("TG_SEARCH_ENABLED", True)
 TG_CHANNELS = [
     channel.strip().lstrip("@").strip("/")
-    for channel in os.getenv("TG_CHANNELS", "tgsearchers7").split(",")
+    for channel in os.getenv("TG_CHANNELS", "tgsearchers7,tgsearchers3,tgsearchers6").split(",")
     if channel.strip()
 ]
 TG_SEARCH_TIMEOUT = _get_int_env("TG_SEARCH_TIMEOUT", 10)

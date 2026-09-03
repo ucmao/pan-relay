@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
+from src.services import search_service
 from src.services.telegram_search_service import (
     parse_telegram_search_html,
     search_telegram_channel,
@@ -26,6 +27,20 @@ SAMPLE_HTML = """
 </div>
 """
 
+SAMPLE_PASSWORD_HTML = """
+<div class="tgme_widget_message_wrap">
+  <div class="tgme_widget_message" data-post="tgsearchers7/125">
+    <div class="tgme_widget_message_text">
+      <b>大奉打更人</b><br>
+      百度网盘：https://pan.baidu.com/s/testbaidu123<br>
+      提取码：5678<br>
+      天翼云盘：https://cloud.189.cn/t/test189（访问码：abcd）<br>
+      115网盘：<a href="https://115.com/s/test115">打开</a> 密码：9999
+    </div>
+  </div>
+</div>
+"""
+
 
 class TelegramSearchServiceTest(unittest.TestCase):
     def test_parse_telegram_search_html_extracts_supported_links(self):
@@ -35,7 +50,23 @@ class TelegramSearchServiceTest(unittest.TestCase):
         self.assertEqual("tg", results[0][0])
         self.assertEqual("流浪地球 1-2 合集", results[0][1])
         self.assertEqual("夸克网盘", results[0][3])
+        self.assertEqual("https://pan.quark.cn/s/abc123", results[0][2])
         self.assertEqual("百度网盘", results[1][3])
+        self.assertEqual("https://pan.baidu.com/s/xyz789?pwd=1234", results[1][2])
+
+    def test_parse_telegram_search_html_extracts_passwords(self):
+        results = parse_telegram_search_html(SAMPLE_PASSWORD_HTML, "tgsearchers7")
+
+        self.assertEqual(3, len(results))
+
+        baidu_item = next(r for r in results if r[3] == "百度网盘")
+        self.assertEqual("https://pan.baidu.com/s/testbaidu123?pwd=5678", baidu_item[2])
+
+        tianyi_item = next(r for r in results if r[3] == "天翼云盘")
+        self.assertEqual("https://cloud.189.cn/t/test189?pwd=abcd", tianyi_item[2])
+
+        pan115_item = next(r for r in results if r[3] == "115网盘")
+        self.assertEqual("https://115.com/s/test115?password=9999", pan115_item[2])
 
     @patch("src.services.telegram_search_service.requests.get")
     def test_search_channel_skips_non_public_redirect(self, mock_get):
@@ -72,13 +103,11 @@ class TelegramSearchIntegrationTest(unittest.TestCase):
         mock_telegram,
         _mock_filter,
     ):
-        from src.services.search_service import search_public_resources
-
         mock_telegram.return_value = [
             ["tg", "流浪地球", "https://pan.quark.cn/s/abc123", "夸克网盘"]
         ]
 
-        success, _, results = search_public_resources("流浪地球")
+        success, _, results = search_service.search_public_resources("流浪地球")
 
         self.assertTrue(success)
         self.assertEqual(1, len(results))

@@ -25,7 +25,32 @@ URL_PATTERN = re.compile(
     r"ed2k://\|file\|[^\s<>\"']+|https?://[^\s<>\"']+)",
     re.IGNORECASE,
 )
-TRAILING_URL_CHARS = ".,;:!?，。；：！？、)]}）】》〉'\""
+TRAILING_URL_CHARS = ".,;:!?，。；：！？、)]}）】》〉'\"#"
+
+PASSWORD_SUPPORTED_NETDISKS = {
+    "百度网盘",
+    "天翼云盘",
+    "123云盘",
+    "迅雷网盘",
+    "115网盘",
+    "移动云盘",
+    "阿里云盘",
+}
+
+PASSWORD_PATTERN = re.compile(
+    r"(?:(?:提取|访问|提取密|密)码|pwd|code)[:：=\s]*([a-zA-Z0-9]{4,6})",
+    re.IGNORECASE,
+)
+
+TIANYI_INLINE_PATTERN = re.compile(
+    r"(?:（(?:访问码|提取码)：|%EF%BC%88%E8%AE%BF%E9%97%AE%E7%A0%81%EF%BC%9A)([a-zA-Z0-9]{4,6})(?:）|%EF%BC%89)?",
+    re.IGNORECASE,
+)
+
+PAN123_INLINE_PATTERN = re.compile(
+    r"[?&](?:提取码|%E6%8F%90%E5%8F%96%E7%A0%81)[:=]([a-zA-Z0-9]{4,6})",
+    re.IGNORECASE,
+)
 
 
 def _request_proxies():
@@ -43,33 +68,131 @@ def _normalize_channel(channel):
     return channel
 
 
+def _clean_and_extract_inline_password(raw_url):
+    """从 URL 中提取内联的访问码/提取码后缀，并清理 URL。"""
+    raw_url = unescape(str(raw_url or "")).strip()
+    pwd = None
+
+    tianyi_match = TIANYI_INLINE_PATTERN.search(raw_url)
+    if tianyi_match:
+        pwd = tianyi_match.group(1)
+        raw_url = raw_url[:tianyi_match.start()]
+
+    pan123_match = PAN123_INLINE_PATTERN.search(raw_url)
+    if pan123_match:
+        pwd = pan123_match.group(1)
+        raw_url = PAN123_INLINE_PATTERN.sub("", raw_url)
+
+    clean_url = raw_url.rstrip(TRAILING_URL_CHARS)
+    return clean_url, pwd
+
+
+def _extract_password_from_text(text):
+    """从文本或上下文片段中提取 4-6 位提取码/密码。"""
+    if not text:
+        return None
+
+    query_match = re.search(r"[?&](?:pwd|password)=([a-zA-Z0-9]{4,6})", text, re.IGNORECASE)
+    if query_match:
+        return query_match.group(1)
+
+    match = PASSWORD_PATTERN.search(text)
+    if match:
+        return match.group(1)
+
+    return None
+
+
+def _attach_password(url, netdisk_name, pwd):
+    """为网盘链接拼接提取码参数（若已有密码则不重复追加）。"""
+    if not pwd:
+        return url
+
+    if re.search(r"[?&](?:pwd|password)=", url, re.IGNORECASE):
+        return url
+
+    param_name = "password" if netdisk_name == "115网盘" else "pwd"
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}{param_name}={pwd}"
+
+
+def _get_anchor_context(anchor):
+    """提取 <a> 标签紧邻的前后兄弟节点文本（跨过 br 等节点）。"""
+    parts = []
+
+    curr = anchor.previous_sibling
+    for _ in range(2):
+        if not curr:
+            break
+        text = curr.get_text() if hasattr(curr, "get_text") else str(curr or "")
+        if text.strip():
+            parts.insert(0, text.strip())
+        curr = curr.previous_sibling
+
+    parts.append(anchor.get_text(strip=True))
+
+    curr = anchor.next_sibling
+    for _ in range(3):
+        if not curr:
+            break
+        text = curr.get_text() if hasattr(curr, "get_text") else str(curr or "")
+        if text.strip():
+            parts.append(text.strip())
+        curr = curr.next_sibling
+
+    return " ".join(parts)
+
+
 def _clean_candidate_url(value):
     value = unescape(str(value or "")).strip().rstrip(TRAILING_URL_CHARS)
     return value
 
 
 def _extract_supported_links(message_element):
-    candidates = []
+    raw_candidates = []
 
+    # 1. 优先提取 <a> 标签链接及其邻近上下文
     for anchor in message_element.select("a[href]"):
-        candidates.append(anchor.get("href", ""))
+        href = anchor.get("href", "").strip()
+        if href:
+            context = _get_anchor_context(anchor)
+            raw_candidates.append((href, context))
 
+    # 2. 从纯文本行中提取链接及前后行上下文
     message_text = message_element.get_text("\n", strip=True)
-    candidates.extend(URL_PATTERN.findall(message_text))
+    lines = [line.strip() for line in message_text.splitlines() if line.strip()]
+    for idx, line in enumerate(lines):
+        for text_url in URL_PATTERN.findall(line):
+            next_line = lines[idx + 1] if idx + 1 < len(lines) else ""
+            context = f"{line}\n{next_line}"
+            raw_candidates.append((text_url, context))
 
     results = []
     seen = set()
-    for candidate in candidates:
-        url = _clean_candidate_url(candidate)
-        if not url or url in seen:
+
+    for raw_url, context in raw_candidates:
+        clean_url, inline_pwd = _clean_and_extract_inline_password(raw_url)
+        if not clean_url:
             continue
 
-        netdisk_name = match_netdisk_link(url)
+        netdisk_name = match_netdisk_link(clean_url)
         if netdisk_name == "其他":
             continue
 
-        seen.add(url)
-        results.append((url, netdisk_name))
+        base_key = clean_url.split("?")[0].rstrip("/")
+        if base_key in seen:
+            continue
+
+        pwd = inline_pwd
+        if not pwd and netdisk_name in PASSWORD_SUPPORTED_NETDISKS:
+            pwd = _extract_password_from_text(context)
+            # 仅当消息中只有一个候选链接时，才回退到全文本范围匹配提取码
+            if not pwd and len(raw_candidates) == 1:
+                pwd = _extract_password_from_text(message_text)
+
+        final_url = _attach_password(clean_url, netdisk_name, pwd)
+        seen.add(base_key)
+        results.append((final_url, netdisk_name))
 
     return results
 
