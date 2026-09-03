@@ -57,14 +57,11 @@
             <a class="admin-nav-tab {{ 'is-active' if active_page == 'resources' else '' }}" href="{{ url_for('resources.resources_page') }}">
                 <i class="fas fa-layer-group"></i> 我的资源
             </a>
+            <a class="admin-nav-tab {{ 'is-active' if active_page == 'sources' else '' }}" href="{{ url_for('search_sources.sources_page') }}">
+                <i class="fas fa-satellite-dish"></i> 检索源管理
+            </a>
             <a class="admin-nav-tab {{ 'is-active' if active_page == 'config' else '' }}" href="{{ url_for('system_config.system_config_page') }}">
                 <i class="fas fa-sliders-h"></i> 系统配置
-            </a>
-            <a class="admin-nav-tab {{ 'is-active' if active_page == 'api' else '' }}" href="{{ url_for('api_config.config_page') }}">
-                <i class="fas fa-code"></i> API 管理
-            </a>
-            <a class="admin-nav-tab {{ 'is-active' if active_page == 'plugins' else '' }}" href="{{ url_for('plugin.plugins_page') }}">
-                <i class="fas fa-puzzle-piece"></i> 插件扩展
             </a>
         </div>
 

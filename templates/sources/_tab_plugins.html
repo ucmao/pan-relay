@@ -1,0 +1,115 @@
+<!-- 插件扩展 Tab -->
+<div class="tab-pane-inner">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <div>
+            <h3 class="admin-panel-title mb-1">
+                <i class="fas fa-puzzle-piece text-primary me-1"></i> 插件扩展与 Python 数据源
+            </h3>
+            <p class="admin-panel-desc mb-0">基于 Python 插件引擎动态加载，支持复杂爬虫与逆向加密站接入，支持目录热重载与在线联调。</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-outline-primary btn-sm" id="reloadPluginsButton" onclick="reloadPlugins()">
+                <i class="fas fa-sync-alt"></i> 重新扫描目录
+            </button>
+            <button class="btn btn-success btn-sm" id="enableAllPluginsButton" onclick="enableAllPlugins()">
+                <i class="fas fa-play"></i> 全部启用
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" id="disableAllPluginsButton" onclick="disableAllPlugins()">
+                <i class="fas fa-ban"></i> 全部禁用
+            </button>
+        </div>
+    </div>
+
+    <!-- 插件列表面板 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h4 class="admin-panel-title" style="font-size: 0.95rem;">
+                    <i class="fas fa-plug text-muted"></i> 已加载插件列表
+                </h4>
+                <p class="admin-panel-desc">继承 <code>BasePlugin</code> 实现的类将被自动注册。直接在表格中切换启停或发起实时联调。</p>
+            </div>
+        </div>
+
+        <div class="data-table-shell">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center;">#</th>
+                        <th style="width: 90px; text-align: center;">状态</th>
+                        <th style="width: 140px;">插件标识</th>
+                        <th>显示名称</th>
+                        <th style="width: 75px; text-align: center;">版本</th>
+                        <th style="width: 90px; text-align: center;">作者</th>
+                        <th style="width: 75px; text-align: center;">权重</th>
+                        <th style="width: 75px; text-align: center;">超时</th>
+                        <th>描述</th>
+                        <th style="width: 70px; text-align: center;">启停</th>
+                        <th style="width: 140px; text-align: center;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="pluginTableBody">
+                    <tr>
+                        <td colspan="11" class="text-center text-muted py-4">
+                            <i class="fas fa-spinner fa-spin me-2"></i> 正在加载插件数据...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- 测试插件模态框 -->
+<div class="modal fade" id="testPluginModal" tabindex="-1" aria-labelledby="testPluginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testPluginModalLabel">
+                    <i class="fas fa-vial text-primary me-1"></i> 测试插件检索能力
+                </h5>
+                <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="currentTestPluginName">
+                <div class="d-flex align-items-center justify-content-between p-2 mb-3 bg-light rounded border">
+                    <div>
+                        <span class="small text-muted">测试插件：</span>
+                        <strong id="modalPluginDisplayName" class="me-2">--</strong>
+                        <span class="plugin-code-tag" id="modalPluginName">--</span>
+                    </div>
+                    <div class="small text-muted">
+                        单次超时限制: <span id="modalPluginTimeout">--</span>s
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mb-3">
+                    <input type="text" class="form-control" id="pluginTestKeyword" placeholder="输入搜索关键词，例如：流浪地球" value="流浪地球">
+                    <button class="btn btn-primary" type="button" id="startPluginTestBtn" onclick="runPluginTest()">
+                        <i class="fas fa-play me-1"></i> 开始检索
+                    </button>
+                </div>
+
+                <div id="pluginTestResultArea" class="d-none">
+                    <div class="alert alert-info py-2 px-3 small mb-2" id="pluginTestStatusAlert"></div>
+                    <div class="data-table-shell border rounded" style="max-height: 320px; overflow-y: auto;">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 45px; text-align: center;">#</th>
+                                    <th>标题</th>
+                                    <th style="width: 100px;">网盘平台</th>
+                                    <th>分享链接 / 提取码</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pluginTestTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-ui-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>

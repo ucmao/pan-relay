@@ -1,6 +1,6 @@
 # src/routes/api_config_routes.py
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, request
 
 import logging
 
@@ -22,15 +22,6 @@ from src.services.api_config_service import (
 logger = logging.getLogger(__name__)
 
 api_config_bp = Blueprint("api_config", __name__)
-
-
-@api_config_bp.route("/admin/api-config", methods=["GET"])
-@token_required
-def config_page():
-    """API 管理页面 (需要 JWT 验证)"""
-    configs = read_api_configs_from_db()
-    logger.info("已验证管理员访问 API 管理页面")
-    return render_template("api_config.html", configs=configs)
 
 
 @api_config_bp.route("/admin/api/configs", methods=["GET"])

@@ -101,6 +101,12 @@ async function loadPublicSearchApiConfig() {
         if (radio) {
             radio.checked = true;
         }
+
+        const kpiPublicApiStatus = document.getElementById('kpiPublicApiStatus');
+        if (kpiPublicApiStatus) {
+            kpiPublicApiStatus.textContent = data.enabled ? '已开启' : '已关闭';
+            kpiPublicApiStatus.style.color = data.enabled ? 'var(--admin-success-text)' : 'var(--admin-text-muted)';
+        }
     } catch (error) {
         console.error('加载公开聚合接口配置失败:', error);
         showToast('加载公开聚合接口配置失败，请检查后端日志。', 'danger');
@@ -292,153 +298,6 @@ async function saveCookieConfig() {
     }
 }
 
-async function loadTgSearchConfig() {
-    try {
-        const response = await fetch('/admin/api/tg-search-config');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        if (data.success && data.config) {
-            const cfg = data.config;
-            const targetVal = cfg.enabled ? 'true' : 'false';
-            const radio = document.querySelector(`.frontend-link-mode-radio[name="tgSearchEnabled"][value="${targetVal}"]`);
-            if (radio) radio.checked = true;
-
-            const proxyEl = document.getElementById('tgProxyInput');
-            if (proxyEl) proxyEl.value = cfg.proxy || '';
-
-            const timeoutEl = document.getElementById('tgTimeoutInput');
-            if (timeoutEl) timeoutEl.value = cfg.timeout || 10;
-
-            const workersEl = document.getElementById('tgMaxWorkersInput');
-            if (workersEl) workersEl.value = cfg.max_workers || 4;
-
-            const channelsEl = document.getElementById('tgChannelsInput');
-            if (channelsEl) {
-                const channelsArr = Array.isArray(cfg.channels) ? cfg.channels : [];
-                channelsEl.value = channelsArr.join(', ');
-                const testChanEl = document.getElementById('tgTestChannel');
-                if (testChanEl && !testChanEl.value && channelsArr.length > 0) {
-                    testChanEl.value = channelsArr[0];
-                }
-            }
-        }
-    } catch (error) {
-        console.error('加载 TG 搜索配置失败:', error);
-        showToast('加载 TG 搜索配置失败，请检查网络或后端状态', 'danger');
-    }
-}
-
-async function saveTgSearchConfig() {
-    const saveBtn = document.getElementById('saveTgSearchConfigBtn');
-    if (saveBtn) saveBtn.disabled = true;
-
-    const enabledRadio = document.querySelector('.frontend-link-mode-radio[name="tgSearchEnabled"]:checked');
-    const enabled = enabledRadio ? enabledRadio.value === 'true' : true;
-    const proxy = (document.getElementById('tgProxyInput')?.value || '').trim();
-    const timeout = parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10);
-    const max_workers = parseInt(document.getElementById('tgMaxWorkersInput')?.value || '4', 10);
-    const channels = (document.getElementById('tgChannelsInput')?.value || '').trim();
-
-    const payload = {
-        enabled,
-        proxy,
-        timeout,
-        max_workers,
-        channels,
-    };
-
-    try {
-        const response = await fetch('/admin/api/tg-search-config', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        const data = await response.json();
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || `HTTP error! status: ${response.status}`);
-        }
-        showToast(data.message || 'Telegram 搜索配置已成功保存！', 'success');
-        await loadTgSearchConfig();
-    } catch (error) {
-        showToast(`保存 TG 配置失败: ${error.message}`, 'danger');
-    } finally {
-        if (saveBtn) saveBtn.disabled = false;
-    }
-}
-
-async function runTgTest() {
-    const btn = document.getElementById('doTgTestBtn');
-    const chanInput = document.getElementById('tgTestChannel');
-    const kwInput = document.getElementById('tgTestKeyword');
-    const resultArea = document.getElementById('tgTestResultArea');
-    const statusAlert = document.getElementById('tgTestStatusAlert');
-    const tbody = document.getElementById('tgTestTableBody');
-
-    const channel = (chanInput?.value || '').trim();
-    const keyword = (kwInput?.value || '测试').trim() || '测试';
-    const proxy = (document.getElementById('tgProxyInput')?.value || '').trim();
-    const timeout = parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10);
-
-    if (!channel) {
-        showToast('请先输入要测试的 Telegram 频道名称', 'warning');
-        if (chanInput) chanInput.focus();
-        return;
-    }
-
-    if (btn) btn.disabled = true;
-    if (resultArea) resultArea.classList.remove('d-none');
-    if (statusAlert) {
-        statusAlert.className = 'alert alert-info py-2 px-3 small mb-2';
-        statusAlert.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> 正在向频道 <strong>@${channel}</strong> 发起测试检索（关键词: "${keyword}"）...`;
-    }
-    if (tbody) tbody.innerHTML = '';
-
-    try {
-        const response = await fetch('/admin/api/tg-search-config/test', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channel, keyword, proxy, timeout }),
-        });
-        const data = await response.json();
-
-        if (!data.success) {
-            statusAlert.className = 'alert alert-warning py-2 px-3 small mb-2';
-            statusAlert.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> ${data.message || '测试未返回有效结果'}`;
-            return;
-        }
-
-        statusAlert.className = 'alert alert-success py-2 px-3 small mb-2';
-        statusAlert.innerHTML = `<i class="fas fa-check-circle me-1"></i> ${data.message} (耗时: ${data.latency_ms}ms)`;
-
-        const results = data.results || [];
-        if (results.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">该频道在本次搜索中未匹配到公开网盘链接（可能为私有频道、防抓取跳转或无对应关键词资源）</td></tr>`;
-        } else {
-            tbody.innerHTML = results.map((item, idx) => `
-                <tr>
-                    <td class="text-center text-muted">${idx + 1}</td>
-                    <td><span class="text-break">${escapeHtml(item.title || item[1] || '无标题')}</span></td>
-                    <td><span class="badge bg-secondary">${escapeHtml(item.cloud_name || item[3] || '未知')}</span></td>
-                    <td>
-                        <a href="${escapeHtml(item.share_link || item[2] || '#')}" target="_blank" class="text-break small text-decoration-none">
-                            ${escapeHtml(item.share_link || item[2] || '')}
-                        </a>
-                    </td>
-                </tr>
-            `).join('');
-        }
-    } catch (error) {
-        if (statusAlert) {
-            statusAlert.className = 'alert alert-danger py-2 px-3 small mb-2';
-            statusAlert.innerHTML = `<i class="fas fa-times-circle me-1"></i> 请求出错: ${error.message}`;
-        }
-    } finally {
-        if (btn) btn.disabled = false;
-    }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     bindFrontendNetdiskCheckboxEvents();
     bindFrontendLinkModeEvents();
@@ -446,7 +305,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();
     loadCookieConfig();
-    loadTgSearchConfig();
     updateDynamicTransferStatusVisibility();
 
     const saveCookieConfigBtn = document.getElementById('saveCookieConfigBtn');

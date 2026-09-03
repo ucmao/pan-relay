@@ -1,5 +1,5 @@
 import logging
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, request
 
 from src.services.plugin_manager import plugin_manager
 from src.utils.auth_utils import token_required
@@ -7,17 +7,6 @@ from src.utils.auth_utils import token_required
 logger = logging.getLogger(__name__)
 
 plugin_bp = Blueprint("plugin", __name__)
-
-
-@plugin_bp.route("/admin/plugins", methods=["GET"])
-@token_required
-def plugins_page():
-    """
-    插件管理工作区页面 (需要 JWT 验证)
-    """
-    plugins = plugin_manager.get_all_plugins()
-    logger.info("已验证管理员访问插件管理页面")
-    return render_template("plugin_config.html", plugins=plugins)
 
 
 @plugin_bp.route("/admin/api/plugins", methods=["GET"])

@@ -23,6 +23,10 @@ async function loadPlugins() {
         if (statCounts) {
             statCounts.textContent = `${enabled} / ${total}`;
         }
+        const tabBadgePlugins = document.getElementById('tabBadgePlugins');
+        if (tabBadgePlugins) {
+            tabBadgePlugins.textContent = `${enabled}/${total}`;
+        }
 
         if (!tbody) return;
 

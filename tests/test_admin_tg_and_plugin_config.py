@@ -149,18 +149,14 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
         settings = get_plugin_settings()
         self.assertTrue(settings["test_mock_plugin"]["is_enabled"])
 
-    def test_admin_plugins_page_unauthorized(self):
-        # 未登录访问应返回 302 重定向到登录页
-        resp = self.client.get("/admin/plugins")
-        self.assertEqual(302, resp.status_code)
-
-    def test_admin_plugins_page_authorized(self):
+    def test_old_routes_not_found(self):
+        # 验证旧路径 /admin/plugins 与 /admin/api-config 已废弃，不再平滑兼容
         self.client.set_cookie("token", self.token)
-        resp = self.client.get("/admin/plugins")
-        self.assertEqual(200, resp.status_code)
-        html = resp.get_data(as_text=True)
-        self.assertIn("插件扩展管理", html)
-        self.assertIn("plugin_config.js", html)
+        resp_plugin = self.client.get("/admin/plugins")
+        self.assertEqual(404, resp_plugin.status_code)
+
+        resp_api = self.client.get("/admin/api-config")
+        self.assertEqual(404, resp_api.status_code)
 
     def test_admin_plugins_api_endpoints(self):
         self.client.set_cookie("token", self.token)
@@ -209,6 +205,37 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
 
         # 恢复状态
         self.mgr.enable_plugin("test_mock_plugin")
+
+    # --- 统一检索源管理工作区测试 ---
+
+    def test_admin_sources_page_unauthorized(self):
+        resp = self.client.get("/admin/sources")
+        self.assertEqual(302, resp.status_code)
+
+    def test_admin_sources_page_authorized(self):
+        self.client.set_cookie("token", self.token)
+        resp = self.client.get("/admin/sources")
+        self.assertEqual(200, resp.status_code)
+        html = resp.get_data(as_text=True)
+        # 验证包含三个 Tab
+        self.assertIn("tab-pane-api", html)
+        self.assertIn("tab-pane-plugins", html)
+        self.assertIn("tab-pane-telegram", html)
+        self.assertIn("search_sources.js", html)
+        self.assertIn("api_config.js", html)
+        self.assertIn("plugin_config.js", html)
+
+    def test_admin_sources_page_tab_switch(self):
+        self.client.set_cookie("token", self.token)
+        resp = self.client.get("/admin/sources?tab=plugins")
+        self.assertEqual(200, resp.status_code)
+        html = resp.get_data(as_text=True)
+        self.assertIn('data-tab-target="plugins"', html)
+
+        resp_tg = self.client.get("/admin/sources?tab=telegram")
+        self.assertEqual(200, resp_tg.status_code)
+        html_tg = resp_tg.get_data(as_text=True)
+        self.assertIn('data-tab-target="telegram"', html_tg)
 
 
 if __name__ == "__main__":

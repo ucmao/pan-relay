@@ -35,7 +35,7 @@ class DummyTestPlugin(BasePlugin):
 class PluginSystemTest(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
-        self.mgr = PluginManager()
+        self.mgr = plugin_manager
         # 注册模拟插件
         self.dummy = DummyTestPlugin()
         self.mgr.register_plugin(self.dummy)

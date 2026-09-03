@@ -128,10 +128,18 @@
             const tbody = document.getElementById('apiTableBody');
             tbody.innerHTML = '';
 
+            const enabledCount = apiConfigs.filter(a => a.is_enabled).length;
+            const totalCount = apiConfigs.length;
+
             const kpiTotalEl = document.getElementById('kpiApiTotal');
-            if (kpiTotalEl) kpiTotalEl.textContent = `${apiConfigs.length} 个`;
+            if (kpiTotalEl) kpiTotalEl.textContent = `${totalCount} 个`;
             const kpiEnabledEl = document.getElementById('kpiApiEnabled');
-            if (kpiEnabledEl) kpiEnabledEl.textContent = `${apiConfigs.filter(a => a.is_enabled).length} 个`;
+            if (kpiEnabledEl) kpiEnabledEl.textContent = `${enabledCount} 个`;
+
+            const kpiApiStat = document.getElementById('kpiApiStat');
+            if (kpiApiStat) kpiApiStat.textContent = `${enabledCount} / ${totalCount}`;
+            const tabBadgeApi = document.getElementById('tabBadgeApi');
+            if (tabBadgeApi) tabBadgeApi.textContent = `${enabledCount}/${totalCount}`;
 
             apiConfigs.forEach((api, index) => {
                 const statusClass = api.status === true ? 'status-available' : 'status-unavailable';
