@@ -4,7 +4,7 @@
 
 **全能网盘推广与自动化变现管理系统**
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![MySQL](https://img.shields.io/badge/database-MySQL-orange.svg)](https://www.mysql.com/) [![Support](https://img.shields.io/badge/support-Quark%20%7C%20Baidu%20%7C%20Aliyun%20%7C%20UC%20%7C%20Xunlei-brightgreen.svg)](#💾-网盘支持矩阵)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![SQLite](https://img.shields.io/badge/database-SQLite-blue.svg)](https://www.sqlite.org/) [![Support](https://img.shields.io/badge/support-Quark%20%7C%20Baidu%20%7C%20Aliyun%20%7C%20UC%20%7C%20Xunlei-brightgreen.svg)](#💾-网盘支持矩阵)
 
 <p align="center">
   <a href="#-在线演示-demo">在线演示</a> •
@@ -35,7 +35,7 @@
 ## 💎 核心变现逻辑
 
 * **自动化链接洗白**：已接入 **夸克网盘、百度网盘、阿里云盘、UC网盘、迅雷网盘**。批量导入他人分享链接，系统自动执行“转存至个人盘 -> 生成个人分享链 -> 替换入库”，实现收益权转移。
-* **私有资源池**：资源存入本地 MySQL 数据库，支持后台批量管理、资源标注及一键导出 Excel，方便全网分发。
+* **私有资源池**：资源存入本地 SQLite 数据库（开箱即用，免配数据库），支持后台批量管理、资源标注及一键导出 Excel，方便全网分发。
 * **多维分发模式**：
     * **前台搜索**：极简搜索首页，优先展示您的收益链接，后聚合展示第三方 API 结果。
     * **标准接口**：提供公开 API，可对接微信机器人、小程序或其他资源导航站。
@@ -92,7 +92,7 @@
 ### 0. 环境要求
 
 * **Python**: 3.8 及以上版本
-* **MySQL**: 5.7 或 8.0+
+* **数据库**: 内置 SQLite（无需安装配置任何数据库软件，开箱即用）
 
 ### 1. 获取源码
 
@@ -101,7 +101,6 @@
 ```bash
 git clone https://github.com/ucmao/search-ucmao.git
 cd search-ucmao
-
 ```
 
 ### 2. 创建虚拟环境 (推荐)
@@ -110,11 +109,9 @@ cd search-ucmao
 # 创建虚拟环境
 python3 -m venv venv
 # 激活环境 (Linux/Mac)
-
 source venv/bin/activate
 # 激活环境 (Windows)
 # venv\Scripts\activate
-
 ```
 
 ### 3. 安装依赖
@@ -122,24 +119,18 @@ source venv/bin/activate
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
-
 ```
 
 ### 4. 环境配置 (.env)
 
-将项目根目录的 `.env.example` 文件重命名为 `.env` 文件，填入以下配置：
+将项目根目录的 `.env.example` 文件重命名为 `.env` 文件，填入以下基础配置：
 
 ```ini
 # 系统密钥 (用于JWT签名)
 SECRET_KEY = 请替换为你的JWT签名密钥（如随机字符串）
 
-# MYSQL 数据库配置
-DB_HOST = localhost
-DB_PORT = 3306
-DB_DATABASE = ucmao_search
-DB_USER = root
-DB_PASSWORD = 请替换为你的MySQL密码
-DB_CHARSET = utf8mb4
+# SQLite 数据库配置（可选，留空则默认保存在 data/ucmao_search.db）
+# SQLITE_DB_PATH = data/ucmao_search.db
 
 # Telegram 公开频道搜索（多个频道使用英文逗号分隔）
 TG_SEARCH_ENABLED = true
@@ -152,28 +143,18 @@ TG_PROXY =
 # 管理员账号配置
 ADMIN_USERNAME = admin
 ADMIN_PASSWORD = 请替换为你的管理员密码
-
 ```
 
 Telegram 搜索直接请求公开频道页面 `https://t.me/s/<频道>?q=<关键词>`，不需要
 Bot Token、`api_id` 或 Telegram 账号。部署服务器必须能够访问 `t.me`；失效、私有或
 无法提供公开预览的频道会被自动跳过。
 
-### 5. 初始化数据库
+> **无需手动建库**：应用启动时会**自动创建 SQLite 数据库并初始化预置搜索源**，零配置直接运行。
 
-```bash
-# 创建数据库
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS ucmao_search DEFAULT CHARACTER SET utf8mb4;"
-# 导入表结构
-mysql -u root -p ucmao_search < schema.sql
-
-```
-
-### 6. 启动应用
+### 5. 启动应用
 
 ```bash
 python app.py
-
 ```
 
 访问 `http://localhost:5004` 即可进入系统。

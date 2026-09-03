@@ -10,6 +10,7 @@ from routes.hot_resource_routes import resources_bp
 from routes.auth_routes import auth_bp
 from routes.system_config_routes import system_config_bp
 from configs.app_config import SECRET_KEY
+from src.db.connection import init_sqlite_db
 from src.services.scheduler_service import start_scheduler
 from src.services.system_config_service import get_frontend_link_mode
 
@@ -17,6 +18,9 @@ app = Flask(__name__)
 
 
 app.secret_key = SECRET_KEY
+
+# 初始化 SQLite 数据库与表结构
+init_sqlite_db()
 
 # 注册蓝图
 app.register_blueprint(auth_bp)

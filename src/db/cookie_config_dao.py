@@ -1,9 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from pymysql.cursors import DictCursor
-
-from src.db.connection import Error, get_db_connection
+from src.db.connection import DictCursor, Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 

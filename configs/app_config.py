@@ -49,15 +49,9 @@ TG_PROXY = os.getenv("TG_PROXY", "").strip()
 # JWT密钥
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-# 数据库配置，从环境变量获取
-db_config = {
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
-    'host': os.getenv('DB_HOST', 'localhost'),  # 提供默认值
-    'database': os.getenv('DB_DATABASE'),
-    'port': int(os.getenv('DB_PORT', 3306)),    # 转换为整数并提供默认值
-    'charset': os.getenv('DB_CHARSET', 'utf8mb4')
-}
+# SQLite 数据库配置
+default_db_path = os.path.join(current_dir, "..", "data", "ucmao_search.db")
+SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", os.path.abspath(default_db_path))
 
 # User-Agent 列表配置（这类静态列表可以保持不变）
 user_agents = [

@@ -2,20 +2,17 @@ import json
 import logging
 from typing import Any, Dict, Optional
 
-from pymysql.cursors import DictCursor
-
-from src.db.connection import Error, get_db_connection
+from src.db.connection import DictCursor, Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
 SYSTEM_CONFIG_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS system_config (
-  config_key varchar(100) NOT NULL COMMENT '配置键',
-  config_value text DEFAULT NULL COMMENT '配置值(JSON字符串)',
-  created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (config_key)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表'
+  config_key TEXT PRIMARY KEY,
+  config_value TEXT DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)
 """
 
 
@@ -49,7 +46,7 @@ def get_config_value(config_key: str) -> Optional[str]:
     try:
         cursor = conn.cursor(DictCursor)
         cursor.execute(
-            "SELECT config_value FROM system_config WHERE config_key = %s",
+            "SELECT config_value FROM system_config WHERE config_key = ?",
             (config_key,),
         )
         row = cursor.fetchone()
@@ -75,8 +72,8 @@ def set_config_value(config_key: str, config_value: Dict[str, Any]) -> bool:
         cursor.execute(
             """
             INSERT INTO system_config (config_key, config_value)
-            VALUES (%s, %s)
-            ON DUPLICATE KEY UPDATE config_value = VALUES(config_value)
+            VALUES (?, ?)
+            ON CONFLICT(config_key) DO UPDATE SET config_value = excluded.config_value, updated_at = datetime('now')
             """,
             (config_key, json.dumps(config_value, ensure_ascii=True)),
         )
