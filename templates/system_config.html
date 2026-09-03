@@ -1,90 +1,45 @@
 {% extends "admin_layout.html" %}
 {% set active_page = 'config' %}
 
-{% block head %}
-<title>Pan-Relay - 系统配置</title>
-<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-{% endblock %}
+{% block title %}系统配置 - Pan-Relay Console{% endblock %}
 
 {% block content %}
-<div class="admin-container">
-    <!-- 业务头部 -->
-    <header class="admin-page-header">
-        <div class="admin-page-title-group">
-            <h1 class="admin-page-title">
-                <i class="fas fa-sliders-h text-primary"></i> 全局系统配置中心
-            </h1>
-            <p class="admin-page-desc">统一调度系统出链模式、Telegram并发抓取网络、公开API网关及云盘运营凭证。</p>
-        </div>
-        <div class="admin-page-actions">
-            <button class="btn btn-outline-primary" id="viewPublicSearchApiDocBtn" data-ui-modal-target="#publicSearchApiModal">
-                <i class="fas fa-book-open"></i> API 文档
-            </button>
-            <button class="btn btn-primary" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});">
-                <i class="fas fa-key"></i> 管理云盘凭证
-            </button>
-        </div>
-    </header>
-
-    <!-- KPI 概览指标条 -->
-    <div class="admin-kpi-grid">
-        <div class="admin-kpi-card">
-            <div class="admin-kpi-header">
-                <span class="admin-kpi-label">出链分发策略</span>
-                <span class="admin-kpi-icon is-blue"><i class="fas fa-random"></i></span>
+<!-- Page Header (ucmao admin_modern style) -->
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+        <h1 class="text-xl font-bold tracking-tight text-slate-900">系统全局配置</h1>
+        <p class="text-xs text-slate-500 mt-0.5">统一调度出链策略、公开 API 网关、前台展示网盘及自动转存凭证</p>
+    </div>
+    <div class="flex items-center space-x-2.5 flex-wrap">
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">出链策略</span>
+                <span class="stat-value" id="kpiDeliveryMode" style="font-size: 0.8125rem;">原始链接</span>
             </div>
-            <div class="admin-kpi-value" id="kpiDeliveryMode">出链模式</div>
-            <div class="admin-kpi-footer">
-                <i class="fas fa-info-circle"></i> 支持原始直连或动态转存替换
-            </div>
-        </div>
-        <div class="admin-kpi-card">
-            <div class="admin-kpi-header">
-                <span class="admin-kpi-label">公开 API 网关</span>
-                <span class="admin-kpi-icon is-green"><i class="fas fa-globe"></i></span>
-            </div>
-            <div class="admin-kpi-value" id="kpiPublicApiStatus">聚合端点</div>
-            <div class="admin-kpi-footer">
-                <i class="fas fa-code"></i> /api 公开检索服务
-            </div>
-        </div>
-        <div class="admin-kpi-card">
-            <div class="admin-kpi-header">
-                <span class="admin-kpi-label">展示网盘范围</span>
-                <span class="admin-kpi-icon is-amber"><i class="fas fa-cloud-download-alt"></i></span>
-            </div>
-            <div class="admin-kpi-value">全域过滤</div>
-            <div class="admin-kpi-footer">
-                <i class="fas fa-filter"></i> 作用于前台与对外 API 接口
-            </div>
-        </div>
-        <div class="admin-kpi-card">
-            <div class="admin-kpi-header">
-                <span class="admin-kpi-label">凭证存储机制</span>
-                <span class="admin-kpi-icon is-purple"><i class="fas fa-shield-alt"></i></span>
-            </div>
-            <div class="admin-kpi-value">服务端安全存储</div>
-            <div class="admin-kpi-footer">
-                <i class="fas fa-lock"></i> 绝不对外暴露，保护账号隐私
+            <div class="stat-item">
+                <span class="stat-label">公开 API</span>
+                <span class="stat-value" id="kpiPublicApiStatus" style="font-size: 0.8125rem;">已开启</span>
             </div>
         </div>
     </div>
+</div>
 
+<div class="space-y-6">
     <!-- 1. 公开聚合搜索接口 -->
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
-                    <i class="fas fa-globe text-primary"></i> 公开聚合搜索接口
+                    <i class="fas fa-globe text-blue-600"></i> 公开聚合搜索接口
                 </h2>
-                <p class="admin-panel-desc">对外提供与前台同源的 JSON 聚合搜索端点 (<code>/api</code>)，供第三方程序或自动化脚本调用。</p>
+                <p class="admin-panel-desc">对外提供与前台同源的 JSON 聚合搜索端点 (<code>/api</code>)</p>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="flex items-center space-x-2">
                 <button class="btn btn-outline-secondary btn-sm" data-ui-modal-target="#publicSearchApiModal">
-                    <i class="fas fa-code"></i> 查看文档
+                    <i class="fas fa-code text-[10px]"></i> 查看文档
                 </button>
                 <button class="btn btn-primary btn-sm" id="savePublicSearchApiButton" onclick="savePublicSearchApiConfig()">
-                    <i class="fas fa-save"></i> 保存接口设置
+                    <i class="fas fa-save text-[10px]"></i> 保存接口设置
                 </button>
             </div>
         </div>
@@ -94,7 +49,7 @@
                     <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled" id="publicSearchApiEnabledOn" value="true" checked>
                     <div class="frontend-link-mode-copy">
                         <span class="frontend-link-mode-title">开启公开访问</span>
-                        <span class="frontend-link-mode-desc">允许外部程序通过 <code>GET /api?keyword=xxx</code> 正常请求聚合搜索结果。</span>
+                        <span class="frontend-link-mode-desc">允许外部调用 <code>GET /api?keyword=xxx</code> 正常请求聚合搜索数据</span>
                     </div>
                     <span class="frontend-link-mode-switch"></span>
                 </label>
@@ -102,7 +57,7 @@
                     <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled" id="publicSearchApiEnabledOff" value="false">
                     <div class="frontend-link-mode-copy">
                         <span class="frontend-link-mode-title">关闭公开访问</span>
-                        <span class="frontend-link-mode-desc">外部访问时将返回服务关闭提示，但内部管理员前台搜索仍可正常使用。</span>
+                        <span class="frontend-link-mode-desc">对外返回服务关闭提示，但管理员前台搜索仍可正常使用</span>
                     </div>
                     <span class="frontend-link-mode-switch"></span>
                 </label>
@@ -110,17 +65,17 @@
         </div>
     </section>
 
-    <!-- 3. 搜索出链策略与动态转存 -->
+    <!-- 2. 搜索出链策略与动态转存 -->
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
-                    <i class="fas fa-share-alt text-primary"></i> 搜索出链与动态转存策略
+                    <i class="fas fa-share-alt text-blue-600"></i> 搜索出链与动态转存策略
                 </h2>
-                <p class="admin-panel-desc">控制前台用户点击资源时的行为：直接提供原始分享链接，或实时转存为您的私有分享链接。</p>
+                <p class="admin-panel-desc">控制前台资源点击行为：直接提供原始分享链接，或转存为私有链接</p>
             </div>
             <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton" onclick="saveFrontendLinkMode()">
-                <i class="fas fa-save"></i> 保存出链策略
+                <i class="fas fa-save text-[10px]"></i> 保存出链策略
             </button>
         </div>
         <div class="admin-panel-body">
@@ -129,7 +84,7 @@
                     <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeCopy" value="copy" checked>
                     <div class="frontend-link-mode-copy">
                         <span class="frontend-link-mode-title">原始链接模式 (推荐)</span>
-                        <span class="frontend-link-mode-desc">前台展示原始链接，用户点击“复制”即可直接使用，速度最快。</span>
+                        <span class="frontend-link-mode-desc">展示原始分享链接，用户直接复制提取码使用，速度快无额外延迟</span>
                     </div>
                     <span class="frontend-link-mode-switch"></span>
                 </label>
@@ -137,39 +92,39 @@
                     <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeView" value="view">
                     <div class="frontend-link-mode-copy">
                         <span class="frontend-link-mode-title">动态转存模式</span>
-                        <span class="frontend-link-mode-desc">前台隐藏原链接，用户点击“查看”时通过您配置的凭证自动转存并生成新分享链接。</span>
+                        <span class="frontend-link-mode-desc">隐藏原链接，用户点击时通过已配置的凭证自动转存并生成新分享链接</span>
                     </div>
                     <span class="frontend-link-mode-switch"></span>
                 </label>
             </div>
 
-            <div class="dynamic-transfer-status-panel d-none" id="dynamicTransferStatusPanel">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h3 class="admin-panel-title" style="font-size: 0.92rem;">
-                        <i class="fas fa-heartbeat text-success"></i> 自动转存凭证健康度
+            <div class="dynamic-transfer-status-panel d-none mt-4 p-4.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3.5" id="dynamicTransferStatusPanel">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2.5 border-b border-slate-200/60">
+                    <h3 class="text-xs font-bold text-slate-800 flex items-center gap-2 flex-shrink-0">
+                        <i class="fas fa-heartbeat text-emerald-500"></i> 转存凭证可用状态
                     </h3>
-                    <span class="text-muted small" id="dynamicTransferStatusSummary">正在检测 5 个云盘凭证的可用状态...</span>
+                    <span class="text-slate-400 text-[11px] leading-relaxed" id="dynamicTransferStatusSummary">正在检测云盘凭证可用状态...</span>
                 </div>
                 <div class="dynamic-transfer-status-grid" id="dynamicTransferStatusGrid"></div>
             </div>
         </div>
     </section>
 
-    <!-- 4. 网盘类型配置 -->
+    <!-- 3. 网盘类型配置 -->
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
-                    <i class="fas fa-filter text-primary"></i> 前台展示网盘类型
+                    <i class="fas fa-filter text-blue-600"></i> 前台展示网盘类型
                 </h2>
-                <p class="admin-panel-desc">控制前台搜索页与对外 API 允许展示的网盘类型。未勾选的网盘将被屏蔽，已选 <span id="frontendNetdiskSelectedCount" class="fw-bold text-primary">0</span> / <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></p>
+                <p class="admin-panel-desc">控制前台与 API 允许展示的网盘类型，已选 <span id="frontendNetdiskSelectedCount" class="font-bold text-blue-600">0</span> / <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></p>
             </div>
-            <div class="d-flex align-items-center gap-2">
+            <div class="flex items-center space-x-2">
                 <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button" onclick="toggleAllFrontendDisplayNetdisks()">
-                    全选/反选
+                    全选 / 反选
                 </button>
                 <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton" onclick="saveFrontendDisplayNetdisks()">
-                    <i class="fas fa-save"></i> 保存网盘设置
+                    <i class="fas fa-save text-[10px]"></i> 保存设置
                 </button>
             </div>
         </div>
@@ -179,7 +134,7 @@
                 <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
                     <input class="frontend-display-netdisk-checkbox" type="checkbox" id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
                     <span class="frontend-netdisk-card-name">{{ netdisk_name }}</span>
-                    <span class="frontend-netdisk-card-check">
+                    <span class="frontend-netdisk-card-check text-blue-600">
                         <i class="fas fa-check"></i>
                     </span>
                 </label>
@@ -188,55 +143,57 @@
         </div>
     </section>
 
-    <!-- 5. 云盘凭证 -->
+    <!-- 4. 云盘凭证 -->
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
-                    <i class="fas fa-key text-warning"></i> 云盘账号凭证与密钥
+                    <i class="fas fa-key text-amber-500"></i> 云盘账号凭证与密钥
                 </h2>
-                <p class="admin-panel-desc">用于后台转存、动态分享与生成私有链接。支持 Cookie 或 Refresh Token，仅保存在服务端安全数据库中。</p>
+                <p class="admin-panel-desc">用于后台自动转存与生成私有分享，仅保存在服务端安全数据库中</p>
             </div>
             <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
-                <i class="fas fa-save"></i> 保存全部凭证
+                <i class="fas fa-save text-[10px]"></i> 保存凭证
             </button>
         </div>
         <div class="admin-panel-body">
-            <div class="row g-3">
-                <div class="col-lg-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                     <label for="baiduCookie" class="form-label">百度网盘 Cookie</label>
-                    <textarea class="form-control font-mono" id="baiduCookie" rows="6" placeholder="请输入百度网盘网页端抓取的完整 Cookie"></textarea>
+                    <textarea class="form-control font-mono" id="baiduCookie" rows="5" placeholder="请输入百度网盘网页端抓取的完整 Cookie"></textarea>
                 </div>
-                <div class="col-lg-6">
+                <div>
                     <label for="quarkCookie" class="form-label">夸克网盘 Cookie</label>
-                    <textarea class="form-control font-mono" id="quarkCookie" rows="6" placeholder="请输入夸克网盘网页端抓取的完整 Cookie"></textarea>
+                    <textarea class="form-control font-mono" id="quarkCookie" rows="5" placeholder="请输入夸克网盘网页端抓取的完整 Cookie"></textarea>
                 </div>
-                <div class="col-lg-6">
+                <div>
                     <label for="aliyunToken" class="form-label">阿里云盘 Refresh Token</label>
-                    <textarea class="form-control font-mono" id="aliyunToken" rows="6" placeholder="请输入阿里云盘的 refresh_token"></textarea>
+                    <textarea class="form-control font-mono" id="aliyunToken" rows="5" placeholder="请输入阿里云盘的 refresh_token"></textarea>
                 </div>
-                <div class="col-lg-6">
+                <div>
                     <label for="ucCookie" class="form-label">UC 网盘 Cookie</label>
-                    <textarea class="form-control font-mono" id="ucCookie" rows="6" placeholder="请输入 UC 网盘网页端抓取的完整 Cookie"></textarea>
+                    <textarea class="form-control font-mono" id="ucCookie" rows="5" placeholder="请输入 UC 网盘网页端抓取的完整 Cookie"></textarea>
                 </div>
-                <div class="col-lg-6">
-                    <label for="xunleiRefreshToken" class="form-label">迅雷网盘 Refresh Token</label>
-                    <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="4" placeholder="请输入迅雷网盘 refresh_token"></textarea>
+                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-2">
+                        <label for="xunleiRefreshToken" class="form-label">迅雷网盘 Refresh Token</label>
+                        <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="3" placeholder="请输入迅雷网盘 refresh_token"></textarea>
+                    </div>
+                    <div>
+                        <label for="xunleiCaptchaSign" class="form-label">迅雷 Captcha Sign</label>
+                        <textarea class="form-control font-mono" id="xunleiCaptchaSign" rows="3" placeholder="请输入 captcha_sign"></textarea>
+                    </div>
                 </div>
-                <div class="col-lg-3">
-                    <label for="xunleiCaptchaSign" class="form-label">迅雷 Captcha Sign</label>
-                    <textarea class="form-control font-mono" id="xunleiCaptchaSign" rows="4" placeholder="请输入 captcha_sign"></textarea>
-                </div>
-                <div class="col-lg-3">
+                <div class="md:col-span-2">
                     <label for="xunleiUserId" class="form-label">迅雷 User ID</label>
                     <input type="text" class="form-control font-mono" id="xunleiUserId" placeholder="请输入 user_id">
                 </div>
             </div>
         </div>
     </section>
-
-    <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
 </div>
+
+<div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
 
 <!-- API 文档模态框 -->
 <div class="modal fade" id="publicSearchApiModal" tabindex="-1" aria-labelledby="publicSearchApiModalLabel" aria-hidden="true">
@@ -244,34 +201,36 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="publicSearchApiModalLabel">
-                    <i class="fas fa-book-open text-primary me-1"></i> 公开聚合搜索接口文档
+                    <i class="fas fa-book-open text-blue-600 mr-2"></i> 公开聚合搜索接口文档
                 </h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
-            <div class="modal-body">
-                <div class="p-3 mb-3 bg-light border rounded">
+            <div class="modal-body space-y-4">
+                <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl">
                     <span class="badge badge-success mb-2">Public Endpoint</span>
-                    <h6 class="fw-bold mb-1">与前台同源的聚合检索接口</h6>
-                    <p class="text-muted small mb-0">调用该端点将同时聚合内部资源池与启用的第三方API/插件，并应用网盘过滤。</p>
+                    <h6 class="font-bold text-slate-800 text-xs mb-1">与前台同源的聚合检索接口</h6>
+                    <p class="text-slate-500 text-xs mb-0">调用该端点将同时聚合内部资源池与启用的第三方API/插件，并自动应用网盘过滤规则。</p>
                 </div>
-                <table class="table table-sm mb-3">
-                    <tr><th style="width: 100px;">请求地址</th><td><code>GET /api</code></td></tr>
-                    <tr><th>参数 keyword</th><td>搜索关键词 (必填，如：<code>凡人修仙传</code>)</td></tr>
+                <table class="table">
+                    <tr><th style="width: 110px;">请求地址</th><td><code>GET /api</code></td></tr>
+                    <tr><th>参数 keyword</th><td>搜索关键词 (必填，如：<code>流浪地球</code>)</td></tr>
                     <tr><th>参数 limit</th><td>单次返回条数限制 (默认: 100)</td></tr>
                 </table>
-                <h6 class="fw-bold mt-3 mb-2">返回示例 (JSON)</h6>
-                <pre class="bg-light p-3 rounded border font-mono small"><code>{
+                <div>
+                    <div class="text-xs font-bold text-slate-700 mb-2">返回示例 (JSON)</div>
+                    <pre class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 font-mono text-xs text-slate-700 overflow-x-auto"><code>{
   "success": true,
   "total": 1,
   "results": [
     {
       "source": "hot",
-      "name": "凡人修仙传 4K",
+      "name": "流浪地球2 4K原画",
       "share_link": "https://pan.quark.cn/s/xxxx",
       "cloud_name": "夸克网盘"
     }
   ]
 }</code></pre>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-ui-dismiss="modal">关闭</button>

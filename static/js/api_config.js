@@ -185,37 +185,39 @@
                     <td>${timeDisplay}</td>
                     <td>${requestDisplay}</td>
                     <td>${responseDisplay}</td>
-                    <td class="action-buttons d-flex justify-content-center align-items-center">
-                        <button class="btn btn-sm ${toggleBtnClass}" title="${api.status === false && !api.is_enabled ? 'API异常，请先测试修复后再启用' : '点击切换状态'}"
-                                onclick="toggleEnabled(${api.id}, ${nextAction})" ${isToggleDisabled}>
-                            <i class="fas ${toggleBtnIcon}"></i> ${toggleBtnText}
-                        </button>
-                        <button class="btn btn-sm btn-info text-white" onclick="testApi(${api.id}, this)" title="测试单个 API" ${isTestDisabled}>
-                            <i class="fas fa-play"></i> 测试
-                        </button>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
-                                data-ui-dropdown-toggle aria-expanded="false" title="更多操作">
-                                <i class="fas fa-ellipsis-v"></i>
+                    <td class="action-buttons text-center">
+                        <div class="inline-flex items-center gap-1.5 justify-center">
+                            <button class="btn btn-sm ${toggleBtnClass}" title="${api.status === false && !api.is_enabled ? 'API异常，请先测试修复后再启用' : '点击切换状态'}"
+                                    onclick="toggleEnabled(${api.id}, ${nextAction})" ${isToggleDisabled}>
+                                <i class="fas ${toggleBtnIcon}"></i> ${toggleBtnText}
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" href="javascript:void(0)" onclick="editApi(${api.id})">
-                                        <i class="fas fa-edit me-2"></i> 修改
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="javascript:void(0)" onclick="copyApi(${api.id})">
-                                        <i class="fas fa-copy me-2"></i> 复制
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="deleteApi(${api.id})">
-                                        <i class="fas fa-trash me-2"></i> 删除
-                                    </a>
-                                </li>
-                            </ul>
+                            <button class="btn btn-sm btn-info" onclick="testApi(${api.id}, this)" title="测试单个 API" ${isTestDisabled}>
+                                <i class="fas fa-play"></i> 测试
+                            </button>
+                            <div class="dropdown relative inline-block">
+                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
+                                    data-ui-dropdown-toggle aria-expanded="false" title="更多操作">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0)" onclick="editApi(${api.id})">
+                                            <i class="fas fa-edit me-2 text-slate-400"></i> 修改
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="javascript:void(0)" onclick="copyApi(${api.id})">
+                                            <i class="fas fa-copy me-2 text-slate-400"></i> 复制
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="deleteApi(${api.id})">
+                                            <i class="fas fa-trash me-2"></i> 删除
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </td>
                 `;

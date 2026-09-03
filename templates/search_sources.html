@@ -1,235 +1,70 @@
 {% extends "admin_layout.html" %}
 {% set active_page = 'sources' %}
 
-{% block head %}
-    <title>Pan-Relay - 检索源统一治理</title>
-    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-    <style>
-        .plugin-status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 2px 8px;
-            border-radius: var(--admin-radius-full);
-            font-size: 0.72rem;
-            font-weight: 600;
-        }
-        .plugin-status-badge.is-enabled {
-            background: var(--admin-success-bg);
-            color: var(--admin-success-text);
-            border: 1px solid var(--admin-success-border);
-        }
-        .plugin-status-badge.is-disabled {
-            background: var(--admin-surface-muted);
-            color: var(--admin-text-muted);
-            border: 1px solid var(--admin-border);
-        }
-        .plugin-code-tag {
-            font-family: "SFMono-Regular", Consolas, Menlo, monospace;
-            background: var(--admin-surface-muted);
-            padding: 2px 6px;
-            border-radius: var(--admin-radius-sm);
-            font-size: 0.78rem;
-            color: var(--admin-text-secondary);
-            border: 1px solid var(--admin-border);
-        }
-        .plugin-switch {
-            position: relative;
-            display: inline-block;
-            width: 38px;
-            height: 20px;
-        }
-        .plugin-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .plugin-slider {
-            position: absolute;
-            cursor: pointer;
-            inset: 0;
-            background-color: var(--admin-border-strong);
-            transition: .25s ease;
-            border-radius: 20px;
-        }
-        .plugin-slider:before {
-            position: absolute;
-            content: "";
-            height: 14px;
-            width: 14px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .25s ease;
-            border-radius: 50%;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-        input:checked + .plugin-slider {
-            background-color: var(--admin-primary);
-        }
-        input:checked + .plugin-slider:before {
-            transform: translateX(18px);
-        }
-
-        /* 检索源 Tab 导航条样式 */
-        .source-tabs-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-bottom: 2px solid var(--admin-border);
-            margin-bottom: 24px;
-            padding-bottom: 0;
-        }
-        .source-tab-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            border: none;
-            background: transparent;
-            color: var(--admin-text-secondary);
-            font-size: 0.92rem;
-            font-weight: 500;
-            cursor: pointer;
-            position: relative;
-            bottom: -2px;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s ease;
-        }
-        .source-tab-btn:hover {
-            color: var(--admin-primary);
-        }
-        .source-tab-btn.is-active {
-            color: var(--admin-primary);
-            font-weight: 600;
-            border-bottom: 2px solid var(--admin-primary);
-        }
-        .source-tab-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 1px 7px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            border-radius: var(--admin-radius-full);
-            background: var(--admin-surface-muted);
-            color: var(--admin-text-muted);
-            border: 1px solid var(--admin-border);
-            transition: all 0.2s ease;
-        }
-        .source-tab-btn.is-active .source-tab-badge {
-            background: var(--admin-primary-light);
-            color: var(--admin-primary);
-            border-color: rgba(37, 99, 235, 0.2);
-        }
-
-        .source-tab-pane {
-            display: none;
-        }
-        .source-tab-pane.is-active {
-            display: block;
-            animation: fadeIn 0.15s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0.7; transform: translateY(2px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-{% endblock %}
+{% block title %}检索源治理 - Pan-Relay Console{% endblock %}
 
 {% block content %}
-    <div class="admin-container">
-        <!-- 业务头部 -->
-        <header class="admin-page-header">
-            <div class="admin-page-title-group">
-                <h1 class="admin-page-title">
-                    <i class="fas fa-satellite-dish text-primary"></i> 检索源治理与插件扩展管理
-                </h1>
-                <p class="admin-page-desc">统一配置外部第三方 API 检索源、Python 数据采集插件以及 Telegram 频道并发检索网络。</p>
+<!-- Page Header (ucmao admin_modern style) -->
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+        <h1 class="text-xl font-bold tracking-tight text-slate-900">检索源治理</h1>
+        <p class="text-xs text-slate-500 mt-0.5">配置第三方 API 接口、Python 采集插件及 Telegram 频道抓取网络</p>
+    </div>
+    <div class="flex items-center space-x-2.5 flex-wrap">
+        <!-- 紧凑运行状态条 -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-label">API 接口</span>
+                <span class="stat-value" id="kpiApiStat">-- / --</span>
             </div>
-            <div class="admin-page-actions">
-                <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('search_index') }}" target="_blank">
-                    <i class="fas fa-external-link-alt"></i> 前台搜索联调
-                </a>
+            <div class="stat-item">
+                <span class="stat-label">插件扩展</span>
+                <span class="stat-value" id="statPluginCounts">-- / --</span>
             </div>
-        </header>
-
-        <!-- KPI 概览指标条 -->
-        <div class="admin-kpi-grid">
-            <div class="admin-kpi-card">
-                <div class="admin-kpi-header">
-                    <span class="admin-kpi-label">API 检索源</span>
-                    <span class="admin-kpi-icon is-blue"><i class="fas fa-code"></i></span>
-                </div>
-                <div class="admin-kpi-value" id="kpiApiStat">-- / --</div>
-                <span id="kpiApiTotal" class="d-none">--</span>
-                <span id="kpiApiEnabled" class="d-none">--</span>
-                <div class="admin-kpi-footer">
-                    <i class="fas fa-info-circle"></i> <span id="kpiApiDetail">已启用 / 总配置</span>
-                </div>
-            </div>
-            <div class="admin-kpi-card">
-                <div class="admin-kpi-header">
-                    <span class="admin-kpi-label">插件扩展</span>
-                    <span class="admin-kpi-icon is-green"><i class="fas fa-puzzle-piece"></i></span>
-                </div>
-                <div class="admin-kpi-value" id="statPluginCounts">-- / --</div>
-                <div class="admin-kpi-footer">
-                    <i class="fas fa-bolt"></i> 动态扫描 & 热重载引擎
-                </div>
-            </div>
-            <div class="admin-kpi-card">
-                <div class="admin-kpi-header">
-                    <span class="admin-kpi-label">Telegram 检索</span>
-                    <span class="admin-kpi-icon is-amber"><i class="fab fa-telegram-plane"></i></span>
-                </div>
-                <div class="admin-kpi-value" id="kpiTgStatus">已启用</div>
-                <div class="admin-kpi-footer">
-                    <i class="fas fa-network-wired"></i> <span id="kpiTgDetail">监控 0 个公开频道</span>
-                </div>
-            </div>
-            <div class="admin-kpi-card">
-                <div class="admin-kpi-header">
-                    <span class="admin-kpi-label">多路并发隔离</span>
-                    <span class="admin-kpi-icon is-purple"><i class="fas fa-shield-virus"></i></span>
-                </div>
-                <div class="admin-kpi-value">熔断隔离</div>
-                <div class="admin-kpi-footer">
-                    <i class="fas fa-check"></i> 单源超时不阻塞其他渠道
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 切换导航 -->
-        <div class="source-tabs-header">
-            <button class="source-tab-btn {{ 'is-active' if active_tab == 'api' else '' }}" data-tab-target="api" type="button">
-                <i class="fas fa-code"></i> API 检索源
-                <span class="source-tab-badge" id="tabBadgeApi">--</span>
-            </button>
-            <button class="source-tab-btn {{ 'is-active' if active_tab == 'plugins' else '' }}" data-tab-target="plugins" type="button">
-                <i class="fas fa-puzzle-piece"></i> 插件扩展
-                <span class="source-tab-badge" id="tabBadgePlugins">--</span>
-            </button>
-            <button class="source-tab-btn {{ 'is-active' if active_tab == 'telegram' else '' }}" data-tab-target="telegram" type="button">
-                <i class="fab fa-telegram-plane"></i> Telegram 频道
-                <span class="source-tab-badge" id="tabBadgeTg">--</span>
-            </button>
-        </div>
-
-        <!-- Tab 内容区域 -->
-        <div class="source-tab-content">
-            <div id="tab-pane-api" class="source-tab-pane {{ 'is-active' if active_tab == 'api' else '' }}">
-                {% include "sources/_tab_api.html" %}
-            </div>
-            <div id="tab-pane-plugins" class="source-tab-pane {{ 'is-active' if active_tab == 'plugins' else '' }}">
-                {% include "sources/_tab_plugins.html" %}
-            </div>
-            <div id="tab-pane-telegram" class="source-tab-pane {{ 'is-active' if active_tab == 'telegram' else '' }}">
-                {% include "sources/_tab_telegram.html" %}
+            <div class="stat-item">
+                <span class="stat-label">Telegram</span>
+                <span class="stat-value" id="kpiTgStatus" style="font-size: 0.8125rem;">--</span>
             </div>
         </div>
     </div>
+</div>
 
-    <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
+<!-- 保持 JS 兼容的隐藏辅助元素 -->
+<span id="kpiApiTotal" class="d-none">--</span>
+<span id="kpiApiEnabled" class="d-none">--</span>
+<span id="kpiApiDetail" class="d-none"></span>
+<span id="kpiTgDetail" class="d-none"></span>
+<span id="tabBadgeApi" class="d-none"></span>
+<span id="tabBadgePlugins" class="d-none"></span>
+<span id="tabBadgeTg" class="d-none"></span>
+
+<!-- 分段控制 Tab 导航 -->
+<div class="source-tabs-header">
+    <button class="source-tab-btn {{ 'is-active' if active_tab == 'api' else '' }}" data-tab-target="api" type="button">
+        <i class="fas fa-code"></i> API 检索源
+    </button>
+    <button class="source-tab-btn {{ 'is-active' if active_tab == 'plugins' else '' }}" data-tab-target="plugins" type="button">
+        <i class="fas fa-puzzle-piece"></i> 插件扩展
+    </button>
+    <button class="source-tab-btn {{ 'is-active' if active_tab == 'telegram' else '' }}" data-tab-target="telegram" type="button">
+        <i class="fab fa-telegram-plane"></i> Telegram 频道
+    </button>
+</div>
+
+<!-- Tab 内容区域 -->
+<div class="source-tab-content">
+    <div id="tab-pane-api" class="source-tab-pane {{ 'is-active' if active_tab == 'api' else '' }}">
+        {% include "sources/_tab_api.html" %}
+    </div>
+    <div id="tab-pane-plugins" class="source-tab-pane {{ 'is-active' if active_tab == 'plugins' else '' }}">
+        {% include "sources/_tab_plugins.html" %}
+    </div>
+    <div id="tab-pane-telegram" class="source-tab-pane {{ 'is-active' if active_tab == 'telegram' else '' }}">
+        {% include "sources/_tab_telegram.html" %}
+    </div>
+</div>
+
+<div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
 {% endblock %}
 
 {% block scripts %}

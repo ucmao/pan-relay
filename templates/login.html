@@ -1,52 +1,70 @@
-{% extends "admin_layout.html" %}
-{% set active_page = 'login' %}
-
-{% block head %}
-<title>Pan-Relay - 管理员登录</title>
-<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-{% endblock %}
-
-{% block content %}
-<div class="admin-login-wrapper">
-    <div class="admin-login-card">
-        <div class="admin-login-header">
-            <img src="{{ url_for('static', filename='images/search_logo.png') }}" alt="Pan-Relay" class="admin-login-logo">
-            <h2 class="admin-login-title">控制台登录</h2>
-            <p class="admin-login-subtitle">进入系统配置中心、API 治理与私有资源池</p>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Pan-Relay Console</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4 antialiased selection:bg-blue-500 selection:text-white">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl border border-slate-200/80 p-7">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <div class="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mx-auto mb-3 text-lg font-bold shadow-2xs">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <h1 class="text-lg font-bold text-slate-900 tracking-tight">欢迎回来</h1>
+            <p class="text-slate-500 mt-0.5 text-xs">Pan-Relay 聚合检索控制台</p>
         </div>
 
         {% if error %}
-        <div class="admin-login-error">
-            <i class="fas fa-exclamation-circle"></i>
+        <div class="bg-rose-50 border border-rose-200/60 text-rose-700 p-3 rounded-xl mb-4 flex items-center space-x-2 text-xs font-medium">
+            <i class="fas fa-exclamation-circle text-rose-500 flex-shrink-0"></i>
             <span>{{ error }}</span>
         </div>
         {% endif %}
 
-        <form method="POST" class="admin-login-form">
-            <div class="form-group">
-                <label for="username">管理员账号</label>
-                <div class="admin-login-input-wrap">
-                    <i class="fas fa-user"></i>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="请输入管理员用户名 (默认: admin)" required autofocus>
-                </div>
+        <form method="POST" class="space-y-4">
+            <div>
+                <label for="username" class="block text-slate-700 text-xs font-semibold mb-1.5">管理员账号</label>
+                <input type="text" id="username" name="username" required autofocus
+                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent outline-none transition-all font-medium text-slate-800 text-xs placeholder-slate-400"
+                    placeholder="请输入管理员账号 (默认: admin)">
+            </div>
+            <div>
+                <label for="password" class="block text-slate-700 text-xs font-semibold mb-1.5">管理密码</label>
+                <input type="password" id="password" name="password" required
+                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent outline-none transition-all font-medium text-slate-800 text-xs placeholder-slate-400"
+                    placeholder="请输入管理密码 (默认: admin123)">
             </div>
 
-            <div class="form-group">
-                <label for="password">管理密码</label>
-                <div class="admin-login-input-wrap">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" class="form-control" id="password" name="password" placeholder="请输入管理密码 (默认: admin123)" required>
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary admin-login-btn">
-                <i class="fas fa-sign-in-alt me-1"></i> 确认登录
+            <button type="submit"
+                class="w-full py-2.5 bg-slate-900 text-white rounded-xl font-semibold text-xs shadow-2xs hover:bg-slate-800 active:scale-[0.99] transition-all flex items-center justify-center space-x-2 cursor-pointer">
+                <i class="fas fa-sign-in-alt text-xs"></i>
+                <span>立即登录</span>
             </button>
         </form>
-    </div>
-</div>
-{% endblock %}
 
-{% block scripts %}
-{{ super() }}
-{% endblock %}
+        <div class="mt-6 text-center border-t border-slate-100 pt-4">
+            <a href="{{ url_for('search_index') }}" class="text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors inline-flex items-center space-x-1.5">
+                <i class="fas fa-arrow-left text-[10px]"></i>
+                <span>返回前台展示页</span>
+            </a>
+        </div>
+
+        <div class="mt-4 text-center text-slate-300 text-[10px] uppercase tracking-wider font-mono">
+            &copy; 2026 Pan-Relay Studio
+        </div>
+    </div>
+</body>
+</html>

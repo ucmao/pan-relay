@@ -5,6 +5,7 @@
     {{ super() }}
     <title>Pan-Relay - 我的资源管理</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/resource.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -25,112 +26,47 @@
     {% endmacro %}
     
     {% macro cloud_disk_checkboxes(prefix) %}
-        <div class="row g-2">
-            <div class="col-md-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Quark" value="quark" checked>
-                    <label class="form-check-label" for="{{ prefix }}Quark">
-                        夸克网盘
-                    </label>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Baidu" value="baidu" checked>
-                    <label class="form-check-label" for="{{ prefix }}Baidu">
-                        百度网盘
-                    </label>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Ali" value="aliyun" checked>
-                    <label class="form-check-label" for="{{ prefix }}Ali">
-                        阿里云盘
-                    </label>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Xunlei" value="xunlei" checked>
-                    <label class="form-check-label" for="{{ prefix }}Xunlei">
-                        迅雷网盘
-                    </label>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="{{ prefix }}Uc" value="uc" checked>
-                    <label class="form-check-label" for="{{ prefix }}Uc">
-                        UC网盘
-                    </label>
-                </div>
-            </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <label class="flex items-center space-x-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer hover:bg-slate-100/80 transition-colors" for="{{ prefix }}Quark">
+                <input class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" type="checkbox" id="{{ prefix }}Quark" value="quark" checked>
+                <span class="text-xs font-medium text-slate-700">夸克网盘</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer hover:bg-slate-100/80 transition-colors" for="{{ prefix }}Baidu">
+                <input class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" type="checkbox" id="{{ prefix }}Baidu" value="baidu" checked>
+                <span class="text-xs font-medium text-slate-700">百度网盘</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer hover:bg-slate-100/80 transition-colors" for="{{ prefix }}Ali">
+                <input class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" type="checkbox" id="{{ prefix }}Ali" value="aliyun" checked>
+                <span class="text-xs font-medium text-slate-700">阿里云盘</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer hover:bg-slate-100/80 transition-colors" for="{{ prefix }}Xunlei">
+                <input class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" type="checkbox" id="{{ prefix }}Xunlei" value="xunlei" checked>
+                <span class="text-xs font-medium text-slate-700">迅雷网盘</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer hover:bg-slate-100/80 transition-colors" for="{{ prefix }}Uc">
+                <input class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" type="checkbox" id="{{ prefix }}Uc" value="uc" checked>
+                <span class="text-xs font-medium text-slate-700">UC网盘</span>
+            </label>
         </div>
     {% endmacro %}
 
     <div class="admin-container">
-        <!-- 业务头部 -->
-        <header class="admin-page-header">
-            <div class="admin-page-title-group">
-                <h1 class="admin-page-title">
-                    <i class="fas fa-layer-group text-primary"></i> 我的资源管理
-                </h1>
-                <p class="admin-page-desc">维护私有入库资源池，支持海量资源的分页检索、一键复制、批量导入与自动转存。</p>
+        <!-- Page Header (ucmao admin_modern style) -->
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">我的资源管理</h1>
+                <p class="text-xs text-slate-500 mt-0.5">维护私有入库资源池，支持分页检索、一键复制、批量导入与自动转存</p>
             </div>
-            <div class="admin-page-actions">
-                <button class="btn btn-primary" id="addResourceBtn" data-ui-modal-target="#addResourceModal">
-                    <i class="fas fa-plus"></i> 新增入库
-                </button>
-                <button type="button" class="btn btn-secondary" id="batchImportResourceBtn" data-ui-modal-target="#batchAddResourceModal">
-                    <i class="fas fa-file-import"></i> 批量导入
-                </button>
-                <button type="button" class="btn btn-outline-primary" id="batchTransferResourceBtn" data-ui-modal-target="#batchAddResourceModal">
-                    <i class="fas fa-cloud-upload-alt"></i> 批量转存入库
-                </button>
-            </div>
-        </header>
-
-        <!-- KPI 概览指标条 -->
-        <div class="admin-kpi-grid">
-            <div class="admin-kpi-card">
-                <div class="admin-kpi-header">
-                    <span class="admin-kpi-label">资源总数</span>
-                    <span class="admin-kpi-icon is-blue"><i class="fas fa-database"></i></span>
-                </div>
-                <div class="admin-kpi-value" id="kpiResourceTotal">--</div>
-                <div class="admin-kpi-footer">
-                    <i class="fas fa-info-circle"></i> 私有存储库中有效收录的分享条目
-                </div>
-            </div>
-            <div class="admin-kpi-card">
-                <div class="admin-kpi-header">
-                    <span class="admin-kpi-label">支持网盘平台</span>
-                    <span class="admin-kpi-icon is-green"><i class="fas fa-cloud"></i></span>
-                </div>
-                <div class="admin-kpi-value">5 类主要平台</div>
-                <div class="admin-kpi-footer">
-                    <i class="fas fa-check"></i> 夸克 / 百度 / 阿里 / 迅雷 / UC
-                </div>
-            </div>
-            <div class="admin-kpi-card">
-                <div class="admin-kpi-header">
-                    <span class="admin-kpi-label">出链同步策略</span>
-                    <span class="admin-kpi-icon is-amber"><i class="fas fa-sync-alt"></i></span>
-                </div>
-                <div class="admin-kpi-value">转存替换就绪</div>
-                <div class="admin-kpi-footer">
-                    <i class="fas fa-shield-alt"></i> 具备凭证时自动生成您的分享链接
-                </div>
-            </div>
-            <div class="admin-kpi-card">
-                <div class="admin-kpi-header">
-                    <span class="admin-kpi-label">检索调度</span>
-                    <span class="admin-kpi-icon is-purple"><i class="fas fa-bolt"></i></span>
-                </div>
-                <div class="admin-kpi-value">秒级直出</div>
-                <div class="admin-kpi-footer">
-                    <i class="fas fa-search"></i> 聚合搜索时本地库优先极速响应
+            <div class="flex items-center space-x-2.5 flex-wrap">
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <span class="stat-label">入库资源</span>
+                        <span class="stat-value" id="kpiResourceTotal">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">支持平台</span>
+                        <span class="stat-value" style="font-size: 0.8125rem;">5 类网盘</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -140,13 +76,26 @@
             <div class="admin-panel-header">
                 <div class="admin-panel-title-area">
                     <h2 class="admin-panel-title">
-                        <i class="fas fa-list-ul text-muted"></i> 资源列表
+                        <i class="fas fa-list-ul text-slate-400"></i> 资源列表
                     </h2>
                     <p class="admin-panel-desc">按关键词检索、单条维护或批量导出清理已有入库资源。</p>
                 </div>
-                <div class="admin-search-wrap">
-                    <i class="fas fa-search"></i>
-                    <input type="text" class="admin-search-input" id="searchInput" placeholder="按资源标题回车或输入搜索...">
+                <div class="flex items-center space-x-2.5 flex-wrap gap-y-2">
+                    <div class="admin-search-wrap">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="admin-search-input" id="searchInput" placeholder="按资源标题回车或输入搜索...">
+                    </div>
+                    <div class="flex items-center space-x-1.5">
+                        <button class="btn btn-primary btn-sm" id="addResourceBtn" data-ui-modal-target="#addResourceModal">
+                            <i class="fas fa-plus text-[10px]"></i> 新增入库
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="batchImportResourceBtn" data-ui-modal-target="#batchAddResourceModal">
+                            <i class="fas fa-file-import text-[10px]"></i> 批量导入
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="batchTransferResourceBtn" data-ui-modal-target="#batchAddResourceModal">
+                            <i class="fas fa-cloud-upload-alt text-[10px]"></i> 批量转存
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -234,33 +183,31 @@
                     <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addResourceForm">
-                        <fieldset>
-                            <div class="mb-3">
-                                <label for="resourceName" class="form-label">
-                                    资源标题 <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" class="form-control" id="resourceName" placeholder="例如：流浪地球2 4K原画" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="resourceShareLink" class="form-label">
-                                    分享链接 <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" class="form-control" id="resourceShareLink" placeholder="例如：https://pan.quark.cn/s/..." required>
-                            </div>
-                            <div class="mb-3 d-none">
-                                <label for="resourceCloudName" class="form-label">云盘名称</label>
-                                <input type="text" class="form-control" id="resourceCloudName">
-                            </div>
-                            <div class="mb-3">
-                                <label for="resourceType" class="form-label">分类类型</label>
-                                {{ resource_type_select('resourceType') }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="resourceRemarks" class="form-label">运营备注</label>
-                                <textarea class="form-control" id="resourceRemarks" rows="2" placeholder="可选填写提取码或特别说明"></textarea>
-                            </div>
-                        </fieldset>
+                    <form id="addResourceForm" class="space-y-3.5">
+                        <div>
+                            <label for="resourceName" class="form-label">
+                                资源标题 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="resourceName" placeholder="例如：流浪地球2 4K原画" required>
+                        </div>
+                        <div>
+                            <label for="resourceShareLink" class="form-label">
+                                分享链接 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="resourceShareLink" placeholder="例如：https://pan.quark.cn/s/..." required>
+                        </div>
+                        <div class="d-none">
+                            <label for="resourceCloudName" class="form-label">云盘名称</label>
+                            <input type="text" class="form-control" id="resourceCloudName">
+                        </div>
+                        <div>
+                            <label for="resourceType" class="form-label">分类类型</label>
+                            {{ resource_type_select('resourceType') }}
+                        </div>
+                        <div>
+                            <label for="resourceRemarks" class="form-label">运营备注</label>
+                            <textarea class="form-control" id="resourceRemarks" rows="2" placeholder="可选填写提取码或特别说明"></textarea>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -284,34 +231,32 @@
                     <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="editResourceForm">
+                    <form id="editResourceForm" class="space-y-3.5">
                         <input type="hidden" id="editResourceId">
-                        <fieldset>
-                            <div class="mb-3">
-                                <label for="editResourceName" class="form-label">
-                                    资源标题 <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" class="form-control" id="editResourceName" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="editResourceShareLink" class="form-label">
-                                    分享链接 <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" class="form-control" id="editResourceShareLink" required>
-                            </div>
-                            <div class="mb-3 d-none">
-                                <label for="editResourceCloudName" class="form-label">云盘名称</label>
-                                <input type="text" class="form-control" id="editResourceCloudName">
-                            </div>
-                            <div class="mb-3">
-                                <label for="editResourceType" class="form-label">分类类型</label>
-                                {{ resource_type_select('editResourceType') }}
-                            </div>
-                            <div class="mb-3">
-                                <label for="editResourceRemarks" class="form-label">运营备注</label>
-                                <textarea class="form-control" id="editResourceRemarks" rows="2"></textarea>
-                            </div>
-                        </fieldset>
+                        <div>
+                            <label for="editResourceName" class="form-label">
+                                资源标题 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="editResourceName" required>
+                        </div>
+                        <div>
+                            <label for="editResourceShareLink" class="form-label">
+                                分享链接 <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="editResourceShareLink" required>
+                        </div>
+                        <div class="d-none">
+                            <label for="editResourceCloudName" class="form-label">云盘名称</label>
+                            <input type="text" class="form-control" id="editResourceCloudName">
+                        </div>
+                        <div>
+                            <label for="editResourceType" class="form-label">分类类型</label>
+                            {{ resource_type_select('editResourceType') }}
+                        </div>
+                        <div>
+                            <label for="editResourceRemarks" class="form-label">运营备注</label>
+                            <textarea class="form-control" id="editResourceRemarks" rows="2"></textarea>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -329,18 +274,20 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="batchAddResourceModalLabel">批量导入资源</h5>
+                    <h5 class="modal-title" id="batchAddResourceModalLabel">
+                        <i class="fas fa-file-import text-blue-600"></i>
+                        <span>批量导入 / 转存资源</span>
+                    </h5>
                     <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="batchAddResourceForm">
-                        <fieldset>
-                            <div class="mb-3">
-                                <label for="batchResourceContent" class="form-label">批量数据源内容 <span class="text-danger">*</span></label>
-                                <div class="text-muted small mb-2">
-                                    批量导入将直接保存原链接；批量转存入库将自动在网盘生成您的私有分享链接后再入库。
-                                </div>
-                                <textarea class="form-control font-mono" id="batchResourceContent" rows="8" placeholder="支持两种格式：
+                    <form id="batchAddResourceForm" class="space-y-4">
+                        <div>
+                            <label for="batchResourceContent" class="block text-xs font-semibold text-slate-700 mb-1">批量数据源内容 <span class="text-rose-500">*</span></label>
+                            <div class="text-slate-500 text-xs mb-2">
+                                批量导入将直接保存原链接；批量转存入库将自动在网盘生成您的私有分享链接后再入库。
+                            </div>
+                            <textarea class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800" id="batchResourceContent" rows="7" placeholder="支持两种格式：
 1）字段格式：
 标题: 示例电影4K
 分享链接: https://pan.quark.cn/s/xxxx
@@ -348,34 +295,37 @@
 备注: 包含国粤双语
 
 2）单行逗号/Tab分隔格式：
-示例电影4K,https://pan.quark.cn/s/xxxx,电影,包含国粤双语
-" required></textarea>
+示例电影4K,https://pan.quark.cn/s/xxxx,电影,包含国粤双语" required></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <div>
+                                <label for="batchResourceType" class="block text-xs font-semibold text-slate-700 mb-1.5">默认分类类型</label>
+                                {{ resource_type_select('batchResourceType') }}
                             </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="batchResourceType" class="form-label">默认分类类型</label>
-                                    {{ resource_type_select('batchResourceType') }}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="batchResourceRemarks" class="form-label">统一备注说明</label>
-                                    <input type="text" class="form-control" id="batchResourceRemarks" placeholder="选填，将附加到每条资源">
-                                </div>
+                            <div>
+                                <label for="batchResourceRemarks" class="block text-xs font-semibold text-slate-700 mb-1.5">统一备注说明</label>
+                                <input type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-xs font-medium text-slate-800" id="batchResourceRemarks" placeholder="选填，将附加到每条资源">
                             </div>
-                            <div class="mb-3 d-none p-3 bg-light border rounded" id="batchTransferOptions">
-                                <label class="form-label mb-1"><strong>自动转存并入库策略配置</strong></label>
-                                <div class="text-muted small mb-2">
-                                    若资源链接与所勾选网盘类型匹配，系统将自动转存至对应网盘并生成专属分享链接替换原链接入库。<br>
-                                    <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> 需先在“系统配置”页面配置好对应网盘 Cookie/Token。</span>
-                                </div>
-                                {{ cloud_disk_checkboxes('resourceSaveTo') }}
+                        </div>
+
+                        <div class="d-none p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5" id="batchTransferOptions">
+                            <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i class="fas fa-cloud-upload-alt text-blue-600"></i>
+                                <span>自动转存并入库策略配置</span>
                             </div>
-                        </fieldset>
+                            <div class="text-slate-500 text-xs leading-relaxed">
+                                若资源链接与所勾选网盘类型匹配，系统将自动转存至对应网盘并生成专属分享链接替换原链接入库。<br>
+                                <span class="text-amber-600 font-medium"><i class="fas fa-exclamation-triangle mr-1 text-xs"></i>需先在“系统配置”页面配置好对应网盘 Cookie/Token。</span>
+                            </div>
+                            {{ cloud_disk_checkboxes('resourceSaveTo') }}
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-ui-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-primary btn-sm" id="batchSaveResourceBtn">
-                        <i class="fas fa-save me-1"></i> 开始导入
+                    <button type="button" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer" data-ui-dismiss="modal">取消</button>
+                    <button type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer" id="batchSaveResourceBtn">
+                        <i class="fas fa-save text-[10px]"></i> 开始导入
                     </button>
                 </div>
             </div>

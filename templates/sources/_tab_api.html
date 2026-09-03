@@ -1,33 +1,24 @@
 <!-- API 检索源 Tab -->
 <div class="tab-pane-inner">
-    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-        <div>
-            <h3 class="admin-panel-title mb-1">
-                <i class="fas fa-code text-primary me-1"></i> 第三方 API 检索源治理
-            </h3>
-            <p class="admin-panel-desc mb-0">配置外部搜索接口、定制 JMESPath 数据提取规则，支持一键连通性测试与全局批量启停。</p>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-primary btn-sm" data-ui-modal-target="#addApiModal">
-                <i class="fas fa-plus"></i> 新建 API
-            </button>
-            <button class="btn btn-success btn-sm" id="enableAllButton">
-                <i class="fas fa-play"></i> 全部启用
-            </button>
-            <button class="btn btn-outline-secondary btn-sm" id="disableAllButton">
-                <i class="fas fa-ban"></i> 全部禁用
-            </button>
-        </div>
-    </div>
-
     <!-- API 列表面板 -->
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
-                <h4 class="admin-panel-title" style="font-size: 0.95rem;">
-                    <i class="fas fa-list text-muted"></i> 接口源列表
-                </h4>
-                <p class="admin-panel-desc">查看最新测试延迟、请求体配置，随时发起连通性自检。</p>
+                <h3 class="admin-panel-title">
+                    <i class="fas fa-code"></i> 第三方 API 检索源
+                </h3>
+                <p class="admin-panel-desc">配置外部搜索接口与 JMESPath 提取规则，支持在线自检与全局启停</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="btn btn-primary btn-sm" data-ui-modal-target="#addApiModal">
+                    <i class="fas fa-plus text-[10px]"></i> 新建 API
+                </button>
+                <button class="btn btn-outline-primary btn-sm" id="enableAllButton">
+                    <i class="fas fa-play text-[10px]"></i> 全部启用
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="disableAllButton">
+                    <i class="fas fa-ban text-[10px]"></i> 全部禁用
+                </button>
             </div>
         </div>
 
@@ -37,10 +28,10 @@
                     <tr>
                         <th style="width: 50px; text-align: center;">#</th>
                         <th style="width: 80px; text-align: center;">状态</th>
-                        <th style="width: 160px;">名字</th>
+                        <th style="width: 160px;">名称</th>
                         <th>接口 URL</th>
-                        <th style="width: 80px; text-align: center;">方法</th>
-                        <th style="width: 95px; text-align: center;">耗时</th>
+                        <th style="width: 75px; text-align: center;">方法</th>
+                        <th style="width: 90px; text-align: center;">耗时</th>
                         <th style="width: 80px; text-align: center;">请求体</th>
                         <th style="width: 80px; text-align: center;">规则</th>
                         <th style="width: 140px; text-align: center;">操作</th>
@@ -64,91 +55,103 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addApiModalLabel">
-                    <i class="fas fa-plus-circle text-primary me-1"></i> 新建 API 检索源
+                    <i class="fas fa-plus-circle text-blue-600"></i>
+                    <span>新建 API 检索源</span>
                 </h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body">
-                <form id="addApiForm">
-                    <fieldset>
-                        <legend>基础信息</legend>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="apiName" class="form-label">
-                                    接口名称 <span class="text-danger">*</span>
+                <form id="addApiForm" class="space-y-4">
+                    <!-- 分组 1: 基础参数 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-200/70 space-y-3">
+                        <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <i class="fas fa-info-circle text-blue-500 text-xs"></i>
+                            <span>基础信息</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                            <div class="sm:col-span-6">
+                                <label for="apiName" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    接口名称 <span class="text-rose-500">*</span>
                                 </label>
-                                <input type="text" class="form-control" id="apiName" placeholder="例如：某网盘搜索源1" required>
+                                <input type="text" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-xs font-medium text-slate-800" id="apiName" placeholder="例如：某网盘搜索源1" required>
                             </div>
-                            <div class="col-md-3">
-                                <label for="apiMethod" class="form-label">
-                                    请求方法 <span class="text-danger">*</span>
+                            <div class="sm:col-span-3">
+                                <label for="apiMethod" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    请求方法 <span class="text-rose-500">*</span>
                                 </label>
-                                <select class="form-select" id="apiMethod" required>
+                                <select class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-xs font-medium text-slate-800 cursor-pointer" id="apiMethod" required>
                                     <option value="get">GET</option>
                                     <option value="post" selected>POST</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label for="apiIsEnabled" class="form-label">
-                                    默认状态 <span class="text-danger">*</span>
+                            <div class="sm:col-span-3">
+                                <label for="apiIsEnabled" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    默认状态 <span class="text-rose-500">*</span>
                                 </label>
-                                <select class="form-select" id="apiIsEnabled" required>
+                                <select class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-xs font-medium text-slate-800 cursor-pointer" id="apiIsEnabled" required>
                                     <option value="true">启用</option>
                                     <option value="false">禁用</option>
                                 </select>
                             </div>
+                            <div class="sm:col-span-12">
+                                <label for="apiUrl" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    接口 URL <span class="text-rose-500">*</span>
+                                    <span class="text-slate-400 font-normal ml-1">（需嵌入 <code>[[keyword]]</code> 作为关键词占位符）</span>
+                                </label>
+                                <input type="text" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-xs text-slate-800" id="apiUrl" placeholder="例：https://api.example.com/search?q=[[keyword]]" required>
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label for="apiUrl" class="form-label">
-                                接口 URL <span class="text-danger">*</span>
-                                <span class="text-muted fw-normal">（需嵌入 <code>[[keyword]]</code> 作为关键词占位符）</span>
-                            </label>
-                            <input type="text" class="form-control font-mono" id="apiUrl" placeholder="例：https://api.example.com/search?q=[[keyword]]" required>
-                        </div>
-                    </fieldset>
-
-                    <fieldset class="mt-3">
-                        <legend class="d-flex align-items-center justify-content-between">
-                            <span>请求体配置 (JSON)</span>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="formatJson('apiRequest')">
-                                <i class="fas fa-magic"></i> 格式化
+                    <!-- 分组 2: 请求体配置 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-200/70 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i class="fas fa-file-code text-indigo-500 text-xs"></i>
+                                <span>请求体配置 (JSON)</span>
+                            </div>
+                            <button type="button" class="px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg shadow-2xs transition-all flex items-center gap-1 cursor-pointer" onclick="formatJson('apiRequest')">
+                                <i class="fas fa-magic text-slate-400 text-[10px]"></i> 格式化
                             </button>
-                        </legend>
-                        <div class="mb-3">
-                            <textarea class="form-control font-mono" id="apiRequest" rows="3" placeholder='例：{"query": "[[keyword]]"}'></textarea>
                         </div>
-                    </fieldset>
+                        <div>
+                            <textarea class="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-xs text-slate-800" id="apiRequest" rows="3" placeholder='POST 请求可留空或配置 JSON，例如：{"query": "[[keyword]]"}'></textarea>
+                        </div>
+                    </div>
 
-                    <fieldset class="mt-3">
-                        <legend>响应解析规则 (JMESPath)</legend>
-                        <div class="mb-3">
-                            <label for="apiResponse" class="form-label">
-                                提取规则表达式 <span class="text-danger">*</span>
-                                <a href="https://jmespath.org/tutorial.html" target="_blank" class="ms-2 small text-primary" title="JMESPath 语法教程">
-                                    <i class="fas fa-external-link-alt"></i> 语法教程
-                                </a>
-                            </label>
-                            <textarea class="form-control font-mono" id="apiResponse" rows="2" placeholder="例：data[*].[name, url]" required></textarea>
+                    <!-- 分组 3: 响应解析规则 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-200/70 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i class="fas fa-filter text-emerald-500 text-xs"></i>
+                                <span>响应解析规则 (JMESPath) <span class="text-rose-500">*</span></span>
+                            </div>
+                            <a href="https://jmespath.org/tutorial.html" target="_blank" class="text-[11px] text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                <span>JMESPath 教程</span>
+                                <i class="fas fa-external-link-alt text-[9px]"></i>
+                            </a>
                         </div>
-                    </fieldset>
+                        <div>
+                            <textarea class="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-xs text-slate-800" id="apiResponse" rows="2" placeholder="例：data[*].[name, url]" required></textarea>
+                        </div>
+                    </div>
                 </form>
             </div>
-            <div class="modal-footer d-flex justify-content-between">
+            <div class="modal-footer flex items-center justify-between">
                 <div>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="apiTestButton" onclick="testDraftApi('api')">
-                        <i class="fas fa-play me-1"></i> 测试单次连通
+                    <button type="button" class="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/60 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer" id="apiTestButton" onclick="testDraftApi('api')">
+                        <i class="fas fa-play text-[10px]"></i> 测试连通性
                     </button>
                 </div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('addApiForm').reset()">
+                <div class="flex items-center space-x-2">
+                    <button type="button" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer" onclick="document.getElementById('addApiForm').reset()">
                         重置
                     </button>
-                    <button type="button" class="btn btn-secondary btn-sm" data-ui-dismiss="modal">
+                    <button type="button" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer" data-ui-dismiss="modal">
                         取消
                     </button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="addApi()">
-                        <i class="fas fa-save me-1"></i> 保存入库
+                    <button type="button" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer" onclick="addApi()">
+                        <i class="fas fa-save text-[10px]"></i> 保存入库
                     </button>
                 </div>
             </div>
@@ -162,84 +165,102 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editApiModalLabel">
-                    <i class="fas fa-edit text-primary me-1"></i> 修改 API 检索源
+                    <i class="fas fa-edit text-blue-600"></i>
+                    <span>修改 API 检索源</span>
                 </h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body">
-                <form id="editApiForm">
+                <form id="editApiForm" class="space-y-4">
                     <input type="hidden" id="editApiId">
-                    <fieldset>
-                        <legend>基础信息</legend>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="editApiName" class="form-label">
-                                    接口名称 <span class="text-danger">*</span>
+
+                    <!-- 分组 1: 基础信息 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-200/70 space-y-3">
+                        <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <i class="fas fa-info-circle text-blue-500 text-xs"></i>
+                            <span>基础信息</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                            <div class="sm:col-span-6">
+                                <label for="editApiName" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    接口名称 <span class="text-rose-500">*</span>
                                 </label>
-                                <input type="text" class="form-control" id="editApiName" required>
+                                <input type="text" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-xs font-medium text-slate-800" id="editApiName" required>
                             </div>
-                            <div class="col-md-3">
-                                <label for="editApiMethod" class="form-label">
-                                    请求方法 <span class="text-danger">*</span>
+                            <div class="sm:col-span-3">
+                                <label for="editApiMethod" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    请求方法 <span class="text-rose-500">*</span>
                                 </label>
-                                <select class="form-select" id="editApiMethod" required>
+                                <select class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-xs font-medium text-slate-800 cursor-pointer" id="editApiMethod" required>
                                     <option value="get">GET</option>
                                     <option value="post">POST</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <label for="editApiIsEnabled" class="form-label">
-                                    启用状态 <span class="text-danger">*</span>
+                            <div class="sm:col-span-3">
+                                <label for="editApiIsEnabled" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    启用状态 <span class="text-rose-500">*</span>
                                 </label>
-                                <select class="form-select" id="editApiIsEnabled" required>
+                                <select class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-xs font-medium text-slate-800 cursor-pointer" id="editApiIsEnabled" required>
                                     <option value="true">启用</option>
                                     <option value="false">禁用</option>
                                 </select>
                             </div>
+                            <div class="sm:col-span-12">
+                                <label for="editApiUrl" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                                    接口 URL <span class="text-rose-500">*</span>
+                                    <span class="text-slate-400 font-normal ml-1">（需嵌入 <code>[[keyword]]</code> 作为关键词占位符）</span>
+                                </label>
+                                <input type="text" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-xs text-slate-800" id="editApiUrl" required>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="editApiUrl" class="form-label">
-                                接口 URL <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" class="form-control font-mono" id="editApiUrl" required>
-                        </div>
-                    </fieldset>
+                    </div>
 
-                    <fieldset class="mt-3">
-                        <legend class="d-flex align-items-center justify-content-between">
-                            <span>请求体配置 (JSON)</span>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="formatJson('editApiRequest')">
-                                <i class="fas fa-magic"></i> 格式化
+                    <!-- 分组 2: 请求体配置 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-200/70 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i class="fas fa-file-code text-indigo-500 text-xs"></i>
+                                <span>请求体配置 (JSON)</span>
+                            </div>
+                            <button type="button" class="px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg shadow-2xs transition-all flex items-center gap-1 cursor-pointer" onclick="formatJson('editApiRequest')">
+                                <i class="fas fa-magic text-slate-400 text-[10px]"></i> 格式化
                             </button>
-                        </legend>
-                        <div class="mb-3">
-                            <textarea class="form-control font-mono" id="editApiRequest" rows="3"></textarea>
                         </div>
-                    </fieldset>
+                        <div>
+                            <textarea class="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-xs text-slate-800" id="editApiRequest" rows="3" placeholder='POST 请求可留空或配置 JSON，例如：{"text": "[[keyword]]"}'></textarea>
+                        </div>
+                    </div>
 
-                    <fieldset class="mt-3">
-                        <legend>响应解析规则 (JMESPath)</legend>
-                        <div class="mb-3">
-                            <label for="editApiResponse" class="form-label">
-                                提取规则表达式 <span class="text-danger">*</span>
-                            </label>
-                            <textarea class="form-control font-mono" id="editApiResponse" rows="2" required></textarea>
+                    <!-- 分组 3: 响应解析规则 -->
+                    <div class="bg-slate-50/70 p-4 rounded-xl border border-slate-200/70 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i class="fas fa-filter text-emerald-500 text-xs"></i>
+                                <span>响应解析规则 (JMESPath) <span class="text-rose-500">*</span></span>
+                            </div>
+                            <a href="https://jmespath.org/tutorial.html" target="_blank" class="text-[11px] text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                <span>JMESPath 语法教程</span>
+                                <i class="fas fa-external-link-alt text-[9px]"></i>
+                            </a>
                         </div>
-                    </fieldset>
+                        <div>
+                            <textarea class="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-mono text-xs text-slate-800" id="editApiResponse" rows="2" placeholder="例：data[*].[name, url]" required></textarea>
+                        </div>
+                    </div>
                 </form>
             </div>
-            <div class="modal-footer d-flex justify-content-between">
+            <div class="modal-footer flex items-center justify-between">
                 <div>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="editApiTestButton" onclick="testDraftApi('editApi')">
-                        <i class="fas fa-play me-1"></i> 测试单次连通
+                    <button type="button" class="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/60 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer" id="editApiTestButton" onclick="testDraftApi('editApi')">
+                        <i class="fas fa-play text-[10px]"></i> 测试连通性
                     </button>
                 </div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-ui-dismiss="modal">
+                <div class="flex items-center space-x-2">
+                    <button type="button" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer" data-ui-dismiss="modal">
                         取消
                     </button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="saveEditedApi()">
-                        <i class="fas fa-save me-1"></i> 保存修改
+                    <button type="button" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer" onclick="saveEditedApi()">
+                        <i class="fas fa-save text-[10px]"></i> 保存修改
                     </button>
                 </div>
             </div>

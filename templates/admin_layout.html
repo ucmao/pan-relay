@@ -4,102 +4,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>{% block title %}Pan-Relay Admin{% endblock %}</title>
 
-    <script>
-        window.tailwind = window.tailwind || {};
-        window.tailwind.config = {
-            corePlugins: {
-                preflight: false
-            },
-            theme: {
-                extend: {
-                    colors: {
-                        brand: '#2563eb',
-                        'brand-hover': '#1d4ed8',
-                        panel: '#ffffff',
-                        border: '#e2e8f0',
-                        muted: '#64748b'
-                    },
-                    boxShadow: {
-                        subtle: '0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08)',
-                        card: '0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.06)'
-                    },
-                    borderRadius: {
-                        'xl': '0.75rem',
-                        '2xl': '1rem'
-                    }
-                }
-            }
-        };
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        .sidebar-item-active {
+            background-color: #eff6ff !important;
+            color: #2563eb !important;
+            font-weight: 600 !important;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .animate-fade-in { animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Mobile Sidebar Drawer Overlay */
+        #sidebar-overlay { display: none; }
+        @media (max-width: 1024px) {
+            #sidebar.open { transform: translateX(0); }
+            #sidebar.open + #sidebar-overlay { display: block; }
+        }
+    </style>
 
     {% block head %}{% endblock %}
 </head>
-<body class="admin-body">
+<body class="bg-slate-50/80 text-slate-900 antialiased selection:bg-blue-500 selection:text-white has-sidebar">
 
-<nav class="admin-navbar">
-    <div class="admin-nav-shell">
-        <a href="{{ url_for('resources.resources_page') if is_logged_in else url_for('auth.login') }}" class="admin-brand-area">
-            <img src="{{ url_for('static', filename='images/search_logo.png') }}" alt="Pan-Relay" class="admin-brand-logo">
-            <div class="admin-brand-title">
-                <span>Pan-Relay</span>
-                <span class="admin-brand-badge">Console</span>
-            </div>
-        </a>
-
-        {% if is_logged_in %}
-        <div class="admin-nav-links">
-            <a class="admin-nav-tab {{ 'is-active' if active_page == 'resources' else '' }}" href="{{ url_for('resources.resources_page') }}">
-                <i class="fas fa-layer-group"></i> 我的资源
+<div class="flex h-screen overflow-hidden relative">
+    <!-- Sidebar (ucmao admin_modern style) -->
+    <aside id="sidebar" class="admin-sidebar fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/80 flex-shrink-0 flex flex-col transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out">
+        <!-- Brand Logo Header -->
+        <div class="h-16 px-6 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+            <a href="{{ url_for('resources.resources_page') }}" class="flex items-center space-x-2.5 group">
+                <img src="{{ url_for('static', filename='images/search_logo.png') }}" class="w-7 h-7 rounded-lg object-contain shadow-2xs group-hover:scale-105 transition-transform" alt="Logo">
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-base font-extrabold tracking-tight text-slate-900">Pan-Relay</span>
+                    <span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-wider">Console</span>
+                </div>
             </a>
-            <a class="admin-nav-tab {{ 'is-active' if active_page == 'sources' else '' }}" href="{{ url_for('search_sources.sources_page') }}">
-                <i class="fas fa-satellite-dish"></i> 检索源管理
-            </a>
-            <a class="admin-nav-tab {{ 'is-active' if active_page == 'config' else '' }}" href="{{ url_for('system_config.system_config_page') }}">
-                <i class="fas fa-sliders-h"></i> 系统配置
-            </a>
+            <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-slate-600 p-1" aria-label="关闭菜单">
+                <i class="fas fa-times text-lg"></i>
+            </button>
         </div>
 
-        <div class="admin-nav-utils">
-            <div class="admin-status-indicator" title="核心服务正常响应">
-                <span class="admin-status-dot"></span>
-                <span>在线</span>
-            </div>
-            <a class="admin-nav-action-btn" href="{{ url_for('search_index') }}" target="_blank" title="在新标签页打开前台搜索">
-                <i class="fas fa-external-link-alt"></i> 前台搜索
-            </a>
-            <div class="admin-user-pill">
-                <span class="admin-avatar"><i class="fas fa-user-shield"></i></span>
-                <span>Admin</span>
-            </div>
-            <a class="admin-nav-logout-btn" href="{{ url_for('auth.logout') }}" title="退出登录">
-                <i class="fas fa-sign-out-alt"></i>
-            </a>
-        </div>
-        {% else %}
-        <div class="admin-nav-utils">
-            <a class="admin-nav-action-btn" href="{{ url_for('search_index') }}">
-                <i class="fas fa-arrow-left"></i> 返回前台
-            </a>
-        </div>
-        {% endif %}
-    </div>
-</nav>
+        <!-- Navigation Links -->
+        <nav class="admin-sidebar-nav flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <div class="px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">核心控制台</div>
 
-{% block content %}{% endblock %}
+            <a href="{{ url_for('resources.resources_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'resources' else '' }}">
+                <i class="fas fa-layer-group w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'resources' else '' }}"></i>
+                <span>我的资源</span>
+            </a>
 
-<footer class="admin-footer">
-    <div class="admin-container pt-0 pb-0">
-        &copy; 2026 Pan-Relay Admin Console · Enterprise Edition
-    </div>
-</footer>
+            <a href="{{ url_for('search_sources.sources_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'sources' else '' }}">
+                <i class="fas fa-satellite-dish w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'sources' else '' }}"></i>
+                <span>检索源管理</span>
+            </a>
+
+            <a href="{{ url_for('system_config.system_config_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'config' else '' }}">
+                <i class="fas fa-sliders-h w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'config' else '' }}"></i>
+                <span>系统配置</span>
+            </a>
+
+            <div class="pt-5 px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">快捷通道</div>
+
+            <a href="{{ url_for('search_index') }}" target="_blank" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors group">
+                <i class="fas fa-external-link-alt w-5 mr-2.5 text-slate-400 group-hover:text-slate-600"></i>
+                <span>前台搜索</span>
+                <i class="fas fa-chevron-right ml-auto text-[10px] text-slate-300 group-hover:text-slate-400"></i>
+            </a>
+        </nav>
+
+        <!-- Admin Profile Footer -->
+        <div class="admin-sidebar-footer p-3.5 border-t border-slate-100 flex-shrink-0 bg-slate-50/50">
+            <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/60 shadow-2xs">
+                <div class="flex items-center space-x-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-xs font-semibold text-slate-900 truncate">Admin</div>
+                        <div class="text-[11px] text-slate-500 truncate flex items-center">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                            <span>系统在线</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors flex-shrink-0" title="退出登录">
+                    <i class="fas fa-sign-out-alt text-xs"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 lg:hidden"></div>
+
+    <!-- Main Content Area -->
+    <main class="admin-main flex-1 overflow-y-auto relative flex flex-col min-w-0">
+        <!-- Mobile Sticky Header -->
+        <header class="lg:hidden bg-white/90 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+            <div class="flex items-center space-x-2.5">
+                <img src="{{ url_for('static', filename='images/search_logo.png') }}" class="w-7 h-7 rounded-lg object-contain" alt="Logo">
+                <span class="text-base font-extrabold text-slate-900">Pan-Relay</span>
+            </div>
+            <button onclick="toggleSidebar()" class="w-9 h-9 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center hover:bg-slate-200 transition-colors" aria-label="打开菜单">
+                <i class="fas fa-bars"></i>
+            </button>
+        </header>
+
+        <div class="p-4 md:p-8 max-w-7xl w-full mx-auto flex-1">
+            {% block content %}{% endblock %}
+        </div>
+
+        <footer class="mt-auto py-4 text-center text-xs text-slate-400 border-t border-slate-200/60">
+            &copy; 2026 Pan-Relay · 网盘聚合检索系统
+        </footer>
+    </main>
+</div>
 
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.classList.toggle('open');
+        }
+    }
+</script>
 {% block scripts %}{% endblock %}
 
 </body>
