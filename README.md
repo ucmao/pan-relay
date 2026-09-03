@@ -141,11 +141,23 @@ DB_USER = root
 DB_PASSWORD = 请替换为你的MySQL密码
 DB_CHARSET = utf8mb4
 
+# Telegram 公开频道搜索（多个频道使用英文逗号分隔）
+TG_SEARCH_ENABLED = true
+TG_CHANNELS = tgsearchers7
+TG_SEARCH_TIMEOUT = 10
+TG_SEARCH_MAX_WORKERS = 4
+# 海外服务器通常留空；无法直连 t.me 时填写 HTTP/SOCKS5 代理
+TG_PROXY =
+
 # 管理员账号配置
 ADMIN_USERNAME = admin
 ADMIN_PASSWORD = 请替换为你的管理员密码
 
 ```
+
+Telegram 搜索直接请求公开频道页面 `https://t.me/s/<频道>?q=<关键词>`，不需要
+Bot Token、`api_id` 或 Telegram 账号。部署服务器必须能够访问 `t.me`；失效、私有或
+无法提供公开预览的频道会被自动跳过。
 
 ### 5. 初始化数据库
 

@@ -6,6 +6,20 @@ from dotenv import load_dotenv
 # 加载.env文件中的环境变量
 load_dotenv()
 
+
+def _get_bool_env(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _get_int_env(name, default, minimum=1):
+    try:
+        return max(int(os.getenv(name, default)), minimum)
+    except (TypeError, ValueError):
+        return default
+
 # 获取当前脚本所在的目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -20,6 +34,17 @@ DEFAULT_SAVE_DIR = os.getenv('DEFAULT_SAVE_DIR')
 # 管理员账号密码
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
+
+# Telegram 公开频道搜索
+TG_SEARCH_ENABLED = _get_bool_env("TG_SEARCH_ENABLED", True)
+TG_CHANNELS = [
+    channel.strip().lstrip("@").strip("/")
+    for channel in os.getenv("TG_CHANNELS", "tgsearchers7").split(",")
+    if channel.strip()
+]
+TG_SEARCH_TIMEOUT = _get_int_env("TG_SEARCH_TIMEOUT", 10)
+TG_SEARCH_MAX_WORKERS = _get_int_env("TG_SEARCH_MAX_WORKERS", 4)
+TG_PROXY = os.getenv("TG_PROXY", "").strip()
 
 # JWT密钥
 SECRET_KEY = os.getenv('SECRET_KEY')
@@ -50,4 +75,3 @@ user_agents = [
     'Mozilla/5.0 (X11; Linux x86_64; rv:90.0) Gecko/20100101 Firefox/90.0',
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 OPR/77.0.4054.203'
 ]
-    
