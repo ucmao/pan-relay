@@ -474,6 +474,105 @@
     text-decoration: underline;
 }
 
+/* --- 弹窗内的 Star 引导卡片 --- */
+.view-result-star-card {
+    border: 1px solid rgba(245, 191, 96, 0.32);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255, 250, 240, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+    padding: 12px 16px;
+    box-shadow: 0 4px 12px rgba(245, 191, 96, 0.08);
+}
+
+.star-card-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.star-card-text {
+    font-size: 0.84rem;
+    color: #475569;
+    line-height: 1.45;
+    display: flex;
+    align-items: center;
+}
+
+.star-card-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid rgba(222, 159, 45, 0.45);
+    background: rgba(255, 255, 255, 0.92);
+    color: #b7791f;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.star-card-btn:hover {
+    background: #f5bf60;
+    color: #0f172a;
+    border-color: #f5bf60;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 191, 96, 0.28);
+}
+
+/* --- 搜索结果底部的 Star 引导卡片 --- */
+.results-star-guide {
+    padding: 18px 0 10px;
+    text-align: center;
+}
+
+.results-star-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.results-star-text {
+    font-size: 0.85rem;
+    color: #475569;
+    display: flex;
+    align-items: center;
+}
+
+.results-star-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 999px;
+    color: #b7791f;
+    border: 1px solid rgba(222, 159, 45, 0.45);
+    background: rgba(255, 248, 235, 0.9);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.results-star-action:hover {
+    background: #f5bf60;
+    color: #0f172a;
+    border-color: #f5bf60;
+    transform: translateY(-1px);
+}
+
 /* --- 搜索结果容器 --- */
 #scrollableResults {
     position: relative;

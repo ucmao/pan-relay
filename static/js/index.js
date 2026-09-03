@@ -22,6 +22,7 @@ const searchButton = document.getElementById('searchButton');
 const searchInput = document.getElementById('searchInput');
 const resultContainer = document.getElementById('resultContainer');
 const loadingMore = document.getElementById('loadingMore');
+const resultsStarGuide = document.getElementById('resultsStarGuide');
 const resultCountText = document.getElementById('resultCountText');
 const statusBar = document.getElementById('statusBar');
 const advancedFilterToggle = document.getElementById('advancedFilterToggle');
@@ -275,6 +276,7 @@ function performSearch() {
 
     resultCountText.classList.add('d-none');
     loadingMore.classList.add('d-none');
+    resultsStarGuide?.classList.add('d-none');
 
     allResults = [];
     currentPage = 1;
@@ -350,6 +352,7 @@ function finalizeSearch(hasError = false) {
                 <h3 class="mt-3 text-muted">未找到相关结果，请尝试其他关键词</h3>
             </div>`;
         loadingMore.classList.add('d-none');
+        resultsStarGuide?.classList.add('d-none');
         // 即使没有结果也显示计数
         document.querySelector('.filter-and-count-container').classList.remove('d-none');
         resultCountText.textContent = `共找到 0 个结果 (${currentFilter})`;
@@ -559,10 +562,16 @@ function renderResults(reset = false) {
         isFullyLoaded = true;
         loadingMore.classList.add('d-none');
         loadingMore.textContent = '已加载全部结果。';
+        if (filteredResults.length > 0) {
+            resultsStarGuide?.classList.remove('d-none');
+        } else {
+            resultsStarGuide?.classList.add('d-none');
+        }
     } else {
         isFullyLoaded = false;
         loadingMore.classList.remove('d-none');
         loadingMore.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div>加载更多结果...';
+        resultsStarGuide?.classList.add('d-none');
     }
 
     if (currentBatch.length > 0) {

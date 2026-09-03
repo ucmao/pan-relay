@@ -77,14 +77,202 @@
             color: #94a3b8;
         }
 
+        .footer-star-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            margin-left: 4px;
+            padding: 1px 7px;
+            border-radius: 9999px;
+            background: rgba(245, 191, 96, 0.18);
+            color: #b7791f;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        /* 顶部导航栏与 GitHub Star 徽章 */
+        .public-top-nav {
+            position: relative;
+            z-index: 50;
+            padding: 16px 0 6px;
+        }
+
+        .github-star-pill {
+            display: inline-flex;
+            align-items: stretch;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            border-radius: 9999px;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #1e293b;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .github-star-pill:hover {
+            border-color: rgba(222, 159, 45, 0.55);
+            box-shadow: 0 6px 20px rgba(222, 159, 45, 0.16), 0 2px 6px rgba(15, 23, 42, 0.06);
+            transform: translateY(-1.5px);
+            color: #0f172a;
+        }
+
+        .github-pill-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 11px 6px 13px;
+            color: #1e293b;
+            font-weight: 600;
+            background: rgba(241, 245, 249, 0.65);
+            border-right: 1px solid rgba(148, 163, 184, 0.2);
+            transition: background 0.2s;
+        }
+
+        .github-star-pill:hover .github-pill-left {
+            background: rgba(241, 245, 249, 0.95);
+        }
+
+        .github-pill-right {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px 6px 10px;
+            color: #475569;
+        }
+
+        .github-pill-right .star-icon {
+            color: #f59e0b;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .github-star-pill:hover .star-icon {
+            transform: scale(1.22) rotate(12deg);
+        }
+
+        .github-star-count {
+            font-weight: 700;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+            min-width: 14px;
+            text-align: center;
+        }
+
+        .admin-nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #64748b;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 9999px;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+
+        .admin-nav-link:hover {
+            color: #0f172a;
+            border-color: rgba(148, 163, 184, 0.4);
+            background: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        /* 免责声明弹窗内的 GitHub 支持卡片 */
+        .disclaimer-star-box {
+            margin: 12px 0 14px;
+            padding: 12px 14px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            border-radius: 16px;
+            background: rgba(248, 250, 252, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .disclaimer-star-box:hover {
+            border-color: rgba(245, 191, 96, 0.4);
+        }
+
+        .disclaimer-star-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 999px;
+            border: 1px solid rgba(222, 159, 45, 0.4);
+            background: rgba(255, 248, 235, 0.9);
+            color: #b7791f;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .disclaimer-star-btn:hover {
+            background: #f5bf60;
+            color: #0f172a;
+            border-color: #f5bf60;
+            transform: translateY(-1px);
+        }
+
         @media (max-width: 540px) {
             .container-fluid-custom {
                 padding: 0 14px;
+            }
+
+            .public-top-nav {
+                padding: 12px 0 4px;
+            }
+
+            .github-repo-text {
+                display: none;
+            }
+
+            .github-pill-left {
+                padding: 6px 9px 6px 11px;
             }
         }
     </style>
 </head>
 <body>
+
+<header class="public-top-nav">
+    <div class="container-fluid-custom d-flex justify-content-between align-items-center">
+        <div class="public-nav-left">
+            <!-- 预留左侧区域，保持搜索区干净居中 -->
+        </div>
+        <div class="public-nav-right d-flex align-items-center gap-2">
+            <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="github-star-pill" title="前往 GitHub 为 Pan-Relay 点亮 Star ⭐">
+                <span class="github-pill-left">
+                    <i class="fab fa-github"></i>
+                    <span class="github-repo-text">Pan-Relay</span>
+                </span>
+                <span class="github-pill-right">
+                    <i class="fas fa-star star-icon"></i>
+                    <span class="star-text">Star</span>
+                    <span id="githubStarCount" class="github-star-count">...</span>
+                </span>
+            </a>
+            {% if is_logged_in %}
+            <a href="{{ url_for('resources.resources_page') }}" class="admin-nav-link" title="进入管理后台">
+                <i class="fas fa-cog"></i>
+                <span>管理后台</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</header>
 
 {% block content %}{% endblock %}
 
@@ -93,7 +281,10 @@
         <div class="footer-copyright">
             <a id="disclaimerLink">&copy; Pan-Relay</a>
             <span class="footer-divider">|</span>
-            <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer">
+                <i class="fab fa-github me-1"></i>GitHub
+                <span class="footer-star-tag"><i class="fas fa-star"></i> Star</span>
+            </a>
         </div>
     </div>
 </div>
@@ -102,13 +293,19 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content disclaimer-modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="disclaimerModalLabel">免责声明</h5>
+                <h5 class="modal-title" id="disclaimerModalLabel">关于与免责声明</h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body disclaimer-modal-body">
-                <p>Pan-Relay 是一款基于多源 API 的自动化检索与网盘中继工具。本项目已在 GitHub 开源：</p>
-                <div class="disclaimer-link-chip">
-                    <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener">github.com/ucmao/pan-relay</a>
+                <p>Pan-Relay 是一款基于多源 API 的自动化检索与网盘中继工具。本项目已在 GitHub 完全开源：</p>
+                <div class="disclaimer-star-box">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fab fa-github fa-lg text-dark"></i>
+                        <span class="font-semibold text-slate-800" style="font-size: 0.88rem;">ucmao / pan-relay</span>
+                    </div>
+                    <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="disclaimer-star-btn">
+                        <i class="fas fa-star text-amber-500"></i> Star 支持
+                    </a>
                 </div>
                 <div class="disclaimer-note-block">
                     <p>1、本工具仅作为资源检索的辅助工具，所有搜索结果均实时调用第三方公开 API 自动生成，本站不存储、不上传、不分发任何实质资源内容。</p>
@@ -116,7 +313,7 @@
                     <p>3、本工具仅供技术研究、学习与交流使用，严禁用于任何形式的商业牟利行为。</p>
                     <p>4、请在法律允许的范围内合理使用。因用户违规使用所产生的法律后果，由用户自行承担。</p>
                 </div>
-                <p class="disclaimer-thanks">感谢您的支持与关注。</p>
+                <p class="disclaimer-thanks">感谢您的支持与关注！欢迎在 GitHub 为我们点亮 Star ⭐</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary btn-sm" data-ui-dismiss="modal">我知道了</button>
@@ -126,6 +323,50 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+<script>
+    // GitHub Star 计数器异步加载与缓存
+    (function () {
+        const starEl = document.getElementById('githubStarCount');
+        if (!starEl) return;
+
+        const CACHE_KEY = 'pan_relay_star_count';
+        const CACHE_TIME_KEY = 'pan_relay_star_time';
+        const TTL = 30 * 60 * 1000; // 30 分钟本地缓存
+
+        function formatStars(count) {
+            const num = Number(count);
+            if (isNaN(num)) return 'Star';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+            return String(num);
+        }
+
+        const cachedCount = localStorage.getItem(CACHE_KEY);
+        const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+
+        if (cachedCount && cachedTime && (Date.now() - Number(cachedTime) < TTL)) {
+            starEl.textContent = formatStars(cachedCount);
+            return;
+        }
+
+        fetch('https://api.github.com/repos/ucmao/pan-relay')
+            .then(res => {
+                if (!res.ok) throw new Error('Network error');
+                return res.json();
+            })
+            .then(data => {
+                if (typeof data.stargazers_count === 'number') {
+                    localStorage.setItem(CACHE_KEY, data.stargazers_count);
+                    localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
+                    starEl.textContent = formatStars(data.stargazers_count);
+                } else {
+                    starEl.textContent = cachedCount ? formatStars(cachedCount) : 'Star';
+                }
+            })
+            .catch(() => {
+                starEl.textContent = cachedCount ? formatStars(cachedCount) : 'Star';
+            });
+    })();
+</script>
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
