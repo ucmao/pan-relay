@@ -37,9 +37,30 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD') or 'admin123'
 
 # Telegram 公开频道搜索
 TG_SEARCH_ENABLED = _get_bool_env("TG_SEARCH_ENABLED", True)
+DEFAULT_TG_CHANNELS = (
+    "tgsearchers7,tgsearchers3,tgsearchers6,Aliyun_4K_Movies,bdbdndn11,yunpanx,"
+    "bsbdbfjfjff,yp123pan,sbsbsnsqq,yunpanxunlei,tianyifc,BaiduCloudDisk,txtyzy,"
+    "peccxinpd,gotopan,PanjClub,kkxlzy,baicaoZY,MCPH01,MCPH02,MCPH03,bdwpzhpd,"
+    "ysxb48,jdjdn1111,yggpan,MCPH086,zaihuayun,Q66Share,ucwpzy,shareAliyun,alyp_1,"
+    "dianyingshare,Quark_Movies,XiangxiuNBB,ydypzyfx,ucquark,xx123pan,"
+    "yingshifenxiang123,zyfb123,tyypzhpd,tianyirigeng,cloudtianyi,hdhhd21,Lsp115,"
+    "oneonefivewpfx,qixingzhenren,taoxgzy,Channel_Shares_115,tyysypzypd,vip115hot,"
+    "wp123zy,yunpan139,yunpan189,yunpanuc,yydf_hzl,leoziyuan,Q_dongman,"
+    "yoyokuakeduanju,TG654TG,WFYSFX02,QukanMovie,yeqingjie_GJG666,"
+    "movielover8888_film3,Baidu_netdisk,D_wusun,FLMdongtianfudi,KaiPanshare,"
+    "QQZYDAPP,rjyxfx,PikPak_Share_Channel,btzhi,newproductsourcing,cctv1211,"
+    "duan_ju,QuarkFree,yunpanNB,kkdj001,xxzlzn,pxyunpanxunlei,jxwpzy,kuakedongman,"
+    "liangxingzhinan,xiangnikanj,solidsexydoll,guoman4K,zdqxm,kduanju,cilidianying,"
+    "CBduanju,SharePanFilms,dzsgx,BooksRealm,Oscar_4Kmovies,douerpan,baidu_yppan,"
+    "Q_jilupian,Netdisk_Movies,yunpanquark,ammmziyuan,ciliziyuanku,cili8888,"
+    "jzmm_123pan,Q_dianying,domgmingapk,dianying4k,q_dianshiju,tgbokee,ucshare,"
+    "godupan,gokuapan,gimy115,WFYSFX03,peccxin,Movie888035,xlwpzy,zyywpzy,wydwpzy,"
+    "gimy100,gimy115iso,wpan8,mqte5,regengguangya,yunpanguangya,regeng115,regeng123,"
+    "yoyokuakeduanjujiaoliuqun,yy80986098,pan_guangya,guangyapan_episode,AV688,pikpakpan"
+)
 TG_CHANNELS = [
     channel.strip().lstrip("@").strip("/")
-    for channel in os.getenv("TG_CHANNELS", "tgsearchers7,tgsearchers3,tgsearchers6").split(",")
+    for channel in os.getenv("TG_CHANNELS", DEFAULT_TG_CHANNELS).split(",")
     if channel.strip()
 ]
 TG_SEARCH_TIMEOUT = _get_int_env("TG_SEARCH_TIMEOUT", 10)
