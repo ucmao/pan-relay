@@ -1,220 +1,47 @@
-# ==================== Python ====================
-# 虚拟环境目录
-venv/
-env/
-.venv/
-ENV/
-
-# Byte-compiled / optimized / DLL files
+# Python 编译文件与缓存
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-
-# C extensions
-*.c
-
-# Distribution / packaging
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
 
-# PyInstaller
-*.manifest
-*.spec
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
+# 项目运行时数据与日志
 data/
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# poetry
-poetry.lock
-
-# pdm
-.pdm.toml
-
-# ==================== Web 服务器/进程文件 ====================
-# uWSGI 运行时文件 + 配置文件
-uwsgi.ini
-uwsgi.pid
-uwsgi.status
-*.socket
-uwsgi.log
-
-# Gunicorn 配置文件 + 日志
-gunicorn_conf.py
-gunicorn.log
-
-# 进程文件
-*.pid
-
-# Apache/Nginx 配置（根据情况选择）
-# 如果包含服务器特定路径，建议忽略实际文件，保存示例文件
-.htaccess
-
-# ==================== 操作系统 ====================
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Windows
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-
-# Linux
-*~
-
-# ==================== IDE ====================
-# VS Code
-.vscode/
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-*.code-workspace
-
-# PyCharm
-.idea/
-*.iws
-*.iml
-*.ipr
-
-# Atom
-.atom/
-
-# Sublime Text
-*.sublime-*
-
-# Eclipse
-.pydevproject
-.project
-.metadata
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.settings/
-.loadpath
-.recommenders
-
-# ==================== 日志和临时文件 ====================
-# 日志文件
-*.log
 logs/
+*.log
 
-# 临时文件
-*.tmp
-*.temp
-*.bak
-*.swp
-*~
-
-# 缓存目录
-.cache/
-
-# ==================== 配置文件 ====================
-# 环境变量文件（包含敏感信息）
-.env
-.env.local
-.env.*.local
-
-# 包含敏感信息的配置文件
-config.ini
-secrets.json
-*.key
-*.pem
-
-# 数据库文件（开发用的本地数据库）
+# 数据库文件
 *.db
 *.sqlite
 *.sqlite3
 
-# ==================== 其他 ====================
-# 压缩包
-*.zip
-*.rar
-*.7z
+# 环境变量与敏感配置（保留示例文件）
+.env
+.env.*
+!.env.example
 
-# 办公文档
-*.doc
-*.docx
-*.xls
-*.xlsx
-*.ppt
-*.pptx
+# 测试与覆盖率
+.pytest_cache/
+.coverage
+htmlcov/
 
-# AI 助手配置及技能
-.agents/
+# 操作系统临时文件
+.DS_Store
+Thumbs.db
+
+# 常见 IDE 与编辑器缓存
+.idea/
+.vscode/
+*.swp
+*~
+*.bak
+*.tmp
+
+# AI 助手私有配置与技能
+.agents/
