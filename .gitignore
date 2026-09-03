@@ -215,3 +215,6 @@ secrets.json
 *.xlsx
 *.ppt
 *.pptx
+
+# AI 助手配置及技能
+.agents/
