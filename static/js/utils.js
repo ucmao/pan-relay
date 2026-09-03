@@ -14,55 +14,101 @@ function formatModalMessage(message) {
 }
 
 /**
- * 显示提示消息
+ * 健壮的剪贴板复制函数（支持现代 Clipboard API 与 execCommand 降级）
+ * 兼容 HTTP、非 localhost、局域网 IP、Safari 等受限上下文
+ * @param {string} text - 要复制的文本内容
+ * @returns {Promise<boolean>} 是否复制成功
+ */
+async function copyTextToClipboard(text) {
+    if (text === undefined || text === null) return false;
+    const str = String(text);
+
+    // 1. 优先尝试现代 Clipboard API（需在安全上下文 HTTPS 或 localhost 下）
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            await navigator.clipboard.writeText(str);
+            return true;
+        } catch (err) {
+            console.warn('navigator.clipboard.writeText 失败，转入 fallback 方案:', err);
+        }
+    }
+
+    // 2. 降级方案：创建临时不可见 textarea 执行 document.execCommand('copy')
+    try {
+        const textArea = document.createElement('textarea');
+        textArea.value = str;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '-9999px';
+        textArea.style.left = '-9999px';
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+        textArea.style.padding = '0';
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+        textArea.style.background = 'transparent';
+        textArea.setAttribute('readonly', '');
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        textArea.setSelectionRange(0, textArea.value.length);
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        return Boolean(successful);
+    } catch (err) {
+        console.error('document.execCommand 复制失败:', err);
+        return false;
+    }
+}
+
+/**
+ * 显示提示消息（现代化 Toast 气泡弹窗）
  * @param {string} message - 消息内容
  * @param {string} type - 消息类型：success, danger, warning, info
  * @param {number} delay - 自动关闭延迟时间（毫秒）
  */
 function showToast(message, type = 'success', delay = 3000) {
-    const toastContainer = document.getElementById('toastContainer');
-    if (!toastContainer) return;
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        document.body.appendChild(toastContainer);
+    }
 
-    // 创建 Toast 元素
+    const iconMap = {
+        success: 'fas fa-check-circle',
+        danger: 'fas fa-times-circle',
+        warning: 'fas fa-exclamation-triangle',
+        info: 'fas fa-info-circle'
+    };
+    const iconClass = iconMap[type] || iconMap.info;
+
     const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type} border-0 position-fixed end-0 m-3`;
+    toast.className = `admin-toast admin-toast-${type}`;
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-    toast.style.zIndex = '1060'; // 确保在最上层
 
     toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">${message}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-ui-dismiss="toast" aria-label="Close"></button>
-        </div>
+        <i class="${iconClass} admin-toast-icon"></i>
+        <div class="admin-toast-message">${escapeHtml(message)}</div>
+        <button type="button" class="admin-toast-close" aria-label="关闭">
+            <i class="fas fa-times"></i>
+        </button>
     `;
 
-    // 计算当前显示的toast数量，设置适当的bottom偏移量
-    const visibleToasts = document.querySelectorAll('.toast.show');
-    const toastHeight = 60; // 大概估算每个toast的高度（包括margin）
-    const bottomOffset = visibleToasts.length * toastHeight + 10; // 10px为初始底部边距
-    toast.style.bottom = `${bottomOffset}px`;
-
     toastContainer.appendChild(toast);
-    toast.classList.add('show');
-    toast.style.display = 'block';
 
     const hideToast = () => {
-        toast.classList.remove('show');
-        toast.style.display = 'none';
-        toast.remove();
-
-        const remainingToasts = document.querySelectorAll('.toast.show');
-        remainingToasts.forEach((t, index) => {
-            t.style.bottom = `${index * toastHeight + 10}px`;
-        });
+        toast.classList.add('admin-toast-hiding');
+        setTimeout(() => {
+            toast.remove();
+        }, 220);
     };
 
-    const autoHideTimer = window.setTimeout(hideToast, delay);
-    const closeButton = toast.querySelector('[data-ui-dismiss="toast"]');
+    const autoHideTimer = setTimeout(hideToast, delay);
+    const closeButton = toast.querySelector('.admin-toast-close');
     closeButton?.addEventListener('click', () => {
-        window.clearTimeout(autoHideTimer);
+        clearTimeout(autoHideTimer);
         hideToast();
     }, { once: true });
 }

@@ -21,6 +21,7 @@ const pageSizeSelect = document.getElementById('pageSizeSelect');
 const jumpPageInput = document.getElementById('jumpPageInput');
 const jumpPageBtn = document.getElementById('jumpPageBtn');
 const resourceTotalCount = document.getElementById('resourceTotalCount');
+const resourceBatchToolbar = document.getElementById('resourceBatchToolbar');
 const selectedResourceCount = document.getElementById('selectedResourceCount');
 const selectCurrentPageCheckbox = document.getElementById('selectCurrentPageCheckbox');
 const selectCurrentPageBtn = document.getElementById('selectCurrentPageBtn');
@@ -290,7 +291,10 @@ function bindActionEvents() {
     });
     // 复制
     document.querySelectorAll('.copy-btn').forEach(btn => {
-        btn.addEventListener('click', () => copyResource(parseInt(btn.getAttribute('data-id'))));
+        btn.addEventListener('click', (e) => {
+            const btnEl = e.currentTarget;
+            copyResource(parseInt(btnEl.getAttribute('data-id'), 10), btnEl);
+        });
     });
 }
 
@@ -310,6 +314,10 @@ function toggleResourceSelection(resourceId, checked) {
 function updateSelectionUI() {
     const selectedCount = selectedResourceMap.size;
 
+    if (resourceBatchToolbar) {
+        resourceBatchToolbar.classList.toggle('show', selectedCount > 0);
+    }
+
     if (selectedResourceCount) {
         selectedResourceCount.textContent = String(selectedCount);
     }
@@ -322,17 +330,11 @@ function updateSelectionUI() {
     }
 
     if (exportSelectedBtn) {
-        exportSelectedBtn.classList.toggle('d-none', selectedCount === 0);
         exportSelectedBtn.disabled = selectedCount === 0;
     }
 
     if (deleteSelectedBtn) {
-        deleteSelectedBtn.classList.toggle('d-none', selectedCount === 0);
         deleteSelectedBtn.disabled = selectedCount === 0;
-    }
-
-    if (clearSelectionBtn) {
-        clearSelectionBtn.classList.toggle('d-none', selectedCount === 0);
     }
 }
 
@@ -353,16 +355,32 @@ function clearResourceSelection() {
 }
 
 // 复制资源信息
-function copyResource(id) {
+async function copyResource(id, buttonEl) {
     const resource = resourcesData.find(r => r.id === id);
     if (!resource) return;
 
-    const copyContent = `标题: ${resource.name}\n链接: ${resource.share_link}\n提取码: ${resource.code || '无'}`;
-    navigator.clipboard.writeText(copyContent).then(() => {
-        showToast('已复制到剪贴板');
-    }).catch(() => {
-        showToast('复制失败', 'danger');
-    });
+    // 格式化复制内容：优先提供干净链接与提取码，支持直接打开或客户端自动识别
+    let copyContent = resource.share_link || '';
+    if (resource.code && resource.code !== '无' && resource.code.trim() !== '') {
+        copyContent = `${resource.share_link} 提取码: ${resource.code}`;
+    }
+
+    const success = await copyTextToClipboard(copyContent);
+
+    if (success) {
+        showToast('已复制到剪贴板', 'success');
+        if (buttonEl) {
+            const originalHtml = buttonEl.innerHTML;
+            buttonEl.innerHTML = '<i class="fas fa-check text-emerald-500"></i> 已复制';
+            buttonEl.disabled = true;
+            setTimeout(() => {
+                buttonEl.innerHTML = originalHtml;
+                buttonEl.disabled = false;
+            }, 1500);
+        }
+    } else {
+        showToast('复制失败，请手动选择复制', 'danger');
+    }
 }
 
 // 删除资源

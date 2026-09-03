@@ -99,26 +99,31 @@
                 </div>
             </div>
 
-            <!-- 批量操作工具栏 -->
-            <div class="resource-batch-toolbar" id="resourceBatchToolbar">
+            <!-- 底部悬浮批量操作栏 -->
+            <div class="resource-batch-toolbar" id="resourceBatchToolbar" role="toolbar" aria-label="批量操作栏">
                 <div class="resource-batch-summary">
-                    <i class="fas fa-check-circle"></i> 已选择 <strong id="selectedResourceCount">0</strong> 项
+                    <i class="fas fa-check-circle"></i>
+                    <span>已选 <strong id="selectedResourceCount">0</strong> 项</span>
+                    <button class="resource-batch-btn-clear" id="clearSelectionBtn" type="button" title="清空选择">
+                        <i class="fas fa-times"></i> 清空
+                    </button>
                 </div>
+                <div class="resource-batch-divider"></div>
+                <div class="resource-batch-scope">
+                    <button class="resource-batch-btn-subtle" id="selectCurrentPageBtn" type="button">
+                        <i class="fas fa-check-square"></i> 选本页
+                    </button>
+                    <button class="resource-batch-btn-subtle" id="selectAllResourcesBtn" type="button">
+                        <i class="fas fa-layer-group"></i> 全选
+                    </button>
+                </div>
+                <div class="resource-batch-divider"></div>
                 <div class="resource-batch-actions">
-                    <button class="btn btn-outline-primary btn-sm" id="selectCurrentPageBtn" type="button">
-                        <i class="fas fa-check-square"></i> 选择当前页
+                    <button class="btn btn-primary btn-sm" id="exportSelectedBtn" type="button">
+                        <i class="fas fa-file-export"></i> 导出
                     </button>
-                    <button class="btn btn-outline-primary btn-sm" id="selectAllResourcesBtn" type="button">
-                        <i class="fas fa-layer-group"></i> 选择全部
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm d-none" id="clearSelectionBtn" type="button">
-                        <i class="fas fa-times"></i> 清空选择
-                    </button>
-                    <button class="btn btn-outline-primary btn-sm d-none" id="exportSelectedBtn" type="button">
-                        <i class="fas fa-file-export"></i> 导出选中
-                    </button>
-                    <button class="btn btn-danger btn-sm d-none" id="deleteSelectedBtn" type="button">
-                        <i class="fas fa-trash"></i> 批量删除
+                    <button class="btn btn-danger btn-sm" id="deleteSelectedBtn" type="button">
+                        <i class="fas fa-trash-alt"></i> 删除
                     </button>
                 </div>
             </div>

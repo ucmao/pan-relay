@@ -540,14 +540,14 @@ function renderResults(reset = false) {
 分享链接: ${url}
 云盘名称: ${netdisk}`;
 
-            navigator.clipboard.writeText(textToCopy)
-                .then(() => {
+            copyTextToClipboard(textToCopy).then(success => {
+                if (success) {
                     this.innerHTML = '<i class="fas fa-check"></i> 已复制';
                     setTimeout(() => { this.innerHTML = '<i class="far fa-copy"></i> 复制'; }, 1500);
-                })
-                .catch(() => {
+                } else {
                     showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
-                });
+                }
+            });
         });
     });
 

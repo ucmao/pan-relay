@@ -1287,28 +1287,84 @@ legend {
 /* Toast Container */
 #toastContainer {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 2000;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     pointer-events: none;
 }
 
 .admin-toast {
     pointer-events: auto;
     min-width: 260px;
-    padding: 10px 16px;
+    max-width: 420px;
+    padding: 12px 16px;
     background: #ffffff;
-    border-radius: var(--admin-radius-lg);
-    box-shadow: var(--admin-shadow-lg);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.16), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
     border: 1px solid #e2e8f0;
-    font-size: 0.78rem;
+    font-size: 0.8125rem;
+    color: #1e293b;
     display: flex;
     align-items: center;
     gap: 10px;
-    animation: fadeIn 0.18s ease;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+    animation: toastSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-toast.admin-toast-hiding {
+    opacity: 0;
+    transform: translateX(24px) scale(0.95);
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.admin-toast-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.admin-toast-success .admin-toast-icon { color: #10b981; }
+.admin-toast-danger .admin-toast-icon { color: #ef4444; }
+.admin-toast-warning .admin-toast-icon { color: #f59e0b; }
+.admin-toast-info .admin-toast-icon { color: #3b82f6; }
+
+.admin-toast-message {
+    flex: 1;
+    font-weight: 500;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.admin-toast-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    transition: all 0.15s ease;
+}
+
+.admin-toast-close:hover {
+    color: #475569;
+    background: #f1f5f9;
 }
 
 /* --------------------------------------------------------------------------
