@@ -2,272 +2,299 @@
 {% set active_page = 'config' %}
 
 {% block head %}
-<title>Pan-Relay - 配置</title>
+<title>Pan-Relay - 系统配置</title>
 <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/api_config.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid-custom pt-4">
-    <section class="admin-hero admin-hero-config">
-        <div class="admin-hero-main">
-            <span class="admin-kicker">System Controls</span>
-            <h2 class="admin-title">配置中心</h2>
-            <p class="admin-description">统一调度出链逻辑、云盘范围与Cookie状态。在直观面板中收拢核心决策，确保系统配置精准生效。</p>
-            <div class="admin-hero-tags">
-                <span class="admin-tag">出链模式</span>
-                <span class="admin-tag">网盘显示</span>
-                <span class="admin-tag">TG搜索</span>
-                <span class="admin-tag">公开接口</span>
-                <span class="admin-tag">Cookie管理</span>
+<div class="admin-container">
+    <!-- 业务头部 -->
+    <header class="admin-page-header">
+        <div class="admin-page-title-group">
+            <h1 class="admin-page-title">
+                <i class="fas fa-sliders-h text-primary"></i> 全局系统配置中心
+            </h1>
+            <p class="admin-page-desc">统一调度系统出链模式、Telegram并发抓取网络、公开API网关及云盘运营凭证。</p>
+        </div>
+        <div class="admin-page-actions">
+            <button class="btn btn-outline-primary" id="viewPublicSearchApiDocBtn" data-ui-modal-target="#publicSearchApiModal">
+                <i class="fas fa-book-open"></i> API 文档
+            </button>
+            <button class="btn btn-primary" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});">
+                <i class="fas fa-key"></i> 管理云盘凭证
+            </button>
+        </div>
+    </header>
+
+    <!-- KPI 概览指标条 -->
+    <div class="admin-kpi-grid">
+        <div class="admin-kpi-card">
+            <div class="admin-kpi-header">
+                <span class="admin-kpi-label">出链分发策略</span>
+                <span class="admin-kpi-icon is-blue"><i class="fas fa-random"></i></span>
+            </div>
+            <div class="admin-kpi-value" id="kpiDeliveryMode">出链模式</div>
+            <div class="admin-kpi-footer">
+                <i class="fas fa-info-circle"></i> 支持原始直连或动态转存替换
             </div>
         </div>
-        <div class="admin-hero-side">
-            <div class="admin-stat-card">
-                <span class="admin-stat-label">System Policy</span>
-                <strong class="admin-stat-value">Delivery Rules</strong>
-                <span class="admin-stat-note">全局配置将同步作用于前台搜索链路与后台转存引擎。</span>
+        <div class="admin-kpi-card">
+            <div class="admin-kpi-header">
+                <span class="admin-kpi-label">TG 频道检索网络</span>
+                <span class="admin-kpi-icon is-green"><i class="fab fa-telegram-plane"></i></span>
+            </div>
+            <div class="admin-kpi-value">并发轮询</div>
+            <div class="admin-kpi-footer">
+                <i class="fas fa-network-wired"></i> 支持 HTTP/SOCKS5 代理隔离
             </div>
         </div>
-    </section>
-
-    <section class="admin-panel mb-4">
-        <div class="card-body">
-            <div class="frontend-link-mode-config">
-                <div class="panel-header panel-header-inline">
-                    <div>
-                        <h2 class="panel-title">公开聚合搜索接口</h2>
-                        <p class="panel-description">用于外部程序接入，返回与搜索页同源的聚合结果。你可以在这里查看文档，并控制该接口是否对外开放。</p>
-                    </div>
-                    <div class="frontend-netdisk-actions">
-                        <button class="btn btn-outline-primary btn-sm" id="viewPublicSearchApiDocBtn"
-                            data-ui-modal-target="#publicSearchApiModal">
-                            <i class="fas fa-code me-1"></i> 查看文档
-                        </button>
-                        <button class="btn btn-primary btn-sm" id="savePublicSearchApiButton"
-                            onclick="savePublicSearchApiConfig()">
-                            <i class="fas fa-save me-1"></i> 保存接口状态
-                        </button>
-                    </div>
-                </div>
-                <div class="frontend-link-mode-options">
-                    <label class="frontend-link-mode-card" for="publicSearchApiEnabledOn">
-                        <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled"
-                            id="publicSearchApiEnabledOn" value="true" checked>
-                        <span class="frontend-link-mode-copy">
-                            <span class="frontend-link-mode-title">开启公开访问</span>
-                            <span class="frontend-link-mode-desc">允许外部通过 <code>/api</code> 获取与搜索页同源的聚合搜索结果。</span>
-                        </span>
-                        <span class="frontend-link-mode-switch"></span>
-                    </label>
-                    <label class="frontend-link-mode-card" for="publicSearchApiEnabledOff">
-                        <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled"
-                            id="publicSearchApiEnabledOff" value="false">
-                        <span class="frontend-link-mode-copy">
-                            <span class="frontend-link-mode-title">关闭公开访问</span>
-                            <span class="frontend-link-mode-desc">外部访问 <code>/api</code> 时将返回关闭提示，但前台搜索页仍可正常使用。</span>
-                        </span>
-                        <span class="frontend-link-mode-switch"></span>
-                    </label>
-                </div>
+        <div class="admin-kpi-card">
+            <div class="admin-kpi-header">
+                <span class="admin-kpi-label">展示网盘范围</span>
+                <span class="admin-kpi-icon is-amber"><i class="fas fa-cloud-download-alt"></i></span>
+            </div>
+            <div class="admin-kpi-value">全域过滤</div>
+            <div class="admin-kpi-footer">
+                <i class="fas fa-filter"></i> 作用于前台与对外 API 接口
             </div>
         </div>
-    </section>
+        <div class="admin-kpi-card">
+            <div class="admin-kpi-header">
+                <span class="admin-kpi-label">凭证存储机制</span>
+                <span class="admin-kpi-icon is-purple"><i class="fas fa-shield-alt"></i></span>
+            </div>
+            <div class="admin-kpi-value">服务端安全存储</div>
+            <div class="admin-kpi-footer">
+                <i class="fas fa-lock"></i> 绝不对外暴露，保护账号隐私
+            </div>
+        </div>
+    </div>
 
-    <section class="admin-panel mb-4">
-        <div class="card-body">
-            <div class="frontend-link-mode-config">
-                <div class="panel-header panel-header-inline">
-                    <div>
-                        <h2 class="panel-title">Telegram 频道搜索配置</h2>
-                        <p class="panel-description">配置 Telegram 公开频道的并发检索源与网络代理。支持即时启停、多频道轮询以及在线连通性联调。</p>
+    <!-- 1. 公开聚合搜索接口 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-globe text-primary"></i> 公开聚合搜索接口
+                </h2>
+                <p class="admin-panel-desc">对外提供与前台同源的 JSON 聚合搜索端点 (<code>/api</code>)，供第三方程序或自动化脚本调用。</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm" data-ui-modal-target="#publicSearchApiModal">
+                    <i class="fas fa-code"></i> 查看文档
+                </button>
+                <button class="btn btn-primary btn-sm" id="savePublicSearchApiButton" onclick="savePublicSearchApiConfig()">
+                    <i class="fas fa-save"></i> 保存接口设置
+                </button>
+            </div>
+        </div>
+        <div class="admin-panel-body">
+            <div class="frontend-link-mode-options">
+                <label class="frontend-link-mode-card" for="publicSearchApiEnabledOn">
+                    <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled" id="publicSearchApiEnabledOn" value="true" checked>
+                    <div class="frontend-link-mode-copy">
+                        <span class="frontend-link-mode-title">开启公开访问</span>
+                        <span class="frontend-link-mode-desc">允许外部程序通过 <code>GET /api?keyword=xxx</code> 正常请求聚合搜索结果。</span>
                     </div>
-                    <div class="frontend-netdisk-actions">
-                        <button class="btn btn-outline-primary btn-sm" id="testTgModalBtn" data-ui-modal-target="#tgTestModal">
-                            <i class="fas fa-satellite-dish me-1"></i> 联调测试
-                        </button>
-                        <button class="btn btn-primary btn-sm" id="saveTgSearchConfigBtn" onclick="saveTgSearchConfig()">
-                            <i class="fas fa-save me-1"></i> 保存 TG 配置
-                        </button>
+                    <span class="frontend-link-mode-switch"></span>
+                </label>
+                <label class="frontend-link-mode-card" for="publicSearchApiEnabledOff">
+                    <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled" id="publicSearchApiEnabledOff" value="false">
+                    <div class="frontend-link-mode-copy">
+                        <span class="frontend-link-mode-title">关闭公开访问</span>
+                        <span class="frontend-link-mode-desc">外部访问时将返回服务关闭提示，但内部管理员前台搜索仍可正常使用。</span>
                     </div>
-                </div>
-
-                <div class="frontend-link-mode-options mb-3">
-                    <label class="frontend-link-mode-card" for="tgSearchEnabledOn">
-                        <input class="frontend-link-mode-radio" type="radio" name="tgSearchEnabled"
-                            id="tgSearchEnabledOn" value="true" checked>
-                        <span class="frontend-link-mode-copy">
-                            <span class="frontend-link-mode-title">开启 TG 搜索</span>
-                            <span class="frontend-link-mode-desc">前台与公开接口搜索时，并发检索配置的 Telegram 公开频道。</span>
-                        </span>
-                        <span class="frontend-link-mode-switch"></span>
-                    </label>
-                    <label class="frontend-link-mode-card" for="tgSearchEnabledOff">
-                        <input class="frontend-link-mode-radio" type="radio" name="tgSearchEnabled"
-                            id="tgSearchEnabledOff" value="false">
-                        <span class="frontend-link-mode-copy">
-                            <span class="frontend-link-mode-title">关闭 TG 搜索</span>
-                            <span class="frontend-link-mode-desc">停用 Telegram 频道抓取，仅使用内部资源库和第三方 API/插件。</span>
-                        </span>
-                        <span class="frontend-link-mode-switch"></span>
-                    </label>
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-lg-6">
-                        <label for="tgProxyInput" class="form-label fw-semibold">
-                            网络代理 (Proxy)
-                            <small class="text-muted fw-normal">（如 <code>socks5://127.0.0.1:7890</code> 或 <code>http://127.0.0.1:7890</code>，内地服务器无法直连时必填）</small>
-                        </label>
-                        <input type="text" class="form-control" id="tgProxyInput" placeholder="留空则直连，例：socks5://127.0.0.1:7890">
-                    </div>
-                    <div class="col-lg-3">
-                        <label for="tgTimeoutInput" class="form-label fw-semibold">
-                            单频道超时时间 (秒)
-                        </label>
-                        <input type="number" class="form-control" id="tgTimeoutInput" min="1" max="60" value="10">
-                    </div>
-                    <div class="col-lg-3">
-                        <label for="tgMaxWorkersInput" class="form-label fw-semibold">
-                            并发拉取线程数
-                        </label>
-                        <input type="number" class="form-control" id="tgMaxWorkersInput" min="1" max="16" value="4">
-                    </div>
-                    <div class="col-12">
-                        <label for="tgChannelsInput" class="form-label fw-semibold">
-                            检索公开频道列表
-                            <small class="text-muted fw-normal">（多个频道用逗号或换行分隔，如 <code>tgsearchers7, tgsearchers3</code>）</small>
-                        </label>
-                        <textarea class="form-control" id="tgChannelsInput" rows="3" placeholder="例如：tgsearchers7, tgsearchers3, tgsearchers6"></textarea>
-                    </div>
-                </div>
+                    <span class="frontend-link-mode-switch"></span>
+                </label>
             </div>
         </div>
     </section>
 
-    <section class="admin-panel mb-4">
-        <div class="card-body">
-            <div class="frontend-link-mode-config">
-                <div class="panel-header panel-header-inline">
-                    <div>
-                        <h2 class="panel-title">搜索出链策略</h2>
-                        <p class="panel-description">控制搜索结果按钮行为：可直接复制原始链接，或点击“查看”后动态转存分享，失败时自动回退原始链接。</p>
+    <!-- 2. Telegram 频道搜索配置 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fab fa-telegram-plane text-info"></i> Telegram 频道检索设置
+                </h2>
+                <p class="admin-panel-desc">配置公开频道的实时并发检索与代理。支持多频道轮询调度以及在线连通性联调。</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-primary btn-sm" id="testTgModalBtn" data-ui-modal-target="#tgTestModal">
+                    <i class="fas fa-satellite-dish"></i> 联调测试
+                </button>
+                <button class="btn btn-primary btn-sm" id="saveTgSearchConfigBtn" onclick="saveTgSearchConfig()">
+                    <i class="fas fa-save"></i> 保存 TG 配置
+                </button>
+            </div>
+        </div>
+        <div class="admin-panel-body">
+            <div class="frontend-link-mode-options mb-4">
+                <label class="frontend-link-mode-card" for="tgSearchEnabledOn">
+                    <input class="frontend-link-mode-radio" type="radio" name="tgSearchEnabled" id="tgSearchEnabledOn" value="true" checked>
+                    <div class="frontend-link-mode-copy">
+                        <span class="frontend-link-mode-title">开启 TG 搜索</span>
+                        <span class="frontend-link-mode-desc">搜索时并发抓取配置的 Telegram 频道，自动解析网盘链接与提取码。</span>
                     </div>
-                    <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton"
-                        onclick="saveFrontendLinkMode()">
-                        <i class="fas fa-save me-1"></i> 保存出链策略
-                    </button>
-                </div>
-                <div class="frontend-link-mode-options">
-                    <label class="frontend-link-mode-card" for="frontendLinkModeCopy">
-                        <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode"
-                            id="frontendLinkModeCopy" value="copy" checked>
-                        <span class="frontend-link-mode-copy">
-                            <span class="frontend-link-mode-title">原始链接模式</span>
-                            <span class="frontend-link-mode-desc">前台展示原始链接，用户点击“复制”即可使用。</span>
-                        </span>
-                        <span class="frontend-link-mode-switch"></span>
-                    </label>
-                    <label class="frontend-link-mode-card" for="frontendLinkModeView">
-                        <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode"
-                            id="frontendLinkModeView" value="view">
-                        <span class="frontend-link-mode-copy">
-                            <span class="frontend-link-mode-title">动态转存模式</span>
-                            <span class="frontend-link-mode-desc">前台隐藏原始链接，用户点击“查看”后生成你的分享链接。</span>
-                        </span>
-                        <span class="frontend-link-mode-switch"></span>
-                    </label>
-                </div>
-                <div class="dynamic-transfer-status-panel d-none" id="dynamicTransferStatusPanel">
-                    <div class="dynamic-transfer-status-header">
-                        <div>
-                            <span class="dynamic-transfer-status-kicker">Dynamic Transfer Status</span>
-                            <h3 class="dynamic-transfer-status-title">自动转存替换状态</h3>
-                            <p class="dynamic-transfer-status-summary" id="dynamicTransferStatusSummary">正在检测 5 个云盘凭证的可用状态...</p>
-                        </div>
+                    <span class="frontend-link-mode-switch"></span>
+                </label>
+                <label class="frontend-link-mode-card" for="tgSearchEnabledOff">
+                    <input class="frontend-link-mode-radio" type="radio" name="tgSearchEnabled" id="tgSearchEnabledOff" value="false">
+                    <div class="frontend-link-mode-copy">
+                        <span class="frontend-link-mode-title">关闭 TG 搜索</span>
+                        <span class="frontend-link-mode-desc">停用 Telegram 抓取引擎，仅检索本地资源库及第三方 API/插件。</span>
                     </div>
-                    <div class="dynamic-transfer-status-grid" id="dynamicTransferStatusGrid"></div>
+                    <span class="frontend-link-mode-switch"></span>
+                </label>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <label for="tgProxyInput" class="form-label">
+                        网络代理 (Proxy)
+                        <span class="text-muted fw-normal">（如 socks5://127.0.0.1:7890，内地服务器直连困难时必填）</span>
+                    </label>
+                    <input type="text" class="form-control" id="tgProxyInput" placeholder="留空则使用系统直连">
+                </div>
+                <div class="col-lg-3">
+                    <label for="tgTimeoutInput" class="form-label">单频道抓取超时 (秒)</label>
+                    <input type="number" class="form-control" id="tgTimeoutInput" min="1" max="60" value="10">
+                </div>
+                <div class="col-lg-3">
+                    <label for="tgMaxWorkersInput" class="form-label">并发拉取线程数</label>
+                    <input type="number" class="form-control" id="tgMaxWorkersInput" min="1" max="16" value="4">
+                </div>
+                <div class="col-12">
+                    <label for="tgChannelsInput" class="form-label">
+                        监控公开频道列表
+                        <span class="text-muted fw-normal">（多个频道用逗号或换行分隔，例如：tgsearchers7, tgsearchers3）</span>
+                    </label>
+                    <textarea class="form-control font-mono" id="tgChannelsInput" rows="3" placeholder="例如：tgsearchers7, tgsearchers3, tgsearchers6"></textarea>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="admin-panel mb-4">
-        <div class="card-body">
-            <div class="frontend-netdisk-config">
-                <div class="frontend-netdisk-header">
-                    <div>
-                        <div class="frontend-netdisk-title-row">
-                            <h2 class="panel-title">网盘类型配置</h2>
-                            <span class="frontend-netdisk-counter">已选 <span id="frontendNetdiskSelectedCount">0</span> /
-                                <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></span>
-                        </div>
-                        <p class="panel-description mt-2">控制搜索页和公开搜索接口可展示的网盘类型。未选中的网盘仍可保留在后台数据里，但不会对前端返回。</p>
+    <!-- 3. 搜索出链策略与动态转存 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-share-alt text-primary"></i> 搜索出链与动态转存策略
+                </h2>
+                <p class="admin-panel-desc">控制前台用户点击资源时的行为：直接提供原始分享链接，或实时转存为您的私有分享链接。</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton" onclick="saveFrontendLinkMode()">
+                <i class="fas fa-save"></i> 保存出链策略
+            </button>
+        </div>
+        <div class="admin-panel-body">
+            <div class="frontend-link-mode-options">
+                <label class="frontend-link-mode-card" for="frontendLinkModeCopy">
+                    <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeCopy" value="copy" checked>
+                    <div class="frontend-link-mode-copy">
+                        <span class="frontend-link-mode-title">原始链接模式 (推荐)</span>
+                        <span class="frontend-link-mode-desc">前台展示原始链接，用户点击“复制”即可直接使用，速度最快。</span>
                     </div>
-                    <div class="frontend-netdisk-actions">
-                        <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton"
-                            type="button" onclick="toggleAllFrontendDisplayNetdisks()">全选</button>
-                        <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton"
-                            onclick="saveFrontendDisplayNetdisks()">
-                            <i class="fas fa-save me-1"></i> 保存显示配置
-                        </button>
+                    <span class="frontend-link-mode-switch"></span>
+                </label>
+                <label class="frontend-link-mode-card" for="frontendLinkModeView">
+                    <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeView" value="view">
+                    <div class="frontend-link-mode-copy">
+                        <span class="frontend-link-mode-title">动态转存模式</span>
+                        <span class="frontend-link-mode-desc">前台隐藏原链接，用户点击“查看”时通过您配置的凭证自动转存并生成新分享链接。</span>
                     </div>
+                    <span class="frontend-link-mode-switch"></span>
+                </label>
+            </div>
+
+            <div class="dynamic-transfer-status-panel d-none" id="dynamicTransferStatusPanel">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h3 class="admin-panel-title" style="font-size: 0.92rem;">
+                        <i class="fas fa-heartbeat text-success"></i> 自动转存凭证健康度
+                    </h3>
+                    <span class="text-muted small" id="dynamicTransferStatusSummary">正在检测 5 个云盘凭证的可用状态...</span>
                 </div>
-                <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
-                    {% for netdisk_name in frontend_netdisk_options %}
-                    <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
-                        <input class="frontend-display-netdisk-checkbox" type="checkbox"
-                            id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
-                        <span class="frontend-netdisk-card-name">{{ netdisk_name }}</span>
-                        <span class="frontend-netdisk-card-check">
-                            <i class="fas fa-check"></i>
-                        </span>
-                    </label>
-                    {% endfor %}
-                </div>
+                <div class="dynamic-transfer-status-grid" id="dynamicTransferStatusGrid"></div>
             </div>
         </div>
     </section>
 
-    <section class="admin-panel mb-4">
-        <div class="card-body">
-            <div class="panel-header panel-header-inline">
-                <div>
-                        <h2 class="panel-title">云盘凭证</h2>
-                        <p class="panel-description">用于后台转存、动态查看和临时分享。不同网盘可填写 Cookie 或 refresh token，均只在服务端保存和使用。</p>
-                    </div>
-                    <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
-                    <i class="fas fa-save me-1"></i> 保存凭证
-                    </button>
-                </div>
-            <div class="row g-3 cookie-grid">
+    <!-- 4. 网盘类型配置 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-filter text-primary"></i> 前台展示网盘类型
+                </h2>
+                <p class="admin-panel-desc">控制前台搜索页与对外 API 允许展示的网盘类型。未勾选的网盘将被屏蔽，已选 <span id="frontendNetdiskSelectedCount" class="fw-bold text-primary">0</span> / <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button" onclick="toggleAllFrontendDisplayNetdisks()">
+                    全选/反选
+                </button>
+                <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton" onclick="saveFrontendDisplayNetdisks()">
+                    <i class="fas fa-save"></i> 保存网盘设置
+                </button>
+            </div>
+        </div>
+        <div class="admin-panel-body">
+            <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
+                {% for netdisk_name in frontend_netdisk_options %}
+                <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
+                    <input class="frontend-display-netdisk-checkbox" type="checkbox" id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
+                    <span class="frontend-netdisk-card-name">{{ netdisk_name }}</span>
+                    <span class="frontend-netdisk-card-check">
+                        <i class="fas fa-check"></i>
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. 云盘凭证 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-key text-warning"></i> 云盘账号凭证与密钥
+                </h2>
+                <p class="admin-panel-desc">用于后台转存、动态分享与生成私有链接。支持 Cookie 或 Refresh Token，仅保存在服务端安全数据库中。</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
+                <i class="fas fa-save"></i> 保存全部凭证
+            </button>
+        </div>
+        <div class="admin-panel-body">
+            <div class="row g-3">
                 <div class="col-lg-6">
-                    <label for="baiduCookie" class="form-label fw-semibold">百度网盘 Cookie</label>
-                    <textarea class="form-control" id="baiduCookie" rows="8" placeholder="请输入百度网盘的 Cookie"></textarea>
+                    <label for="baiduCookie" class="form-label">百度网盘 Cookie</label>
+                    <textarea class="form-control font-mono" id="baiduCookie" rows="6" placeholder="请输入百度网盘网页端抓取的完整 Cookie"></textarea>
                 </div>
                 <div class="col-lg-6">
-                    <label for="quarkCookie" class="form-label fw-semibold">夸克网盘 Cookie</label>
-                    <textarea class="form-control" id="quarkCookie" rows="8" placeholder="请输入夸克网盘的 Cookie"></textarea>
+                    <label for="quarkCookie" class="form-label">夸克网盘 Cookie</label>
+                    <textarea class="form-control font-mono" id="quarkCookie" rows="6" placeholder="请输入夸克网盘网页端抓取的完整 Cookie"></textarea>
                 </div>
                 <div class="col-lg-6">
-                    <label for="aliyunToken" class="form-label fw-semibold">阿里云盘 Refresh Token</label>
-                    <textarea class="form-control" id="aliyunToken" rows="8" placeholder="请输入阿里云盘的 refresh_token"></textarea>
+                    <label for="aliyunToken" class="form-label">阿里云盘 Refresh Token</label>
+                    <textarea class="form-control font-mono" id="aliyunToken" rows="6" placeholder="请输入阿里云盘的 refresh_token"></textarea>
                 </div>
                 <div class="col-lg-6">
-                    <label for="ucCookie" class="form-label fw-semibold">UC 网盘 Cookie</label>
-                    <textarea class="form-control" id="ucCookie" rows="8" placeholder="请输入 UC 网盘的 Cookie"></textarea>
+                    <label for="ucCookie" class="form-label">UC 网盘 Cookie</label>
+                    <textarea class="form-control font-mono" id="ucCookie" rows="6" placeholder="请输入 UC 网盘网页端抓取的完整 Cookie"></textarea>
                 </div>
                 <div class="col-lg-6">
-                    <label for="xunleiRefreshToken" class="form-label fw-semibold">迅雷网盘 Refresh Token</label>
-                    <textarea class="form-control" id="xunleiRefreshToken" rows="5" placeholder="请输入迅雷网盘的 refresh_token"></textarea>
+                    <label for="xunleiRefreshToken" class="form-label">迅雷网盘 Refresh Token</label>
+                    <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="4" placeholder="请输入迅雷网盘 refresh_token"></textarea>
                 </div>
-                <div class="col-lg-6">
-                    <label for="xunleiCaptchaSign" class="form-label fw-semibold">迅雷网盘 Captcha Sign</label>
-                    <textarea class="form-control" id="xunleiCaptchaSign" rows="5" placeholder="请输入 captcha_sign"></textarea>
+                <div class="col-lg-3">
+                    <label for="xunleiCaptchaSign" class="form-label">迅雷 Captcha Sign</label>
+                    <textarea class="form-control font-mono" id="xunleiCaptchaSign" rows="4" placeholder="请输入 captcha_sign"></textarea>
                 </div>
-                <div class="col-lg-6">
-                    <label for="xunleiUserId" class="form-label fw-semibold">迅雷网盘 User ID</label>
-                    <input class="form-control" id="xunleiUserId" placeholder="请输入 user_id">
+                <div class="col-lg-3">
+                    <label for="xunleiUserId" class="form-label">迅雷 User ID</label>
+                    <input type="text" class="form-control font-mono" id="xunleiUserId" placeholder="请输入 user_id">
                 </div>
             </div>
         </div>
@@ -276,78 +303,79 @@
     <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
 </div>
 
-<div class="modal fade" id="publicSearchApiModal" tabindex="-1" aria-labelledby="publicSearchApiModalLabel"
-    aria-hidden="true">
+<!-- API 文档模态框 -->
+<div class="modal fade" id="publicSearchApiModal" tabindex="-1" aria-labelledby="publicSearchApiModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="publicSearchApiModalLabel">公开聚合搜索接口</h5>
+                <h5 class="modal-title" id="publicSearchApiModalLabel">
+                    <i class="fas fa-book-open text-primary me-1"></i> 公开聚合搜索接口文档
+                </h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
-            <div class="modal-body api-doc-modal">
-                <div class="modal-doc-intro">
-                    <span class="doc-badge">Public Endpoint</span>
-                    <h6>与搜索页同源的聚合搜索结果</h6>
+            <div class="modal-body">
+                <div class="p-3 mb-3 bg-light border rounded">
+                    <span class="badge badge-success mb-2">Public Endpoint</span>
+                    <h6 class="fw-bold mb-1">与前台同源的聚合检索接口</h6>
+                    <p class="text-muted small mb-0">调用该端点将同时聚合内部资源池与启用的第三方API/插件，并应用网盘过滤。</p>
                 </div>
-                <p><strong>接口地址：</strong> <code>/api</code></p>
-                <p><strong>请求方法：</strong> GET</p>
-                <p><strong>参数说明：</strong></p>
-                <ul>
-                    <li><code>keyword</code>：搜索关键词，和搜索页输入框一致（必填）</li>
-                    <li><code>limit</code>：返回结果数量限制（默认 100）</li>
-                </ul>
-                <p><strong>说明：</strong>该接口会聚合内部资源库与已启用、已测试正常的第三方搜索源，并按前台显示网盘配置过滤结果。</p>
-                <p><strong>返回格式：</strong></p>
-                <pre><code>{"success": true,
- "total": 3,
- "results": [{
-   "source": "hot",
-   "name": "凡人修仙传",
-   "share_link": "https://pan.quark.cn/s/xxxx",
-   "cloud_name": "夸克网盘"
- }]}</code></pre>
-                <p><strong>使用示例：</strong></p>
-                <pre><code>GET /api?keyword=凡人修仙传
-GET /api?keyword=庆余年&limit=20
-GET /api?keyword=周杰伦&limit=10</code></pre>
+                <table class="table table-sm mb-3">
+                    <tr><th style="width: 100px;">请求地址</th><td><code>GET /api</code></td></tr>
+                    <tr><th>参数 keyword</th><td>搜索关键词 (必填，如：<code>凡人修仙传</code>)</td></tr>
+                    <tr><th>参数 limit</th><td>单次返回条数限制 (默认: 100)</td></tr>
+                </table>
+                <h6 class="fw-bold mt-3 mb-2">返回示例 (JSON)</h6>
+                <pre class="bg-light p-3 rounded border font-mono small"><code>{
+  "success": true,
+  "total": 1,
+  "results": [
+    {
+      "source": "hot",
+      "name": "凡人修仙传 4K",
+      "share_link": "https://pan.quark.cn/s/xxxx",
+      "cloud_name": "夸克网盘"
+    }
+  ]
+}</code></pre>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-ui-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-ui-dismiss="modal">关闭</button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Telegram 联调测试模态框 -->
 <div class="modal fade" id="tgTestModal" tabindex="-1" aria-labelledby="tgTestModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="tgTestModalLabel">
-                    <i class="fab fa-telegram-plane text-primary me-2"></i> Telegram 频道连通性与检索联调
+                    <i class="fab fa-telegram-plane text-info me-1"></i> Telegram 频道联调与检索测试
                 </h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body">
                 <div class="row g-2 mb-3">
                     <div class="col-md-5">
-                        <label class="form-label small fw-semibold">测试频道用户名</label>
+                        <label class="form-label small">测试频道用户名</label>
                         <input type="text" class="form-control form-control-sm" id="tgTestChannel" placeholder="例如：tgsearchers7">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label small fw-semibold">测试关键词</label>
+                        <label class="form-label small">测试关键词</label>
                         <input type="text" class="form-control form-control-sm" id="tgTestKeyword" value="测试" placeholder="输入搜索词">
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <button type="button" class="btn btn-primary btn-sm w-100" id="doTgTestBtn" onclick="runTgTest()">
-                            <i class="fas fa-play me-1"></i> 发起测试
+                            <i class="fas fa-play me-1"></i> 发起联调
                         </button>
                     </div>
                 </div>
                 <div id="tgTestResultArea" class="d-none">
                     <div class="alert alert-info py-2 px-3 small mb-2" id="tgTestStatusAlert"></div>
-                    <div class="table-responsive border rounded" style="max-height: 280px; overflow-y: auto;">
-                        <table class="table table-sm table-bordered table-hover mb-0">
-                            <thead class="table-light">
+                    <div class="data-table-shell border rounded" style="max-height: 280px; overflow-y: auto;">
+                        <table class="table table-sm mb-0">
+                            <thead>
                                 <tr>
                                     <th style="width: 50px;">序号</th>
                                     <th>标题</th>

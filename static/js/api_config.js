@@ -127,6 +127,12 @@
         function renderTable() {
             const tbody = document.getElementById('apiTableBody');
             tbody.innerHTML = '';
+
+            const kpiTotalEl = document.getElementById('kpiApiTotal');
+            if (kpiTotalEl) kpiTotalEl.textContent = `${apiConfigs.length} 个`;
+            const kpiEnabledEl = document.getElementById('kpiApiEnabled');
+            if (kpiEnabledEl) kpiEnabledEl.textContent = `${apiConfigs.filter(a => a.is_enabled).length} 个`;
+
             apiConfigs.forEach((api, index) => {
                 const statusClass = api.status === true ? 'status-available' : 'status-unavailable';
                 const statusText = api.status === true ? '正常' : '异常';

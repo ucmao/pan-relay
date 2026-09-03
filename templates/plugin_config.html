@@ -2,42 +2,42 @@
 {% set active_page = 'plugins' %}
 
 {% block head %}
-    <title>Pan-Relay - 插件管理</title>
+    <title>Pan-Relay - 插件扩展工作区</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/api_config.css') }}">
     <style>
         .plugin-status-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.78rem;
+            gap: 5px;
+            padding: 2px 8px;
+            border-radius: var(--admin-radius-full);
+            font-size: 0.72rem;
             font-weight: 600;
         }
         .plugin-status-badge.is-enabled {
-            background: rgba(34, 197, 94, 0.12);
-            color: #16a34a;
-            border: 1px solid rgba(34, 197, 94, 0.25);
+            background: var(--admin-success-bg);
+            color: var(--admin-success-text);
+            border: 1px solid var(--admin-success-border);
         }
         .plugin-status-badge.is-disabled {
-            background: rgba(148, 163, 184, 0.14);
-            color: #64748b;
-            border: 1px solid rgba(148, 163, 184, 0.24);
+            background: var(--admin-surface-muted);
+            color: var(--admin-text-muted);
+            border: 1px solid var(--admin-border);
         }
         .plugin-code-tag {
-            font-family: monospace;
-            background: #f1f5f9;
+            font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+            background: var(--admin-surface-muted);
             padding: 2px 6px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            color: #334155;
+            border-radius: var(--admin-radius-sm);
+            font-size: 0.78rem;
+            color: var(--admin-text-secondary);
+            border: 1px solid var(--admin-border);
         }
         .plugin-switch {
             position: relative;
             display: inline-block;
-            width: 44px;
-            height: 24px;
+            width: 38px;
+            height: 20px;
         }
         .plugin-switch input {
             opacity: 0;
@@ -48,88 +48,124 @@
             position: absolute;
             cursor: pointer;
             inset: 0;
-            background-color: #cbd5e1;
-            transition: .3s;
-            border-radius: 24px;
+            background-color: var(--admin-border-strong);
+            transition: .25s ease;
+            border-radius: 20px;
         }
         .plugin-slider:before {
             position: absolute;
             content: "";
-            height: 18px;
-            width: 18px;
+            height: 14px;
+            width: 14px;
             left: 3px;
             bottom: 3px;
             background-color: white;
-            transition: .3s;
+            transition: .25s ease;
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
         input:checked + .plugin-slider {
-            background-color: #10b981;
+            background-color: var(--admin-primary);
         }
         input:checked + .plugin-slider:before {
-            transform: translateX(20px);
+            transform: translateX(18px);
         }
     </style>
 {% endblock %}
 
 {% block content %}
-    <div class="container-fluid-custom pt-4">
-        <section class="admin-hero admin-hero-api">
-            <div class="admin-hero-main">
-                <span class="admin-kicker">Plugin Workspace</span>
-                <h2 class="admin-title">插件扩展管理</h2>
-                <p class="admin-description">基于 Python 脚本的可插拔自定义数据源管理中心。无需修改核心代码，实现爬虫、复杂加密站点的无缝接入、状态持久化与在线联调。</p>
-                <div class="admin-hero-tags">
-                    <span class="admin-tag">动态热重载</span>
-                    <span class="admin-tag">状态持久化</span>
-                    <span class="admin-tag">并发异常隔离</span>
-                    <span class="admin-tag">连通性健康检测</span>
-                </div>
+    <div class="admin-container">
+        <!-- 业务头部 -->
+        <header class="admin-page-header">
+            <div class="admin-page-title-group">
+                <h1 class="admin-page-title">
+                    <i class="fas fa-puzzle-piece text-primary"></i> 插件扩展与 Python 数据源
+                </h1>
+                <p class="admin-page-desc">基于 Python 插件引擎加载自定义检索逻辑，支持复杂反爬站点接入、在线联调测试与热重载。</p>
             </div>
-            <div class="admin-hero-side">
-                <div class="admin-stat-card">
-                    <span class="admin-stat-label">Plugin Status</span>
-                    <strong class="admin-stat-value" id="statPluginCounts">0 / 0</strong>
-                    <span class="admin-stat-note">启用中的插件将在搜索时与官方库、TG频道及第三方API并发执行。</span>
-                </div>
+            <div class="admin-page-actions">
+                <button class="btn btn-outline-primary" id="reloadPluginsButton" onclick="reloadPlugins()">
+                    <i class="fas fa-sync-alt"></i> 重新扫描目录
+                </button>
+                <button class="btn btn-success btn-sm" id="enableAllPluginsButton" onclick="enableAllPlugins()">
+                    <i class="fas fa-play"></i> 全部启用
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="disableAllPluginsButton" onclick="disableAllPlugins()">
+                    <i class="fas fa-ban"></i> 全部禁用
+                </button>
             </div>
-        </section>
+        </header>
 
+        <!-- KPI 概览指标条 -->
+        <div class="admin-kpi-grid">
+            <div class="admin-kpi-card">
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">已启用 / 总插件</span>
+                    <span class="admin-kpi-icon is-blue"><i class="fas fa-cubes"></i></span>
+                </div>
+                <div class="admin-kpi-value" id="statPluginCounts">0 / 0</div>
+                <div class="admin-kpi-footer">
+                    <i class="fas fa-info-circle"></i> 动态扫描 <code>src/plugins/</code> 目录
+                </div>
+            </div>
+            <div class="admin-kpi-card">
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">热重载引擎</span>
+                    <span class="admin-kpi-icon is-green"><i class="fas fa-bolt"></i></span>
+                </div>
+                <div class="admin-kpi-value">实时热重载</div>
+                <div class="admin-kpi-footer">
+                    <i class="fas fa-check"></i> 修改插件脚本后免重启生效
+                </div>
+            </div>
+            <div class="admin-kpi-card">
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">执行模式</span>
+                    <span class="admin-kpi-icon is-amber"><i class="fas fa-microchip"></i></span>
+                </div>
+                <div class="admin-kpi-value">异步并发隔离</div>
+                <div class="admin-kpi-footer">
+                    <i class="fas fa-shield-alt"></i> 独立超时与异常熔断
+                </div>
+            </div>
+            <div class="admin-kpi-card">
+                <div class="admin-kpi-header">
+                    <span class="admin-kpi-label">状态持久化</span>
+                    <span class="admin-kpi-icon is-purple"><i class="fas fa-save"></i></span>
+                </div>
+                <div class="admin-kpi-value">SQLite 存储</div>
+                <div class="admin-kpi-footer">
+                    <i class="fas fa-database"></i> 重启自动恢复启停状态
+                </div>
+            </div>
+        </div>
+
+        <!-- 主面板 -->
         <section class="admin-panel">
-            <div class="panel-header">
-                <div>
-                    <h2 class="panel-title">已加载插件列表</h2>
-                    <p class="panel-description">系统自动加载 <code>src/plugins/</code> 目录下的所有 <code>BasePlugin</code> 实现。新增插件脚本后，点击“重新扫描目录”即可生效。</p>
-                </div>
-                <div class="panel-actions">
-                    <button class="btn btn-outline-primary btn-sm" id="reloadPluginsButton" onclick="reloadPlugins()">
-                        <i class="fas fa-sync-alt me-1"></i> 重新扫描目录
-                    </button>
-                    <button class="btn btn-success btn-sm" id="enableAllPluginsButton" onclick="enableAllPlugins()">
-                        <i class="fas fa-power-off me-1"></i> 全部启用
-                    </button>
-                    <button class="btn btn-secondary btn-sm" id="disableAllPluginsButton" onclick="disableAllPlugins()">
-                        <i class="fas fa-ban me-1"></i> 全部禁用
-                    </button>
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-plug text-muted"></i> 已加载插件列表
+                    </h2>
+                    <p class="admin-panel-desc">继承 <code>BasePlugin</code> 实现的类将被自动注册。直接在表格中切换启停或发起实时联调。</p>
                 </div>
             </div>
 
-            <div class="data-table-shell api-table-shell">
-                <table class="table table-bordered table-hover">
-                    <thead class="table-light">
+            <div class="data-table-shell">
+                <table class="table">
+                    <thead>
                         <tr>
-                            <th style="width: 50px;" class="text-center">序号</th>
-                            <th style="width: 90px;" class="text-center">状态</th>
+                            <th style="width: 50px; text-align: center;">#</th>
+                            <th style="width: 90px; text-align: center;">状态</th>
                             <th style="width: 140px;">插件标识</th>
                             <th>显示名称</th>
-                            <th style="width: 80px;" class="text-center">版本</th>
-                            <th style="width: 90px;" class="text-center">作者</th>
-                            <th style="width: 80px;" class="text-center">权重</th>
-                            <th style="width: 80px;" class="text-center">超时</th>
+                            <th style="width: 75px; text-align: center;">版本</th>
+                            <th style="width: 90px; text-align: center;">作者</th>
+                            <th style="width: 75px; text-align: center;">权重</th>
+                            <th style="width: 75px; text-align: center;">超时</th>
                             <th>描述</th>
-                            <th style="width: 70px;" class="text-center">启停</th>
-                            <th style="width: 150px;" class="text-center">操作</th>
+                            <th style="width: 70px; text-align: center;">启停</th>
+                            <th style="width: 140px; text-align: center;">操作</th>
                         </tr>
                     </thead>
                     <tbody id="pluginTableBody">
@@ -150,7 +186,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="testPluginModalLabel">
-                        <i class="fas fa-vial text-primary me-2"></i> 测试插件检索能力
+                        <i class="fas fa-vial text-primary me-1"></i> 测试插件检索能力
                     </h5>
                     <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
                 </div>
@@ -158,17 +194,16 @@
                     <input type="hidden" id="currentTestPluginName">
                     <div class="d-flex align-items-center justify-content-between p-2 mb-3 bg-light rounded border">
                         <div>
-                            <span class="small text-muted">当前测试插件：</span>
+                            <span class="small text-muted">测试插件：</span>
                             <strong id="modalPluginDisplayName" class="me-2">--</strong>
                             <span class="plugin-code-tag" id="modalPluginName">--</span>
                         </div>
                         <div class="small text-muted">
-                            超时限制: <span id="modalPluginTimeout">--</span>s
+                            单次超时限制: <span id="modalPluginTimeout">--</span>s
                         </div>
                     </div>
 
-                    <div class="input-group mb-3">
-                        <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
+                    <div class="d-flex gap-2 mb-3">
                         <input type="text" class="form-control" id="pluginTestKeyword" placeholder="输入搜索关键词，例如：流浪地球" value="流浪地球">
                         <button class="btn btn-primary" type="button" id="startPluginTestBtn" onclick="runPluginTest()">
                             <i class="fas fa-play me-1"></i> 开始检索
@@ -177,11 +212,11 @@
 
                     <div id="pluginTestResultArea" class="d-none">
                         <div class="alert alert-info py-2 px-3 small mb-2" id="pluginTestStatusAlert"></div>
-                        <div class="table-responsive border rounded" style="max-height: 320px; overflow-y: auto;">
-                            <table class="table table-sm table-bordered table-hover mb-0">
-                                <thead class="table-light">
+                        <div class="data-table-shell border rounded" style="max-height: 320px; overflow-y: auto;">
+                            <table class="table table-sm mb-0">
+                                <thead>
                                     <tr>
-                                        <th style="width: 45px;" class="text-center">#</th>
+                                        <th style="width: 45px; text-align: center;">#</th>
                                         <th>标题</th>
                                         <th style="width: 100px;">网盘平台</th>
                                         <th>分享链接 / 提取码</th>

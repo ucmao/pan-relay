@@ -8,11 +8,15 @@ function getFrontendLinkModeRadios() {
 
 function updateDynamicTransferStatusVisibility() {
     const panel = document.getElementById('dynamicTransferStatusPanel');
+    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="frontendLinkMode"]:checked');
+    const kpiEl = document.getElementById('kpiDeliveryMode');
+    if (kpiEl && selectedMode) {
+        kpiEl.textContent = selectedMode.value === 'view' ? '动态转存模式' : '原始链接模式';
+    }
     if (!panel) {
         return;
     }
 
-    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="frontendLinkMode"]:checked');
     panel.classList.toggle('d-none', !selectedMode || selectedMode.value !== 'view');
 }
 

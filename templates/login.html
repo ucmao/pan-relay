@@ -2,37 +2,47 @@
 {% set active_page = 'login' %}
 
 {% block head %}
-<title>Pan-Relay - 登录页面</title>
+<title>Pan-Relay - 管理员登录</title>
 <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="main-content-wrapper">
-    <div class="container-fluid-custom">
-        <section class="login-shell">
-            <div class="login-panel">
-                <div class="login-copy">
-                    <span class="hero-kicker">Admin Console</span>
-                    <h2 class="login-title">管理员登录</h2>
-                    <p class="login-description">进入配置中心、API 管理和资源工作台。</p>
+<div class="admin-login-wrapper">
+    <div class="admin-login-card">
+        <div class="admin-login-header">
+            <img src="{{ url_for('static', filename='images/search_logo.png') }}" alt="Pan-Relay" class="admin-login-logo">
+            <h2 class="admin-login-title">控制台登录</h2>
+            <p class="admin-login-subtitle">进入系统配置中心、API 治理与私有资源池</p>
+        </div>
+
+        {% if error %}
+        <div class="admin-login-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form method="POST" class="admin-login-form">
+            <div class="form-group">
+                <label for="username">管理员账号</label>
+                <div class="admin-login-input-wrap">
+                    <i class="fas fa-user"></i>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="请输入管理员用户名 (默认: admin)" required autofocus>
                 </div>
-                {% if error %}
-                <div class="error-message">{{ error }}</div>
-                {% endif %}
-                <form method="POST" class="login-form">
-                    <div class="form-group">
-                        <label for="username">账号</label>
-                        <input type="text" id="username" name="username" placeholder="默认: admin" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">密码</label>
-                        <input type="password" id="password" name="password" placeholder="默认: admin123" required>
-                    </div>
-                    <button type="submit" class="btn-login">登录</button>
-                </form>
             </div>
-        </section>
+
+            <div class="form-group">
+                <label for="password">管理密码</label>
+                <div class="admin-login-input-wrap">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="请输入管理密码 (默认: admin123)" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary admin-login-btn">
+                <i class="fas fa-sign-in-alt me-1"></i> 确认登录
+            </button>
+        </form>
     </div>
 </div>
 {% endblock %}

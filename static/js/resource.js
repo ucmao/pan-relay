@@ -218,6 +218,10 @@ function updatePaginationControls() {
     if (resourceTotalCount) {
         resourceTotalCount.textContent = `共 ${totalCount} 条`;
     }
+    const kpiTotalEl = document.getElementById('kpiResourceTotal');
+    if (kpiTotalEl) {
+        kpiTotalEl.textContent = `${totalCount} 条`;
+    }
 
     if (jumpPageInput) {
         jumpPageInput.value = String(currentPage);
