@@ -22,6 +22,8 @@
             font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
             min-width: 320px;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             color: #0f172a;
             background:
                 radial-gradient(circle at top left, rgba(245, 191, 96, 0.18), transparent 34%),
@@ -51,7 +53,7 @@
         }
 
         .footer-container {
-            margin-top: 44px;
+            margin-top: auto;
         }
 
         .footer-copyright {
@@ -186,17 +188,53 @@
             transform: translateY(-1px);
         }
 
-        /* 免责声明弹窗内的 GitHub 支持卡片 */
+        /* 免责声明弹窗重构 */
+        .disclaimer-modal-dialog {
+            max-width: 560px;
+            width: calc(100% - 32px);
+            margin: 1.5rem auto;
+        }
+
+        .disclaimer-modal-content {
+            border-radius: 20px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 20px 45px -12px rgba(15, 23, 42, 0.2);
+            overflow: hidden;
+        }
+
+        .disclaimer-modal-content .modal-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .disclaimer-modal-content .modal-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .disclaimer-modal-body {
+            padding: 16px 20px 14px;
+            font-size: 0.84rem;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .disclaimer-intro {
+            margin-bottom: 8px;
+            color: #475569;
+            font-size: 0.84rem;
+        }
+
         .disclaimer-star-box {
-            margin: 12px 0 14px;
-            padding: 12px 14px;
+            margin: 8px 0 12px;
+            padding: 9px 14px;
             border: 1px solid rgba(226, 232, 240, 0.9);
-            border-radius: 16px;
+            border-radius: 12px;
             background: rgba(248, 250, 252, 0.95);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-wrap: wrap;
             gap: 10px;
         }
 
@@ -208,8 +246,8 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            padding: 6px 12px;
-            font-size: 0.8rem;
+            padding: 5px 12px;
+            font-size: 0.78rem;
             font-weight: 600;
             border-radius: 999px;
             border: 1px solid rgba(222, 159, 45, 0.4);
@@ -224,6 +262,55 @@
             color: #0f172a;
             border-color: #f5bf60;
             transform: translateY(-1px);
+        }
+
+        .disclaimer-note-block {
+            margin: 10px 0;
+            padding: 12px 14px 12px 28px;
+            border: 1px solid rgba(245, 191, 96, 0.28);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(255, 251, 235, 0.9), rgba(255, 255, 255, 0.9));
+        }
+
+        .disclaimer-list {
+            margin: 0;
+            padding: 0;
+            list-style: decimal;
+            font-size: 0.8rem;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .disclaimer-list li {
+            margin-bottom: 6px;
+            padding-left: 2px;
+        }
+
+        .disclaimer-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        .disclaimer-thanks {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin: 12px 0 0;
+            text-align: center;
+        }
+
+        .disclaimer-modal-content .modal-footer {
+            padding: 12px 18px;
+            border-top: 1px solid rgba(226, 232, 240, 0.8);
+            background: rgba(248, 250, 252, 0.6);
+            display: flex;
+            justify-content: center;
+        }
+
+        .disclaimer-confirm-btn {
+            min-width: 140px;
+            border-radius: 9999px;
+            font-weight: 600;
+            padding-top: 7px;
+            padding-bottom: 7px;
         }
 
         @media (max-width: 540px) {
@@ -290,14 +377,14 @@
 </div>
 
 <div class="modal fade" id="disclaimerModal" tabindex="-1" aria-labelledby="disclaimerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-dialog modal-dialog-centered disclaimer-modal-dialog">
         <div class="modal-content disclaimer-modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="disclaimerModalLabel">关于与免责声明</h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body disclaimer-modal-body">
-                <p>Pan-Relay 是一款基于多源 API 的自动化检索与网盘中继工具。本项目已在 GitHub 完全开源：</p>
+                <p class="disclaimer-intro">Pan-Relay 是一款基于多源 API 的自动化检索与网盘中继工具，本项目已在 GitHub 完全开源：</p>
                 <div class="disclaimer-star-box">
                     <div class="d-flex align-items-center gap-2">
                         <i class="fab fa-github fa-lg text-dark"></i>
@@ -308,15 +395,17 @@
                     </a>
                 </div>
                 <div class="disclaimer-note-block">
-                    <p>1、本工具仅作为资源检索的辅助工具，所有搜索结果均实时调用第三方公开 API 自动生成，本站不存储、不上传、不分发任何实质资源内容。</p>
-                    <p>2、搜索结果指向的第三方链接内容由原平台负责。Pan-Relay 无法控制其内容，不对其合法性、准确性或安全性负责。</p>
-                    <p>3、本工具仅供技术研究、学习与交流使用，严禁用于任何形式的商业牟利行为。</p>
-                    <p>4、请在法律允许的范围内合理使用。因用户违规使用所产生的法律后果，由用户自行承担。</p>
+                    <ol class="disclaimer-list">
+                        <li>本工具仅作为资源检索的辅助工具，所有搜索结果均实时调用第三方公开 API 自动生成，本站不存储、不上传、不分发任何实质资源内容。</li>
+                        <li>搜索结果指向的第三方链接内容由原平台负责，Pan-Relay 无法控制其内容，不对其合法性、准确性或安全性负责。</li>
+                        <li>本工具仅供技术研究、学习与交流使用，严禁用于任何形式的商业牟利行为。</li>
+                        <li>请在法律允许的范围内合理使用，因违规使用所产生的法律后果由用户自行承担。</li>
+                    </ol>
                 </div>
                 <p class="disclaimer-thanks">感谢您的支持与关注！欢迎在 GitHub 为我们点亮 Star ⭐</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary btn-sm" data-ui-dismiss="modal">我知道了</button>
+                <button type="button" class="btn btn-primary btn-sm px-4 disclaimer-confirm-btn" data-ui-dismiss="modal">我知道了</button>
             </div>
         </div>
     </div>

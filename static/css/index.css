@@ -1,6 +1,7 @@
 /* --- 搜索栏 --- */
 .search-page-wrapper {
     padding-top: 18px;
+    flex: 1 0 auto;
 }
 
 .search-layout {
@@ -278,9 +279,10 @@
 
 /* --- 网盘过滤栏 --- */
 #netdisk-filter-bar {
-    padding: 4px 0 14px;
+    padding: 6px 0 12px;
     margin-bottom: 14px;
     display: flex;
+    align-items: center;
     gap: 10px;
     overflow-x: auto;
     white-space: nowrap;
@@ -293,30 +295,71 @@
 }
 
 .filter-btn {
-    background-color: rgba(255, 255, 255, 0.88);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.88);
     color: #475569;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    padding: 8px 16px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    padding: 0 16px;
+    height: 38px;
     border-radius: 999px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.84rem;
+    line-height: 1;
     flex-shrink: 0;
-    font-weight: 600;
-    transition: all 0.18s ease;
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
 }
 
 .filter-btn:hover {
     color: var(--text-primary);
-    border-color: rgba(245, 191, 96, 0.28);
+    border-color: rgba(245, 191, 96, 0.45);
     background-color: rgba(255, 255, 255, 0.98);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.07);
+}
+
+.filter-btn:active {
+    transform: translateY(0);
 }
 
 .filter-btn.active {
-    background: rgba(245, 191, 96, 0.16);
+    background: linear-gradient(135deg, rgba(245, 191, 96, 0.24), rgba(245, 191, 96, 0.14));
     color: #b7791f;
-    border-color: rgba(245, 191, 96, 0.3);
+    border-color: rgba(245, 191, 96, 0.5);
     font-weight: 600;
-    box-shadow: inset 0 0 0 1px rgba(245, 191, 96, 0.08);
+    box-shadow: 0 3px 10px rgba(245, 191, 96, 0.2);
+}
+
+.filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.14);
+    color: #64748b;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover .filter-count {
+    background: rgba(148, 163, 184, 0.24);
+    color: #334155;
+}
+
+.filter-btn.active .filter-count {
+    background: rgba(222, 159, 45, 0.25);
+    color: #966110;
 }
 
 .filter-and-count-container {
@@ -329,82 +372,207 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .result-count {
     flex: 0 0 auto;
     color: #334155;
-    font-size: 0.94rem;
+    font-size: 0.92rem;
     font-weight: 600;
 }
 
 .filter-toggle-button {
     flex: 0 0 auto;
     border-radius: 999px;
-    padding: 0.5rem 0.95rem;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    font-weight: 500;
     color: #475569;
-    border-color: rgba(148, 163, 184, 0.2);
+    border: 1px solid rgba(148, 163, 184, 0.25);
     background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    backdrop-filter: blur(8px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .filter-toggle-button:hover,
 .filter-toggle-button:focus {
-    color: var(--text-primary);
-    border-color: rgba(245, 191, 96, 0.3);
-    background-color: rgba(255, 255, 255, 1);
+    color: #0f172a;
+    border-color: rgba(245, 191, 96, 0.45);
+    background-color: #ffffff;
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+}
+
+.filter-toggle-button.has-active-filters {
+    color: #b7791f;
+    background: rgba(255, 248, 235, 0.9);
+    border-color: rgba(245, 191, 96, 0.5);
+    font-weight: 600;
 }
 
 .advanced-filter-panel {
-    padding: 14px;
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    padding: 16px 20px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 20px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.9) 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 4px 10px -2px rgba(15, 23, 42, 0.02);
+    backdrop-filter: blur(12px);
+    margin-top: 8px;
 }
 
-#advanced-filter-bar {
+.advanced-filter-grid {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    gap: 12px;
     flex-wrap: wrap;
+}
+
+.filter-input-wrapper {
+    flex: 1 1 240px;
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid rgba(203, 213, 225, 0.7);
+    border-radius: 14px;
+    padding: 4px 14px;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+.filter-input-wrapper:focus-within {
+    border-color: #f5bf60;
+    box-shadow: 0 0 0 3px rgba(245, 191, 96, 0.18);
+    background: #ffffff;
+}
+
+.filter-input-icon {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.88rem;
+    margin-right: 8px;
+}
+
+.filter-input-icon.text-emerald {
+    color: #10b981;
+}
+
+.filter-input-icon.text-rose {
+    color: #f43f5e;
+}
+
+.filter-input-tag {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-right: 8px;
+    padding-right: 8px;
+    border-right: 1px solid rgba(226, 232, 240, 0.9);
+    white-space: nowrap;
+}
+
+.filter-input-field {
+    border: none !important;
+    background: transparent !important;
+    padding: 6px 0 !important;
+    font-size: 0.84rem;
+    color: #1e293b;
+    box-shadow: none !important;
+    width: 100%;
+}
+
+.filter-input-field::placeholder {
+    color: #94a3b8;
+    font-size: 0.82rem;
+}
+
+.filter-actions {
+    display: flex;
+    align-items: center;
     gap: 8px;
-    flex: 1 1 auto;
+    flex-shrink: 0;
 }
 
-.advanced-filter-group {
-    width: 250px;
-    height: 46px;
-}
-
-.advanced-filter-label {
-    background-color: rgba(248, 250, 252, 0.95);
-    border-color: rgba(148, 163, 184, 0.18);
-    min-width: 78px;
-    justify-content: center;
-    padding: 0.35rem 0.9rem;
+.filter-apply-btn {
+    height: 40px;
+    min-width: 90px;
+    padding: 0 18px;
+    font-size: 0.84rem;
     font-weight: 600;
-    color: #475569;
-    border-top-left-radius: 14px !important;
-    border-bottom-left-radius: 14px !important;
-    border-top-right-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f8ca72, #eeaf46);
+    color: #362511;
+    box-shadow: 0 4px 12px rgba(245, 191, 96, 0.25);
+    transition: all 0.2s ease;
 }
 
-.advanced-filter-input {
-    padding: 0.5rem 0.75rem;
-    border-color: rgba(148, 163, 184, 0.18);
-    background-color: rgba(255, 255, 255, 0.98);
-    border-top-left-radius: 0 !important;
-    border-bottom-left-radius: 0 !important;
-    border-top-right-radius: 14px !important;
-    border-bottom-right-radius: 14px !important;
+.filter-apply-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(245, 191, 96, 0.35);
+    color: #1a1005;
 }
 
-.advanced-filter-apply {
-    height: 46px;
-    min-width: 92px;
-    padding: 0.5rem 1.1rem;
+.filter-reset-btn {
+    height: 40px;
+    padding: 0 14px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border: 1px solid rgba(203, 213, 225, 0.7);
+    border-radius: 12px;
+    background: rgba(248, 250, 252, 0.9);
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.filter-reset-btn:hover {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+.active-filter-tags {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(226, 232, 240, 0.9);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.active-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.76rem;
     font-weight: 600;
+}
+
+.active-filter-chip.chip-include {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.active-filter-chip.chip-exclude {
+    background: rgba(244, 63, 94, 0.1);
+    color: #e11d48;
+    border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.chip-remove {
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+}
+
+.chip-remove:hover {
+    opacity: 1;
 }
 
 .view-result-modal {
@@ -521,56 +689,6 @@
     border-color: #f5bf60;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(245, 191, 96, 0.28);
-}
-
-/* --- 搜索结果底部的 Star 引导卡片 --- */
-.results-star-guide {
-    padding: 18px 0 10px;
-    text-align: center;
-}
-
-.results-star-box {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 8px 18px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-.results-star-text {
-    font-size: 0.85rem;
-    color: #475569;
-    display: flex;
-    align-items: center;
-}
-
-.results-star-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 12px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    border-radius: 999px;
-    color: #b7791f;
-    border: 1px solid rgba(222, 159, 45, 0.45);
-    background: rgba(255, 248, 235, 0.9);
-    text-decoration: none;
-    transition: all 0.2s ease;
-}
-
-.results-star-action:hover {
-    background: #f5bf60;
-    color: #0f172a;
-    border-color: #f5bf60;
-    transform: translateY(-1px);
 }
 
 /* --- 搜索结果容器 --- */

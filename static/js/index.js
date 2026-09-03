@@ -12,17 +12,18 @@ let excludeKeywords = [];
 const isViewModeEnabled = window.SEARCH_LINK_MODE === 'view';
 
 const filterBar = document.getElementById('netdisk-filter-bar');
-const advancedFilterBar = document.getElementById('advanced-filter-bar');
 const includeFilterInput = document.getElementById('includeFilter');
 const excludeFilterInput = document.getElementById('excludeFilter');
 const applyFilterButton = document.getElementById('applyFilter');
+const resetFilterButton = document.getElementById('resetFilter');
+const activeFilterTags = document.getElementById('activeFilterTags');
 
 const scrollableResultsDiv = document.getElementById('scrollableResults');
+const searchShell = document.getElementById('searchShell');
 const searchButton = document.getElementById('searchButton');
 const searchInput = document.getElementById('searchInput');
 const resultContainer = document.getElementById('resultContainer');
 const loadingMore = document.getElementById('loadingMore');
-const resultsStarGuide = document.getElementById('resultsStarGuide');
 const resultCountText = document.getElementById('resultCountText');
 const statusBar = document.getElementById('statusBar');
 const advancedFilterToggle = document.getElementById('advancedFilterToggle');
@@ -47,9 +48,16 @@ function setAdvancedFilterOpen(isOpen) {
 
     advancedFilterPanel.classList.toggle('d-none', !isOpen);
     advancedFilterToggle.setAttribute('aria-expanded', String(isOpen));
-    advancedFilterToggle.innerHTML = isOpen
-        ? '<i class="fas fa-times me-1"></i> 收起筛选'
-        : '<i class="fas fa-sliders-h me-1"></i> 筛选';
+    
+    const hasActiveFilters = includeKeywords.length > 0 || excludeKeywords.length > 0;
+    
+    if (isOpen) {
+        advancedFilterToggle.innerHTML = '<i class="fas fa-chevron-up me-1"></i> 收起筛选';
+    } else {
+        advancedFilterToggle.innerHTML = hasActiveFilters
+            ? '<i class="fas fa-filter me-1"></i> 已应用筛选'
+            : '<i class="fas fa-sliders-h me-1"></i> 筛选';
+    }
 }
 
 advancedFilterToggle?.addEventListener('click', function () {
@@ -192,59 +200,122 @@ searchInput.addEventListener('keydown', function (event) {
 });
 
 /**
- * 动态创建网盘过滤按钮。（保持不变）
+ * 动态更新网盘过滤按钮及实时数量统计。
  */
 function updateFilterButtons() {
-    const netdiskNames = new Set(allResults.map(item => item[3]));
-    // 确保移除所有非 '全部' 的按钮，以便重新排序
-    const buttonsToRemove = Array.from(filterBar.querySelectorAll('.filter-btn')).filter(btn => btn.getAttribute('data-netdisk') !== '全部');
-    buttonsToRemove.forEach(btn => btn.remove());
+    if (!filterBar) return;
 
-    if (allResults.length > 0) {
-        filterBar.classList.remove('d-none');
-    } else {
+    if (allResults.length === 0) {
         filterBar.classList.add('d-none');
+        return;
     }
+    filterBar.classList.remove('d-none');
 
-    // 1. 过滤出需要动态添加的网盘名称，并排除“全部”和“其他”
-    const dynamicNames = Array.from(netdiskNames).filter(name => name !== '全部' && name !== '其他');
+    // 1. 统计各网盘符合条件数量 (支持高级筛选关键词过滤)
+    const baseList = (includeKeywords.length > 0 || excludeKeywords.length > 0)
+        ? allResults.filter(result => {
+            const title = (result[1] || '').toLowerCase();
+            const matchesInclude = includeKeywords.length === 0 ||
+                includeKeywords.every(kw => title.includes(kw.toLowerCase()));
+            const matchesExclude = excludeKeywords.length === 0 ||
+                !excludeKeywords.some(kw => title.includes(kw.toLowerCase()));
+            return matchesInclude && matchesExclude;
+        })
+        : allResults;
 
-    // 2. 动态添加其他网盘名称
-    dynamicNames.forEach(name => {
-        const button = document.createElement('button');
-        button.className = 'filter-btn';
-        button.textContent = name;
-        button.setAttribute('data-netdisk', name);
+    const counts = {};
+    let totalCount = baseList.length;
 
-        if (name === currentFilter) {
-            button.classList.add('active');
-        }
-        filterBar.appendChild(button);
+    baseList.forEach(item => {
+        const diskName = item[3] || '其他';
+        counts[diskName] = (counts[diskName] || 0) + 1;
     });
 
-    // 3. 确保“其他”在最后（如果存在）
-    const hasOther = netdiskNames.has('其他');
-    if (hasOther) {
-        const otherButton = document.createElement('button');
-        otherButton.className = 'filter-btn';
-        otherButton.textContent = '其他';
-        otherButton.setAttribute('data-netdisk', '其他');
+    // 2. 收集出现的网盘，保持按钮顺序稳定
+    const orderedDisks = ['全部'];
+    const seenNames = new Set(['全部']);
 
-        if ('其他' === currentFilter) {
-            otherButton.classList.add('active');
+    allResults.forEach(item => {
+        const diskName = item[3] || '其他';
+        if (diskName !== '其他' && !seenNames.has(diskName)) {
+            seenNames.add(diskName);
+            orderedDisks.push(diskName);
         }
-        filterBar.appendChild(otherButton);
+    });
+
+    const hasOther = allResults.some(item => (item[3] || '其他') === '其他');
+    if (hasOther && !seenNames.has('其他')) {
+        seenNames.add('其他');
+        orderedDisks.push('其他');
     }
 
-    // 4. 确保“全部”按钮的 active 状态正确
-    const allButton = filterBar.querySelector('[data-netdisk="全部"]');
-    if (allButton) {
-        if (currentFilter === '全部') {
-            allButton.classList.add('active');
+    // 3. 原位更新 DOM 节点，避免整盘删除重建导致聚焦或滚动条丢失
+    const existingButtonsMap = new Map();
+    filterBar.querySelectorAll('.filter-btn').forEach(btn => {
+        const diskKey = btn.getAttribute('data-netdisk');
+        if (diskKey) existingButtonsMap.set(diskKey, btn);
+    });
+
+    orderedDisks.forEach((diskName, index) => {
+        const count = diskName === '全部' ? totalCount : (counts[diskName] || 0);
+        let btn = existingButtonsMap.get(diskName);
+
+        if (!btn) {
+            btn = document.createElement('button');
+            btn.className = 'filter-btn';
+            btn.setAttribute('data-netdisk', diskName);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'filter-name';
+            nameSpan.textContent = diskName;
+
+            const countSpan = document.createElement('span');
+            countSpan.className = 'filter-count';
+            countSpan.textContent = String(count);
+
+            btn.appendChild(nameSpan);
+            btn.appendChild(countSpan);
+            existingButtonsMap.set(diskName, btn);
         } else {
-            allButton.classList.remove('active');
+            let nameSpan = btn.querySelector('.filter-name');
+            let countSpan = btn.querySelector('.filter-count');
+
+            if (!nameSpan) {
+                nameSpan = document.createElement('span');
+                nameSpan.className = 'filter-name';
+                nameSpan.textContent = diskName;
+                btn.prepend(nameSpan);
+            } else if (nameSpan.textContent !== diskName) {
+                nameSpan.textContent = diskName;
+            }
+
+            if (!countSpan) {
+                countSpan = document.createElement('span');
+                countSpan.className = 'filter-count';
+                countSpan.textContent = String(count);
+                btn.appendChild(countSpan);
+            } else if (countSpan.textContent !== String(count)) {
+                countSpan.textContent = String(count);
+            }
         }
-    }
+
+        if (diskName === currentFilter) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+
+        const currentChildAtIndex = filterBar.children[index];
+        if (currentChildAtIndex !== btn) {
+            filterBar.insertBefore(btn, currentChildAtIndex || null);
+        }
+    });
+
+    existingButtonsMap.forEach((btn, diskName) => {
+        if (!orderedDisks.includes(diskName)) {
+            btn.remove();
+        }
+    });
 }
 
 /**
@@ -253,13 +324,16 @@ function updateFilterButtons() {
 function performSearch() {
     if (isSearchRunning) return;
 
-    const keyword = searchInput.value;
+    const keyword = (searchInput.value || '').trim();
     if (!keyword) {
         showAlertModal('请输入搜索关键词', 'warning', '搜索提示');
         return;
     }
 
     // 1. 初始化状态和界面
+    if (searchShell) {
+        searchShell.classList.remove('d-none');
+    }
     isSearchRunning = true;
     isFullyLoaded = false;
     searchButton.disabled = true;
@@ -276,7 +350,6 @@ function performSearch() {
 
     resultCountText.classList.add('d-none');
     loadingMore.classList.add('d-none');
-    resultsStarGuide?.classList.add('d-none');
 
     allResults = [];
     currentPage = 1;
@@ -352,7 +425,6 @@ function finalizeSearch(hasError = false) {
                 <h3 class="mt-3 text-muted">未找到相关结果，请尝试其他关键词</h3>
             </div>`;
         loadingMore.classList.add('d-none');
-        resultsStarGuide?.classList.add('d-none');
         // 即使没有结果也显示计数
         document.querySelector('.filter-and-count-container').classList.remove('d-none');
         resultCountText.textContent = `共找到 0 个结果 (${currentFilter})`;
@@ -562,16 +634,10 @@ function renderResults(reset = false) {
         isFullyLoaded = true;
         loadingMore.classList.add('d-none');
         loadingMore.textContent = '已加载全部结果。';
-        if (filteredResults.length > 0) {
-            resultsStarGuide?.classList.remove('d-none');
-        } else {
-            resultsStarGuide?.classList.add('d-none');
-        }
     } else {
         isFullyLoaded = false;
         loadingMore.classList.remove('d-none');
         loadingMore.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div>加载更多结果...';
-        resultsStarGuide?.classList.add('d-none');
     }
 
     if (currentBatch.length > 0) {
@@ -713,37 +779,114 @@ filterBar.addEventListener('click', (event) => {
     }
 });
 
-// --- 高级筛选事件监听器 (新增) ---
-applyFilterButton.addEventListener('click', applyAdvancedFilter);
+// --- 高级筛选事件监听器 (重构优化) ---
+applyFilterButton?.addEventListener('click', applyAdvancedFilter);
+resetFilterButton?.addEventListener('click', resetAdvancedFilter);
 
 // 添加回车键支持
-includeFilterInput.addEventListener('keydown', function (event) {
+includeFilterInput?.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         applyAdvancedFilter();
     }
 });
 
-excludeFilterInput.addEventListener('keydown', function (event) {
+excludeFilterInput?.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         applyAdvancedFilter();
     }
 });
 
 /**
+ * 更新已生效筛选标签的 UI 展示
+ */
+function updateActiveFilterTagsUI() {
+    const hasFilters = includeKeywords.length > 0 || excludeKeywords.length > 0;
+    
+    if (resetFilterButton) {
+        resetFilterButton.classList.toggle('d-none', !hasFilters);
+    }
+    
+    if (advancedFilterToggle) {
+        advancedFilterToggle.classList.toggle('has-active-filters', hasFilters);
+        if (!isAdvancedFilterOpen) {
+            advancedFilterToggle.innerHTML = hasFilters
+                ? '<i class="fas fa-filter me-1"></i> 已应用筛选'
+                : '<i class="fas fa-sliders-h me-1"></i> 筛选';
+        }
+    }
+    
+    if (!activeFilterTags) return;
+    
+    if (!hasFilters) {
+        activeFilterTags.classList.add('d-none');
+        activeFilterTags.innerHTML = '';
+        return;
+    }
+    
+    activeFilterTags.classList.remove('d-none');
+    let html = '';
+    
+    includeKeywords.forEach(kw => {
+        html += `<span class="active-filter-chip chip-include"><i class="fas fa-plus-circle me-1"></i>包含: ${escapeHtml(kw)} <i class="fas fa-times chip-remove ms-1" data-type="include" data-kw="${escapeHtml(kw)}"></i></span>`;
+    });
+    
+    excludeKeywords.forEach(kw => {
+        html += `<span class="active-filter-chip chip-exclude"><i class="fas fa-minus-circle me-1"></i>排除: ${escapeHtml(kw)} <i class="fas fa-times chip-remove ms-1" data-type="exclude" data-kw="${escapeHtml(kw)}"></i></span>`;
+    });
+    
+    activeFilterTags.innerHTML = html;
+}
+
+// 代理监听删除单独标签
+activeFilterTags?.addEventListener('click', function(e) {
+    const removeBtn = e.target.closest('.chip-remove');
+    if (!removeBtn) return;
+    
+    const type = removeBtn.getAttribute('data-type');
+    const kw = removeBtn.getAttribute('data-kw');
+    
+    if (type === 'include') {
+        includeKeywords = includeKeywords.filter(k => k !== kw);
+        if (includeFilterInput) includeFilterInput.value = includeKeywords.join(' ');
+    } else if (type === 'exclude') {
+        excludeKeywords = excludeKeywords.filter(k => k !== kw);
+        if (excludeFilterInput) excludeFilterInput.value = excludeKeywords.join(' ');
+    }
+    
+    applyAdvancedFilter();
+});
+
+/**
+ * 重置高级筛选
+ */
+function resetAdvancedFilter() {
+    if (includeFilterInput) includeFilterInput.value = '';
+    if (excludeFilterInput) excludeFilterInput.value = '';
+    includeKeywords = [];
+    excludeKeywords = [];
+    applyAdvancedFilter();
+}
+
+/**
  * 应用高级筛选条件
  */
 function applyAdvancedFilter() {
     // 获取并处理筛选关键词
-    includeKeywords = includeFilterInput.value
+    includeKeywords = includeFilterInput ? includeFilterInput.value
         .split(/\s+/)
         .map(kw => kw.trim())
-        .filter(kw => kw.length > 0);
+        .filter(kw => kw.length > 0) : [];
 
     // 获取并处理排除关键词
-    excludeKeywords = excludeFilterInput.value
+    excludeKeywords = excludeFilterInput ? excludeFilterInput.value
         .split(/\s+/)
         .map(kw => kw.trim())
-        .filter(kw => kw.length > 0);
+        .filter(kw => kw.length > 0) : [];
+
+    updateActiveFilterTagsUI();
+
+    // 更新网盘按钮实时数量
+    updateFilterButtons();
 
     // 重新渲染结果
     renderResults(true);

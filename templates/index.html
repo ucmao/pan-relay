@@ -23,65 +23,60 @@
                 </div>
             </div>
 
-            <section class="search-shell">
-                <div id="statusBar" class="d-none text-center mb-3 p-2 bg-warning bg-opacity-25 text-dark rounded-3">
+            <section class="search-shell d-none" id="searchShell">
+                <div id="statusBar" class="d-none text-center mb-3 p-2 bg-amber-100 text-amber-900 rounded-xl">
                 </div>
 
                 <div id="netdisk-filter-bar" class="d-none">
-                    <button class="filter-btn active" data-netdisk="全部">全部</button>
+                    <button class="filter-btn active" data-netdisk="全部">
+                        <span class="filter-name">全部</span>
+                        <span class="filter-count">0</span>
+                    </button>
                 </div>
 
                 <div class="filter-and-count-container d-none mt-3">
                     <div class="filter-toolbar">
                         <p class="result-count mb-0" id="resultCountText"></p>
-                        <button class="btn btn-sm btn-outline-secondary filter-toggle-button" id="advancedFilterToggle"
+                        <button class="btn filter-toggle-button" id="advancedFilterToggle"
                             type="button" aria-expanded="false">
                             <i class="fas fa-sliders-h me-1"></i> 筛选
                         </button>
                     </div>
                     <div id="advancedFilterPanel" class="advanced-filter-panel d-none">
-                        <div id="advanced-filter-bar" class="mb-2">
-                            <div class="input-group input-group-sm advanced-filter-group">
-                                <span class="input-group-text advanced-filter-label">包含</span>
-                                <input type="text" class="form-control form-control-sm advanced-filter-input"
-                                    id="includeFilter" placeholder="关键词1 关键词2">
+                        <div class="advanced-filter-grid">
+                            <div class="filter-input-wrapper">
+                                <span class="filter-input-icon text-emerald"><i class="fas fa-plus-circle"></i></span>
+                                <span class="filter-input-tag">包含</span>
+                                <input type="text" class="form-control filter-input-field" id="includeFilter"
+                                    placeholder="输入关键词（空格分隔）">
                             </div>
-                            <div class="input-group input-group-sm advanced-filter-group">
-                                <span class="input-group-text advanced-filter-label">不包含</span>
-                                <input type="text" class="form-control form-control-sm advanced-filter-input"
-                                    id="excludeFilter" placeholder="排除词1 排除词2">
+                            <div class="filter-input-wrapper">
+                                <span class="filter-input-icon text-rose"><i class="fas fa-minus-circle"></i></span>
+                                <span class="filter-input-tag">排除</span>
+                                <input type="text" class="form-control filter-input-field" id="excludeFilter"
+                                    placeholder="输入排除词（空格分隔）">
                             </div>
-                            <button class="btn btn-outline-primary btn-sm advanced-filter-apply"
-                                id="applyFilter">应用</button>
+                            <div class="filter-actions">
+                                <button class="btn filter-apply-btn" id="applyFilter" type="button">
+                                    <i class="fas fa-filter me-1"></i> 应用
+                                </button>
+                                <button class="btn filter-reset-btn d-none" id="resetFilter" type="button" title="重置筛选">
+                                    <i class="fas fa-rotate-left me-1"></i> 重置
+                                </button>
+                            </div>
                         </div>
+                        <div id="activeFilterTags" class="active-filter-tags d-none"></div>
                     </div>
                 </div>
 
                 <div id="scrollableResults">
-                    <div id="resultContainer" class="text-center initial-prompt-area">
-                        <div class="initial-icon-wrapper">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                        </div>
-                        <h3 class="mt-3 text-muted">输入关键词开始搜索</h3>
-                    </div>
+                    <div id="resultContainer"></div>
 
                     <div id="loadingMore" class="d-none text-center p-3">
                         <div class="spinner-border spinner-border-sm me-2" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
                         加载更多结果...
-                    </div>
-
-                    <div id="resultsStarGuide" class="results-star-guide d-none">
-                        <div class="results-star-box">
-                            <div class="results-star-text">
-                                <i class="fab fa-github me-1 text-dark"></i>
-                                <span>喜欢 Pan-Relay 搜索体验？欢迎在 GitHub 为项目点亮 Star ⭐</span>
-                            </div>
-                            <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="results-star-action">
-                                <i class="fas fa-star me-1 text-amber-500"></i>Star 支持
-                            </a>
-                        </div>
                     </div>
                 </div>
             </section>
