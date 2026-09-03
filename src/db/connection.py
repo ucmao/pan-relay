@@ -5,7 +5,7 @@ import sqlite3
 from contextlib import contextmanager
 from typing import Generator, Optional
 
-from configs.app_config import SQLITE_DB_PATH
+from src.configs.app_config import SQLITE_DB_PATH, BASE_DIR
 
 logger = logging.getLogger(__name__)
 Error = sqlite3.Error
@@ -129,10 +129,7 @@ def init_sqlite_db():
     if db_dir and not os.path.exists(db_dir):
         os.makedirs(db_dir, exist_ok=True)
 
-    schema_file = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "..", "schema_sqlite.sql"
-    )
-    schema_file = os.path.abspath(schema_file)
+    schema_file = os.path.join(BASE_DIR, "schema_sqlite.sql")
 
     try:
         raw_conn = sqlite3.connect(db_path, timeout=30.0)

@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, render_template, request
 import logging
 
-from utils.auth_utils import token_required
-from src.services.hot_resource_service import (
+from src.utils.auth_utils import token_required
+from src.services.resource_service import (
     list_resources,
     get_resource_detail,
     add_resource_and_share,
@@ -19,7 +19,7 @@ resources_bp = Blueprint("resources", __name__)
 @token_required
 def resources_page():
     """资源管理页面，需要JWT验证"""
-    return render_template("hot_resource.html")
+    return render_template("resource.html")
 
 
 @resources_bp.route("/admin/api/resources", methods=["GET"])

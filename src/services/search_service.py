@@ -9,11 +9,11 @@ from urllib.parse import urlparse
 import jmespath
 import requests
 
-from configs.app_config import user_agents
+from src.configs.app_config import user_agents
 from src.db.resources_dao import search_resources_by_keyword, search_resources_advanced
 from src.services.system_config_service import get_allowed_frontend_netdisks
 from src.services.telegram_search_service import search_telegram_resources
-from utils.netdisk_utils import match_netdisk_link
+from src.utils.netdisk_utils import match_netdisk_link
 
 logger = logging.getLogger(__name__)
 

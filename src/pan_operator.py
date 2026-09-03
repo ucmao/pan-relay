@@ -10,7 +10,7 @@ from src.clients.baidu_client import Baidu
 from src.clients.xunlei_client import XunleiDrive
 from src.db.resources_dao import insert_resource, delete_by_share_link, update_share_link
 from src.db.cookie_config_dao import get_cookie_by_cloud_name
-from utils.netdisk_utils import match_netdisk_link
+from src.utils.netdisk_utils import match_netdisk_link
 
 logger = logging.getLogger(__name__)
 

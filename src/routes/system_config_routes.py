@@ -10,8 +10,8 @@ from src.services.system_config_service import (
     save_frontend_display_netdisk_config,
     save_frontend_link_mode,
 )
-from utils.auth_utils import token_required
-from utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
+from src.utils.auth_utils import token_required
+from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
 
 system_config_bp = Blueprint("system_config", __name__)
 

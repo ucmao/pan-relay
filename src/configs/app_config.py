@@ -20,11 +20,11 @@ def _get_int_env(name, default, minimum=1):
     except (TypeError, ValueError):
         return default
 
-# 获取当前脚本所在的目录
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取项目根目录 (pan-relay/)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# 设置 SECRET_KEY，用于会话管理
-SECRET_KEY = os.getenv('SECRET_KEY')
+# 设置 SECRET_KEY，用于会话管理与 JWT 签名
+SECRET_KEY = os.getenv('SECRET_KEY', 'pan-relay-secret-key-default')
 
 # 网盘信息
 QUARK_PAN_COOKIE = os.getenv('QUARK_PAN_COOKIE')
@@ -46,11 +46,8 @@ TG_SEARCH_TIMEOUT = _get_int_env("TG_SEARCH_TIMEOUT", 10)
 TG_SEARCH_MAX_WORKERS = _get_int_env("TG_SEARCH_MAX_WORKERS", 4)
 TG_PROXY = os.getenv("TG_PROXY", "").strip()
 
-# JWT密钥
-SECRET_KEY = os.getenv('SECRET_KEY')
-
 # SQLite 数据库配置
-default_db_path = os.path.join(current_dir, "..", "data", "ucmao_search.db")
+default_db_path = os.path.join(BASE_DIR, "data", "ucmao_search.db")
 SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", os.path.abspath(default_db_path))
 
 # User-Agent 列表配置（这类静态列表可以保持不变）

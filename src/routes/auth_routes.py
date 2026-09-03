@@ -1,4 +1,4 @@
-# routes/auth.py
+# src/routes/auth_routes.py
 
 from flask import Blueprint, render_template, redirect, request, url_for
 import jwt
@@ -7,9 +7,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 # 导入应用配置
-from configs.app_config import ADMIN_USERNAME, ADMIN_PASSWORD
-from configs.app_config import SECRET_KEY
-from utils.auth_utils import create_jwt_token
+from src.configs.app_config import ADMIN_USERNAME, ADMIN_PASSWORD
+from src.configs.app_config import SECRET_KEY
+from src.utils.auth_utils import create_jwt_token
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -25,8 +25,11 @@ def login():
             pass
 
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+
+        if not username or not password:
+            return render_template('login.html', error='账号或密码不能为空')
         
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             # 创建JWT令牌

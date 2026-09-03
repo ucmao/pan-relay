@@ -1,16 +1,16 @@
 import logging
 import os
-from configs.logging_setup import setup_logging
+from src.configs.logging_setup import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
 from flask import Flask, render_template
-from routes.api_config_routes import api_config_bp
-from routes.search_routes import search_bp
-from routes.hot_resource_routes import resources_bp
-from routes.auth_routes import auth_bp
-from routes.system_config_routes import system_config_bp
-from configs.app_config import SECRET_KEY
+from src.routes.api_config_routes import api_config_bp
+from src.routes.search_routes import search_bp
+from src.routes.resource_routes import resources_bp
+from src.routes.auth_routes import auth_bp
+from src.routes.system_config_routes import system_config_bp
+from src.configs.app_config import SECRET_KEY
 from src.db.connection import init_sqlite_db
 from src.services.scheduler_service import start_scheduler
 from src.services.system_config_service import get_frontend_link_mode

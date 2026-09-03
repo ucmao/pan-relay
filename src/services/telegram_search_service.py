@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from configs.app_config import (
+from src.configs.app_config import (
     TG_CHANNELS,
     TG_PROXY,
     TG_SEARCH_ENABLED,
@@ -15,7 +15,7 @@ from configs.app_config import (
     TG_SEARCH_TIMEOUT,
     user_agents,
 )
-from utils.netdisk_utils import match_netdisk_link
+from src.utils.netdisk_utils import match_netdisk_link
 
 logger = logging.getLogger(__name__)
 

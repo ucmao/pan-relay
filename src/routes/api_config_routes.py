@@ -1,10 +1,10 @@
-# routes/api_config_routes.py
+# src/routes/api_config_routes.py
 
 from flask import Blueprint, jsonify, render_template, request
 
 import logging
 
-from utils.auth_utils import token_required
+from src.utils.auth_utils import token_required
 from src.services.api_config_service import (
     read_api_configs_from_db,
     add_api_config_to_db,
@@ -161,6 +161,7 @@ def test_api():
         {
             "status_code": status_code,
             "response_rule": response_rule,
+            "status_text": "正常" if new_status else "异常",
             "状态": "正常" if new_status else "异常",
             "status": new_status,
             "response_time_ms": response_time_ms,

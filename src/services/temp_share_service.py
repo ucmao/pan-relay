@@ -9,7 +9,7 @@ from src.db.temp_share_dao import (
     touch_temp_share,
 )
 from src.pan_operator import create_share, del_share, get_and_validate_credential
-from utils.netdisk_utils import match_netdisk_link
+from src.utils.netdisk_utils import match_netdisk_link
 
 logger = logging.getLogger(__name__)
 

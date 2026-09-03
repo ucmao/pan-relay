@@ -1,4 +1,4 @@
-# routes/search_routes.py
+# src/routes/search_routes.py
 
 from flask import Blueprint, request, jsonify, Response
 
@@ -12,7 +12,7 @@ from src.services.search_service import (
 )
 from src.services.system_config_service import is_public_search_api_enabled
 from src.services.temp_share_service import cleanup_expired_temp_shares, resolve_view_url
-from utils.auth_utils import token_required
+from src.utils.auth_utils import token_required
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +66,10 @@ def create_share_route():
         result = create_share(share_data)
         if result:
             logger.info(f"分享创建成功: {share_data.get('title')}")
-            return jsonify({"message": '分享创建成功', "success": True}), 200
+            return jsonify({"message": "分享创建成功", "success": True}), 200
+        else:
             logger.warning(f"分享创建失败: {share_data.get('title')}")
-            return jsonify({"error": "分享创建失败"}), 500
+            return jsonify({"error": "分享创建失败", "success": False}), 500
     except Exception as e:
         logger.error(f"创建分享时发生未知错误: {str(e)}", exc_info=True)
         return jsonify({"error": f"发生未知错误: {str(e)}"}), 500
@@ -84,8 +85,9 @@ def del_share_route():
         if result:
             logger.info(f"分享删除成功: URL={share_data.get('share_url')}")
             return jsonify({"message": "分享删除成功", "success": True}), 200
+        else:
             logger.warning(f"分享删除失败: URL={share_data.get('share_url')}")
-            return jsonify({"error": "分享删除失败"}), 500
+            return jsonify({"error": "分享删除失败", "success": False}), 500
     except Exception as e:
         logger.error(f"删除分享时发生未知错误: {str(e)}", exc_info=True)
         return jsonify({"error": f"发生未知错误: {str(e)}"}), 500

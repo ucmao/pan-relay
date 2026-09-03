@@ -136,7 +136,7 @@ def list_resources(
     page: int = 1, page_size: int = 10, search: str = ""
 ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
     """
-    后台列表分页查询 resources（供 hot_resource_service 调用）。
+    后台列表分页查询 resources（供 resource_service 调用）。
     返回: (success, message, data)
     """
     conn = get_db_connection()
@@ -226,7 +226,7 @@ def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, 
 
 def insert_resource_simple(resource_data: Dict[str, Any]) -> Tuple[bool, str, Optional[int]]:
     """
-    后台新增资源用的简单插入（不含 file_id），供 hot_resource_service 调用。
+    后台新增资源用的简单插入（不含 file_id），供 resource_service 调用。
     """
     conn = get_db_connection()
     if not conn:
@@ -301,7 +301,7 @@ def update_resource_basic_info(resource_id: int, resource_data: Dict[str, Any]) 
 def delete_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
     """
     根据 ID 删除资源，同时返回被删除记录的 share_link 和 file_id，
-    以便 hot_resource_service / pan_operator 调用 del_share 使用。
+    以便 resource_service / pan_operator 调用 del_share 使用。
     """
     conn = get_db_connection()
     if not conn:

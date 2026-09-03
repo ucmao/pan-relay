@@ -5,7 +5,7 @@
     {{ super() }}
     <title>小青搜剧 - 我的资源管理</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/hot_resource.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/resource.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -423,5 +423,5 @@
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/hot_resource.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/resource.js') }}"></script>
 {% endblock %}
