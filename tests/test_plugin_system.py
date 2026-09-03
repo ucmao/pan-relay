@@ -12,7 +12,7 @@ from src.services.search_service import search_public_resources
 class DummyTestPlugin(BasePlugin):
     name = "dummy_test_plugin"
     display_name = "测试模拟插件"
-    priority = 110
+    priority = 999
     is_enabled = True
     timeout = 2.0
 
