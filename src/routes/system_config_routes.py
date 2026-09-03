@@ -6,10 +6,13 @@ from src.services.system_config_service import (
     get_public_search_api_config,
     get_frontend_display_netdisk_config,
     get_frontend_link_mode,
+    get_tg_search_config,
     save_public_search_api_config,
     save_frontend_display_netdisk_config,
     save_frontend_link_mode,
+    save_tg_search_config,
 )
+from src.services.telegram_search_service import test_telegram_connection
 from src.utils.auth_utils import token_required
 from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
 
@@ -282,3 +285,52 @@ def save_credential_config():
         return jsonify({"success": False, "message": message}), 500
 
     return jsonify({"success": True, "message": "云盘凭证保存成功"})
+
+
+@system_config_bp.route("/admin/api/tg-search-config", methods=["GET"])
+@token_required
+def get_tg_search_config_api():
+    """获取当前 Telegram 频道搜索配置"""
+    config = get_tg_search_config()
+    return jsonify({"success": True, "config": config})
+
+
+@system_config_bp.route("/admin/api/tg-search-config", methods=["PUT"])
+@token_required
+def update_tg_search_config_api():
+    """更新并持久化 Telegram 频道搜索配置"""
+    data = request.get_json() or {}
+    success = save_tg_search_config(data)
+    if not success:
+        return jsonify({"success": False, "message": "Telegram 搜索配置保存失败"}), 400
+
+    return jsonify({
+        "success": True,
+        "message": "Telegram 搜索配置保存成功",
+        "config": get_tg_search_config(),
+    })
+
+
+@system_config_bp.route("/admin/api/tg-search-config/test", methods=["POST"])
+@token_required
+def test_tg_search_api():
+    """测试指定 Telegram 公开频道的检索与连通性"""
+    data = request.get_json() or {}
+    channel = str(data.get("channel", "")).strip()
+    keyword = str(data.get("keyword", "测试")).strip() or "测试"
+    proxy = data.get("proxy")
+    timeout = data.get("timeout")
+    if timeout is not None:
+        try:
+            timeout = int(timeout)
+        except (TypeError, ValueError):
+            timeout = 10
+
+    result = test_telegram_connection(
+        channel=channel,
+        keyword=keyword,
+        proxy=proxy,
+        timeout=timeout,
+    )
+    return jsonify(result)
+

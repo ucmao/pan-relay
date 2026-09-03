@@ -55,10 +55,17 @@ PAN123_INLINE_PATTERN = re.compile(
 )
 
 
-def _request_proxies():
-    if not TG_PROXY:
+def _request_proxies(proxy=None):
+    if proxy is None:
+        try:
+            from src.services.system_config_service import get_tg_search_config
+            proxy = get_tg_search_config().get("proxy", "")
+        except Exception:
+            proxy = TG_PROXY
+    proxy = str(proxy or "").strip()
+    if not proxy:
         return None
-    return {"http": TG_PROXY, "https": TG_PROXY}
+    return {"http": proxy, "https": proxy}
 
 
 def _normalize_channel(channel):
@@ -432,10 +439,17 @@ def parse_telegram_search_html(html, channel):
     return results
 
 
-def search_telegram_channel(keyword, channel):
+def search_telegram_channel(keyword, channel, proxy=None, timeout=None):
     channel = _normalize_channel(channel)
     if not channel:
         return []
+
+    if timeout is None:
+        try:
+            from src.services.system_config_service import get_tg_search_config
+            timeout = get_tg_search_config().get("timeout", TG_SEARCH_TIMEOUT)
+        except Exception:
+            timeout = TG_SEARCH_TIMEOUT
 
     target_url = TELEGRAM_PUBLIC_CHANNEL_URL.format(channel=channel)
     headers = {
@@ -449,8 +463,8 @@ def search_telegram_channel(keyword, channel):
             target_url,
             params={"q": keyword},
             headers=headers,
-            proxies=_request_proxies(),
-            timeout=TG_SEARCH_TIMEOUT,
+            proxies=_request_proxies(proxy),
+            timeout=timeout,
         )
         response.raise_for_status()
 
@@ -470,17 +484,32 @@ def search_telegram_channel(keyword, channel):
 
 
 def search_telegram_resources(keyword):
-    """并发搜索配置的 Telegram 公开频道。"""
+    """并发搜索配置的 Telegram 公开频道（优先使用数据库配置）。"""
+    try:
+        from src.services.system_config_service import get_tg_search_config
+        cfg = get_tg_search_config()
+        is_enabled = cfg.get("enabled", TG_SEARCH_ENABLED)
+        channels = cfg.get("channels", TG_CHANNELS)
+        timeout = cfg.get("timeout", TG_SEARCH_TIMEOUT)
+        max_workers = cfg.get("max_workers", TG_SEARCH_MAX_WORKERS)
+        proxy = cfg.get("proxy", TG_PROXY)
+    except Exception:
+        is_enabled = TG_SEARCH_ENABLED
+        channels = TG_CHANNELS
+        timeout = TG_SEARCH_TIMEOUT
+        max_workers = TG_SEARCH_MAX_WORKERS
+        proxy = TG_PROXY
+
     keyword = str(keyword or "").strip()
-    if not TG_SEARCH_ENABLED or not keyword or not TG_CHANNELS:
+    if not is_enabled or not keyword or not channels:
         return []
 
-    max_workers = min(TG_SEARCH_MAX_WORKERS, len(TG_CHANNELS))
+    workers = min(max_workers, len(channels))
     results = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [
-            executor.submit(search_telegram_channel, keyword, channel)
-            for channel in TG_CHANNELS
+            executor.submit(search_telegram_channel, keyword, channel, proxy=proxy, timeout=timeout)
+            for channel in channels
         ]
         for future in concurrent.futures.as_completed(futures):
             try:
@@ -491,15 +520,89 @@ def search_telegram_resources(keyword):
     deduped = []
     seen = set()
     for item in results:
-        if item[2] in seen:
+        share_link = item.share_link if hasattr(item, "share_link") else item[2]
+        if share_link in seen:
             continue
-        seen.add(item[2])
+        seen.add(share_link)
         deduped.append(item)
 
     logger.info(
         "Telegram 搜索完成：关键词 '%s'，频道 %d 个，资源 %d 条。",
         keyword,
-        len(TG_CHANNELS),
+        len(channels),
         len(deduped),
     )
     return deduped
+
+
+def test_telegram_connection(
+    channel: str,
+    keyword: str = "测试",
+    proxy: Optional[str] = None,
+    timeout: Optional[int] = None,
+) -> Dict[str, Any]:
+    """
+    在线测试指定 Telegram 公开频道的连通性与检索解析能力。
+    返回耗时、状态、抓取条数及前 10 条样本数据。
+    """
+    import time
+    channel = _normalize_channel(channel)
+    if not channel:
+        return {
+            "success": False,
+            "message": "频道名称不能为空",
+            "channel": "",
+            "latency_ms": 0,
+            "count": 0,
+            "results": [],
+        }
+
+    try:
+        from src.services.system_config_service import get_tg_search_config
+        cfg = get_tg_search_config()
+        if proxy is None:
+            proxy = cfg.get("proxy", "")
+        if timeout is None:
+            timeout = cfg.get("timeout", 10)
+    except Exception:
+        proxy = proxy or TG_PROXY
+        timeout = timeout or 10
+
+    start_time = time.time()
+    try:
+        results = search_telegram_channel(
+            keyword=keyword,
+            channel=channel,
+            proxy=proxy,
+            timeout=timeout,
+        )
+        latency_ms = int((time.time() - start_time) * 1000)
+        serialized = [
+            r.to_dict() if hasattr(r, "to_dict") else {
+                "source": r[0],
+                "title": r[1],
+                "share_link": r[2],
+                "cloud_name": r[3],
+            }
+            for r in results
+        ]
+        return {
+            "success": True,
+            "message": f"频道 @{channel} 测试完成，耗时 {latency_ms}ms，发现 {len(results)} 条网盘资源",
+            "channel": channel,
+            "latency_ms": latency_ms,
+            "count": len(results),
+            "results": serialized[:10],
+        }
+    except Exception as e:
+        latency_ms = int((time.time() - start_time) * 1000)
+        logger.error(f"测试 Telegram 频道 @{channel} 异常: {e}")
+        return {
+            "success": False,
+            "message": f"测试失败: {e}",
+            "channel": channel,
+            "latency_ms": latency_ms,
+            "count": 0,
+            "results": [],
+        }
+

@@ -17,6 +17,8 @@ services:
     environment:
       - PORT=5004
       - TZ=Asia/Shanghai
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5004/"]
       interval: 30s

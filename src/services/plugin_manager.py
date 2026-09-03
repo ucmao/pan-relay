@@ -82,11 +82,26 @@ class PluginManager:
                 except Exception as e:
                     logger.error(f"导入插件模块失败 ({filename}): {e}")
 
+            # 应用持久化配置
+            try:
+                from src.services.system_config_service import get_plugin_settings
+                settings = get_plugin_settings()
+                for name, plugin in self._plugins.items():
+                    if name in settings and "is_enabled" in settings[name]:
+                        plugin.is_enabled = bool(settings[name]["is_enabled"])
+            except Exception as conf_err:
+                logger.warning(f"加载插件持久化配置失败: {conf_err}")
+
     def register_plugin(self, plugin: BasePlugin):
         """手动注册插件实例"""
         with self._plugin_lock:
             self._plugins[plugin.name] = plugin
             logger.info(f"手动注册插件成功: [{plugin.name}]")
+
+    def reload_plugins(self, plugin_dir: Optional[str] = None) -> List[BasePlugin]:
+        """重新扫描插件目录并热重载加载"""
+        self.discover_plugins(plugin_dir)
+        return self.get_all_plugins()
 
     def get_plugin(self, name: str) -> Optional[BasePlugin]:
         with self._plugin_lock:
@@ -106,6 +121,11 @@ class PluginManager:
             if plugin:
                 plugin.is_enabled = True
                 logger.info(f"插件已启用: {name}")
+                try:
+                    from src.services.system_config_service import save_plugin_status
+                    save_plugin_status(name, True)
+                except Exception as e:
+                    logger.error(f"持久化插件 [{name}] 启用状态失败: {e}")
                 return True
             return False
 
@@ -115,8 +135,14 @@ class PluginManager:
             if plugin:
                 plugin.is_enabled = False
                 logger.info(f"插件已停用: {name}")
+                try:
+                    from src.services.system_config_service import save_plugin_status
+                    save_plugin_status(name, False)
+                except Exception as e:
+                    logger.error(f"持久化插件 [{name}] 停用状态失败: {e}")
                 return True
             return False
+
 
     def search_all(self, keyword: str, max_workers: int = 4) -> List[SearchResultItem]:
         """

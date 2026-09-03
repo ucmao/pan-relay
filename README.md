@@ -58,9 +58,9 @@ Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化�
 
 ## 🚀 部署指南
 
-### Docker 部署（强烈推荐，极速验证）
+### 方式一：Docker 部署（强烈推荐，开箱即用）
 
-内置 SQLite 数据库，无需安装任何数据库软件，开箱即用一键启动：
+内置 SQLite 数据库，无需安装任何数据库软件，一键启动：
 
 ```bash
 # 1. 克隆代码并进入目录
@@ -74,13 +74,9 @@ docker compose up -d
 docker compose logs -f
 ```
 
-启动完成后，直接访问 [http://localhost:5004](http://localhost:5004) 即可使用！
-
-> **提示**：如需自定义后台密码或 TG 代理，可直接执行 `cp .env.example .env` 后按需修改。
-
 ---
 
-### 本地 Python 环境运行
+### 方式二：本地 Python 环境运行
 
 适用于本地二次开发或无 Docker 环境的宿主机：
 
@@ -93,6 +89,17 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
+
+---
+
+### 🌐 服务访问与管理后台
+
+服务启动后，在浏览器直接访问：
+
+* **前台搜索**：[http://localhost:5004](http://localhost:5004)
+* **管理后台**：[http://localhost:5004/admin](http://localhost:5004/admin)（默认账号 `admin` / 密码 `admin123`）
+
+> 💡 **提示**：如需自定义后台密码或 TG 代理，可复制 `cp .env.example .env` 后按需修改。
 
 ---
 

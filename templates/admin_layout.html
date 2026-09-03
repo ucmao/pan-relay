@@ -274,6 +274,9 @@
                 <a class="nav-btn {{ 'is-active' if active_page == 'api' else '' }}" href="{{ url_for('api_config.config_page') }}">
                     <i class="fas fa-code"></i> API
                 </a>
+                <a class="nav-btn {{ 'is-active' if active_page == 'plugins' else '' }}" href="{{ url_for('plugin.plugins_page') }}">
+                    <i class="fas fa-puzzle-piece"></i> 插件
+                </a>
                 <a class="nav-btn" href="{{ url_for('auth.logout') }}">
                     <i class="fas fa-sign-out-alt"></i> 退出
                 </a>

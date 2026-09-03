@@ -1,11 +1,107 @@
 import logging
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, render_template, request
 
 from src.services.plugin_manager import plugin_manager
+from src.utils.auth_utils import token_required
 
 logger = logging.getLogger(__name__)
 
 plugin_bp = Blueprint("plugin", __name__)
+
+
+@plugin_bp.route("/admin/plugins", methods=["GET"])
+@token_required
+def plugins_page():
+    """
+    插件管理工作区页面 (需要 JWT 验证)
+    """
+    plugins = plugin_manager.get_all_plugins()
+    logger.info("已验证管理员访问插件管理页面")
+    return render_template("plugin_config.html", plugins=plugins)
+
+
+@plugin_bp.route("/admin/api/plugins", methods=["GET"])
+@token_required
+def get_admin_plugins_api():
+    """
+    获取系统中所有插件列表及元数据 (管理员接口)
+    """
+    plugins = plugin_manager.get_all_plugins()
+    data = [p.to_dict() for p in plugins]
+    return jsonify({
+        "success": True,
+        "total": len(data),
+        "enabled_count": len([p for p in plugins if p.is_enabled]),
+        "plugins": data,
+    })
+
+
+@plugin_bp.route("/admin/api/plugins/<plugin_name>/toggle", methods=["POST"])
+@token_required
+def toggle_admin_plugin_api(plugin_name):
+    """
+    切换指定插件的启用/停用状态 (管理员接口)
+    """
+    return toggle_plugin_api(plugin_name)
+
+
+@plugin_bp.route("/admin/api/plugins/<plugin_name>/test", methods=["POST"])
+@token_required
+def test_admin_plugin_api(plugin_name):
+    """
+    在线测试单个插件检索 (管理员接口)
+    """
+    return test_plugin_api(plugin_name)
+
+
+@plugin_bp.route("/admin/api/plugins/<plugin_name>/health", methods=["GET"])
+@token_required
+def health_admin_plugin_api(plugin_name):
+    """
+    检查指定插件连通性与健康度 (管理员接口)
+    """
+    return health_plugin_api(plugin_name)
+
+
+@plugin_bp.route("/admin/api/plugins/reload", methods=["POST"])
+@token_required
+def reload_admin_plugins_api():
+    """
+    热重载重新扫描插件目录 (管理员接口)
+    """
+    try:
+        plugins = plugin_manager.reload_plugins()
+        data = [p.to_dict() for p in plugins]
+        return jsonify({
+            "success": True,
+            "message": f"成功重新扫描插件目录，共载入 {len(data)} 个插件",
+            "total": len(data),
+            "enabled_count": len([p for p in plugins if p.is_enabled]),
+            "plugins": data,
+        })
+    except Exception as e:
+        logger.error(f"重新加载插件异常: {e}")
+        return jsonify({"success": False, "message": f"重新载入插件失败: {e}"}), 500
+
+
+@plugin_bp.route("/admin/api/plugins/enable-all", methods=["POST"])
+@token_required
+def enable_all_admin_plugins_api():
+    """全部启用插件"""
+    plugins = plugin_manager.get_all_plugins()
+    for p in plugins:
+        plugin_manager.enable_plugin(p.name)
+    return jsonify({"success": True, "message": "已全部启用所有插件"})
+
+
+@plugin_bp.route("/admin/api/plugins/disable-all", methods=["POST"])
+@token_required
+def disable_all_admin_plugins_api():
+    """全部禁用插件"""
+    plugins = plugin_manager.get_all_plugins()
+    for p in plugins:
+        plugin_manager.disable_plugin(p.name)
+    return jsonify({"success": True, "message": "已全部停用所有插件"})
 
 
 @plugin_bp.route("/api/plugins", methods=["GET"])

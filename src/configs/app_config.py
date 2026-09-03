@@ -31,9 +31,9 @@ QUARK_PAN_COOKIE = os.getenv('QUARK_PAN_COOKIE')
 BAIDU_PAN_COOKIE = os.getenv('BAIDU_PAN_COOKIE')
 DEFAULT_SAVE_DIR = os.getenv('DEFAULT_SAVE_DIR')
 
-# 管理员账号密码
-ADMIN_USERNAME = os.getenv('ADMIN_USERNAME')
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
+# 管理员账号密码（默认: admin / admin123）
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME') or 'admin'
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD') or 'admin123'
 
 # Telegram 公开频道搜索
 TG_SEARCH_ENABLED = _get_bool_env("TG_SEARCH_ENABLED", True)
