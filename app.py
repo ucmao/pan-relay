@@ -1,4 +1,5 @@
 import logging
+import os
 from configs.logging_setup import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -55,5 +56,6 @@ def search_index():
 
 
 if __name__ == '__main__':
-    logger.info("启动 Flask 应用")
-    app.run(host='0.0.0.0', port=5004)
+    port = int(os.getenv("PORT", 5004))
+    logger.info(f"启动 Flask 应用，监听端口: {port}")
+    app.run(host='0.0.0.0', port=port)

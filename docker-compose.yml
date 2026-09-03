@@ -1,0 +1,25 @@
+services:
+  pan-relay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pan-relay:latest
+    container_name: pan-relay
+    restart: unless-stopped
+    ports:
+      - "5004:5004"
+    volumes:
+      # 持久化挂载 SQLite 数据库目录（确保容器重启/升级时数据不丢失）
+      - ./data:/app/data
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - PORT=5004
+      - TZ=Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5004/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
