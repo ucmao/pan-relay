@@ -26,6 +26,7 @@ const resultContainer = document.getElementById('resultContainer');
 const loadingMore = document.getElementById('loadingMore');
 const resultCountText = document.getElementById('resultCountText');
 const statusBar = document.getElementById('statusBar');
+const exportExcelBtn = document.getElementById('exportExcelBtn');
 const advancedFilterToggle = document.getElementById('advancedFilterToggle');
 const advancedFilterPanel = document.getElementById('advancedFilterPanel');
 const viewResultModalElement = document.getElementById('viewResultModal');
@@ -515,17 +516,17 @@ function calculateRankScoreFront(item, keyword = '') {
 }
 
 /**
- * 渲染搜索结果到页面 (修改过滤逻辑)
+ * 获取当前经过网盘分类、包含词、排除词筛选并经综合排序后的搜索结果列表
  */
-function renderResults(reset = false) {
+function getFilteredResults() {
     let filteredResults = allResults.filter(result => {
         // 云盘过滤
         const matchesNetdisk = currentFilter === '全部' || result[3] === currentFilter;
 
         // 筛选关键词过滤
-        const title = result[1].toLowerCase();
+        const title = (result[1] || '').toLowerCase();
         const matchesInclude = includeKeywords.length === 0 ||
-            includeKeywords.every(keyword => title.toLowerCase().includes(keyword.toLowerCase()));
+            includeKeywords.every(keyword => title.includes(keyword.toLowerCase()));
 
         // 排除关键词过滤
         const matchesExclude = excludeKeywords.length === 0 ||
@@ -535,8 +536,75 @@ function renderResults(reset = false) {
     });
 
     // 智能综合排序：根据得分降序排列
-    const currentKw = (searchInput.value || '').trim();
+    const currentKw = (searchInput?.value || '').trim();
     filteredResults.sort((a, b) => calculateRankScoreFront(b, currentKw) - calculateRankScoreFront(a, currentKw));
+    return filteredResults;
+}
+
+/**
+ * 格式化来源文本
+ */
+function formatSourceText(source) {
+    if (source === 'hot') return '推荐资源';
+    if (source === 'tg') return 'Telegram频道';
+    if (source) return `插件: ${source}`;
+    return '全网搜索';
+}
+
+/**
+ * 导出当前筛选结果的所有数据到 Excel (CSV 格式, 带 UTF-8 BOM 防乱码)
+ */
+function exportFilteredResultsToExcel() {
+    const filteredResults = getFilteredResults();
+    if (!filteredResults || filteredResults.length === 0) {
+        showAlertModal('当前筛选结果没有可以导出的数据', 'warning', '导出提示');
+        return;
+    }
+
+    const headers = ['序号', '资源标题', '分享链接', '云盘名称', '来源'];
+    const csvLines = [headers.join(',')];
+
+    filteredResults.forEach((item, index) => {
+        const sourceStr = formatSourceText(item[0]);
+        const titleStr = (item[1] || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+        const urlStr = (item[2] || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+        const netdiskStr = (item[3] || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
+
+        const row = [
+            index + 1,
+            `"${titleStr}"`,
+            `"${urlStr}"`,
+            `"${netdiskStr}"`,
+            `"${sourceStr}"`
+        ];
+        csvLines.push(row.join(','));
+    });
+
+    const csvContent = "\uFEFF" + csvLines.join('\n');
+    const keyword = (searchInput?.value || '').trim() || '搜索结果';
+    const filterSuffix = currentFilter !== '全部' ? `_${currentFilter}` : '';
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    const filename = `${keyword}${filterSuffix}_${dateStr}.csv`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+exportExcelBtn?.addEventListener('click', exportFilteredResultsToExcel);
+
+/**
+ * 渲染搜索结果到页面 (修改过滤逻辑)
+ */
+function renderResults(reset = false) {
+    let filteredResults = getFilteredResults();
 
     if (reset) {
         currentPage = 1;

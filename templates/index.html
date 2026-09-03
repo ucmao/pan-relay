@@ -37,10 +37,15 @@
                 <div class="filter-and-count-container d-none mt-3">
                     <div class="filter-toolbar">
                         <p class="result-count mb-0" id="resultCountText"></p>
-                        <button class="btn filter-toggle-button" id="advancedFilterToggle"
-                            type="button" aria-expanded="false">
-                            <i class="fas fa-sliders-h me-1"></i> 筛选
-                        </button>
+                        <div class="filter-toolbar-actions">
+                            <button class="btn filter-toggle-button export-excel-btn" id="exportExcelBtn" type="button" title="导出当前筛选结果到 Excel">
+                                <i class="fas fa-file-excel me-1 text-emerald"></i> 导出 Excel
+                            </button>
+                            <button class="btn filter-toggle-button" id="advancedFilterToggle"
+                                type="button" aria-expanded="false">
+                                <i class="fas fa-sliders-h me-1"></i> 筛选
+                            </button>
+                        </div>
                     </div>
                     <div id="advancedFilterPanel" class="advanced-filter-panel d-none">
                         <div class="advanced-filter-grid">

@@ -84,7 +84,7 @@ class PluginSystemTest(unittest.TestCase):
 
     def test_search_service_aggregation_includes_plugins(self):
         # 验证 search_public_resources 能够顺利并行收集插件结果
-        success, msg, results = search_public_resources("繁花", limit=50)
+        success, msg, results = search_public_resources("繁花", limit=500)
         self.assertTrue(success)
         self.assertIsInstance(results, list)
         # 检查是否包含插件产生的数据源

@@ -131,6 +131,12 @@ def init_sqlite_db():
 
         raw_conn.close()
         _db_initialized = True
+
+        try:
+            from src.services.system_config_service import init_default_search_sources
+            init_default_search_sources()
+        except Exception as e:
+            logger.warning(f"自动初始化默认全量搜索源配置失败: {e}")
     except Exception as e:
         logger.error(f"初始化 SQLite 数据库失败: {e}")
         raise

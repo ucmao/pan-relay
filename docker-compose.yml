@@ -11,6 +11,7 @@ services:
     volumes:
       # 持久化挂载 SQLite 数据库目录（确保容器重启/升级时数据不丢失）
       - ./data:/app/data
+      - ./logs:/app/logs
     env_file:
       - path: .env
         required: false
