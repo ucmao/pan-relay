@@ -2,6 +2,7 @@ import concurrent.futures
 import logging
 import re
 from html import unescape
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -198,6 +199,197 @@ def _extract_supported_links(message_element):
     return results
 
 
+CLOUD_DISK_LABELS = {
+    "链接", "地址", "资源地址", "资源", "下载地址", "网盘地址", "网盘链接", "网盘", "分享链接",
+    "打开", "点击打开", "点击下载", "点此查看", "备用链接", "备用",
+    "夸克", "夸克网盘", "夸克云盘", "quark", "pan.quark.cn",
+    "百度", "百度网盘", "百度云", "baidu", "pan.baidu.com", "bdwp", "bdpan",
+    "阿里", "阿里云", "阿里云盘", "阿里网盘", "aliyun", "alipan",
+    "uc", "uc网盘", "uc云盘", "drive.uc.cn",
+    "迅雷", "迅雷网盘", "迅雷云盘", "xunlei", "pan.xunlei.com",
+    "115", "115网盘", "115云盘",
+    "123", "123网盘", "123云盘", "123pan",
+    "天翼", "天翼云", "天翼云盘", "天翼网盘", "cloud.189.cn",
+    "移动", "移动云盘", "和彩云",
+}
+
+TITLE_PREFIX_PATTERN = re.compile(
+    r"^(?:(?:【|\(|\[|#)?(?:资源名称|影视名称|短剧名称|片名|剧名|名称|标题|title|资源)(?:】|\)|\])?[\s:：]+)+",
+    re.IGNORECASE,
+)
+
+EMOJI_PATTERN = re.compile(
+    r"[\U00010000-\U0010ffff\u2600-\u27bf\u2300-\u23ff\u2b50\u2b55\u200d\ufe0f]"
+)
+
+CHANNEL_WATERMARK_PATTERN = re.compile(
+    r"(?:[|\-—~]\s*)?(?:(?:关注(?:频道|群聊|频道链接)?|永久发布页|发布页|via|来源)[\s:：]*)?@[a-zA-Z0-9_-]+.*$",
+    re.IGNORECASE,
+)
+
+
+def clean_telegram_title(title: str) -> str:
+    """清理标题，去除片名前缀、标签、表情符号及推广水印。"""
+    if not title:
+        return ""
+    text = title.strip()
+
+    # 1. 移除首尾表情符号
+    text = EMOJI_PATTERN.sub("", text).strip()
+
+    # 2. 移除常见前缀标签（如【片名】：、剧名：等）
+    text = TITLE_PREFIX_PATTERN.sub("", text).strip()
+
+    # 3. 移除行末连续的 hashtag（如 #4K #合集）
+    parts = text.split()
+    while parts and parts[-1].startswith("#"):
+        parts.pop()
+    text = " ".join(parts).strip()
+
+    # 4. 移除频道推广水印后缀（如 | @tgsearchers 或 | 关注频道 @pansearch）
+    text = CHANNEL_WATERMARK_PATTERN.sub("", text).strip()
+
+    # 5. 移除残留修饰符号
+    text = text.strip("-—:：|~ ")
+    return text[:255]
+
+
+def is_cloud_disk_label(text: str) -> bool:
+    """判断一段文本是否仅为网盘名称或通用链接前缀词（防止误作为作品标题）。"""
+    if not text:
+        return True
+    cleaned = text.strip("【】[]()：:|- ").lower()
+    return cleaned in CLOUD_DISK_LABELS
+
+
+def extract_title_from_link_line(line: str) -> Optional[str]:
+    """
+    从形如 '作品名：https://...' 或 '作品名 https://...' 的单行中提取作品标题。
+    若行前缀只是网盘名称（如 '夸克网盘：'、'百度：'），则返回 None，交由上下文标题处理。
+    """
+    url_match = URL_PATTERN.search(line)
+    if not url_match or url_match.start() == 0:
+        return None
+
+    prefix = line[: url_match.start()].strip()
+    for sep in ["：", ":"]:
+        if sep in prefix:
+            candidate = prefix.split(sep)[0].strip()
+            if is_cloud_disk_label(candidate):
+                return None
+            cleaned = clean_telegram_title(candidate)
+            if cleaned and not is_cloud_disk_label(cleaned):
+                return cleaned
+            return None
+
+    cleaned = clean_telegram_title(prefix)
+    if cleaned and not is_cloud_disk_label(cleaned):
+        return cleaned
+
+    return None
+
+
+def extract_items_from_message_element(message_element, dt: Optional[str] = None) -> List[SearchResultItem]:
+    """
+    双遍扫描 Telegram 消息节点，精确将网盘链接、上下文标题与专属提取码绑定。
+    解决单帖多资源标题串味、多网盘密码错配的问题。
+    """
+    import copy
+    soup = copy.copy(message_element)
+
+    # 1. 将 <a> 标签转换为带有真实 URL 的文本占位
+    for a in soup.find_all("a"):
+        href = (a.get("href") or "").strip()
+        text = a.get_text(strip=True)
+        if href and URL_PATTERN.search(href):
+            a.replace_with(f" {text} {href} ")
+        elif text:
+            a.replace_with(f" {text} ")
+
+    # 2. 将换行与块级标签替换为换行符
+    for br in soup.find_all(["br", "p", "div", "blockquote"]):
+        br.replace_with("\n" + br.get_text())
+
+    raw_text = soup.get_text()
+    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+    if not lines:
+        return []
+
+    # 寻找全局候选标题作为最终保底
+    global_fallback_title = None
+    for line in lines:
+        if not URL_PATTERN.search(line) and not line.startswith("#"):
+            cleaned = clean_telegram_title(line)
+            if cleaned and not is_cloud_disk_label(cleaned):
+                global_fallback_title = cleaned
+                break
+
+    items = []
+    seen_links = set()
+    current_context_title = global_fallback_title
+
+    # 第一遍扫描：逐行解析状态机
+    for idx, line in enumerate(lines):
+        urls_in_line = URL_PATTERN.findall(line)
+
+        if not urls_in_line:
+            # 非链接行，检查是否为新的段落作品标题
+            if line.startswith("#") and len(line.split()) <= 4:
+                continue
+            if any(ad in line for ad in ["关注频道", "入群交流", "永久发布页", "版权归原作者", "防走丢"]):
+                continue
+            if PASSWORD_PATTERN.search(line) and len(line) <= 15:
+                continue
+
+            cleaned = clean_telegram_title(line)
+            if cleaned and not is_cloud_disk_label(cleaned):
+                current_context_title = cleaned
+        else:
+            # 链接行：判断本行是否有自带的专属标题
+            line_title = extract_title_from_link_line(line)
+            title_to_use = line_title or current_context_title or global_fallback_title or "Telegram 频道资源"
+
+            # 提取本行之后下一行可能存在的独立提取码
+            next_line = lines[idx + 1] if idx + 1 < len(lines) else ""
+            next_line_has_url = bool(URL_PATTERN.search(next_line))
+
+            for raw_url in urls_in_line:
+                clean_url, inline_pwd = _clean_and_extract_inline_password(raw_url)
+                if not clean_url:
+                    continue
+
+                netdisk_name = match_netdisk_link(clean_url)
+                if netdisk_name == "其他":
+                    continue
+
+                base_key = clean_url.split("?")[0].rstrip("/")
+                if base_key in seen_links:
+                    continue
+                seen_links.add(base_key)
+
+                pwd = inline_pwd
+                if not pwd and netdisk_name in PASSWORD_SUPPORTED_NETDISKS:
+                    pwd = _extract_password_from_text(line)
+                    if not pwd and next_line and not next_line_has_url:
+                        pwd = _extract_password_from_text(next_line)
+                    if not pwd and len(seen_links) == 1 and idx == len(lines) - 1:
+                        pwd = _extract_password_from_text(raw_text)
+
+                final_url = _attach_password(clean_url, netdisk_name, pwd)
+                items.append(
+                    SearchResultItem(
+                        source="tg",
+                        title=title_to_use,
+                        share_link=final_url,
+                        cloud_name=netdisk_name,
+                        password=pwd,
+                        datetime=dt,
+                    )
+                )
+
+    return items
+
+
 def _extract_title(message_element):
     text = message_element.get_text("\n", strip=True)
     lines = [line.strip() for line in text.splitlines() if line.strip()]
@@ -205,16 +397,12 @@ def _extract_title(message_element):
         return "Telegram 频道资源"
 
     for line in lines:
-        if line.startswith("名称："):
-            return line.partition("：")[2].strip() or lines[0]
-        if line.startswith("名称:"):
-            return line.partition(":")[2].strip() or lines[0]
-
-    for line in lines:
         if not line.startswith("#") and not URL_PATTERN.search(line):
-            return line[:255]
+            cleaned = clean_telegram_title(line)
+            if cleaned and not is_cloud_disk_label(cleaned):
+                return cleaned
 
-    return lines[0][:255]
+    return clean_telegram_title(lines[0]) or "Telegram 频道资源"
 
 
 def parse_telegram_search_html(html, channel):
@@ -229,23 +417,16 @@ def parse_telegram_search_html(html, channel):
         if content is None:
             continue
 
-        title = _extract_title(content)
         time_tag = message.select_one(".tgme_widget_message_date time")
         dt = time_tag.get("datetime") if time_tag else None
 
-        for url, netdisk_name in _extract_supported_links(content):
-            if url in seen:
+        items = extract_items_from_message_element(content, dt=dt)
+        for item in items:
+            base_key = item.share_link.split("?")[0].rstrip("/")
+            if base_key in seen:
                 continue
-            seen.add(url)
-            results.append(
-                SearchResultItem(
-                    source="tg",
-                    title=title,
-                    share_link=url,
-                    cloud_name=netdisk_name,
-                    datetime=dt,
-                )
-            )
+            seen.add(base_key)
+            results.append(item)
 
     logger.info("Telegram 频道 '%s' 解析到 %d 条网盘资源。", channel, len(results))
     return results
