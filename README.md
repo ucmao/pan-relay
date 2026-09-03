@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="static/images/hero_search_top.webp" width="360" height="auto" alt="小青搜剧 Logo">
+<img src="static/images/hero_search_top.webp" width="480" height="auto" alt="Pan-Relay Logo">
 
 **基于 Python 的多网盘聚合中继与自动化变现管理系统**
 
@@ -16,7 +16,7 @@
   <a href="#-联系作者">联系作者</a>
 </p>
 
-小青搜剧是一款专为网盘推广员、资源站长打造的**全自动化收益与聚合分发系统**。
+Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化收益与聚合分发系统**。
 
 通过“资源聚合 -> 自动转存 -> 链接洗白 -> 裂变分发”的闭环，助你实现拉新与转存收益最大化。
 
@@ -64,8 +64,8 @@
 
 ```bash
 # 1. 克隆代码并进入目录
-git clone https://github.com/ucmao/search-ucmao.git
-cd search-ucmao
+git clone https://github.com/ucmao/pan-relay.git
+cd pan-relay
 
 # 2. 启动服务（自动构建镜像，数据持久化挂载至本地 ./data 目录）
 docker compose up -d
@@ -173,7 +173,7 @@ pan-relay/
 * **微信**：csdnxr
 * **QQ**：294323976
 * **邮箱**：leoucmao@gmail.com
-* **Bug反馈**：[GitHub Issues](https://github.com/ucmao/search-ucmao/issues)
+* **Bug反馈**：[GitHub Issues](https://github.com/ucmao/pan-relay/issues)
 
 ---
 

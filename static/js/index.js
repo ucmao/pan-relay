@@ -86,25 +86,81 @@ function getNetdiskColorClass(netdiskName) {
     return { badgeClass, badgeTextClass };
 }
 
-// 前端去重辅助函数 (保持不变)
+// 提取规范化网盘资源唯一键 (与后端对齐，防止误杀同名不同链接)
+function extractCanonicalResourceKeyFront(url) {
+    if (!url) return '';
+    const str = String(url).trim();
+
+    const quarkMatch = str.match(/pan\.quark\.cn\/s\/([a-zA-Z0-9_-]+)/i);
+    if (quarkMatch) return `quark:${quarkMatch[1]}`;
+
+    const baiduMatch = str.match(/(?:pan\.baidu\.com|bdpan\.com|baiduyun\.com)\/s\/([a-zA-Z0-9_-]+)/i);
+    if (baiduMatch) return `baidu:${baiduMatch[1]}`;
+
+    const aliyunMatch = str.match(/(?:alipan\.com|aliyundrive\.com|drive\.aliyun\.com)\/s\/([a-zA-Z0-9_-]+)/i);
+    if (aliyunMatch) return `aliyun:${aliyunMatch[1]}`;
+
+    const ucMatch = str.match(/(?:drive\.uc\.cn|pan\.uc\.cn)\/s\/([a-zA-Z0-9_-]+)/i);
+    if (ucMatch) return `uc:${ucMatch[1]}`;
+
+    const xunleiMatch = str.match(/pan\.xunlei\.com\/s\/([a-zA-Z0-9_-]+)/i);
+    if (xunleiMatch) return `xunlei:${xunleiMatch[1]}`;
+
+    const pan123Match = str.match(/(?:123pan\.com|123\d{3}\.(?:com|cn))\/s\/([a-zA-Z0-9_-]+)/i);
+    if (pan123Match) return `123pan:${pan123Match[1]}`;
+
+    const tianyiMatch = str.match(/cloud\.189\.cn\/(?:t\/|web\/share\?code=)([a-zA-Z0-9_-]+)/i);
+    if (tianyiMatch) return `tianyi:${tianyiMatch[1]}`;
+
+    const pan115Match = str.match(/(?:115\.com|115pan\.com|115cdn\.com|anxia\.com)\/s\/([a-zA-Z0-9_-]+)/i);
+    if (pan115Match) return `115:${pan115Match[1]}`;
+
+    const mobileMatch = str.match(/(?:yun\.139\.com\/shareweb\/#\/w\/i\/|caiyun\.139\.com\/w\/i\/|caiyun\.139\.com\/m\/i\?|pan\.10086\.cn\/s\/)([a-zA-Z0-9_-]+)/i);
+    if (mobileMatch) return `mobile:${mobileMatch[1]}`;
+
+    const magnetMatch = str.match(/magnet:\?xt=urn:btih:([a-zA-Z0-9]+)/i);
+    if (magnetMatch) return `magnet:${magnetMatch[1].toLowerCase()}`;
+
+    try {
+        const u = new URL(str);
+        return `url:${u.hostname.toLowerCase()}${u.pathname.replace(/\/$/, '')}`;
+    } catch (e) {
+        return `raw:${str}`;
+    }
+}
+
+// 前端去重辅助函数 (支持同名多链接并存，同一资源择优保留)
 function filterUnique2ndDomainFront(lst) {
-    const seenCombinations = new Set();
-    const result = [];
+    const itemMap = new Map();
+    const order = [];
+
     for (const subList of lst) {
-        if (subList.length >= 4) {
-            const title = subList[1];
-            const url = subList[2];
-            try {
-                const domain = new URL(url).hostname;
-                const combination = `${title}|${domain}`;
-                if (!seenCombinations.has(combination)) {
-                    seenCombinations.add(combination);
-                    result.push(subList);
-                }
-            } catch (e) { continue; }
+        if (!Array.isArray(subList) || subList.length < 4) continue;
+        const source = subList[0];
+        const title = subList[1] || '';
+        const url = subList[2] || '';
+
+        const key = extractCanonicalResourceKeyFront(url);
+        if (!key) continue;
+
+        if (!itemMap.has(key)) {
+            itemMap.set(key, subList);
+            order.push(key);
+        } else {
+            // 对比已有项与新项，优先保留 source === 'hot' 或标题更完整或带密码的
+            const existing = itemMap.get(key);
+            let existingScore = (existing[0] === 'hot' ? 1000 : 0) + (existing[1]?.length || 0);
+            if (existing[2]?.includes('pwd=') || existing[2]?.includes('password=')) existingScore += 100;
+
+            let newScore = (source === 'hot' ? 1000 : 0) + (title.length || 0);
+            if (url.includes('pwd=') || url.includes('password=')) newScore += 100;
+
+            if (newScore > existingScore) {
+                itemMap.set(key, subList);
+            }
         }
     }
-    return result;
+    return order.map(k => itemMap.get(k));
 }
 
 /**

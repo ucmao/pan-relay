@@ -14,7 +14,11 @@ from src.db.resources import search_resources_by_keyword, search_resources_advan
 from src.models.search_item import SearchResultItem
 from src.services.system_config_service import get_allowed_frontend_netdisks
 from src.services.telegram_search_service import search_telegram_resources
-from src.utils.netdisk_utils import match_netdisk_link
+from src.utils.netdisk_utils import (
+    match_netdisk_link,
+    extract_canonical_resource_key,
+    extract_password_from_url,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -262,8 +266,28 @@ def generate_search_stream_events(keyword):
                 for item in items
             ]
 
+        seen_keys = set()
+
+        def _dedupe_stream_chunk(items):
+            unique_items = []
+            for item in items:
+                try:
+                    typed = SearchResultItem.from_item(item)
+                except Exception:
+                    continue
+                url = (typed.share_link or "").strip()
+                if not url:
+                    continue
+                key = extract_canonical_resource_key(url) or f"url:{url}"
+                if key in seen_keys:
+                    continue
+                seen_keys.add(key)
+                unique_items.append(typed)
+            return unique_items
+
         db_results = search_in_database(keyword)
         db_results = filter_results_by_frontend_netdisks(db_results)
+        db_results = _dedupe_stream_chunk(db_results)
         if db_results:
             yield json.dumps({"type": "initial", "results": _serialize_items(db_results)})
 
@@ -292,6 +316,7 @@ def generate_search_stream_events(keyword):
                     try:
                         results = future.result()
                         results = filter_results_by_frontend_netdisks(results)
+                        results = _dedupe_stream_chunk(results)
                         if results:
                             yield json.dumps({"type": "update", "results": _serialize_items(results)})
                     except Exception as e:
@@ -305,39 +330,119 @@ def generate_search_stream_events(keyword):
     return _event_generator()
 
 
+QUALITY_KEYWORDS = ["合集", "系列", "全集", "全", "完结", "完", "4k", "2160p", "1080p", "高清", "原盘", "最新"]
+
+
+def calculate_completeness_score(item: SearchResultItem) -> int:
+    """
+    计算搜索结果的完整度与质量得分：
+    - 内部库收益源 (hot) 拥有绝对最高权重 (+1000)
+    - 拥有提取码/密码优先 (+100)
+    - 标题包含 4K/全集/完结等高质量关键词加分 (+15 each)
+    - 标题长度与详细程度加分 (最大 +50)
+    - 网盘平台成功识别加分 (+10)
+    """
+    score = 0
+
+    # 1. 数据来源权重 (hot 收益盘优先)
+    if item.source == "hot":
+        score += 1000
+    elif item.source == "tg":
+        score += 50
+    else:
+        score += 30
+
+    # 2. 密码提取码存在加分
+    pwd = item.password or extract_password_from_url(item.share_link)
+    if pwd:
+        score += 100
+
+    # 3. 关键词质量分
+    title_lower = (item.title or "").lower()
+    for kw in QUALITY_KEYWORDS:
+        if kw in title_lower:
+            score += 15
+
+    # 4. 标题详细度分（惩罚通用占位标题）
+    if item.title and item.title != "Telegram 频道资源":
+        score += min(len(item.title), 50)
+    else:
+        score -= 50
+
+    # 5. 网盘有效识别分
+    if item.cloud_name and item.cloud_name != "其他":
+        score += 10
+
+    return score
+
+
+def merge_or_select_better(existing: SearchResultItem, incoming: SearchResultItem) -> SearchResultItem:
+    """
+    当两条记录指向相同网盘真实资源时，择优合并：
+    1. 选择得分更高者作为基础信息
+    2. 继承并补全提取码密码，防止有效密码丢失
+    """
+    existing_pwd = existing.password or extract_password_from_url(existing.share_link)
+    incoming_pwd = incoming.password or extract_password_from_url(incoming.share_link)
+    best_pwd = existing_pwd or incoming_pwd
+
+    existing_score = calculate_completeness_score(existing)
+    incoming_score = calculate_completeness_score(incoming)
+
+    chosen = existing if existing_score >= incoming_score else incoming
+
+    # 确保密码保留在选出的对象上
+    if best_pwd:
+        if not chosen.password:
+            chosen.password = best_pwd
+        # 若原链接中缺少 pwd 参数，可适度拼接以保持链接直达
+        if "pwd=" not in chosen.share_link and "password=" not in chosen.share_link:
+            sep = "&" if "?" in chosen.share_link else "?"
+            param = "password" if "115" in chosen.share_link else "pwd"
+            chosen.share_link = f"{chosen.share_link}{sep}{param}={best_pwd}"
+
+    return chosen
+
+
 def dedupe_search_results(results):
-    deduped = []
-    seen = set()
+    """
+    对搜索结果进行精准去重与择优合并：
+    - 基于网盘平台真实唯一键 (如 quark:xxx, baidu:yyy) 去重
+    - 允许同名但不同资源链接并存 (彻底修复粗暴以 title|hostname 导致同名不同链被误删的问题)
+    - 相同真实资源出现多次时，按完整度得分择优保留最完整、带提取码的版本
+    - 保持列表初始出现顺序
+    """
+    if not results:
+        return []
+
+    deduped_map = {}
+    order = []
 
     for item in results:
-        if isinstance(item, SearchResultItem):
-            title = item.title.strip()
-            url = item.share_link.strip()
-        elif isinstance(item, (list, tuple)) and len(item) >= 4:
-            title = str(item[1]).strip()
-            url = str(item[2]).strip()
-        elif isinstance(item, dict):
-            title = str(item.get("name") or item.get("title", "")).strip()
-            url = str(item.get("share_link") or item.get("url", "")).strip()
-        else:
+        if not item:
             continue
-
-        hostname = url
         try:
-            parsed = urlparse(url)
-            if parsed.hostname:
-                hostname = parsed.hostname
+            typed_item = SearchResultItem.from_item(item)
         except Exception:
-            hostname = url
-
-        key = f"{title}|{hostname}"
-        if key in seen:
             continue
 
-        seen.add(key)
-        deduped.append(item)
+        url = (typed_item.share_link or "").strip()
+        if not url:
+            continue
 
-    return deduped
+        key = extract_canonical_resource_key(url)
+        if not key:
+            key = f"url:{url}"
+
+        if key not in deduped_map:
+            deduped_map[key] = typed_item
+            order.append(key)
+        else:
+            existing_item = deduped_map[key]
+            better_item = merge_or_select_better(existing_item, typed_item)
+            deduped_map[key] = better_item
+
+    return [deduped_map[k] for k in order]
 
 
 def search_public_resources(keyword="", limit=100):
