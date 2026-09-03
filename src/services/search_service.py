@@ -13,6 +13,7 @@ import requests
 from src.configs.app_config import user_agents
 from src.db.resources import search_resources_by_keyword, search_resources_advanced
 from src.models.search_item import SearchResultItem
+from src.services.plugin_manager import plugin_manager
 from src.services.system_config_service import get_allowed_frontend_netdisks
 from src.services.telegram_search_service import search_telegram_resources
 from src.utils.netdisk_utils import (
@@ -313,9 +314,11 @@ def generate_search_stream_events(keyword):
 
         urls_config_search = replace_keyword_in_config(enabled_configs, "[[keyword]]", keyword)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             futures = [executor.submit(process_config, config, keyword) for config in urls_config_search]
             futures.append(executor.submit(search_telegram_resources, keyword))
+            for plugin in plugin_manager.get_enabled_plugins():
+                futures.append(executor.submit(plugin.search, keyword))
             pending_futures = set(futures)
 
             while pending_futures:
@@ -624,9 +627,10 @@ def search_public_resources(keyword="", limit=100):
     enabled_configs.sort(key=lambda x: x.get("response_time_ms", 9999))
     urls_config_search = replace_keyword_in_config(enabled_configs, "[[keyword]]", keyword)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
         futures = [executor.submit(process_config, config, keyword) for config in urls_config_search]
         futures.append(executor.submit(search_telegram_resources, keyword))
+        futures.append(executor.submit(plugin_manager.search_all, keyword))
         for future in concurrent.futures.as_completed(futures):
             try:
                 results = future.result()

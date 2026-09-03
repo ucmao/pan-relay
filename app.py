@@ -10,6 +10,7 @@ from src.routes.search_routes import search_bp
 from src.routes.resource_routes import resources_bp
 from src.routes.auth_routes import auth_bp
 from src.routes.system_config_routes import system_config_bp
+from src.routes.plugin_routes import plugin_bp
 from src.configs.app_config import SECRET_KEY
 from src.db.connection import init_sqlite_db
 from src.services.scheduler_service import start_scheduler
@@ -29,6 +30,7 @@ app.register_blueprint(api_config_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(resources_bp)
 app.register_blueprint(system_config_bp)
+app.register_blueprint(plugin_bp)
 start_scheduler()
 
 # 上下文处理器，将登录状态传递给所有模板
