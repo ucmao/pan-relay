@@ -1,9 +1,8 @@
 import logging
 import os
-import re
 import sqlite3
 from contextlib import contextmanager
-from typing import Generator, Optional
+from typing import Optional
 
 from src.configs.app_config import SQLITE_DB_PATH, BASE_DIR
 
@@ -11,43 +10,22 @@ logger = logging.getLogger(__name__)
 Error = sqlite3.Error
 
 
-class DictCursor:
-    """兼容原代码对 DictCursor 的引用"""
-    pass
-
-
-class Cursor:
-    """兼容原代码对 Cursor 的引用"""
-    pass
-
-
 class SQLiteCursorWrapper:
-    """包装 sqlite3.Cursor，兼容 MySQL 的 %s 占位符、部分常用函数及 DictCursor 特性。"""
+    """包装 sqlite3.Cursor，提供纯净原生 SQLite 游标操作与字典行解析。"""
 
     def __init__(self, raw_cursor: sqlite3.Cursor, as_dict: bool = False):
         self._cursor = raw_cursor
         self.as_dict = as_dict
 
-    def _transform_sql(self, sql: str) -> str:
-        # 将 %s 占位符替换为 SQLite 的 ? 占位符
-        sql = sql.replace("%s", "?")
-        # 兼容 RAND() 为 RANDOM()
-        sql = re.sub(r"\bRAND\(\)", "RANDOM()", sql, flags=re.IGNORECASE)
-        # 兼容 NOW() 为 datetime('now')
-        sql = re.sub(r"\bNOW\(\)", "datetime('now')", sql, flags=re.IGNORECASE)
-        return sql
-
     def execute(self, sql: str, params=None):
-        transformed = self._transform_sql(sql)
         if params is None:
-            return self._cursor.execute(transformed)
-        return self._cursor.execute(transformed, params)
+            return self._cursor.execute(sql)
+        return self._cursor.execute(sql, params)
 
     def executemany(self, sql: str, params=None):
-        transformed = self._transform_sql(sql)
         if params is None:
-            return self._cursor.executemany(transformed)
-        return self._cursor.executemany(transformed, params)
+            return self._cursor.executemany(sql)
+        return self._cursor.executemany(sql, params)
 
     def fetchone(self):
         row = self._cursor.fetchone()
@@ -83,13 +61,12 @@ class SQLiteCursorWrapper:
 
 
 class SQLiteConnectionWrapper:
-    """包装 sqlite3.Connection，提供与原有 connection 相同的 cursor/commit/rollback 行为。"""
+    """包装 sqlite3.Connection，提供便捷的 cursor/commit/rollback 行为。"""
 
     def __init__(self, raw_conn: sqlite3.Connection):
         self._conn = raw_conn
 
-    def cursor(self, cursor_type=None) -> SQLiteCursorWrapper:
-        as_dict = bool(cursor_type and cursor_type is not Cursor)
+    def cursor(self, as_dict: bool = False) -> SQLiteCursorWrapper:
         return SQLiteCursorWrapper(self._conn.cursor(), as_dict=as_dict)
 
     def commit(self):
@@ -135,27 +112,35 @@ def init_sqlite_db():
         raw_conn = sqlite3.connect(db_path, timeout=30.0)
         raw_conn.execute("PRAGMA journal_mode=WAL;")
         raw_conn.execute("PRAGMA synchronous=NORMAL;")
-        raw_conn.execute("PRAGMA busy_timeout=30000;")
 
-        cursor = raw_conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='api_config'")
-        table_exists = cursor.fetchone() is not None
+        table_check = raw_conn.execute(
+            "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='resources';"
+        ).fetchone()
 
-        if not table_exists and os.path.exists(schema_file):
-            with open(schema_file, "r", encoding="utf-8") as f:
-                schema_sql = f.read()
-            raw_conn.executescript(schema_sql)
-            raw_conn.commit()
-            logger.info(f"成功使用 {schema_file} 初始化 SQLite 数据库: {db_path}")
+        if table_check[0] == 0:
+            logger.info("SQLite 数据库表不存在，正在执行 schema_sqlite.sql 初始化建表...")
+            if os.path.exists(schema_file):
+                with open(schema_file, "r", encoding="utf-8") as f:
+                    schema_sql = f.read()
+                raw_conn.executescript(schema_sql)
+                logger.info("SQLite 数据库初始化建表完成。")
+            else:
+                logger.error(f"未找到数据库初始化脚本: {schema_file}")
+        else:
+            logger.info("SQLite 数据库表结构校验正常。")
 
         raw_conn.close()
         _db_initialized = True
-    except Exception as err:
-        logger.error(f"初始化 SQLite 数据库失败: {err}")
+    except Exception as e:
+        logger.error(f"初始化 SQLite 数据库失败: {e}")
+        raise
 
 
 def get_db_connection() -> Optional[SQLiteConnectionWrapper]:
-    """获取 SQLite 数据库连接的统一入口。"""
+    """
+    获取 SQLite 数据库连接。
+    返回封装后的 SQLiteConnectionWrapper。
+    """
     global _db_initialized
     if not _db_initialized:
         init_sqlite_db()
@@ -164,10 +149,9 @@ def get_db_connection() -> Optional[SQLiteConnectionWrapper]:
         raw_conn = sqlite3.connect(SQLITE_DB_PATH, timeout=30.0)
         raw_conn.execute("PRAGMA journal_mode=WAL;")
         raw_conn.execute("PRAGMA synchronous=NORMAL;")
-        raw_conn.execute("PRAGMA busy_timeout=30000;")
         return SQLiteConnectionWrapper(raw_conn)
-    except Error as err:
-        logger.error(f"SQLite 数据库连接失败: {err}")
+    except sqlite3.Error as err:
+        logger.error(f"连接 SQLite 数据库失败: {err}")
         return None
 
 
@@ -181,7 +165,7 @@ def db_cursor(as_dict: bool = False):
         yield None
         return
 
-    cursor = conn.cursor(DictCursor if as_dict else Cursor)
+    cursor = conn.cursor(as_dict=as_dict)
     try:
         yield cursor
         conn.commit()

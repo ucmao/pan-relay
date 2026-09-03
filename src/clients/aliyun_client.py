@@ -5,10 +5,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
+from src.clients.base_client import BasePanClient
+
 logger = logging.getLogger(__name__)
 
 
-class AliyunDrive:
+class AliyunPanClient(BasePanClient):
     def __init__(self, refresh_token: str) -> None:
         self.refresh_token = refresh_token.strip()
         self.session = requests.Session()

@@ -6,12 +6,14 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 
+from src.clients.base_client import BasePanClient
+
 logger = logging.getLogger(__name__)
 
 
 def ad_check(file_name: str) -> bool:
-    ad_keywords = ["防迷路", "防失联"]
-    file_name_lower = (file_name or "").lower()
+    ad_keywords = ["公众号", "备用", "防失联", "防封", "更新", "关注", "发布页"]
+    file_name_lower = file_name.lower()
     return any(keyword in file_name_lower for keyword in ad_keywords)
 
 
@@ -20,7 +22,7 @@ def generate_timestamp(length: int) -> int:
     return int(timestamps[0:length])
 
 
-class Quark:
+class QuarkPanClient(BasePanClient):
     ad_pwd_id = "0df525db2bd0"
 
     def __init__(self, credential: str) -> None:
@@ -369,3 +371,4 @@ class Quark:
     def _extract_pwd_id(url: str) -> str:
         match = re.search(r"/s/(\w+)", url)
         return match.group(1) if match else ""
+

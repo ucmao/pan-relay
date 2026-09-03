@@ -15,6 +15,7 @@ from src.configs.app_config import (
     TG_SEARCH_TIMEOUT,
     user_agents,
 )
+from src.models.search_item import SearchResultItem
 from src.utils.netdisk_utils import match_netdisk_link
 
 logger = logging.getLogger(__name__)
@@ -233,7 +234,9 @@ def parse_telegram_search_html(html, channel):
             if url in seen:
                 continue
             seen.add(url)
-            results.append(["tg", title, url, netdisk_name])
+            results.append(
+                SearchResultItem(source="tg", title=title, share_link=url, cloud_name=netdisk_name)
+            )
 
     logger.info("Telegram 频道 '%s' 解析到 %d 条网盘资源。", channel, len(results))
     return results

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.db.connection import DictCursor, Error, get_db_connection
+from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def get_all_configs(order_by_created: bool = True) -> List[Dict[str, Any]]:
         )
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
         cursor.execute(query)
         results = cursor.fetchall()
 
@@ -66,8 +66,8 @@ def get_config_by_id(api_id: int) -> Optional[Dict[str, Any]]:
         return None
 
     try:
-        cursor = conn.cursor(DictCursor)
-        cursor.execute("SELECT * FROM api_config WHERE id = %s", (api_id,))
+        cursor = conn.cursor(as_dict=True)
+        cursor.execute("SELECT * FROM api_config WHERE id = ?", (api_id,))
         config = cursor.fetchone()
         return config
     except Error as err:
@@ -84,9 +84,9 @@ def get_config_status(api_id: int) -> Optional[Dict[str, bool]]:
     if not conn:
         return None
 
-    query = "SELECT status, is_enabled FROM api_config WHERE id = %s"
+    query = "SELECT status, is_enabled FROM api_config WHERE id = ?"
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
         cursor.execute(query, (api_id,))
         result = cursor.fetchone()
         if result:
@@ -109,7 +109,7 @@ def insert_config(new_config: Dict[str, Any]) -> Tuple[bool, str, Optional[int]]
 
     query = (
         "INSERT INTO api_config (name, url, method, request, response, status, "
-        "is_enabled, response_time_ms) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+        "is_enabled, response_time_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
     params = (
         new_config["name"],
@@ -146,11 +146,11 @@ def copy_config(api_id: int) -> Tuple[bool, str, Optional[int]]:
 
     select_query = (
         "SELECT name, url, method, request, response, status, is_enabled, response_time_ms "
-        "FROM api_config WHERE id = %s"
+        "FROM api_config WHERE id = ?"
     )
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
         cursor.execute(select_query, (api_id,))
         original_config = cursor.fetchone()
 
@@ -161,7 +161,7 @@ def copy_config(api_id: int) -> Tuple[bool, str, Optional[int]]:
         new_name = f"{original_config['name']}_副本"
         insert_query = (
             "INSERT INTO api_config (name, url, method, request, response, status, "
-            "is_enabled, response_time_ms) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+            "is_enabled, response_time_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
         insert_params = (
             new_name,
@@ -208,8 +208,8 @@ def update_config(api_id: int, updated_config: Dict[str, Any]) -> Tuple[bool, st
 
     query = """
     UPDATE api_config 
-    SET name = %s, url = %s, method = %s, request = %s, response = %s, status = %s, is_enabled = %s
-    WHERE id = %s
+    SET name = ?, url = ?, method = ?, request = ?, response = ?, status = ?, is_enabled = ?
+    WHERE id = ?
     """
     params = (
         updated_config["name"],
@@ -246,7 +246,7 @@ def delete_config(api_id: int) -> Tuple[bool, str]:
     if not conn:
         return False, "数据库连接失败"
 
-    query = "DELETE FROM api_config WHERE id = %s"
+    query = "DELETE FROM api_config WHERE id = ?"
 
     try:
         cursor = conn.cursor()
@@ -273,7 +273,7 @@ def update_status(api_id: int, new_status: bool, response_time_ms: int = 0) -> b
     if not conn:
         return False
 
-    query = "UPDATE api_config SET status = %s, response_time_ms = %s WHERE id = %s"
+    query = "UPDATE api_config SET status = ?, response_time_ms = ? WHERE id = ?"
     status_int = 1 if new_status else 0
 
     try:
@@ -302,18 +302,18 @@ def update_enabled_status(
     if not conn:
         return False
 
-    fields = ["is_enabled = %s"]
+    fields = ["is_enabled = ?"]
     params = [1 if is_enabled else 0]
 
     if new_status is not None:
-        fields.append("status = %s")
+        fields.append("status = ?")
         params.append(1 if new_status else 0)
 
     if response_time_ms is not None:
-        fields.append("response_time_ms = %s")
+        fields.append("response_time_ms = ?")
         params.append(response_time_ms)
 
-    query = f"UPDATE api_config SET {', '.join(fields)} WHERE id = %s"
+    query = f"UPDATE api_config SET {', '.join(fields)} WHERE id = ?"
     params.append(api_id)
 
     try:
@@ -349,7 +349,7 @@ def set_enabled(api_id: int, is_enabled: bool) -> Tuple[bool, str]:
     if not conn:
         return False, "数据库连接失败"
 
-    query = "UPDATE api_config SET is_enabled = %s WHERE id = %s"
+    query = "UPDATE api_config SET is_enabled = ? WHERE id = ?"
     status_int = 1 if is_enabled else 0
 
     try:

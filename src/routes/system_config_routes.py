@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, render_template, request
 import json
 
-from src.db.cookie_config_dao import delete_cookie, get_cookie_by_cloud_name, save_cookie
+from src.db.credentials import delete_cookie, get_cookie_by_cloud_name, save_cookie
 from src.services.system_config_service import (
     get_public_search_api_config,
     get_frontend_display_netdisk_config,
@@ -211,7 +211,6 @@ def update_public_search_api():
     )
 
 
-@system_config_bp.route("/admin/api/cookie-config", methods=["GET"])
 @system_config_bp.route("/admin/api/credential-config", methods=["GET"])
 @token_required
 def get_credential_config():
@@ -240,7 +239,6 @@ def get_credential_config():
     )
 
 
-@system_config_bp.route("/admin/api/cookie-config", methods=["POST"])
 @system_config_bp.route("/admin/api/credential-config", methods=["POST"])
 @token_required
 def save_credential_config():

@@ -52,7 +52,7 @@
 | **阿里云盘** | ✓ | ✓ | ✓ | Refresh Token |
 | **UC网盘** | ✓ | ✓ | ✓ | Cookie |
 | **迅雷网盘** | ✓ | ✓ | ✓ | Refresh Token + Captcha Sign + User ID |
-| **其他网盘** | ✓ | 🚧 持续开发中 | 🚧 持续开发中 | 视平台而定 |
+| **其他网盘** | ✓ | 🚧 | 🚧 | 视平台而定 |
 
 ---
 
@@ -98,15 +98,13 @@ python app.py
 
 ## ⚙️ 网盘凭证说明
 
-登录管理后台（`/admin`）进入 **配置中心**，填写对应平台的登录态凭证即可开启全自动转存与收益洗白功能：
+登录管理后台（`/admin`）进入 **配置中心 -> 云盘凭证** 即可配置各平台登录态：
 
-| 网盘平台 | 凭证字段 | 凭证类型 | 说明 |
-| :--- | :--- | :--- | :--- |
-| **夸克网盘** | `夸克网盘 Cookie` | Cookie | 登录网页版后复制请求标头中的整段 Cookie |
-| **百度网盘** | `百度网盘 Cookie` | Cookie | 登录网页版后复制请求标头中的整段 Cookie |
-| **UC网盘** | `UC网盘 Cookie` | Cookie | 登录网页版后复制请求标头中的整段 Cookie |
-| **阿里云盘** | `阿里云盘 Refresh Token` | Refresh Token | 提取自登录会话凭证中的 refresh_token |
-| **迅雷网盘** | `Refresh Token` / `Captcha Sign` / `User ID` | 多参数组合 | 3 项参数均需填写，缺一不可 |
+* **夸克 / 百度 / UC 网盘**：登录网页版，从浏览器开发者工具（F12）网络请求标头中复制完整 `Cookie` 填入。
+* **阿里云盘**：从登录会话中提取并填入 `refresh_token`。
+* **迅雷网盘**：需同时填入 `Refresh Token`、`Captcha Sign` 与 `User ID` 三项参数（缺一不可）。
+
+> 💡 **安全提示**：所有凭证仅在服务端本地存储，用于自动化转存与动态出链，绝不上传至任何第三方。
 
 ---
 
@@ -150,7 +148,8 @@ pan-relay/
 │   ├── configs/               # 应用配置与日志管理
 │   │   ├── app_config.py      # 环境变量与核心配置读取
 │   │   └── logging_setup.py   # 日志格式与输出配置
-│   ├── db/                    # SQLite DAO 数据库交互层
+│   ├── db/                    # SQLite 数据库交互层 (resources, api_configs, credentials 等)
+│   ├── models/                # 搜索结果等领域数据模型 (SearchResultItem)
 │   ├── routes/                # Web 蓝图路由层
 │   │   ├── search_routes.py   # 前台搜索与公开 API 路由
 │   │   ├── resource_routes.py # 后台私有资源管理路由

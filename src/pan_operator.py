@@ -3,13 +3,15 @@ import logging
 import time
 from typing import Any, Dict, List
 
-from src.clients.aliyun_client import AliyunDrive
-from src.clients.uc_client import UcDrive
-from src.clients.quark_client import Quark
-from src.clients.baidu_client import Baidu
-from src.clients.xunlei_client import XunleiDrive
-from src.db.resources_dao import insert_resource, delete_by_share_link, update_share_link
-from src.db.cookie_config_dao import get_cookie_by_cloud_name
+from src.clients import (
+    AliyunPanClient,
+    BaiduPanClient,
+    QuarkPanClient,
+    UcPanClient,
+    XunleiPanClient,
+)
+from src.db.resources import insert_resource, delete_by_share_link, update_share_link
+from src.db.credentials import get_cookie_by_cloud_name
 from src.utils.netdisk_utils import match_netdisk_link
 
 logger = logging.getLogger(__name__)
@@ -62,11 +64,6 @@ def get_and_validate_credential(netdisk_type: str) -> Any:
         return ""
         
     return credential
-
-
-def get_and_validate_cookie(netdisk_type: str) -> str:
-    """兼容旧调用，后续逐步迁移到凭证命名。"""
-    return get_and_validate_credential(netdisk_type)
 
 
 def _normalize_file_id(file_id: Any) -> Any:
@@ -151,11 +148,11 @@ def create_share(share_data):
         # 1. 匹配网盘类型
         netdisk_type = match_netdisk_link(share_url)
         config_map = {
-            "夸克网盘": {"class": Quark, "enabled": save_to_netdisk.get('quark', False)},
-            "百度网盘": {"class": Baidu, "enabled": save_to_netdisk.get('baidu', False)},
-            "阿里云盘": {"class": AliyunDrive, "enabled": save_to_netdisk.get('aliyun', False)},
-            "UC网盘": {"class": UcDrive, "enabled": save_to_netdisk.get('uc', False)},
-            "迅雷网盘": {"class": XunleiDrive, "enabled": save_to_netdisk.get('xunlei', False)},
+            "夸克网盘": {"class": QuarkPanClient, "enabled": save_to_netdisk.get('quark', False)},
+            "百度网盘": {"class": BaiduPanClient, "enabled": save_to_netdisk.get('baidu', False)},
+            "阿里云盘": {"class": AliyunPanClient, "enabled": save_to_netdisk.get('aliyun', False)},
+            "UC网盘": {"class": UcPanClient, "enabled": save_to_netdisk.get('uc', False)},
+            "迅雷网盘": {"class": XunleiPanClient, "enabled": save_to_netdisk.get('xunlei', False)},
         }
         
         conf = config_map.get(netdisk_type)
@@ -227,11 +224,11 @@ def del_share(share_data):
 
         # 2. 执行物理删除
         client_map = {
-            "百度网盘": Baidu,
-            "夸克网盘": Quark,
-            "阿里云盘": AliyunDrive,
-            "UC网盘": UcDrive,
-            "迅雷网盘": XunleiDrive,
+            "百度网盘": BaiduPanClient,
+            "夸克网盘": QuarkPanClient,
+            "阿里云盘": AliyunPanClient,
+            "UC网盘": UcPanClient,
+            "迅雷网盘": XunleiPanClient,
         }
         client_class = client_map.get(netdisk_type)
         if not client_class:

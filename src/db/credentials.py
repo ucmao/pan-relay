@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.db.connection import DictCursor, Error, get_db_connection
+from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ def get_all_cookies() -> List[Dict[str, Any]]:
     query = "SELECT id, cloud_name, cookie, created_at, updated_at FROM cookie_config ORDER BY created_at DESC"
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
         cursor.execute(query)
         results = cursor.fetchall()
 
@@ -46,10 +46,10 @@ def get_cookie_by_cloud_name(cloud_name: str) -> Optional[str]:
     if not conn:
         return None
 
-    query = "SELECT cookie FROM cookie_config WHERE cloud_name = %s"
+    query = "SELECT cookie FROM cookie_config WHERE cloud_name = ?"
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
         cursor.execute(query, (cloud_name,))
         result = cursor.fetchone()
         return result["cookie"] if result else None
@@ -76,12 +76,12 @@ def save_cookie(cloud_name: str, cookie: str) -> Tuple[bool, str]:
         cursor = conn.cursor()
         if existing_cookie is not None:
             # 更新现有记录
-            query = "UPDATE cookie_config SET cookie = %s WHERE cloud_name = %s"
+            query = "UPDATE cookie_config SET cookie = ? WHERE cloud_name = ?"
             params = (cookie, cloud_name)
             action = "更新"
         else:
             # 插入新记录
-            query = "INSERT INTO cookie_config (cloud_name, cookie) VALUES (%s, %s)"
+            query = "INSERT INTO cookie_config (cloud_name, cookie) VALUES (?, ?)"
             params = (cloud_name, cookie)
             action = "添加"
         
@@ -105,7 +105,7 @@ def delete_cookie(cloud_name: str) -> Tuple[bool, str]:
     if not conn:
         return False, "数据库连接失败"
 
-    query = "DELETE FROM cookie_config WHERE cloud_name = %s"
+    query = "DELETE FROM cookie_config WHERE cloud_name = ?"
 
     try:
         cursor = conn.cursor()

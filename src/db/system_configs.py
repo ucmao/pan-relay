@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Dict, Optional
 
-from src.db.connection import DictCursor, Error, get_db_connection
+from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ def get_config_value(config_key: str) -> Optional[str]:
         return None
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
         cursor.execute(
             "SELECT config_value FROM system_config WHERE config_key = ?",
             (config_key,),

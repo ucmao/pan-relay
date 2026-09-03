@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.db.connection import DictCursor, Error, db_cursor, get_db_connection
+from src.db.connection import Error, db_cursor, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def insert_resource(record: Dict[str, Any]) -> Optional[int]:
     """
     插入一条资源记录，返回新记录的 ID。
-    兼容 pan_operator 传入的数据字段。
+    处理 pan_operator 传入的数据字段。
     """
     file_id = record.get("file_id")
     name = record.get("name")
@@ -20,7 +20,7 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
 
     sql = """
     INSERT INTO resources (file_id, name, share_link, cloud_name, type, remarks)
-    VALUES (%s, %s, %s, %s, %s, %s)
+    VALUES (?, ?, ?, ?, ?, ?)
     """
     params = (file_id, name, share_link, cloud_name, resource_type, remarks)
 
@@ -46,7 +46,7 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
 
 def query_file_id_by_share_link(share_link: str) -> Optional[str]:
     """根据分享链接查询 file_id，用于 pan_operator。"""
-    sql = "SELECT file_id FROM resources WHERE share_link = %s"
+    sql = "SELECT file_id FROM resources WHERE share_link = ?"
     with db_cursor() as cursor:
         if cursor is None:
             return None
@@ -62,7 +62,7 @@ def query_file_id_by_share_link(share_link: str) -> Optional[str]:
 
 def delete_by_share_link(share_link: str) -> int:
     """根据分享链接删除资源记录，返回受影响行数。"""
-    sql = "DELETE FROM resources WHERE share_link = %s"
+    sql = "DELETE FROM resources WHERE share_link = ?"
     with db_cursor() as cursor:
         if cursor is None:
             return 0
@@ -77,7 +77,7 @@ def delete_by_share_link(share_link: str) -> int:
 
 def random_read_record() -> Optional[Tuple]:
     """随机读取一条资源记录，返回原始行数据。"""
-    sql = "SELECT * FROM resources ORDER BY RAND() LIMIT 1"
+    sql = "SELECT * FROM resources ORDER BY RANDOM() LIMIT 1"
     with db_cursor() as cursor:
         if cursor is None:
             return None
@@ -103,15 +103,15 @@ def update_share_link(resource_id: int, new_share_link: str, file_id: Optional[s
         if file_id:
             sql = """
             UPDATE resources
-            SET share_link = %s, file_id = %s, is_replaced = TRUE
-            WHERE id = %s
+            SET share_link = ?, file_id = ?, is_replaced = 1
+            WHERE id = ?
             """
             params = (new_share_link, file_id, resource_id)
         else:
             sql = """
             UPDATE resources
-            SET share_link = %s, is_replaced = TRUE
-            WHERE id = %s
+            SET share_link = ?, is_replaced = 1
+            WHERE id = ?
             """
             params = (new_share_link, resource_id)
 
@@ -144,13 +144,13 @@ def list_resources(
         return False, "数据库连接失败", None
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
 
         where_clause = " WHERE 1=1 "
         params: List[Any] = []
 
         if search:
-            where_clause += " AND name LIKE %s"
+            where_clause += " AND name LIKE ?"
             params.append(f"%{search}%")
 
         count_sql = f"SELECT COUNT(*) AS total FROM resources{where_clause}"
@@ -165,7 +165,7 @@ def list_resources(
         FROM resources
         {where_clause}
         ORDER BY created_at DESC
-        LIMIT %s OFFSET %s
+        LIMIT ? OFFSET ?
         """
         params.extend([page_size, offset])
         cursor.execute(query_sql, params)
@@ -200,10 +200,10 @@ def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, 
         return False, "数据库连接失败", None
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
         sql = """
         SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, created_at, updated_at
-        FROM resources WHERE id = %s
+        FROM resources WHERE id = ?
         """
         cursor.execute(sql, (resource_id,))
         row = cursor.fetchone()
@@ -236,7 +236,7 @@ def insert_resource_simple(resource_data: Dict[str, Any]) -> Tuple[bool, str, Op
         cursor = conn.cursor()
         sql = """
         INSERT INTO resources (name, share_link, cloud_name, type, remarks)
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES (?, ?, ?, ?, ?)
         """
         params = (
             resource_data["name"],
@@ -267,15 +267,15 @@ def update_resource_basic_info(resource_id: int, resource_data: Dict[str, Any]) 
 
     try:
         cursor = conn.cursor()
-        check_sql = "SELECT id FROM resources WHERE id = %s"
+        check_sql = "SELECT id FROM resources WHERE id = ?"
         cursor.execute(check_sql, (resource_id,))
         if not cursor.fetchone():
             return False, "资源不存在"
 
         sql = """
         UPDATE resources
-        SET name = %s, share_link = %s, cloud_name = %s, type = %s, remarks = %s
-        WHERE id = %s
+        SET name = ?, share_link = ?, cloud_name = ?, type = ?, remarks = ?
+        WHERE id = ?
         """
         params = (
             resource_data["name"],
@@ -308,15 +308,15 @@ def delete_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[st
         return False, "数据库连接失败", None
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
 
-        check_sql = "SELECT share_link, file_id FROM resources WHERE id = %s"
+        check_sql = "SELECT share_link, file_id FROM resources WHERE id = ?"
         cursor.execute(check_sql, (resource_id,))
         resource = cursor.fetchone()
         if not resource:
             return False, "资源不存在", None
 
-        delete_sql = "DELETE FROM resources WHERE id = %s"
+        delete_sql = "DELETE FROM resources WHERE id = ?"
         cursor.execute(delete_sql, (resource_id,))
         conn.commit()
 
@@ -339,7 +339,7 @@ def search_resources_by_keyword(keyword: str) -> List[Tuple[str, str, Optional[s
     根据关键词搜索资源（用于搜索服务）。
     返回: [(name, share_link, cloud_name), ...]
     """
-    sql = "SELECT name, share_link, cloud_name FROM resources WHERE name LIKE %s"
+    sql = "SELECT name, share_link, cloud_name FROM resources WHERE name LIKE ?"
     conn = get_db_connection()
     if not conn:
         return []
@@ -372,21 +372,21 @@ def search_resources_advanced(
         return False, "数据库连接失败", []
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
 
         conditions = []
         params = []
 
         if name:
-            conditions.append("name LIKE %s")
+            conditions.append("name LIKE ?")
             params.append(f"%{name}%")
 
         if cloud_name:
-            conditions.append("cloud_name LIKE %s")
+            conditions.append("cloud_name LIKE ?")
             params.append(f"%{cloud_name}%")
 
         if resource_type:
-            conditions.append("type LIKE %s")
+            conditions.append("type LIKE ?")
             params.append(f"%{resource_type}%")
 
         base_query = "SELECT id, name, share_link, cloud_name, type, remarks FROM resources"
@@ -398,11 +398,11 @@ def search_resources_advanced(
         elif sort == "desc":
             order_clause = " ORDER BY id DESC"
         elif sort == "random":
-            order_clause = " ORDER BY RAND()"
+            order_clause = " ORDER BY RANDOM()"
         else:  # default
             order_clause = " ORDER BY created_at DESC"
             
-        limit_clause = " LIMIT %s"
+        limit_clause = " LIMIT ?"
 
         sql = base_query + where_clause + order_clause + limit_clause
         params.append(limit)

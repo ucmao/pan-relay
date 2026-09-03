@@ -10,7 +10,8 @@ import jmespath
 import requests
 
 from src.configs.app_config import user_agents
-from src.db.resources_dao import search_resources_by_keyword, search_resources_advanced
+from src.db.resources import search_resources_by_keyword, search_resources_advanced
+from src.models.search_item import SearchResultItem
 from src.services.system_config_service import get_allowed_frontend_netdisks
 from src.services.telegram_search_service import search_telegram_resources
 from src.utils.netdisk_utils import match_netdisk_link
@@ -26,7 +27,10 @@ def filter_results_by_frontend_netdisks(results):
 
     filtered_results = []
     for item in results:
-        if isinstance(item, (list, tuple)) and len(item) >= 4:
+        if isinstance(item, SearchResultItem):
+            if item.cloud_name in allowed_netdisks:
+                filtered_results.append(item)
+        elif isinstance(item, (list, tuple)) and len(item) >= 4:
             netdisk_name = item[3]
             if netdisk_name in allowed_netdisks:
                 filtered_results.append(item)
@@ -40,7 +44,7 @@ def filter_results_by_frontend_netdisks(results):
 
 def read_all_api_configs_from_db():
     """从数据库读取所有 API 配置（用于搜索服务，不排序）"""
-    from src.db.api_config_dao import get_all_configs
+    from src.db.api_configs import get_all_configs
     return get_all_configs(order_by_created=False)
 
 
@@ -173,7 +177,9 @@ def clean_and_extract_data(data):
         url = extract_url(d_lst[2])
         netdisk_name = match_netdisk_link(url)
 
-        cleaned_data.append([source, title, url, netdisk_name])
+        cleaned_data.append(
+            SearchResultItem(source=source, title=title, share_link=url, cloud_name=netdisk_name)
+        )
 
     return cleaned_data
 
@@ -216,16 +222,18 @@ def process_config(config, keyword):
 def search_in_database(keyword):
     """
     从内部数据库搜索，并新增网盘信息。
-    返回格式: [[source, title, url, netdisk_name], ...]
+    返回格式: [SearchResultItem, ...]
     """
     try:
-        # 使用 DAO 搜索资源
+        # 从数据库搜索资源
         results = search_resources_by_keyword(keyword)
 
         final_results = []
         for name, link, cloud_name in results:
             netdisk_name = cloud_name if cloud_name else match_netdisk_link(link)
-            final_results.append(["hot", name, link, netdisk_name])
+            final_results.append(
+                SearchResultItem(source="hot", title=name, share_link=link, cloud_name=netdisk_name)
+            )
 
         num_results = len(final_results)
         log_message = f"内部数据库搜索到 {num_results} 条资源。"
@@ -248,10 +256,16 @@ def generate_search_stream_events(keyword):
     """
 
     def _event_generator():
+        def _serialize_items(items):
+            return [
+                item.to_list() if isinstance(item, SearchResultItem) else list(item)
+                for item in items
+            ]
+
         db_results = search_in_database(keyword)
         db_results = filter_results_by_frontend_netdisks(db_results)
         if db_results:
-            yield json.dumps({"type": "initial", "results": db_results})
+            yield json.dumps({"type": "initial", "results": _serialize_items(db_results)})
 
         urls_config = read_all_api_configs_from_db()
         enabled_configs = [c for c in urls_config if c.get("status", False) and c.get("is_enabled", False)]
@@ -279,7 +293,7 @@ def generate_search_stream_events(keyword):
                         results = future.result()
                         results = filter_results_by_frontend_netdisks(results)
                         if results:
-                            yield json.dumps({"type": "update", "results": results})
+                            yield json.dumps({"type": "update", "results": _serialize_items(results)})
                     except Exception as e:
                         logger.error(f"SSE 收集结果时发生异常: {e}")
 
@@ -296,13 +310,19 @@ def dedupe_search_results(results):
     seen = set()
 
     for item in results:
-        if not isinstance(item, (list, tuple)) or len(item) < 4:
+        if isinstance(item, SearchResultItem):
+            title = item.title.strip()
+            url = item.share_link.strip()
+        elif isinstance(item, (list, tuple)) and len(item) >= 4:
+            title = str(item[1]).strip()
+            url = str(item[2]).strip()
+        elif isinstance(item, dict):
+            title = str(item.get("name") or item.get("title", "")).strip()
+            url = str(item.get("share_link") or item.get("url", "")).strip()
+        else:
             continue
 
-        title = str(item[1]).strip()
-        url = str(item[2]).strip()
         hostname = url
-
         try:
             parsed = urlparse(url)
             if parsed.hostname:
@@ -350,7 +370,9 @@ def search_public_resources(keyword="", limit=100):
     limited_results = deduped_results[: max(limit, 1)]
 
     return True, "聚合搜索成功", [
-        {
+        item.to_dict()
+        if isinstance(item, SearchResultItem)
+        else {
             "source": item[0],
             "name": item[1],
             "share_link": item[2],

@@ -6,7 +6,7 @@ import concurrent.futures
 import jmespath
 import requests
 
-from src.db.api_config_dao import (
+from src.db.api_configs import (
     get_all_configs,
     get_config_by_id,
     get_config_status,

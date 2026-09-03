@@ -6,10 +6,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
+from src.clients.base_client import BasePanClient
+
 logger = logging.getLogger(__name__)
 
 
-class XunleiDrive:
+class XunleiPanClient(BasePanClient):
     client_id = "Xqp0kJBXWhwaTpB6"
     device_id = "925b7631473a13716b791d7f28289cad"
 
@@ -253,3 +255,4 @@ class XunleiDrive:
             share_match.group(1) if share_match else "",
             pwd_match.group(1) if pwd_match else "",
         )
+

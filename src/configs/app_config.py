@@ -47,7 +47,7 @@ TG_SEARCH_MAX_WORKERS = _get_int_env("TG_SEARCH_MAX_WORKERS", 4)
 TG_PROXY = os.getenv("TG_PROXY", "").strip()
 
 # SQLite 数据库配置
-default_db_path = os.path.join(BASE_DIR, "data", "ucmao_search.db")
+default_db_path = os.path.join(BASE_DIR, "data", "pan_relay.db")
 SQLITE_DB_PATH = os.getenv("SQLITE_DB_PATH", os.path.abspath(default_db_path))
 
 # User-Agent 列表配置（这类静态列表可以保持不变）

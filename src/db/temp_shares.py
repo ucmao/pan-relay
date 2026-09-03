@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, List, Optional
 
-from src.db.connection import DictCursor, Error, get_db_connection
+from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -51,15 +51,15 @@ def get_active_temp_share(original_url: str, cloud_name: str) -> Optional[Dict[s
         return None
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
         cursor.execute(
             """
             SELECT id, original_url, title, cloud_name, temp_share_url, file_id, status, expires_at
             FROM temp_share
-            WHERE original_url = %s
-              AND cloud_name = %s
+            WHERE original_url = ?
+              AND cloud_name = ?
               AND status = 'active'
-              AND expires_at > NOW()
+              AND expires_at > datetime('now')
             ORDER BY created_at DESC
             LIMIT 1
             """,
@@ -82,7 +82,7 @@ def touch_temp_share(record_id: int) -> bool:
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "UPDATE temp_share SET last_accessed_at = NOW() WHERE id = %s",
+            "UPDATE temp_share SET last_accessed_at = datetime('now') WHERE id = ?",
             (record_id,),
         )
         conn.commit()
@@ -142,15 +142,15 @@ def list_expired_temp_shares(limit: int = 50) -> List[Dict[str, Any]]:
         return []
 
     try:
-        cursor = conn.cursor(DictCursor)
+        cursor = conn.cursor(as_dict=True)
         cursor.execute(
             """
             SELECT id, original_url, title, cloud_name, temp_share_url, file_id
             FROM temp_share
             WHERE status = 'active'
-              AND expires_at <= NOW()
+              AND expires_at <= datetime('now')
             ORDER BY expires_at ASC
-            LIMIT %s
+            LIMIT ?
             """,
             (limit,),
         )
@@ -173,8 +173,8 @@ def mark_temp_share_deleted(record_id: int) -> bool:
         cursor.execute(
             """
             UPDATE temp_share
-            SET status = 'deleted', deleted_at = NOW()
-            WHERE id = %s
+            SET status = 'deleted', deleted_at = datetime('now')
+            WHERE id = ?
             """,
             (record_id,),
         )

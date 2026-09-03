@@ -1,7 +1,7 @@
 import logging
 
-from src.db.resources_dao import (
-    list_resources as dao_list_resources,
+from src.db.resources import (
+    list_resources as db_list_resources,
     get_resource_by_id,
     insert_resource_simple,
     update_resource_basic_info,
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def list_resources(page: int = 1, page_size: int = 10, search: str = ""):
     """获取资源列表，支持分页和搜索"""
-    return dao_list_resources(page=page, page_size=page_size, search=search)
+    return db_list_resources(page=page, page_size=page_size, search=search)
 
 
 def get_resource_detail(resource_id: int):
@@ -30,7 +30,7 @@ def add_resource_and_share(resource_data: dict):
     if not resource_data.get("name") or not resource_data.get("share_link"):
         return False, "标题和分享链接为必填项", None
 
-    # 使用 DAO 插入资源
+    # 向数据库插入资源
     success, message, new_id = insert_resource_simple(resource_data)
     if not success:
         return False, message, None
@@ -75,7 +75,7 @@ def delete_resource_and_share(resource_id: int):
     删除资源。
     直接删除数据库记录并将 share_url 传递给 del_share 函数。
     """
-    # 使用 DAO 删除资源，同时获取被删除记录的 share_link 和 file_id
+    # 从数据库删除资源，同时获取被删除记录的 share_link 和 file_id
     success, message, resource = delete_resource_by_id(resource_id)
     if not success:
         return False, message

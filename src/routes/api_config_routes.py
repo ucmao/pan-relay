@@ -162,7 +162,6 @@ def test_api():
             "status_code": status_code,
             "response_rule": response_rule,
             "status_text": "正常" if new_status else "异常",
-            "状态": "正常" if new_status else "异常",
             "status": new_status,
             "response_time_ms": response_time_ms,
         }

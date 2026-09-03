@@ -6,10 +6,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
+from src.clients.base_client import BasePanClient
+
 logger = logging.getLogger(__name__)
 
 
-class UcDrive:
+class UcPanClient(BasePanClient):
     def __init__(self, cookie: str) -> None:
         self.session = requests.Session()
         self.session.headers.update(

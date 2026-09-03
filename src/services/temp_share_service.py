@@ -1,7 +1,7 @@
 import logging
 from typing import Dict
 
-from src.db.temp_share_dao import (
+from src.db.temp_shares import (
     create_temp_share_record,
     get_active_temp_share,
     list_expired_temp_shares,
