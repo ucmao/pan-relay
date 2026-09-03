@@ -18,6 +18,7 @@ class SearchResultItem:
     share_link: str  # 网盘分享链接
     cloud_name: str  # 网盘平台名称 (如: "夸克网盘", "百度网盘")
     password: Optional[str] = None  # 提取码 (可选)
+    datetime: Optional[str] = None  # 发布时间/创建时间 (可选)
 
     @property
     def url(self) -> str:
@@ -49,6 +50,8 @@ class SearchResultItem:
         }
         if self.password:
             res["password"] = self.password
+        if self.datetime:
+            res["datetime"] = self.datetime
         return res
 
     def __getitem__(self, index: int) -> str:
@@ -70,11 +73,14 @@ class SearchResultItem:
             title = str(item[1]) if len(item) > 1 else ""
             url = str(item[2]) if len(item) > 2 else ""
             netdisk = str(item[3]) if len(item) > 3 else ""
-            return cls(source=source, title=title, share_link=url, cloud_name=netdisk)
+            dt = str(item[4]) if len(item) > 4 and item[4] else None
+            return cls(source=source, title=title, share_link=url, cloud_name=netdisk, datetime=dt)
         if isinstance(item, dict):
             source = item.get("source", "other")
             title = item.get("name") or item.get("title", "")
             url = item.get("share_link") or item.get("url", "")
             netdisk = item.get("cloud_name") or item.get("netdisk_name", "")
-            return cls(source=source, title=title, share_link=url, cloud_name=netdisk)
+            pwd = item.get("password") or item.get("pwd")
+            dt = item.get("datetime") or item.get("created_at") or item.get("time")
+            return cls(source=source, title=title, share_link=url, cloud_name=netdisk, password=pwd, datetime=dt)
         raise ValueError(f"无法转换为 SearchResultItem: {item}")

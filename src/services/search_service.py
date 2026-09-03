@@ -4,6 +4,7 @@ import logging
 import random
 import re
 import time
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 import jmespath
@@ -233,10 +234,20 @@ def search_in_database(keyword):
         results = search_resources_by_keyword(keyword)
 
         final_results = []
-        for name, link, cloud_name in results:
+        for row in results:
+            name = str(row[0]) if len(row) > 0 else ""
+            link = str(row[1]) if len(row) > 1 else ""
+            cloud_name = str(row[2]) if len(row) > 2 and row[2] else ""
+            created_at = str(row[3]) if len(row) > 3 and row[3] else None
             netdisk_name = cloud_name if cloud_name else match_netdisk_link(link)
             final_results.append(
-                SearchResultItem(source="hot", title=name, share_link=link, cloud_name=netdisk_name)
+                SearchResultItem(
+                    source="hot",
+                    title=name,
+                    share_link=link,
+                    cloud_name=netdisk_name,
+                    datetime=created_at,
+                )
             )
 
         num_results = len(final_results)
@@ -445,6 +456,159 @@ def dedupe_search_results(results):
     return [deduped_map[k] for k in order]
 
 
+# --- 智能多维综合评分与排序 (对齐 pansou) ---
+
+def calculate_time_score(dt_str: Optional[str], title: str = "") -> float:
+    """
+    计算时间时效得分（最高 500 分）：
+    - 1天内: 500
+    - 3天内: 400
+    - 7天内: 300
+    - 30天内: 200
+    - 90天内: 100
+    - 1年内: 50
+    - 1年以上: 20
+    - 无时间信息但标题包含当年年份(如 2026/2025): +60 分兜底
+    """
+    if not dt_str:
+        curr_year = time.strftime("%Y")
+        if curr_year in (title or ""):
+            return 80.0
+        prev_year = str(int(curr_year) - 1)
+        if prev_year in (title or ""):
+            return 50.0
+        return 0.0
+
+    try:
+        from datetime import datetime
+        dt_clean = str(dt_str).replace("Z", "+00:00").split(".")[0]
+        dt_clean = dt_clean.replace("T", " ")
+        parsed_dt = datetime.strptime(dt_clean[:19], "%Y-%m-%d %H:%M:%S")
+        days_diff = (datetime.now() - parsed_dt).total_seconds() / 86400.0
+
+        if days_diff <= 1:
+            return 500.0
+        elif days_diff <= 3:
+            return 400.0
+        elif days_diff <= 7:
+            return 300.0
+        elif days_diff <= 30:
+            return 200.0
+        elif days_diff <= 90:
+            return 100.0
+        elif days_diff <= 365:
+            return 50.0
+        else:
+            return 20.0
+    except Exception:
+        return 0.0
+
+
+KEYWORD_RANK_WEIGHTS = [
+    ("合集", 420),
+    ("系列", 350),
+    ("全集", 280),
+    ("全", 280),
+    ("完结", 210),
+    ("完", 210),
+    ("4k", 180),
+    ("2160p", 180),
+    ("原盘", 180),
+    ("最新", 140),
+    ("1080p", 140),
+    ("高清", 140),
+    ("国粤双语", 70),
+    ("附", 70),
+]
+
+
+def calculate_keyword_score(title: str) -> float:
+    if not title:
+        return 0.0
+    title_lower = title.lower()
+    score = 0.0
+    matched = set()
+
+    for kw, weight in KEYWORD_RANK_WEIGHTS:
+        if kw in title_lower and kw not in matched:
+            score += weight
+            matched.add(kw)
+            if len(matched) >= 3:
+                break
+    return min(score, 600.0)
+
+
+def calculate_relevance_score(title: str, keyword: str) -> float:
+    if not title or not keyword:
+        return 0.0
+    t_clean = title.strip().lower()
+    k_clean = keyword.strip().lower()
+
+    if t_clean == k_clean:
+        return 300.0
+    if t_clean.startswith(k_clean):
+        return 150.0
+    if k_clean in t_clean:
+        return 80.0
+    return 0.0
+
+
+def calculate_rank_score(item: SearchResultItem, keyword: str = "") -> float:
+    """
+    计算综合排名得分：
+    总分 = 数据源层级分 + 关键词分 + 时效分 + 提取码分 + 标题相关度分
+    """
+    score = 0.0
+
+    # 1. 数据源层级分 (hot 自有收益盘绝对优先)
+    if item.source == "hot":
+        score += 1000.0
+    elif item.source == "tg":
+        score += 150.0
+    else:
+        score += 50.0
+
+    # 2. 特征关键词分
+    score += calculate_keyword_score(item.title)
+
+    # 3. 时效新鲜度分
+    score += calculate_time_score(item.datetime, item.title)
+
+    # 4. 提取码与完整度分
+    pwd = item.password or extract_password_from_url(item.share_link)
+    if pwd:
+        score += 100.0
+
+    if item.cloud_name and item.cloud_name != "其他":
+        score += 20.0
+
+    if not item.title or item.title == "Telegram 频道资源":
+        score -= 300.0
+
+    # 5. 搜索词相关度分
+    if keyword:
+        score += calculate_relevance_score(item.title, keyword)
+
+    return score
+
+
+def sort_search_results(results: List[SearchResultItem], keyword: str = "") -> List[SearchResultItem]:
+    """
+    按照综合得分对结果降序排序（稳定排序）
+    """
+    if not results:
+        return []
+
+    scored = []
+    for item in results:
+        typed = SearchResultItem.from_item(item) if not isinstance(item, SearchResultItem) else item
+        s = calculate_rank_score(typed, keyword=keyword)
+        scored.append((s, typed))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [item for _, item in scored]
+
+
 def search_public_resources(keyword="", limit=100):
     keyword = (keyword or "").strip()
     if not keyword:
@@ -472,7 +636,8 @@ def search_public_resources(keyword="", limit=100):
                 logger.error(f"公开聚合接口收集结果时发生异常: {err}")
 
     deduped_results = dedupe_search_results(aggregated_results)
-    limited_results = deduped_results[: max(limit, 1)]
+    sorted_results = sort_search_results(deduped_results, keyword=keyword)
+    limited_results = sorted_results[: max(limit, 1)]
 
     return True, "聚合搜索成功", [
         item.to_dict()

@@ -230,12 +230,21 @@ def parse_telegram_search_html(html, channel):
             continue
 
         title = _extract_title(content)
+        time_tag = message.select_one(".tgme_widget_message_date time")
+        dt = time_tag.get("datetime") if time_tag else None
+
         for url, netdisk_name in _extract_supported_links(content):
             if url in seen:
                 continue
             seen.add(url)
             results.append(
-                SearchResultItem(source="tg", title=title, share_link=url, cloud_name=netdisk_name)
+                SearchResultItem(
+                    source="tg",
+                    title=title,
+                    share_link=url,
+                    cloud_name=netdisk_name,
+                    datetime=dt,
+                )
             )
 
     logger.info("Telegram 频道 '%s' 解析到 %d 条网盘资源。", channel, len(results))

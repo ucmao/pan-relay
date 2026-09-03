@@ -369,6 +369,76 @@ function finalizeSearch(hasError = false) {
     }
 }
 
+// 前端综合智能评分函数 (对齐后端模型与 pansou 排序)
+function calculateRankScoreFront(item, keyword = '') {
+    let score = 0;
+    const source = item[0] || '';
+    const title = (item[1] || '').trim();
+    const url = (item[2] || '').trim();
+    const netdisk = (item[3] || '').trim();
+
+    // 1. 数据源层级分 (hot 自有收益盘绝对优先)
+    if (source === 'hot') {
+        score += 1000;
+    } else if (source === 'tg') {
+        score += 150;
+    } else {
+        score += 50;
+    }
+
+    // 2. 特征关键词质量分 (合集/系列/全集/4K/完结)
+    const lowerTitle = title.toLowerCase();
+    const keywordsWeight = [
+        ['合集', 420],
+        ['系列', 350],
+        ['全集', 280],
+        ['全', 280],
+        ['完结', 210],
+        ['完', 210],
+        ['4k', 180],
+        ['2160p', 180],
+        ['原盘', 180],
+        ['最新', 140],
+        ['1080p', 140],
+        ['高清', 140],
+        ['国粤双语', 70],
+    ];
+
+    let kwCount = 0;
+    for (const [kw, w] of keywordsWeight) {
+        if (lowerTitle.includes(kw)) {
+            score += w;
+            kwCount++;
+            if (kwCount >= 3) break;
+        }
+    }
+
+    // 3. 密码与完整度分
+    if (url.includes('pwd=') || url.includes('password=')) {
+        score += 100;
+    }
+    if (netdisk && netdisk !== '其他') {
+        score += 20;
+    }
+    if (!title || title === 'Telegram 频道资源') {
+        score -= 300;
+    }
+
+    // 4. 搜索词相关性分
+    if (keyword) {
+        const lowerKw = keyword.toLowerCase();
+        if (lowerTitle === lowerKw) {
+            score += 300;
+        } else if (lowerTitle.startsWith(lowerKw)) {
+            score += 150;
+        } else if (lowerTitle.includes(lowerKw)) {
+            score += 80;
+        }
+    }
+
+    return score;
+}
+
 /**
  * 渲染搜索结果到页面 (修改过滤逻辑)
  */
@@ -388,6 +458,10 @@ function renderResults(reset = false) {
 
         return matchesNetdisk && matchesInclude && matchesExclude;
     });
+
+    // 智能综合排序：根据得分降序排列
+    const currentKw = (searchInput.value || '').trim();
+    filteredResults.sort((a, b) => calculateRankScoreFront(b, currentKw) - calculateRankScoreFront(a, currentKw));
 
     if (reset) {
         currentPage = 1;

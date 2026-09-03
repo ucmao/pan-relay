@@ -334,12 +334,12 @@ def delete_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[st
         conn.close()
 
 
-def search_resources_by_keyword(keyword: str) -> List[Tuple[str, str, Optional[str]]]:
+def search_resources_by_keyword(keyword: str) -> List[Tuple]:
     """
     根据关键词搜索资源（用于搜索服务）。
-    返回: [(name, share_link, cloud_name), ...]
+    返回: [(name, share_link, cloud_name, created_at), ...]
     """
-    sql = "SELECT name, share_link, cloud_name FROM resources WHERE name LIKE ?"
+    sql = "SELECT name, share_link, cloud_name, created_at FROM resources WHERE name LIKE ?"
     conn = get_db_connection()
     if not conn:
         return []
