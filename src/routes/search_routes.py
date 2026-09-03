@@ -10,6 +10,7 @@ from src.services.search_service import (
     generate_search_stream_events,
     search_public_resources,
 )
+from src.services.link_checker import check_link, check_links_batch
 from src.services.system_config_service import is_public_search_api_enabled
 from src.services.temp_share_service import cleanup_expired_temp_shares, resolve_view_url
 from src.utils.auth_utils import token_required
@@ -55,6 +56,37 @@ def search_api():
         return jsonify({"success": False, "message": message}), status_code
 
     return jsonify({"success": True, "total": len(results), "results": results})
+
+
+@search_bp.route("/api/check/links", methods=["POST"])
+def check_links_api():
+    """
+    批量检测网盘分享链接有效性接口
+    """
+    data = request.get_json(silent=True) or {}
+    items = data.get("items")
+    if not items or not isinstance(items, list):
+        return jsonify({"success": False, "message": "缺少有效的 items 列表参数"}), 400
+
+    results = check_links_batch(items)
+    return jsonify({"success": True, "total": len(results), "results": results})
+
+
+@search_bp.route("/api/check/link", methods=["GET"])
+def check_single_link_api():
+    """
+    单条网盘分享链接检测接口
+    """
+    url = request.args.get("url", "").strip()
+    if not url:
+        return jsonify({"success": False, "message": "请提供待检测的网盘链接 (url)"}), 400
+
+    password = request.args.get("password") or request.args.get("pwd")
+    disk_type = request.args.get("disk_type") or request.args.get("cloud_name")
+    force_refresh = request.args.get("refresh", "false").lower() in ("true", "1")
+
+    res = check_link(url, password=password, disk_type=disk_type, force_refresh=force_refresh)
+    return jsonify({"success": True, "data": res})
 
 
 @search_bp.route("/create_share", methods=["POST"])

@@ -12,7 +12,8 @@ from src.clients import (
 )
 from src.db.resources import insert_resource, delete_by_share_link, update_share_link
 from src.db.credentials import get_cookie_by_cloud_name
-from src.utils.netdisk_utils import match_netdisk_link
+from src.services.link_checker import check_link, STATE_BAD, STATE_LOCKED
+from src.utils.netdisk_utils import match_netdisk_link, extract_password_from_url
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +167,21 @@ def create_share(share_data):
         client_credential = get_and_validate_credential(netdisk_type)
         if not client_credential:
             return share_data if not has_id else None
+
+        # 3.1 前置免登录测活检查 (避免死链无效提交给网盘造成风控或报错)
+        check_res = check_link(share_url, password=share_data.get("password"), disk_type=netdisk_type)
+        if check_res.get("state") == STATE_BAD:
+            logger.warning(
+                f"[{netdisk_type}] 转存前检测到链接已失效/违规，终止转存: {check_res.get('summary')} ({share_url})"
+            )
+            return None
+        if check_res.get("state") == STATE_LOCKED:
+            pwd = share_data.get("password") or extract_password_from_url(share_url)
+            if not pwd:
+                logger.warning(
+                    f"[{netdisk_type}] 转存前检测到链接需要提取码但未提供密码，终止转存 ({share_url})"
+                )
+                return None
 
         # 4. 执行转存
         new_file_id, file_name, new_share_url = _handle_netdisk_operation(
