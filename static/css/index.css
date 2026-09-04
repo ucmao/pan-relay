@@ -46,6 +46,48 @@
     text-transform: uppercase;
 }
 
+/* --- 搜索持续加载 - 底部悬浮弱提示胶囊 --- */
+.search-status-toast {
+    position: fixed;
+    bottom: 84px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1080;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 22px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(245, 158, 11, 0.32);
+    box-shadow: 0 10px 28px -4px rgba(245, 158, 11, 0.18),
+                0 4px 14px rgba(15, 23, 42, 0.08);
+    color: #92400e;
+    font-size: 0.88rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.search-status-toast.toast-hidden {
+    opacity: 0;
+    transform: translate(-50%, 18px);
+}
+
+.search-status-toast .spinner-border {
+    width: 0.92rem;
+    height: 0.92rem;
+    border-width: 0.15em;
+    color: #d97706;
+}
+
 .search-shell {
     position: relative;
     overflow: hidden;

@@ -5,10 +5,12 @@ import json
 from src.db.credentials import delete_cookie, get_cookie_by_cloud_name, save_cookie
 from src.services.system_config_service import (
     get_public_search_api_config,
+    get_allow_excel_download_config,
     get_frontend_display_netdisk_config,
     get_frontend_link_mode,
     get_tg_search_config,
     save_public_search_api_config,
+    save_allow_excel_download_config,
     save_frontend_display_netdisk_config,
     save_frontend_link_mode,
     save_tg_search_config,
@@ -220,6 +222,30 @@ def update_public_search_api():
         {
             "success": True,
             "message": "公开聚合接口已开启" if enabled else "公开聚合接口已关闭",
+        }
+    )
+
+
+@system_config_bp.route("/admin/api/allow-excel-download-config", methods=["GET"])
+@token_required
+def get_allow_excel_download():
+    config = get_allow_excel_download_config()
+    return jsonify({"success": True, "enabled": config["enabled"]})
+
+
+@system_config_bp.route("/admin/api/allow-excel-download-config", methods=["PUT"])
+@token_required
+def update_allow_excel_download():
+    data = request.get_json() or {}
+    enabled = bool(data.get("enabled", True))
+
+    if not save_allow_excel_download_config(enabled):
+        return jsonify({"success": False, "message": "Excel 导出配置保存失败"}), 400
+
+    return jsonify(
+        {
+            "success": True,
+            "message": "已允许前台下载 Excel" if enabled else "已禁止前台下载 Excel",
         }
     )
 

@@ -346,8 +346,12 @@ function performSearch() {
     searchButton.classList.add('is-flying');
     searchButton.classList.add('searching');
 
-    statusBar.classList.remove('d-none');
-    statusBar.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> 正在持续搜索更多资源...';
+    if (statusBar) {
+        statusBar.classList.remove('d-none');
+        void statusBar.offsetWidth;
+        statusBar.classList.remove('toast-hidden');
+        statusBar.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> 正在持续搜索更多资源...';
+    }
 
     resultCountText.classList.add('d-none');
     loadingMore.classList.add('d-none');
@@ -363,7 +367,7 @@ function performSearch() {
     includeKeywords = [];
     excludeKeywords = [];
 
-    resultContainer.innerHTML = '<p class="text-center text-muted p-4">资源正在路上，马上就来啦...</p > ';
+    resultContainer.innerHTML = '';
     scrollableResultsDiv.removeEventListener('scroll', infiniteScrollHandler);
 
     // 2. 创建 EventSource 连接
@@ -414,7 +418,14 @@ function finalizeSearch(hasError = false) {
     searchButton.classList.remove('is-flying');
     searchButton.classList.remove('searching');
 
-    statusBar.classList.add('d-none');
+    if (statusBar) {
+        statusBar.classList.add('toast-hidden');
+        setTimeout(() => {
+            if (!isSearchRunning) {
+                statusBar.classList.add('d-none');
+            }
+        }, 300);
+    }
 
     if (allResults.length === 0 && !hasError) {
         // 恢复初始提示
@@ -561,11 +572,10 @@ function exportFilteredResultsToExcel() {
         return;
     }
 
-    const headers = ['序号', '资源标题', '分享链接', '云盘名称', '来源'];
+    const headers = ['序号', '资源标题', '分享链接', '云盘名称'];
     const csvLines = [headers.join(',')];
 
     filteredResults.forEach((item, index) => {
-        const sourceStr = formatSourceText(item[0]);
         const titleStr = (item[1] || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
         const urlStr = (item[2] || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
         const netdiskStr = (item[3] || '').replace(/\r?\n/g, ' ').replace(/"/g, '""');
@@ -574,8 +584,7 @@ function exportFilteredResultsToExcel() {
             index + 1,
             `"${titleStr}"`,
             `"${urlStr}"`,
-            `"${netdiskStr}"`,
-            `"${sourceStr}"`
+            `"${netdiskStr}"`
         ];
         csvLines.push(row.join(','));
     });

@@ -24,9 +24,6 @@
             </div>
 
             <section class="search-shell d-none" id="searchShell">
-                <div id="statusBar" class="d-none text-center mb-3 p-2 bg-amber-100 text-amber-900 rounded-xl">
-                </div>
-
                 <div id="netdisk-filter-bar" class="d-none">
                     <button class="filter-btn active" data-netdisk="全部">
                         <span class="filter-name">全部</span>
@@ -38,9 +35,11 @@
                     <div class="filter-toolbar">
                         <p class="result-count mb-0" id="resultCountText"></p>
                         <div class="filter-toolbar-actions">
+                            {% if allow_excel_download %}
                             <button class="btn filter-toggle-button export-excel-btn" id="exportExcelBtn" type="button" title="导出当前筛选结果到 Excel">
                                 <i class="fas fa-file-excel me-1 text-emerald"></i> 导出 Excel
                             </button>
+                            {% endif %}
                             <button class="btn filter-toggle-button" id="advancedFilterToggle"
                                 type="button" aria-expanded="false">
                                 <i class="fas fa-sliders-h me-1"></i> 筛选
@@ -85,6 +84,7 @@
                     </div>
                 </div>
             </section>
+            <div id="statusBar" class="search-status-toast d-none toast-hidden"></div>
         </div>
     </div>
 </div>

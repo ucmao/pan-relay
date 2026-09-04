@@ -63,9 +63,42 @@
                 </label>
             </div>
         </div>
+    <!-- 2. 前台 Excel 下载与导出 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-file-excel text-emerald-600"></i> 前台 Excel 下载与导出
+                </h2>
+                <p class="admin-panel-desc">控制前台搜索结果页面是否显示“导出 Excel”下载按钮</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="saveAllowExcelDownloadButton" onclick="saveAllowExcelDownloadConfig()">
+                <i class="fas fa-save text-[10px]"></i> 保存导出设置
+            </button>
+        </div>
+        <div class="admin-panel-body">
+            <div class="frontend-link-mode-options">
+                <label class="frontend-link-mode-card" for="allowExcelDownloadOn">
+                    <input class="frontend-link-mode-radio" type="radio" name="allowExcelDownload" id="allowExcelDownloadOn" value="true" checked>
+                    <div class="frontend-link-mode-copy">
+                        <span class="frontend-link-mode-title">允许下载 (默认)</span>
+                        <span class="frontend-link-mode-desc">前台搜索结果页面工具栏中显示“导出 Excel”按钮</span>
+                    </div>
+                    <span class="frontend-link-mode-switch"></span>
+                </label>
+                <label class="frontend-link-mode-card" for="allowExcelDownloadOff">
+                    <input class="frontend-link-mode-radio" type="radio" name="allowExcelDownload" id="allowExcelDownloadOff" value="false">
+                    <div class="frontend-link-mode-copy">
+                        <span class="frontend-link-mode-title">不允许下载</span>
+                        <span class="frontend-link-mode-desc">隐藏前台搜索结果页面的“导出 Excel”按钮</span>
+                    </div>
+                    <span class="frontend-link-mode-switch"></span>
+                </label>
+            </div>
+        </div>
     </section>
 
-    <!-- 2. 搜索出链策略与动态转存 -->
+    <!-- 3. 搜索出链策略与动态转存 -->
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
@@ -110,7 +143,7 @@
         </div>
     </section>
 
-    <!-- 3. 网盘类型配置 -->
+    <!-- 4. 网盘类型配置 -->
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
@@ -143,7 +176,7 @@
         </div>
     </section>
 
-    <!-- 4. 云盘凭证 -->
+    <!-- 5. 云盘凭证 -->
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">

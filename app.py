@@ -15,7 +15,7 @@ from src.routes.search_sources_routes import search_sources_bp
 from src.configs.app_config import SECRET_KEY
 from src.db.connection import init_sqlite_db
 from src.services.scheduler_service import start_scheduler
-from src.services.system_config_service import get_frontend_link_mode
+from src.services.system_config_service import get_frontend_link_mode, is_excel_download_enabled
 
 app = Flask(__name__)
 
@@ -56,7 +56,11 @@ def inject_login_status():
 # 首页，返回 HTML 文件
 @app.route('/')
 def search_index():
-    return render_template('index.html', frontend_link_mode=get_frontend_link_mode())
+    return render_template(
+        'index.html',
+        frontend_link_mode=get_frontend_link_mode(),
+        allow_excel_download=is_excel_download_enabled(),
+    )
 
 
 if __name__ == '__main__':

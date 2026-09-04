@@ -140,6 +140,52 @@ async function savePublicSearchApiConfig() {
     }
 }
 
+async function loadAllowExcelDownloadConfig() {
+    try {
+        const response = await fetch('/admin/api/allow-excel-download-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const targetValue = data.enabled ? 'true' : 'false';
+        const radio = document.querySelector(`.frontend-link-mode-radio[name="allowExcelDownload"][value="${targetValue}"]`);
+        if (radio) {
+            radio.checked = true;
+        }
+    } catch (error) {
+        console.error('加载 Excel 下载配置失败:', error);
+        showToast('加载 Excel 下载配置失败，请检查后端日志。', 'danger');
+    }
+}
+
+async function saveAllowExcelDownloadConfig() {
+    const saveButton = document.getElementById('saveAllowExcelDownloadButton');
+    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="allowExcelDownload"]:checked');
+    const enabled = selectedMode ? selectedMode.value === 'true' : true;
+
+    saveButton.disabled = true;
+    try {
+        const response = await fetch('/admin/api/allow-excel-download-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message, 'success');
+    } catch (error) {
+        console.error('保存 Excel 下载配置失败:', error);
+        showToast(`保存 Excel 下载配置失败: ${error.message}`, 'danger');
+    } finally {
+        saveButton.disabled = false;
+    }
+}
+
 function toggleAllFrontendDisplayNetdisks() {
     const checkboxes = getFrontendDisplayNetdiskCheckboxes();
     const allChecked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
@@ -302,6 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindFrontendNetdiskCheckboxEvents();
     bindFrontendLinkModeEvents();
     loadPublicSearchApiConfig();
+    loadAllowExcelDownloadConfig();
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();
     loadCookieConfig();
