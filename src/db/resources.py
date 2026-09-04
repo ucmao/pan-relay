@@ -334,19 +334,24 @@ def delete_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[st
         conn.close()
 
 
-def search_resources_by_keyword(keyword: str) -> List[Tuple]:
+def search_resources_by_title_terms(terms: List[str]) -> List[Tuple]:
     """
-    根据关键词搜索资源（用于搜索服务）。
+    根据标题中的任一搜索词搜索资源（用于搜索服务）。
     返回: [(name, share_link, cloud_name, created_at), ...]
     """
-    sql = "SELECT name, share_link, cloud_name, created_at FROM resources WHERE name LIKE ?"
+    clean_terms = [str(term).strip() for term in terms if str(term).strip()]
+    if not clean_terms:
+        return []
+
+    conditions = " OR ".join("name LIKE ?" for _ in clean_terms)
+    sql = f"SELECT name, share_link, cloud_name, created_at FROM resources WHERE {conditions}"
     conn = get_db_connection()
     if not conn:
         return []
 
     try:
         cursor = conn.cursor()
-        cursor.execute(sql, (f"%{keyword}%",))
+        cursor.execute(sql, [f"%{term}%" for term in clean_terms])
         results = cursor.fetchall()
         return results
     except Error as err:
@@ -418,4 +423,3 @@ def search_resources_advanced(
     finally:
         cursor.close()
         conn.close()
-

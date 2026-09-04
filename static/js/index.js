@@ -377,8 +377,9 @@ function performSearch() {
         try {
             const data = JSON.parse(event.data);
 
-            if (data.type === 'end') {
+            if (data.type === 'complete') {
                 eventSource.close();
+                allResults = data.results || [];
                 finalizeSearch();
             } else if (data.results && data.results.length > 0) {
                 const currentLength = allResults.length;

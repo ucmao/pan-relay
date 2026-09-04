@@ -20,7 +20,7 @@ from src.db.resources import (
     list_resources,
     random_read_record,
     search_resources_advanced,
-    search_resources_by_keyword,
+    search_resources_by_title_terms,
     update_resource_basic_info,
 )
 from src.db.temp_shares import (
@@ -67,7 +67,7 @@ class NativeSqlDatabaseTest(unittest.TestCase):
             self.assertTrue(success)
 
             # 5. 关键词搜索
-            results = search_resources_by_keyword("纯净化_更新")
+            results = search_resources_by_title_terms(["纯净化_更新"])
             self.assertGreaterEqual(len(results), 1)
 
             # 6. 高级搜索

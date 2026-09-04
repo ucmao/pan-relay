@@ -11,10 +11,10 @@ from src.services.system_config_service import (
     ALLOW_EXCEL_DOWNLOAD_KEY,
     get_allow_excel_download_config,
     get_plugin_settings,
-    get_tg_search_config,
+    get_search_scheduler_config,
     is_excel_download_enabled,
     save_allow_excel_download_config,
-    save_tg_search_config,
+    save_search_scheduler_config,
 )
 from src.services.telegram_channel_service import (
     add_tg_channel,
@@ -143,14 +143,14 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
             self.mgr._plugins.pop("test_mock_plugin", None)
 
     def test_tg_search_config_get_and_save(self):
-        cfg = get_tg_search_config()
+        cfg = get_search_scheduler_config()["tg"]
         self.assertIn("enabled", cfg)
 
         new_payload = {"enabled": False, "proxy": "socks5://127.0.0.1:1080", "timeout": 15, "max_workers": 2}
-        self.assertTrue(save_tg_search_config(new_payload))
-        saved = get_tg_search_config()
+        self.assertTrue(save_search_scheduler_config({"api": {"timeout": 10, "max_workers": 8}, "tg": new_payload, "plugin": {"timeout": 10, "max_workers": 6}}))
+        saved = get_search_scheduler_config()["tg"]
         self.assertFalse(saved["enabled"])
-        save_tg_search_config({"enabled": True, "proxy": ""})
+        save_search_scheduler_config({"api": {"timeout": 10, "max_workers": 8}, "tg": {"enabled": True, "proxy": "", "timeout": 10, "max_workers": 4}, "plugin": {"timeout": 10, "max_workers": 6}})
 
     def test_tg_channel_list_crud_and_health(self):
         channel = "codex_test_channel"

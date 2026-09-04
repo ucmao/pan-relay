@@ -59,8 +59,8 @@ PAN123_INLINE_PATTERN = re.compile(
 def _request_proxies(proxy=None):
     if proxy is None:
         try:
-            from src.services.system_config_service import get_tg_search_config
-            proxy = get_tg_search_config().get("proxy", "")
+            from src.services.system_config_service import get_search_scheduler_config
+            proxy = get_search_scheduler_config()["tg"].get("proxy", "")
         except Exception:
             proxy = TG_PROXY
     proxy = str(proxy or "").strip()
@@ -455,8 +455,8 @@ def search_telegram_channel(keyword, channel, proxy=None, timeout=None, raise_on
 
     if timeout is None:
         try:
-            from src.services.system_config_service import get_tg_search_config
-            timeout = get_tg_search_config().get("timeout", TG_SEARCH_TIMEOUT)
+            from src.services.system_config_service import get_search_scheduler_config
+            timeout = get_search_scheduler_config()["tg"].get("timeout", TG_SEARCH_TIMEOUT)
         except Exception:
             timeout = TG_SEARCH_TIMEOUT
 
@@ -519,8 +519,8 @@ def test_telegram_connection(
         }
 
     try:
-        from src.services.system_config_service import get_tg_search_config
-        cfg = get_tg_search_config()
+        from src.services.system_config_service import get_search_scheduler_config
+        cfg = get_search_scheduler_config()["tg"]
         if proxy is None:
             proxy = cfg.get("proxy", "")
         if timeout is None:

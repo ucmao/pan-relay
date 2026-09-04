@@ -119,8 +119,8 @@ class TelegramSearchIntegrationTest(unittest.TestCase):
     @patch("src.services.search_service.search_telegram_channel")
     @patch("src.services.search_service.get_enabled_channel_names", return_value=["slow_channel", "fast_channel"])
     @patch(
-        "src.services.system_config_service.get_tg_search_config",
-        return_value={"enabled": True, "max_workers": 2, "timeout": 10, "proxy": ""},
+        "src.services.system_config_service.get_search_scheduler_config",
+        return_value={"api": {"timeout": 10, "max_workers": 8}, "tg": {"enabled": True, "max_workers": 2, "timeout": 10, "proxy": ""}, "plugin": {"timeout": 10, "max_workers": 6}},
     )
     @patch("src.services.search_service.read_all_api_configs_from_db", return_value=[])
     def test_upstream_iterator_yields_each_tg_channel_when_ready(

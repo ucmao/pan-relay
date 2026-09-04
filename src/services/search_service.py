@@ -11,7 +11,7 @@ import jmespath
 import requests
 
 from src.configs.app_config import user_agents
-from src.db.resources import search_resources_by_keyword, search_resources_advanced
+from src.db.resources import search_resources_by_title_terms, search_resources_advanced
 from src.models.search_item import SearchResultItem
 from src.services.plugin_manager import plugin_manager
 from src.services.sensitive_word_service import check_input_keyword, filter_search_results
@@ -182,24 +182,28 @@ def replace_keyword_in_config(configs, placeholder, keyword):
     return updated_configs
 
 
-def filter_output(extracted_data, keyword):
-    """根据关键词过滤结果，实现模糊匹配。"""
-    separator_pattern = r"[,、|;+\-/	\n*#\s]"
-    processed_keyword = re.sub(separator_pattern, " ", keyword)
+def parse_search_terms(keyword: str) -> List[str]:
+    """按任意空白字符拆分搜索词；单词查询保留其完整内容。"""
+    return str(keyword or "").split()
 
-    keyword_list = [kw.strip() for kw in processed_keyword.split() if kw.strip()]
 
-    filtered_list = []
+def get_title_matched_terms(title: str, keyword: str) -> List[str]:
+    """返回标题命中的搜索词。"""
+    normalized_title = str(title or "").casefold()
+    return [term for term in parse_search_terms(keyword) if term.casefold() in normalized_title]
 
-    for item in extracted_data:
-        title = item[0]
 
-        for kw in keyword_list:
-            if kw in title:
-                filtered_list.append(item)
-                break
-
-    return filtered_list
+def filter_results_by_title(results: List[Any], keyword: str) -> List[SearchResultItem]:
+    """仅保留标题命中搜索词的结果，供所有搜索来源统一使用。"""
+    matched_results = []
+    for item in results:
+        try:
+            typed_item = SearchResultItem.from_item(item)
+        except (TypeError, ValueError, IndexError):
+            continue
+        if get_title_matched_terms(typed_item.title, keyword):
+            matched_results.append(typed_item)
+    return matched_results
 
 
 def clean_and_extract_data(data):
@@ -242,7 +246,7 @@ def clean_and_extract_data(data):
     return cleaned_data
 
 
-def process_config(config, keyword):
+def process_config(config, keyword, timeout=10):
     """
     处理单个 API 配置，获取、筛选数据，并返回包含网盘名称的结果。
     """
@@ -250,17 +254,14 @@ def process_config(config, keyword):
     final_results = []
 
     try:
-        response_data = fetch_data(config["url"], config["method"], config["request"], timeout=10)
+        response_data = fetch_data(config["url"], config["method"], config["request"], timeout=timeout)
 
         if response_data:
             extracted_data = extract_from_json(response_data, config["response"])
 
             if extracted_data and isinstance(extracted_data, list):
-                filtered_data = filter_output(extracted_data, keyword)
-
-                if filtered_data:
-                    filtered_data_with_keyword = [["other", item[0], item[1]] for item in filtered_data]
-                    final_results = clean_and_extract_data(filtered_data_with_keyword)
+                extracted_data_with_source = [["other", item[0], item[1]] for item in extracted_data]
+                final_results = clean_and_extract_data(extracted_data_with_source)
 
             num_results = len(final_results)
             log_message = f"API '{config_name}' ({config['url']}) 搜索到 {num_results} 条资源。"
@@ -291,7 +292,12 @@ def _search_plugin(plugin, keyword):
 
 def iter_upstream_search_results(keyword):
     """按单个上游完成顺序产出 API、Telegram 频道和插件的搜索结果。"""
-    from src.services.system_config_service import get_tg_search_config
+    from src.services.system_config_service import get_search_scheduler_config
+
+    scheduler_config = get_search_scheduler_config()
+    api_config = scheduler_config["api"]
+    tg_config = scheduler_config["tg"]
+    plugin_config = scheduler_config["plugin"]
 
     api_configs = [
         config
@@ -301,7 +307,6 @@ def iter_upstream_search_results(keyword):
     api_configs.sort(key=lambda config: config.get("response_time_ms") or 9999)
     api_configs = replace_keyword_in_config(api_configs, "[[keyword]]", keyword)
 
-    tg_config = get_tg_search_config()
     tg_channels = get_enabled_channel_names() if tg_config.get("enabled", True) else []
     tg_workers = min(max(int(tg_config.get("max_workers", 4)), 1), len(tg_channels))
     tg_timeout = max(int(tg_config.get("timeout", 10)), 1)
@@ -311,14 +316,15 @@ def iter_upstream_search_results(keyword):
 
     executors = []
     future_types = {}
+    future_deadlines = {}
     try:
         if api_configs:
             api_executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=min(8, len(api_configs)), thread_name_prefix="api-search"
+                max_workers=min(api_config["max_workers"], len(api_configs)), thread_name_prefix="api-search"
             )
             executors.append(api_executor)
             for config in api_configs:
-                future_types[api_executor.submit(process_config, config, keyword)] = "API"
+                future_types[api_executor.submit(process_config, config, keyword, api_config["timeout"])] = "API"
 
         if tg_channels:
             tg_executor = concurrent.futures.ThreadPoolExecutor(
@@ -338,16 +344,28 @@ def iter_upstream_search_results(keyword):
 
         if plugins:
             plugin_executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=min(6, len(plugins)), thread_name_prefix="plugin-search"
+                max_workers=min(plugin_config["max_workers"], len(plugins)), thread_name_prefix="plugin-search"
             )
             executors.append(plugin_executor)
             for plugin in plugins:
-                future_types[plugin_executor.submit(_search_plugin, plugin, keyword)] = f"插件 {plugin.name}"
+                future = plugin_executor.submit(_search_plugin, plugin, keyword)
+                future_types[future] = f"插件 {plugin.name}"
+                future_deadlines[future] = time.monotonic() + plugin_config["timeout"]
 
         pending = set(future_types)
         while pending:
+            expired = [future for future in pending if future_deadlines.get(future, float("inf")) <= time.monotonic()]
+            for future in expired:
+                pending.remove(future)
+                future.cancel()
+                logger.warning("%s 搜索超时（限制：%ss）", future_types[future], plugin_config["timeout"])
+            if not pending:
+                break
+            next_deadline = min((future_deadlines.get(future, float("inf")) for future in pending), default=float("inf"))
             done, pending = concurrent.futures.wait(
-                pending, return_when=concurrent.futures.FIRST_COMPLETED
+                pending,
+                timeout=None if next_deadline == float("inf") else max(next_deadline - time.monotonic(), 0),
+                return_when=concurrent.futures.FIRST_COMPLETED,
             )
             for future in done:
                 source_name = future_types[future]
@@ -367,7 +385,7 @@ def search_in_database(keyword):
     """
     try:
         # 从数据库搜索资源
-        results = search_resources_by_keyword(keyword)
+        results = search_resources_by_title_terms(parse_search_terms(keyword))
 
         final_results = []
         for row in results:
@@ -427,10 +445,8 @@ def generate_search_stream_events(keyword):
         cached_items = get_cached_search_items(keyword)
         if cached_items is not None:
             logger.info(f"关键词 '{keyword}' 流式搜索击中内存缓存 ({len(cached_items)} 条)。")
-            cached_items = filter_search_results(cached_items)
-            if cached_items:
-                yield json.dumps({"type": "initial", "results": _serialize_items(cached_items)})
-            yield json.dumps({"type": "end"})
+            cached_items = filter_results_by_title(filter_search_results(cached_items), keyword)
+            yield json.dumps({"type": "complete", "results": _serialize_items(cached_items)})
             return
 
         seen_items_map: Dict[str, SearchResultItem] = {}
@@ -464,14 +480,14 @@ def generate_search_stream_events(keyword):
 
         db_results = search_in_database(keyword)
         db_results = filter_results_by_frontend_netdisks(db_results)
-        db_results = filter_search_results(db_results)
+        db_results = filter_results_by_title(filter_search_results(db_results), keyword)
         db_results = _dedupe_stream_chunk(db_results)
         if db_results:
             yield json.dumps({"type": "initial", "results": _serialize_items(db_results)})
 
         for results in iter_upstream_search_results(keyword):
             results = filter_results_by_frontend_netdisks(results)
-            results = filter_search_results(results)
+            results = filter_results_by_title(filter_search_results(results), keyword)
             results = _dedupe_stream_chunk(results)
             if results:
                 yield json.dumps({"type": "update", "results": _serialize_items(results)})
@@ -482,7 +498,7 @@ def generate_search_stream_events(keyword):
             set_cached_search_items(keyword, final_stream_items)
 
         logger.info(f"关键词 '{keyword}' 所有流式搜索完成，共 {len(final_stream_items)} 条。")
-        yield json.dumps({"type": "end"})
+        yield json.dumps({"type": "complete", "results": _serialize_items(final_stream_items)})
 
     return _event_generator()
 
@@ -687,8 +703,12 @@ def calculate_keyword_score(title: str) -> float:
 def calculate_relevance_score(title: str, keyword: str) -> float:
     if not title or not keyword:
         return 0.0
-    t_clean = title.strip().lower()
-    k_clean = keyword.strip().lower()
+    t_clean = title.strip().casefold()
+    terms = parse_search_terms(keyword)
+    if len(terms) > 1:
+        return float(len(get_title_matched_terms(title, keyword)) * 100)
+
+    k_clean = terms[0].casefold() if terms else ""
 
     if t_clean == k_clean:
         return 300.0
@@ -756,10 +776,11 @@ def sort_search_results(results: List[SearchResultItem], keyword: str = "") -> L
     for item in results:
         typed = SearchResultItem.from_item(item) if not isinstance(item, SearchResultItem) else item
         s = calculate_rank_score(typed, keyword=keyword)
-        scored.append((s, typed))
+        matched_term_count = len(get_title_matched_terms(typed.title, keyword))
+        scored.append((matched_term_count, s, typed))
 
-    scored.sort(key=lambda x: x[0], reverse=True)
-    return [item for _, item in scored]
+    scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    return [item for _, _, item in scored]
 
 
 def search_public_resources(keyword="", limit=100):
@@ -774,7 +795,7 @@ def search_public_resources(keyword="", limit=100):
     cached_items = get_cached_search_items(keyword)
     if cached_items is not None:
         logger.info(f"关键词 '{keyword}' 聚合搜索击中内存缓存 ({len(cached_items)} 条)。")
-        filtered_cached = filter_search_results(cached_items)
+        filtered_cached = filter_results_by_title(filter_search_results(cached_items), keyword)
         limited_cached = filtered_cached[: max(limit, 1)]
         return True, "聚合搜索成功 (缓存)", [item.to_dict() for item in limited_cached]
 
@@ -788,7 +809,7 @@ def search_public_resources(keyword="", limit=100):
             aggregated_results.extend(filter_results_by_frontend_netdisks(results))
 
     # 敏感词过滤、去重与排序
-    aggregated_results = filter_search_results(aggregated_results)
+    aggregated_results = filter_results_by_title(filter_search_results(aggregated_results), keyword)
     deduped_results = dedupe_search_results(aggregated_results)
     sorted_results = sort_search_results(deduped_results, keyword=keyword)
     if sorted_results:

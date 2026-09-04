@@ -23,7 +23,7 @@ from src.db.connection import get_db_connection, init_sqlite_db
 from src.db.telegram_channels import get_all_channels, set_channel_enabled, update_channel_health
 from src.services.plugin_manager import plugin_manager
 from src.services.system_config_service import (
-    get_tg_search_config,
+    get_search_scheduler_config,
     save_plugin_status,
 )
 from src.services.telegram_search_service import search_telegram_channel
@@ -315,7 +315,7 @@ def main():
     conn.close()
 
     # 2. 提取全量 TG 频道
-    tg_config = get_tg_search_config()
+    tg_config = get_search_scheduler_config()["tg"]
     tg_channels = [item["channel"] for item in get_all_channels()]
     tg_proxy = tg_config.get("proxy", "")
     tg_timeout = tg_config.get("timeout", 10)

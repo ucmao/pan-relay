@@ -9,13 +9,13 @@ from src.services.system_config_service import (
     get_frontend_display_netdisk_config,
     get_frontend_link_mode,
     get_sensitive_words_config,
-    get_tg_search_config,
+    get_search_scheduler_config,
     save_public_search_api_config,
     save_allow_excel_download_config,
     save_frontend_display_netdisk_config,
     save_frontend_link_mode,
     save_sensitive_words_config,
-    save_tg_search_config,
+    save_search_scheduler_config,
 )
 from src.services.telegram_channel_service import (
     add_tg_channel,
@@ -325,27 +325,25 @@ def save_credential_config():
     return jsonify({"success": True, "message": "云盘凭证保存成功"})
 
 
-@system_config_bp.route("/admin/api/tg-search-config", methods=["GET"])
+@system_config_bp.route("/admin/api/search-scheduler-config", methods=["GET"])
 @token_required
-def get_tg_search_config_api():
-    """获取当前 Telegram 频道搜索配置"""
-    config = get_tg_search_config()
+def get_search_scheduler_config_api():
+    config = get_search_scheduler_config()
     return jsonify({"success": True, "config": config})
 
 
-@system_config_bp.route("/admin/api/tg-search-config", methods=["PUT"])
+@system_config_bp.route("/admin/api/search-scheduler-config", methods=["PUT"])
 @token_required
-def update_tg_search_config_api():
-    """更新并持久化 Telegram 频道搜索配置"""
+def update_search_scheduler_config_api():
     data = request.get_json() or {}
-    success = save_tg_search_config(data)
+    success = save_search_scheduler_config(data)
     if not success:
-        return jsonify({"success": False, "message": "Telegram 搜索配置保存失败"}), 400
+        return jsonify({"success": False, "message": "搜索调度配置保存失败"}), 400
 
     return jsonify({
         "success": True,
-        "message": "Telegram 搜索配置保存成功",
-        "config": get_tg_search_config(),
+        "message": "搜索调度配置保存成功",
+        "config": get_search_scheduler_config(),
     })
 
 
@@ -435,8 +433,8 @@ def test_all_tg_channels_api():
     if not channels:
         return jsonify({"success": True, "message": "暂无可检测的频道", "results": []})
 
-    config = get_tg_search_config()
-    workers = min(max(int(config.get("max_workers", 4)), 1), len(channels))
+    config = get_search_scheduler_config()["tg"]
+    workers = min(config["max_workers"], len(channels))
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(test_telegram_connection, channel, keyword): channel
@@ -520,4 +518,3 @@ def update_sensitive_words_config_api():
         "message": "敏感词配置保存成功",
         "config": get_sensitive_words_config(),
     })
-

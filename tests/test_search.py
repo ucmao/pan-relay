@@ -21,6 +21,8 @@ from src.services.search_service import (
     calculate_relevance_score,
     calculate_time_score,
     dedupe_search_results,
+    filter_results_by_title,
+    get_title_matched_terms,
     merge_or_select_better,
     sort_search_results,
 )
@@ -70,6 +72,23 @@ class SearchDeduplicationTest(unittest.TestCase):
 
 
 class SearchRankingTest(unittest.TestCase):
+    def test_single_term_requires_contiguous_title_match(self):
+        results = [
+            SearchResultItem(source="other", title="先例汇编", share_link="https://pan.quark.cn/s/one", cloud_name="夸克网盘"),
+            SearchResultItem(source="other", title="先 行案例", share_link="https://pan.quark.cn/s/two", cloud_name="夸克网盘"),
+        ]
+        self.assertEqual(["先例汇编"], [item.title for item in filter_results_by_title(results, "先例")])
+
+    def test_multiple_terms_match_any_whitespace_separated_term_and_rank_by_count(self):
+        results = [
+            SearchResultItem(source="hot", title="只含 A", share_link="https://pan.quark.cn/s/one", cloud_name="夸克网盘"),
+            SearchResultItem(source="other", title="A 与 B 和 C", share_link="https://pan.quark.cn/s/two", cloud_name="夸克网盘"),
+            SearchResultItem(source="other", title="无关结果", share_link="https://pan.quark.cn/s/three", cloud_name="夸克网盘"),
+        ]
+        filtered = filter_results_by_title(results, "A\tB C")
+        self.assertEqual(["A", "B", "C"], get_title_matched_terms("A 与 B 和 C", "A\tB C"))
+        self.assertEqual(["A 与 B 和 C", "只含 A"], [item.title for item in sort_search_results(filtered, keyword="A\tB C")])
+
     def test_calculate_time_score(self):
         now = datetime.now()
         t_1day = (now - timedelta(hours=12)).strftime("%Y-%m-%d %H:%M:%S")

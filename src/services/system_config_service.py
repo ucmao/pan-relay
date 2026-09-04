@@ -212,13 +212,17 @@ def save_sensitive_words_config(config_data: Dict[str, Any]) -> bool:
     return success
 
 
-TG_SEARCH_CONFIG_KEY = "telegram_search_settings"
+SEARCH_SCHEDULER_CONFIG_KEY = "search_scheduler_settings"
 PLUGIN_SETTINGS_KEY = "plugin_settings"
 
 
-def get_tg_search_config() -> Dict[str, Any]:
-    """获取 Telegram 抓取引擎的全局设置。"""
+def get_search_scheduler_config() -> Dict[str, Any]:
+    """获取三类检索源的调度参数。"""
     from src.configs.app_config import (
+        API_SEARCH_MAX_WORKERS,
+        API_SEARCH_TIMEOUT,
+        PLUGIN_SEARCH_MAX_WORKERS,
+        PLUGIN_SEARCH_TIMEOUT,
         TG_SEARCH_ENABLED,
         TG_PROXY,
         TG_SEARCH_TIMEOUT,
@@ -226,54 +230,30 @@ def get_tg_search_config() -> Dict[str, Any]:
     )
 
     default_config = {
-        "enabled": TG_SEARCH_ENABLED,
-        "proxy": TG_PROXY or "",
-        "timeout": TG_SEARCH_TIMEOUT or 10,
-        "max_workers": TG_SEARCH_MAX_WORKERS or 4,
+        "api": {"timeout": API_SEARCH_TIMEOUT, "max_workers": API_SEARCH_MAX_WORKERS},
+        "tg": {"enabled": TG_SEARCH_ENABLED, "proxy": TG_PROXY or "", "timeout": TG_SEARCH_TIMEOUT, "max_workers": TG_SEARCH_MAX_WORKERS},
+        "plugin": {"timeout": PLUGIN_SEARCH_TIMEOUT, "max_workers": PLUGIN_SEARCH_MAX_WORKERS},
     }
-
-    raw_value = get_config_value(TG_SEARCH_CONFIG_KEY)
+    raw_value = get_config_value(SEARCH_SCHEDULER_CONFIG_KEY)
     if not raw_value:
         return default_config
     try:
         parsed = json.loads(raw_value)
         return {
-            "enabled": bool(parsed.get("enabled", default_config["enabled"])),
-            "proxy": str(parsed.get("proxy", default_config["proxy"])).strip(),
-            "timeout": max(int(parsed.get("timeout", default_config["timeout"])), 1),
-            "max_workers": max(int(parsed.get("max_workers", default_config["max_workers"])), 1),
+            "api": {"timeout": max(int(parsed["api"].get("timeout", default_config["api"]["timeout"])), 1), "max_workers": max(int(parsed["api"].get("max_workers", default_config["api"]["max_workers"])), 1)},
+            "tg": {"enabled": bool(parsed["tg"].get("enabled", default_config["tg"]["enabled"])), "proxy": str(parsed["tg"].get("proxy", default_config["tg"]["proxy"])).strip(), "timeout": max(int(parsed["tg"].get("timeout", default_config["tg"]["timeout"])), 1), "max_workers": max(int(parsed["tg"].get("max_workers", default_config["tg"]["max_workers"])), 1)},
+            "plugin": {"timeout": max(int(parsed["plugin"].get("timeout", default_config["plugin"]["timeout"])), 1), "max_workers": max(int(parsed["plugin"].get("max_workers", default_config["plugin"]["max_workers"])), 1)},
         }
-    except (TypeError, ValueError, json.JSONDecodeError) as error:
-        logger.warning("TG 搜索设置格式无效，已回退到默认值: %s", error)
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+        logger.warning("搜索调度设置格式无效，已回退到默认值: %s", error)
         return default_config
 
 
-def save_tg_search_config(data: Dict[str, Any]) -> bool:
-    """保存 Telegram 抓取引擎的全局设置。"""
+def save_search_scheduler_config(data: Dict[str, Any]) -> bool:
+    """保存三类检索源的调度参数。"""
     if not isinstance(data, dict):
         return False
-
-    current = get_tg_search_config()
-    enabled = bool(data.get("enabled", current.get("enabled", True)))
-    proxy = str(data.get("proxy", current.get("proxy", ""))).strip()
-    try:
-        timeout = max(int(data.get("timeout", current.get("timeout", 10))), 1)
-    except (TypeError, ValueError):
-        timeout = 10
-
-    try:
-        max_workers = max(int(data.get("max_workers", current.get("max_workers", 4))), 1)
-    except (TypeError, ValueError):
-        max_workers = 4
-
-    payload = {
-        "enabled": enabled,
-        "proxy": proxy,
-        "timeout": timeout,
-        "max_workers": max_workers,
-    }
-
-    return set_config_value(TG_SEARCH_CONFIG_KEY, payload)
+    return set_config_value(SEARCH_SCHEDULER_CONFIG_KEY, data)
 
 
 def get_plugin_settings() -> Dict[str, Dict[str, Any]]:
@@ -337,14 +317,9 @@ def init_default_search_sources():
     )
 
     # 1. 首次初始化 TG 全局设置与频道表
-    current_tg = get_config_value(TG_SEARCH_CONFIG_KEY)
-    if not current_tg:
-        save_tg_search_config({
-            "enabled": True,
-            "proxy": TG_PROXY,
-            "timeout": TG_SEARCH_TIMEOUT,
-            "max_workers": TG_SEARCH_MAX_WORKERS,
-        })
+    current_scheduler = get_config_value(SEARCH_SCHEDULER_CONFIG_KEY)
+    if not current_scheduler:
+        save_search_scheduler_config(get_search_scheduler_config())
         try:
             from src.db.telegram_channels import seed_channels
             preset_channels = load_preset_tg_channels()

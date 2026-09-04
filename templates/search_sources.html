@@ -38,16 +38,21 @@
 <span id="tabBadgePlugins" class="d-none"></span>
 <span id="tabBadgeTg" class="d-none"></span>
 
-<!-- 分段控制 Tab 导航 -->
-<div class="source-tabs-header">
-    <button class="source-tab-btn {{ 'is-active' if active_tab == 'api' else '' }}" data-tab-target="api" type="button">
-        <i class="fas fa-code"></i> API 检索源
-    </button>
-    <button class="source-tab-btn {{ 'is-active' if active_tab == 'plugins' else '' }}" data-tab-target="plugins" type="button">
-        <i class="fas fa-puzzle-piece"></i> 插件扩展
-    </button>
-    <button class="source-tab-btn {{ 'is-active' if active_tab == 'telegram' else '' }}" data-tab-target="telegram" type="button">
-        <i class="fab fa-telegram-plane"></i> Telegram 频道
+<!-- 分段控制 Tab 导航与右侧全局操作按钮 -->
+<div class="source-tabs-header flex items-center justify-between gap-3">
+    <div class="flex items-center space-x-1">
+        <button class="source-tab-btn {{ 'is-active' if active_tab == 'api' else '' }}" data-tab-target="api" type="button">
+            <i class="fas fa-code"></i> API 检索源
+        </button>
+        <button class="source-tab-btn {{ 'is-active' if active_tab == 'plugins' else '' }}" data-tab-target="plugins" type="button">
+            <i class="fas fa-puzzle-piece"></i> 插件扩展
+        </button>
+        <button class="source-tab-btn {{ 'is-active' if active_tab == 'telegram' else '' }}" data-tab-target="telegram" type="button">
+            <i class="fab fa-telegram-plane"></i> Telegram 频道
+        </button>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm flex-shrink-0" data-ui-modal-target="#searchSettingsModal" type="button">
+        <i class="fas fa-sliders-h text-[11px] me-1"></i> 搜索调度参数
     </button>
 </div>
 
@@ -63,6 +68,8 @@
         {% include "sources/_tab_telegram.html" %}
     </div>
 </div>
+
+{% include "sources/_modal_search_scheduler.html" %}
 
 <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
 {% endblock %}

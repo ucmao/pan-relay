@@ -145,12 +145,13 @@
     async function loadTgSearchConfig() {
         try {
             const [configResponse, channelsResponse] = await Promise.all([
-                fetch('/admin/api/tg-search-config'),
+                fetch('/admin/api/search-scheduler-config'),
                 fetch('/admin/api/tg-channels'),
             ]);
             const configData = await readJson(configResponse);
             const channelsData = await readJson(channelsResponse);
-            tgConfig = configData.config || {};
+            const scheduler = configData.config || {};
+            tgConfig = scheduler.tg || {};
             tgChannels = Array.isArray(channelsData.channels) ? channelsData.channels : [];
 
             const proxyEl = document.getElementById('tgProxyInput');
@@ -159,6 +160,14 @@
             if (proxyEl) proxyEl.value = tgConfig.proxy || '';
             if (timeoutEl) timeoutEl.value = tgConfig.timeout || 10;
             if (workersEl) workersEl.value = tgConfig.max_workers || 4;
+            const apiTimeoutEl = document.getElementById('apiTimeoutInput');
+            const apiWorkersEl = document.getElementById('apiMaxWorkersInput');
+            const pluginTimeoutEl = document.getElementById('pluginTimeoutInput');
+            const pluginWorkersEl = document.getElementById('pluginMaxWorkersInput');
+            if (apiTimeoutEl) apiTimeoutEl.value = scheduler.api?.timeout || 10;
+            if (apiWorkersEl) apiWorkersEl.value = scheduler.api?.max_workers || 8;
+            if (pluginTimeoutEl) pluginTimeoutEl.value = scheduler.plugin?.timeout || 10;
+            if (pluginWorkersEl) pluginWorkersEl.value = scheduler.plugin?.max_workers || 6;
             renderTgChannels();
         } catch (error) {
             console.error('加载 TG 配置失败:', error);
@@ -169,20 +178,17 @@
     async function saveTgSearchConfig() {
         const button = document.getElementById('saveTgSearchConfigBtn');
         if (button) button.disabled = true;
-        const payload = {
-            enabled: true,
-            proxy: (document.getElementById('tgProxyInput')?.value || '').trim(),
-            timeout: parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10),
-            max_workers: parseInt(document.getElementById('tgMaxWorkersInput')?.value || '4', 10),
-        };
+        const payload = { api: { timeout: parseInt(document.getElementById('apiTimeoutInput')?.value || '10', 10), max_workers: parseInt(document.getElementById('apiMaxWorkersInput')?.value || '8', 10) }, tg: { enabled: true, proxy: (document.getElementById('tgProxyInput')?.value || '').trim(), timeout: parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10), max_workers: parseInt(document.getElementById('tgMaxWorkersInput')?.value || '4', 10) }, plugin: { timeout: parseInt(document.getElementById('pluginTimeoutInput')?.value || '10', 10), max_workers: parseInt(document.getElementById('pluginMaxWorkersInput')?.value || '6', 10) } };
         try {
-            const data = await readJson(await fetch('/admin/api/tg-search-config', {
+            const data = await readJson(await fetch('/admin/api/search-scheduler-config', {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
             }));
-            showToast?.(data.message || 'Telegram 抓取设置已保存', 'success');
+            showToast?.(data.message || '搜索调度参数已保存', 'success');
+            window.AppUI?.closeModal('#searchSettingsModal');
+            window.AppUI?.closeModal('#tgSettingsModal');
             await loadTgSearchConfig();
         } catch (error) {
-            showToast?.(`保存 TG 配置失败：${error.message}`, 'danger');
+            showToast?.(`保存调度配置失败：${error.message}`, 'danger');
         } finally {
             if (button) button.disabled = false;
         }
