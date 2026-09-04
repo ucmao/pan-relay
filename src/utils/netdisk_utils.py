@@ -2,27 +2,34 @@ import re
 from typing import Optional
 
 NETDISK_RULES = [
-    # 网盘
+    # 国内主流网盘
     ("百度网盘", r"(?:https?://)?(?:pan\.baidu\.com|bdpan\.com|baiduyun\.com)/"),
     ("夸克网盘", r"(?:https?://)?pan\.quark\.cn/"),
+    ("阿里云盘", r"(?:https?://)?(?:drive\.aliyun\.com|aliyundrive\.com|alipan\.com)/"),
     ("迅雷网盘", r"(?:https?://)?pan\.xunlei\.com/"),
     ("UC网盘", r"(?:https?://)?(?:pan\.uc\.cn|drive\.uc\.cn)/"),
-    ("悟空网盘", r"(?:https?://)?pan\.wkbrowser\.com/"),
-    ("快兔网盘", r"(?:https?://)?(?:diskyun\.com|www\.diskyun\.com)/"),
+    ("123云盘", r"(?:https?://)?(?:123pan\.(?:com|cn)|123\d{3}\.(?:com|cn))/"),
     ("115网盘", r"(?:https?://)?(?:115\.com|115pan\.com|115cdn\.com|anxia\.com)/"),
-    ("蓝奏云", r"(?:https?://)?(?:www\.)?(?:lanzou[uixys]*|lan[zs]o[ux])\.(?:com|net|org)/"),
-    ("光鸭云盘", r"(?:https?://)?(?:www\.)?guangyapan\.com/"),
-    ("腾讯微云", r"(?:https?://)?(?:www\.)?weiyun\.com/"),
-    ("坚果云", r"(?:https?://)?(?:www\.)?jianguoyun\.com/"),
-    # 云盘
-    ("阿里云盘", r"(?:https?://)?(?:drive\.aliyun\.com|aliyundrive\.com|alipan\.com)/"),
+    # 运营商云盘
     ("天翼云盘", r"(?:https?://)?cloud\.189\.cn/"),
     ("移动云盘", r"(?:https?://)?(?:pan\.10086\.cn|caiyun\.139\.com|yun\.139\.com|caiyun\.feixin\.10086\.cn)/"),
     ("联通云盘", r"(?:https?://)?pan\.wo\.cn/"),
-    ("123云盘", r"(?:https?://)?(?:123pan\.(?:com|cn)|123\d{3}\.(?:com|cn))/"),
-    # 其他网盘
+    # 国内特色/小众网盘
+    ("蓝奏云", r"(?:https?://)?(?:www\.)?(?:lanzou[uixys]*|lan[zs]o[ux])\.(?:com|net|org)/"),
+    ("城通网盘", r"(?:https?://)?(?:www\.)?(?:ctfile|pipipan|400gb|t004)\.(?:com|cn)/"),
+    ("腾讯微云", r"(?:https?://)?(?:www\.)?weiyun\.com/"),
+    ("坚果云", r"(?:https?://)?(?:www\.)?jianguoyun\.com/"),
+    ("悟空网盘", r"(?:https?://)?pan\.wkbrowser\.com/"),
+    ("快兔网盘", r"(?:https?://)?(?:diskyun\.com|www\.diskyun\.com)/"),
+    ("光鸭云盘", r"(?:https?://)?(?:www\.)?guangyapan\.com/"),
+    # 海外及跨境网盘
+    ("TeraBox", r"(?:https?://)?(?:www\.)?(?:terabox|teraboxapp|1024tera|freeterabox)\.(?:com|app)/"),
+    ("Google Drive", r"(?:https?://)?(?:drive|docs)\.google\.com/"),
+    ("MEGA", r"(?:https?://)?mega\.(?:nz|co\.nz)/"),
+    ("GoFile", r"(?:https?://)?(?:www\.)?gofile\.io/"),
+    ("OneDrive", r"(?:https?://)?(?:1drv\.ms|(?:[\w-]+\.)?onedrive\.live\.com|[\w-]+\.sharepoint\.com)/"),
     ("PikPak", r"(?:https?://)?(?:www\.)?(?:pikpak|mypikpak|pikpakdrive)\.com/"),
-    # 链接类型
+    # P2P 下载与协议链接
     ("磁力链接", r"^magnet:\?xt=urn:btih:"),
     ("迅雷链接", r"thunder://[A-Za-z0-9+/=]+"),
     ("电驴链接", r"^ed2k://"),
@@ -52,6 +59,12 @@ CANONICAL_ID_PATTERNS = [
     ("tianyi", re.compile(r"cloud\.189\.cn/(?:t/|web/share\?code=)([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("115", re.compile(r"(?:115\.com|115pan\.com|115cdn\.com|anxia\.com)/s/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("mobile", re.compile(r"(?:yun\.139\.com/shareweb/#/w/i/|caiyun\.139\.com/w/i/|caiyun\.139\.com/m/i\?|caiyun\.feixin\.10086\.cn/|pan\.10086\.cn/s/)([a-zA-Z0-9_-]+)", re.IGNORECASE)),
+    ("terabox", re.compile(r"(?:terabox|teraboxapp|1024tera|freeterabox)\.(?:com|app)/s/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
+    ("googledrive", re.compile(r"(?:drive|docs)\.google\.com/(?:file/d/|drive/folders/|open\?id=)([a-zA-Z0-9_-]+)", re.IGNORECASE)),
+    ("mega", re.compile(r"mega\.(?:nz|co\.nz)/(?:file|folder)/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
+    ("gofile", re.compile(r"gofile\.io/d/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
+    ("onedrive", re.compile(r"(?:1drv\.ms/u/s!|onedrive\.live\.com/redux/\?resid=)([a-zA-Z0-9_-]+)", re.IGNORECASE)),
+    ("ctfile", re.compile(r"(?:ctfile|pipipan|400gb|t004)\.(?:com|cn)/(?:f|file)/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("pikpak", re.compile(r"(?:pikpak|mypikpak|pikpakdrive)\.com/s/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("lanzou", re.compile(r"(?:lanzou[uixys]*|lan[zs]o[ux])\.(?:com|net|org)/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("guangya", re.compile(r"guangyapan\.com/s/([a-zA-Z0-9_-]+)", re.IGNORECASE)),

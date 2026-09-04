@@ -37,6 +37,8 @@ PASSWORD_SUPPORTED_NETDISKS = {
     "115网盘",
     "移动云盘",
     "阿里云盘",
+    "城通网盘",
+    "TeraBox",
 }
 
 PASSWORD_PATTERN = re.compile(
@@ -218,6 +220,12 @@ CLOUD_DISK_LABELS = {
     "123", "123网盘", "123云盘", "123pan",
     "天翼", "天翼云", "天翼云盘", "天翼网盘", "cloud.189.cn",
     "移动", "移动云盘", "和彩云",
+    "terabox", "terabox网盘", "terabox云盘", "1024tera",
+    "google drive", "googledrive", "gdrive", "谷歌云盘", "谷歌网盘", "drive.google.com",
+    "mega", "mega网盘", "mega.nz",
+    "gofile", "gofile.io",
+    "onedrive", "onedrive.live.com", "1drv.ms", "微软云盘", "微软网盘",
+    "城通", "城通网盘", "ctfile", "pipipan",
 }
 
 TITLE_PREFIX_PATTERN = re.compile(

@@ -119,6 +119,63 @@
             </div>
         </section>
 
+        <!-- 2. 敏感词过滤与安全防护 -->
+        <section class="admin-panel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-shield-alt text-red-600"></i> 敏感词过滤与安全防护
+                    </h2>
+                    <p class="admin-panel-desc">高效率 DFA 匹配算法，实时阻断非法搜索关键词与剔除网盘脏数据资源</p>
+                </div>
+            </div>
+            <div class="admin-panel-body space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-3 border-b border-slate-100">
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                        <div>
+                            <span class="font-bold text-slate-800 text-xs block">启用敏感词过滤引擎</span>
+                            <span class="text-[11px] text-slate-500">全局匹配引擎总开关</span>
+                        </div>
+                        <label class="plugin-switch">
+                            <input type="checkbox" id="sensitiveWordsGlobalToggle" onchange="saveSensitiveWordsConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                        <div>
+                            <span class="font-bold text-slate-800 text-xs block">拦截搜索输入关键词</span>
+                            <span class="text-[11px] text-slate-500">命中则直接拒绝搜索</span>
+                        </div>
+                        <label class="plugin-switch">
+                            <input type="checkbox" id="sensitiveWordsInputToggle" onchange="saveSensitiveWordsConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                        <div>
+                            <span class="font-bold text-slate-800 text-xs block">剔除输出脏数据结果</span>
+                            <span class="text-[11px] text-slate-500">命中标题或链接时自动丢弃</span>
+                        </div>
+                        <label class="plugin-switch">
+                            <input type="checkbox" id="sensitiveWordsOutputToggle" onchange="saveSensitiveWordsConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label for="sensitiveWordsTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
+                            敏感词黑名单词库 (每行一个词)
+                        </label>
+                        <span class="text-xs text-slate-500">当前词数：<strong id="sensitiveWordsCount" class="text-blue-600">0</strong> 条</span>
+                    </div>
+                    <textarea class="form-control font-mono text-xs" id="sensitiveWordsTextarea" rows="6" placeholder="请输入敏感词，每行一个（例如：外挂、博彩、破解工具等）" onblur="saveSensitiveWordsConfig()"></textarea>
+                    <p class="text-[11px] text-slate-400 mt-1.5 mb-0">提示：切换开关或编辑词库离开焦点后系统将自动保存并即时生效。</p>
+                </div>
+            </div>
+        </section>
+
         <!-- 3. 网盘类型配置 -->
         <section class="admin-panel">
             <div class="admin-panel-header">

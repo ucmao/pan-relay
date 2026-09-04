@@ -141,7 +141,10 @@ def save_allow_excel_download_config(enabled: bool) -> bool:
 
 SENSITIVE_WORDS_CONFIG_KEY = "sensitive_words_config"
 DEFAULT_SENSITIVE_WORDS = [
-    "外挂", "辅助透视", "破解工具", "博彩", "赌博", "色情", "卡密", "代刷"
+    "博彩", "赌博", "百家乐", "新葡京",
+    "色情", "黄片", "成人视频",
+    "卡密", "代刷", "接码", "撞库",
+    "外挂", "辅助透视", "透视挂",
 ]
 
 

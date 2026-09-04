@@ -424,15 +424,104 @@ async function saveCookieConfig() {
     }
 }
 
+async function loadSensitiveWordsConfig() {
+    try {
+        const response = await fetch('/admin/api/sensitive-words-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const config = data.config || {};
+
+        const globalToggle = document.getElementById('sensitiveWordsGlobalToggle');
+        const inputToggle = document.getElementById('sensitiveWordsInputToggle');
+        const outputToggle = document.getElementById('sensitiveWordsOutputToggle');
+        const textarea = document.getElementById('sensitiveWordsTextarea');
+        const countEl = document.getElementById('sensitiveWordsCount');
+
+        if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? true);
+        if (inputToggle) inputToggle.checked = Boolean(config.input_enabled ?? true);
+        if (outputToggle) outputToggle.checked = Boolean(config.output_enabled ?? true);
+
+        const words = Array.isArray(config.words) ? config.words : [];
+        if (textarea) {
+            textarea.value = words.join('\n');
+        }
+        if (countEl) {
+            countEl.textContent = String(words.length);
+        }
+    } catch (error) {
+        console.error('加载敏感词配置失败:', error);
+        showToast('加载敏感词配置失败，请检查后端日志。', 'danger');
+    }
+}
+
+async function saveSensitiveWordsConfig() {
+    const globalToggle = document.getElementById('sensitiveWordsGlobalToggle');
+    const inputToggle = document.getElementById('sensitiveWordsInputToggle');
+    const outputToggle = document.getElementById('sensitiveWordsOutputToggle');
+    const textarea = document.getElementById('sensitiveWordsTextarea');
+    const saveBtn = document.getElementById('saveSensitiveWordsConfigBtn');
+
+    const wordsRaw = textarea ? textarea.value : '';
+    const words = wordsRaw
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+    const payload = {
+        enabled: globalToggle ? globalToggle.checked : true,
+        input_enabled: inputToggle ? inputToggle.checked : true,
+        output_enabled: outputToggle ? outputToggle.checked : true,
+        words: words,
+    };
+
+    if (saveBtn) saveBtn.disabled = true;
+    try {
+        const response = await fetch('/admin/api/sensitive-words-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '敏感词配置保存成功', 'success');
+        await loadSensitiveWordsConfig();
+    } catch (error) {
+        console.error('保存敏感词配置失败:', error);
+        showToast(`保存敏感词配置失败: ${error.message}`, 'danger');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
+    }
+}
+
+function bindSensitiveWordsTextareaEvents() {
+    const textarea = document.getElementById('sensitiveWordsTextarea');
+    const countEl = document.getElementById('sensitiveWordsCount');
+    if (textarea && countEl) {
+        textarea.addEventListener('input', () => {
+            const words = textarea.value.split('\n').map((s) => s.trim()).filter(Boolean);
+            countEl.textContent = String(words.length);
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     bindSystemTabEvents();
     bindCredentialTabEvents();
     bindFrontendNetdiskCheckboxEvents();
     bindFrontendLinkModeEvents();
+    bindSensitiveWordsTextareaEvents();
     loadPublicSearchApiConfig();
     loadAllowExcelDownloadConfig();
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();
+    loadSensitiveWordsConfig();
     loadCookieConfig();
     updateDynamicTransferStatusVisibility();
 
@@ -441,3 +530,4 @@ document.addEventListener('DOMContentLoaded', () => {
         saveCookieConfigBtn.addEventListener('click', saveCookieConfig);
     }
 });
+

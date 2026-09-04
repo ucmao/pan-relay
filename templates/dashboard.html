@@ -5,19 +5,16 @@
 {% block content %}
 <div class="space-y-6 animate-fade-in">
     <!-- 顶栏欢迎与操作条 -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
-        <div>
-            <div class="flex items-center space-x-3">
-                <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">仪表盘</h1>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>系统状态良好
-                </span>
-            </div>
-            <p class="text-sm text-slate-500 mt-1">实时掌握网盘聚合检索源健康度、自动转存凭证与资源库状态。</p>
-        </div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white px-6 py-5 rounded-2xl border border-slate-200/80 shadow-2xs">
         <div class="flex items-center space-x-3">
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">仪表盘</h1>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>系统运行正常
+            </span>
+        </div>
+        <div class="flex items-center space-x-2.5">
             <button onclick="refreshDashboardStats()" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center space-x-1.5">
-                <i class="fas fa-sync-alt" id="refresh-icon"></i>
+                <i class="fas fa-sync-alt text-slate-500" id="refresh-icon"></i>
                 <span>刷新统计</span>
             </button>
             <button onclick="openQuickAddModal()" class="px-4 py-2 text-xs font-semibold rounded-xl bg-blue-600 text-white shadow-xs hover:bg-blue-700 transition-all flex items-center space-x-1.5">
@@ -27,90 +24,80 @@
         </div>
     </div>
 
-    <!-- 4 大核心指标卡片 -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <!-- 4 大核心指标卡片 (统一极简风格) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- 卡片 1: 资源总数 -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md transition-shadow">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition-all">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">资源库总量</span>
-                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                    <i class="fas fa-layer-group text-lg"></i>
-                </div>
+                <span class="text-xs font-semibold text-slate-500">资源库总量</span>
+                <i class="fas fa-layer-group text-slate-400 text-sm"></i>
             </div>
             <div class="mt-3 flex items-baseline justify-between">
-                <span class="text-3xl font-black text-slate-900" id="stat-resources-total">{{ summary.resources.total_count }}</span>
-                <span class="text-xs font-medium text-slate-500">已替换 <strong class="text-blue-600" id="stat-resources-replaced">{{ summary.resources.replaced_count }}</strong></span>
+                <span class="text-2xl font-bold text-slate-900" id="stat-resources-total">{{ summary.resources.total_count }}</span>
+                <span class="text-xs text-slate-500">已替换 <strong class="text-slate-700 font-semibold" id="stat-resources-replaced">{{ summary.resources.replaced_count }}</strong></span>
             </div>
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div class="mt-3 pt-2.5 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
                 <span>云盘类别: {{ summary.resources.cloud_distribution|length }} 种</span>
-                <a href="{{ url_for('resources.resources_page') }}" class="text-blue-600 font-semibold hover:underline flex items-center">
-                    管理资源 <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+                <a href="{{ url_for('resources.resources_page') }}" class="text-blue-600 font-medium hover:underline flex items-center">
+                    管理资源 <i class="fas fa-chevron-right text-[9px] ml-1"></i>
                 </a>
             </div>
         </div>
 
         <!-- 卡片 2: 检索源健康率 -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md transition-shadow">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition-all">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">检索源综合健康率</span>
-                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                    <i class="fas fa-satellite-dish text-lg"></i>
-                </div>
+                <span class="text-xs font-semibold text-slate-500">检索源综合健康率</span>
+                <i class="fas fa-satellite-dish text-slate-400 text-sm"></i>
             </div>
             <div class="mt-3 flex items-baseline justify-between">
-                <span class="text-3xl font-black text-slate-900" id="stat-health-rate">{{ summary.sources.overall_health_rate }}%</span>
-                <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">在线</span>
+                <span class="text-2xl font-bold text-slate-900" id="stat-health-rate">{{ summary.sources.overall_health_rate }}%</span>
+                <span class="text-xs font-medium text-emerald-600 bg-emerald-50/80 px-2 py-0.5 rounded">在线</span>
             </div>
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div class="mt-3 pt-2.5 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
                 <span>API / 插件 / TG 渠道</span>
-                <a href="{{ url_for('search_sources.sources_page') }}" class="text-blue-600 font-semibold hover:underline flex items-center">
-                    源治理 <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+                <a href="{{ url_for('search_sources.sources_page') }}" class="text-blue-600 font-medium hover:underline flex items-center">
+                    源治理 <i class="fas fa-chevron-right text-[9px] ml-1"></i>
                 </a>
             </div>
         </div>
 
         <!-- 卡片 3: 转存凭证激活率 -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md transition-shadow">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition-all">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">自动转存凭证</span>
-                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                    <i class="fas fa-key text-lg"></i>
-                </div>
+                <span class="text-xs font-semibold text-slate-500">自动转存凭证</span>
+                <i class="fas fa-key text-slate-400 text-sm"></i>
             </div>
             <div class="mt-3 flex items-baseline justify-between">
-                <span class="text-3xl font-black text-slate-900" id="stat-credentials-ratio">{{ summary.credentials.summary.enabled_count }} / {{ summary.credentials.summary.total_count }}</span>
-                <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">云盘凭证</span>
+                <span class="text-2xl font-bold text-slate-900" id="stat-credentials-ratio">{{ summary.credentials.summary.enabled_count }} / {{ summary.credentials.summary.total_count }}</span>
+                <span class="text-xs text-slate-500">已启用凭证</span>
             </div>
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span>支持百度/夸克/阿里/UC/迅雷</span>
-                <a href="{{ url_for('system_config.system_config_page') }}" class="text-blue-600 font-semibold hover:underline flex items-center">
-                    更新凭证 <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+            <div class="mt-3 pt-2.5 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
+                <span>百度/夸克/阿里/UC/迅雷</span>
+                <a href="{{ url_for('system_config.system_config_page') }}" class="text-blue-600 font-medium hover:underline flex items-center">
+                    更新凭证 <i class="fas fa-chevron-right text-[9px] ml-1"></i>
                 </a>
             </div>
         </div>
 
         <!-- 卡片 4: 前台服务能力 -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:shadow-md transition-shadow">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition-all">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">前台服务能力</span>
-                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-                    <i class="fas fa-sliders-h text-lg"></i>
-                </div>
+                <span class="text-xs font-semibold text-slate-500">前台服务能力</span>
+                <i class="fas fa-sliders-h text-slate-400 text-sm"></i>
             </div>
             <div class="mt-3 flex items-baseline justify-between">
-                <span class="text-lg font-black text-slate-900 uppercase" id="stat-link-mode">
+                <span class="text-lg font-bold text-slate-900" id="stat-link-mode">
                     {% if summary.system.frontend_link_mode == 'direct' %}直接出链
                     {% elif summary.system.frontend_link_mode == 'temp' %}临时转存
                     {% else %}智能模式{% endif %}
                 </span>
-                <span class="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
-                    模式
-                </span>
+                <span class="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">运行模式</span>
             </div>
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <span>公开API: <strong id="stat-public-api-status" class="{% if summary.system.public_search_api_enabled %}text-emerald-600{% else %}text-rose-500{% endif %}">{% if summary.system.public_search_api_enabled %}开启{% else %}关闭{% endif %}</strong></span>
-                <a href="{{ url_for('system_config.system_config_page') }}" class="text-blue-600 font-semibold hover:underline flex items-center">
-                    系统设置 <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+            <div class="mt-3 pt-2.5 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
+                <span>公开API: <strong id="stat-public-api-status" class="{% if summary.system.public_search_api_enabled %}text-emerald-600{% else %}text-rose-500{% endif %} font-semibold">{% if summary.system.public_search_api_enabled %}开启{% else %}关闭{% endif %}</strong></span>
+                <a href="{{ url_for('system_config.system_config_page') }}" class="text-blue-600 font-medium hover:underline flex items-center">
+                    系统设置 <i class="fas fa-chevron-right text-[9px] ml-1"></i>
                 </a>
             </div>
         </div>
@@ -118,18 +105,17 @@
 
     <!-- 主板块：网格两列布局 -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- 左侧 8 列：核心业务看板（检索源概览、凭证矩阵、最新资源） -->
+        <!-- 左侧 8 列：核心业务看板 -->
         <div class="lg:col-span-8 space-y-6">
             
-            <!-- 检索源治理与健康分布看板 -->
+            <!-- 全量检索源治理看板 (展平取消框中框) -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
                     <div>
                         <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
                             <i class="fas fa-network-wired text-blue-600"></i>
                             <span>全量检索源治理看板</span>
                         </h2>
-                        <p class="text-xs text-slate-500 mt-0.5">聚合 API 检索源、第三方爬虫插件与 Telegram 搜索频道</p>
                     </div>
                     <div class="flex space-x-2">
                         <button onclick="triggerBatchApiTest()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100 transition-colors">
@@ -141,82 +127,79 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5">
-                    <!-- API 检索源统计块 -->
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                        <div class="flex items-center justify-between text-xs font-semibold text-slate-500 mb-2">
-                            <span>API 接口源</span>
-                            <span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px]">JSON/REST</span>
+                <!-- 扁平 3 列网格，无嵌套内边框卡片 -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-5">
+                    <!-- API 接口源统计块 -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-600">API 接口源</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium">JSON/REST</span>
                         </div>
-                        <div class="text-2xl font-black text-slate-900">
+                        <div class="text-2xl font-bold text-slate-900">
                             {{ summary.sources.api.enabled_count }} <span class="text-xs font-normal text-slate-500">/ {{ summary.sources.api.total_count }} 启用</span>
                         </div>
-                        <div class="mt-2 space-y-1 text-xs text-slate-600">
+                        <div class="pt-1 space-y-1 text-xs text-slate-500">
                             <div class="flex justify-between">
                                 <span>正常响应:</span>
-                                <span class="font-bold text-emerald-600">{{ summary.sources.api.healthy_count }}</span>
+                                <span class="font-semibold text-emerald-600">{{ summary.sources.api.healthy_count }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span>平均延迟:</span>
-                                <span class="font-bold text-slate-700">{{ summary.sources.api.avg_response_time_ms }} ms</span>
+                                <span class="font-medium text-slate-700">{{ summary.sources.api.avg_response_time_ms }} ms</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- 插件扩展统计块 -->
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                        <div class="flex items-center justify-between text-xs font-semibold text-slate-500 mb-2">
-                            <span>爬虫扩展插件</span>
-                            <span class="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 text-[10px]">Python</span>
+                    <div class="space-y-2 sm:border-l sm:border-slate-100 sm:pl-6">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-600">爬虫扩展插件</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium">Python</span>
                         </div>
-                        <div class="text-2xl font-black text-slate-900">
+                        <div class="text-2xl font-bold text-slate-900">
                             {{ summary.sources.plugins.enabled_count }} <span class="text-xs font-normal text-slate-500">/ {{ summary.sources.plugins.total_count }} 开启</span>
                         </div>
-                        <div class="mt-2 text-xs text-slate-500 truncate">
-                            包含独立站点或自动化抓取模块
+                        <div class="pt-1 text-xs text-slate-500">
+                            包含独立站点与抓取模块
                         </div>
                     </div>
 
                     <!-- Telegram 频道统计块 -->
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                        <div class="flex items-center justify-between text-xs font-semibold text-slate-500 mb-2">
-                            <span>Telegram 频道</span>
-                            <span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 text-[10px]">TG Bot</span>
+                    <div class="space-y-2 sm:border-l sm:border-slate-100 sm:pl-6">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-600">Telegram 频道</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium">TG Bot</span>
                         </div>
-                        <div class="text-2xl font-black text-slate-900">
+                        <div class="text-2xl font-bold text-slate-900">
                             {{ summary.sources.telegram.enabled_count }} <span class="text-xs font-normal text-slate-500">/ {{ summary.sources.telegram.total_count }} 关注</span>
                         </div>
-                        <div class="mt-2 space-y-1 text-xs text-slate-600">
+                        <div class="pt-1 space-y-1 text-xs text-slate-500">
                             <div class="flex justify-between">
                                 <span>连通正常:</span>
-                                <span class="font-bold text-emerald-600">{{ summary.sources.telegram.healthy_count }}</span>
+                                <span class="font-semibold text-emerald-600">{{ summary.sources.telegram.healthy_count }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 网盘转存凭证矩阵看板 -->
+            <!-- 网盘凭证与转存状态矩阵 (扁平极简列表) -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div>
                         <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-                            <i class="fas fa-hdd text-amber-500"></i>
-                            <span>网盘凭证与转存状态矩阵</span>
+                            <i class="fas fa-hdd text-slate-700"></i>
+                            <span>网盘凭证与转存状态</span>
                         </h2>
-                        <p class="text-xs text-slate-500 mt-0.5">自动检测网盘账号凭证合法性，决定动态生成分享链接能力</p>
                     </div>
-                    <a href="{{ url_for('system_config.system_config_page') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline">
-                        管理所有凭证 &rarr;
+                    <a href="{{ url_for('system_config.system_config_page') }}" class="text-xs font-semibold text-blue-600 hover:underline">
+                        管理凭证 &rarr;
                     </a>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-5">
                     {% for item in summary.credentials.statuses %}
-                    <div class="p-3.5 rounded-xl border flex flex-col justify-between space-y-2
-                        {% if item.status == 'enabled' %}bg-emerald-50/40 border-emerald-200/80
-                        {% elif item.status == 'invalid' %}bg-amber-50/40 border-amber-200/80
-                        {% else %}bg-slate-50 border-slate-200/70{% endif %}">
+                    <div class="p-3.5 rounded-xl border border-slate-200/80 bg-white hover:border-slate-300 transition-all flex flex-col justify-between space-y-2">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
                                 <span class="w-2 h-2 rounded-full
@@ -225,10 +208,10 @@
                                     {% else %}bg-slate-300{% endif %}"></span>
                                 <span class="text-xs font-bold text-slate-900">{{ item.cloud_name }}</span>
                             </div>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold
-                                {% if item.status == 'enabled' %}bg-emerald-100 text-emerald-700
-                                {% elif item.status == 'invalid' %}bg-amber-100 text-amber-700
-                                {% else %}bg-slate-200 text-slate-600{% endif %}">
+                            <span class="text-[10px] px-1.5 py-0.5 rounded font-medium
+                                {% if item.status == 'enabled' %}bg-emerald-50 text-emerald-700 border border-emerald-100
+                                {% elif item.status == 'invalid' %}bg-amber-50 text-amber-700 border border-amber-100
+                                {% else %}bg-slate-100 text-slate-600{% endif %}">
                                 {{ item.title }}
                             </span>
                         </div>
@@ -243,10 +226,9 @@
                 <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div>
                         <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-                            <i class="fas fa-clock text-blue-500"></i>
+                            <i class="fas fa-clock text-slate-700"></i>
                             <span>最新收录资源</span>
                         </h2>
-                        <p class="text-xs text-slate-500 mt-0.5">展示最新通过 API 或后台录入的资源记录</p>
                     </div>
                     <a href="{{ url_for('resources.resources_page') }}" class="text-xs font-semibold text-blue-600 hover:underline">
                         完整资源库 &rarr;
@@ -272,7 +254,7 @@
                                         {{ res.name }}
                                     </td>
                                     <td class="py-3 px-2">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
                                             {{ res.cloud_name or '通用网盘' }}
                                         </span>
                                     </td>
@@ -307,48 +289,43 @@
             <!-- 快捷控制中心组件 -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
                 <h2 class="text-base font-bold text-slate-900 pb-3 border-b border-slate-100 flex items-center space-x-2">
-                    <i class="fas fa-bolt text-amber-500"></i>
+                    <i class="fas fa-sliders-h text-slate-700"></i>
                     <span>快捷控制中心</span>
                 </h2>
 
-                <div class="mt-4 space-y-3">
-                    <button onclick="openQuickAddModal()" class="w-full py-2.5 px-4 rounded-xl bg-blue-600 text-white font-semibold text-xs shadow-xs hover:bg-blue-700 transition-colors flex items-center justify-between">
-                        <span class="flex items-center"><i class="fas fa-plus-circle mr-2"></i>快捷添加资源</span>
-                        <i class="fas fa-chevron-right text-[10px]"></i>
-                    </button>
-
-                    <a href="{{ url_for('search_index') }}" target="_blank" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors flex items-center justify-between group">
+                <div class="mt-4 space-y-2.5">
+                    <a href="{{ url_for('search_index') }}" target="_blank" class="w-full py-2.5 px-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium text-xs border border-slate-200/60 transition-colors flex items-center justify-between group">
                         <span class="flex items-center"><i class="fas fa-search mr-2 text-slate-400 group-hover:text-slate-600"></i>前台聚合搜索试用</span>
                         <i class="fas fa-external-link-alt text-[10px] text-slate-400"></i>
                     </a>
 
-                    <a href="{{ url_for('search_sources.sources_page') }}" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors flex items-center justify-between group">
-                        <span class="flex items-center"><i class="fas fa-sliders-h mr-2 text-slate-400 group-hover:text-slate-600"></i>管理 API / Telegram 源</span>
+                    <a href="{{ url_for('search_sources.sources_page') }}" class="w-full py-2.5 px-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-medium text-xs border border-slate-200/60 transition-colors flex items-center justify-between group">
+                        <span class="flex items-center"><i class="fas fa-cog mr-2 text-slate-400 group-hover:text-slate-600"></i>管理 API / Telegram 源</span>
                         <i class="fas fa-chevron-right text-[10px] text-slate-400"></i>
                     </a>
                 </div>
 
                 <!-- 快捷模式切换与开关 -->
-                <div class="mt-6 pt-5 border-t border-slate-100 space-y-4">
+                <div class="mt-5 pt-4 border-t border-slate-100 space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-2">前台出链模式</label>
-                        <select id="quick-link-mode-select" onchange="quickUpdateLinkMode(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">前台出链模式</label>
+                        <select id="quick-link-mode-select" onchange="quickUpdateLinkMode(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="direct" {% if summary.system.frontend_link_mode == 'direct' %}selected{% endif %}>直接出链 (推荐)</option>
                             <option value="temp" {% if summary.system.frontend_link_mode == 'temp' %}selected{% endif %}>强制临时转存</option>
                             <option value="auto" {% if summary.system.frontend_link_mode == 'auto' %}selected{% endif %}>智能自适应模式</option>
                         </select>
                     </div>
 
-                    <div class="flex items-center justify-between pt-2">
-                        <span class="text-xs font-semibold text-slate-700">公开 API 搜索接口</span>
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-xs font-medium text-slate-700">公开 API 搜索接口</span>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="toggle-public-api" onchange="quickTogglePublicApi(this.checked)" class="sr-only peer" {% if summary.system.public_search_api_enabled %}checked{% endif %}>
                             <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                     </div>
 
-                    <div class="flex items-center justify-between pt-1">
-                        <span class="text-xs font-semibold text-slate-700">前台 Excel 批量导出</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-700">前台 Excel 批量导出</span>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="toggle-excel-download" onchange="quickToggleExcel(this.checked)" class="sr-only peer" {% if summary.system.allow_excel_download_enabled %}checked{% endif %}>
                             <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
