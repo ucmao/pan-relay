@@ -2,28 +2,34 @@ function getFrontendDisplayNetdiskCheckboxes() {
     return Array.from(document.querySelectorAll('.frontend-display-netdisk-checkbox'));
 }
 
-function getFrontendLinkModeRadios() {
-    return Array.from(document.querySelectorAll('.frontend-link-mode-radio[name="frontendLinkMode"]'));
-}
-
 function updateDynamicTransferStatusVisibility() {
     const panel = document.getElementById('dynamicTransferStatusPanel');
-    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="frontendLinkMode"]:checked');
+    const select = document.getElementById('frontendLinkModeSelect');
+    const badge = document.getElementById('frontendLinkModeBadge');
     const kpiEl = document.getElementById('kpiDeliveryMode');
-    if (kpiEl && selectedMode) {
-        kpiEl.textContent = selectedMode.value === 'view' ? '动态转存模式' : '原始链接模式';
+
+    const mode = select ? select.value : 'copy';
+    const isView = mode === 'view';
+
+    if (kpiEl) {
+        kpiEl.textContent = isView ? '动态转存' : '原始链接';
+    }
+    if (badge) {
+        badge.textContent = isView ? '动态转存模式' : '原始链接模式';
+        badge.className = `badge ${isView ? 'badge-warning' : 'badge-info'} text-[10px]`;
     }
     if (!panel) {
         return;
     }
 
-    panel.classList.toggle('d-none', !selectedMode || selectedMode.value !== 'view');
+    panel.classList.toggle('d-none', !isView);
 }
 
 function bindFrontendLinkModeEvents() {
-    getFrontendLinkModeRadios().forEach((radio) => {
-        radio.addEventListener('change', updateDynamicTransferStatusVisibility);
-    });
+    const select = document.getElementById('frontendLinkModeSelect');
+    if (select) {
+        select.addEventListener('change', updateDynamicTransferStatusVisibility);
+    }
 }
 
 function bindSystemTabEvents() {
@@ -151,7 +157,10 @@ function updateFrontendNetdiskSelectionUI() {
 
 function bindFrontendNetdiskCheckboxEvents() {
     getFrontendDisplayNetdiskCheckboxes().forEach((checkbox) => {
-        checkbox.addEventListener('change', updateFrontendNetdiskSelectionUI);
+        checkbox.addEventListener('change', async () => {
+            updateFrontendNetdiskSelectionUI();
+            await saveFrontendDisplayNetdisks();
+        });
     });
 }
 
@@ -257,13 +266,14 @@ async function saveAllowExcelDownloadConfig() {
     }
 }
 
-function toggleAllFrontendDisplayNetdisks() {
+async function toggleAllFrontendDisplayNetdisks() {
     const checkboxes = getFrontendDisplayNetdiskCheckboxes();
     const allChecked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
     checkboxes.forEach((checkbox) => {
         checkbox.checked = !allChecked;
     });
     updateFrontendNetdiskSelectionUI();
+    await saveFrontendDisplayNetdisks();
 }
 
 async function loadFrontendDisplayNetdisks() {
@@ -286,17 +296,16 @@ async function loadFrontendDisplayNetdisks() {
 }
 
 async function saveFrontendDisplayNetdisks() {
-    const saveButton = document.getElementById('saveFrontendNetdiskConfigButton');
     const enabledNetdisks = getFrontendDisplayNetdiskCheckboxes()
         .filter((checkbox) => checkbox.checked)
         .map((checkbox) => checkbox.value);
 
     if (enabledNetdisks.length === 0) {
         showToast('前端显示网盘至少需要保留一个。', 'warning');
+        await loadFrontendDisplayNetdisks();
         return;
     }
 
-    if (saveButton) saveButton.disabled = true;
     try {
         const response = await fetch('/admin/api/frontend-display-netdisks', {
             method: 'PUT',
@@ -313,8 +322,7 @@ async function saveFrontendDisplayNetdisks() {
     } catch (error) {
         console.error('保存前端显示网盘配置失败:', error);
         showToast(`保存前端显示网盘配置失败: ${error.message}`, 'danger');
-    } finally {
-        if (saveButton) saveButton.disabled = false;
+        await loadFrontendDisplayNetdisks();
     }
 }
 
@@ -326,9 +334,9 @@ async function loadFrontendLinkMode() {
         }
 
         const data = await response.json();
-        const radio = document.querySelector(`.frontend-link-mode-radio[name="frontendLinkMode"][value="${data.mode || 'copy'}"]`);
-        if (radio) {
-            radio.checked = true;
+        const select = document.getElementById('frontendLinkModeSelect');
+        if (select) {
+            select.value = data.mode || 'copy';
         }
         updateDynamicTransferStatusVisibility();
     } catch (error) {
@@ -338,15 +346,15 @@ async function loadFrontendLinkMode() {
 }
 
 async function saveFrontendLinkMode() {
-    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="frontendLinkMode"]:checked');
-    const saveButton = document.getElementById('saveFrontendLinkModeButton');
+    const select = document.getElementById('frontendLinkModeSelect');
+    const mode = select ? select.value : 'copy';
 
-    if (saveButton) saveButton.disabled = true;
+    if (select) select.disabled = true;
     try {
         const response = await fetch('/admin/api/frontend-link-mode', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode: selectedMode ? selectedMode.value : 'copy' })
+            body: JSON.stringify({ mode: mode })
         });
 
         const data = await response.json();
@@ -354,12 +362,13 @@ async function saveFrontendLinkMode() {
             throw new Error(data.message || `HTTP error! status: ${response.status}`);
         }
 
-        showToast(data.message, 'success');
+        showToast(data.message || '出链策略保存成功', 'success');
+        updateDynamicTransferStatusVisibility();
     } catch (error) {
         console.error('保存前端出链模式失败:', error);
         showToast(`保存前端出链模式失败: ${error.message}`, 'danger');
     } finally {
-        if (saveButton) saveButton.disabled = false;
+        if (select) select.disabled = false;
     }
 }
 

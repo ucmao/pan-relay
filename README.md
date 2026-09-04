@@ -12,7 +12,6 @@
   <a href="#-部署指南">部署指南</a> •
   <a href="#-网盘凭证说明">凭证配置</a> •
   <a href="#-开放接口可选">开放接口</a> •
-  <a href="#-项目结构">项目结构</a> •
   <a href="#-联系作者">联系作者</a>
 </p>
 
@@ -151,37 +150,6 @@ GET /api?keyword={关键词}&cloud_name={可选网盘平台}&limit=20
 }
 ```
 
----
-
-## 📂 项目结构
-
-```text
-pan-relay/
-├── app.py                     # 应用主入口 (Flask 路由注册与调度器启动)
-├── Dockerfile                 # Docker 轻量镜像构建定义
-├── docker-compose.yml         # 容器化一键部署编排
-├── requirements.txt           # Python 核心依赖清单
-├── schema_sqlite.sql          # SQLite 数据库表结构与预置数据
-├── src/                       # 应用核心包
-│   ├── clients/               # 夸克/百度/阿里/UC/迅雷底层 API 客户端
-│   ├── configs/               # 应用配置与日志管理
-│   │   ├── app_config.py      # 环境变量与核心配置读取
-│   │   └── logging_setup.py   # 日志格式与输出配置
-│   ├── db/                    # SQLite 数据库交互层 (resources, api_configs, credentials 等)
-│   ├── models/                # 搜索结果等领域数据模型 (SearchResultItem)
-│   ├── routes/                # Web 蓝图路由层
-│   │   ├── search_routes.py   # 前台搜索与公开 API 路由
-│   │   ├── resource_routes.py # 后台私有资源管理路由
-│   │   ├── api_config_routes.py # 第三方 API 搜索源管理路由
-│   │   ├── system_config_routes.py # 系统配置与网盘凭证管理
-│   │   └── auth_routes.py     # 后台鉴权与 JWT 认证
-│   ├── services/              # 搜索聚合服务、TG 爬虫、转存调度
-│   ├── utils/                 # 权限校验、网盘链接正则提取等通用工具
-│   └── pan_operator.py        # 核心转存与链接洗白操作引擎
-├── static/                    # 前端 CSS、JS 及图片素材
-├── templates/                 # Jinja2 HTML 页面模板
-└── tests/                     # 自动化单元测试套件
-```
 
 ---
 

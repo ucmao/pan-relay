@@ -14,6 +14,7 @@ from src.configs.app_config import user_agents
 from src.db.resources import search_resources_by_keyword, search_resources_advanced
 from src.models.search_item import SearchResultItem
 from src.services.plugin_manager import plugin_manager
+from src.services.sensitive_word_service import check_input_keyword, filter_search_results
 from src.services.system_config_service import get_allowed_frontend_netdisks
 from src.services.telegram_search_service import search_telegram_resources
 from src.utils.netdisk_utils import (
@@ -320,8 +321,18 @@ def generate_search_stream_events(keyword):
     """
     生成搜索结果的 SSE 事件流 (生成字符串, 不直接返回 Response)
     """
+    keyword = str(keyword or "").strip()
 
     def _event_generator():
+        if not keyword:
+            yield json.dumps({"type": "error", "message": "请提供有效的搜索关键词"})
+            return
+
+        is_blocked, matched_word = check_input_keyword(keyword)
+        if is_blocked:
+            yield json.dumps({"type": "error", "message": f"搜索关键词包含敏感词汇 '{matched_word}'，已禁止搜索"}, ensure_ascii=False)
+            return
+
         def _serialize_items(items):
             return [
                 item.to_list() if isinstance(item, SearchResultItem) else list(item)
@@ -332,6 +343,7 @@ def generate_search_stream_events(keyword):
         cached_items = get_cached_search_items(keyword)
         if cached_items is not None:
             logger.info(f"关键词 '{keyword}' 流式搜索击中内存缓存 ({len(cached_items)} 条)。")
+            cached_items = filter_search_results(cached_items)
             if cached_items:
                 yield json.dumps({"type": "initial", "results": _serialize_items(cached_items)})
             yield json.dumps({"type": "end"})
@@ -368,6 +380,7 @@ def generate_search_stream_events(keyword):
 
         db_results = search_in_database(keyword)
         db_results = filter_results_by_frontend_netdisks(db_results)
+        db_results = filter_search_results(db_results)
         db_results = _dedupe_stream_chunk(db_results)
         if db_results:
             yield json.dumps({"type": "initial", "results": _serialize_items(db_results)})
@@ -399,6 +412,7 @@ def generate_search_stream_events(keyword):
                     try:
                         results = future.result()
                         results = filter_results_by_frontend_netdisks(results)
+                        results = filter_search_results(results)
                         results = _dedupe_stream_chunk(results)
                         if results:
                             yield json.dumps({"type": "update", "results": _serialize_items(results)})
@@ -698,10 +712,15 @@ def search_public_resources(keyword="", limit=100):
     if not keyword:
         return False, "请提供搜索关键词", []
 
+    is_blocked, matched_word = check_input_keyword(keyword)
+    if is_blocked:
+        return False, f"搜索关键词包含敏感词汇 '{matched_word}'，已禁止搜索", []
+
     cached_items = get_cached_search_items(keyword)
     if cached_items is not None:
         logger.info(f"关键词 '{keyword}' 聚合搜索击中内存缓存 ({len(cached_items)} 条)。")
-        limited_cached = cached_items[: max(limit, 1)]
+        filtered_cached = filter_search_results(cached_items)
+        limited_cached = filtered_cached[: max(limit, 1)]
         return True, "聚合搜索成功 (缓存)", [item.to_dict() for item in limited_cached]
 
     aggregated_results = []
@@ -726,6 +745,8 @@ def search_public_resources(keyword="", limit=100):
             except Exception as err:
                 logger.error(f"公开聚合接口收集结果时发生异常: {err}")
 
+    # 敏感词过滤、去重与排序
+    aggregated_results = filter_search_results(aggregated_results)
     deduped_results = dedupe_search_results(aggregated_results)
     sorted_results = sort_search_results(deduped_results, keyword=keyword)
     if sorted_results:

@@ -139,6 +139,76 @@ def save_allow_excel_download_config(enabled: bool) -> bool:
     )
 
 
+SENSITIVE_WORDS_CONFIG_KEY = "sensitive_words_config"
+DEFAULT_SENSITIVE_WORDS = [
+    "外挂", "辅助透视", "破解工具", "博彩", "赌博", "色情", "卡密", "代刷"
+]
+
+
+def get_sensitive_words_config() -> Dict[str, Any]:
+    """获取敏感词过滤全局设置与词库"""
+    default_config = {
+        "enabled": True,
+        "input_enabled": True,
+        "output_enabled": True,
+        "words": DEFAULT_SENSITIVE_WORDS.copy(),
+    }
+    raw_value = get_config_value(SENSITIVE_WORDS_CONFIG_KEY)
+    if not raw_value:
+        return default_config
+    try:
+        parsed = json.loads(raw_value)
+        if not isinstance(parsed, dict):
+            return default_config
+        words = parsed.get("words", default_config["words"])
+        if isinstance(words, str):
+            words = [w.strip() for w in words.replace("\r\n", "\n").split("\n") if w.strip()]
+        elif not isinstance(words, list):
+            words = default_config["words"]
+        return {
+            "enabled": bool(parsed.get("enabled", True)),
+            "input_enabled": bool(parsed.get("input_enabled", True)),
+            "output_enabled": bool(parsed.get("output_enabled", True)),
+            "words": [str(w).strip().lower() for w in words if str(w).strip()],
+        }
+    except Exception as e:
+        logger.warning(f"读取敏感词配置失败，回退默认配置: {e}")
+        return default_config
+
+
+def save_sensitive_words_config(config_data: Dict[str, Any]) -> bool:
+    """保存敏感词过滤配置并触发算法缓存重载"""
+    if not isinstance(config_data, dict):
+        return False
+    current = get_sensitive_words_config()
+    enabled = bool(config_data.get("enabled", current["enabled"]))
+    input_enabled = bool(config_data.get("input_enabled", current["input_enabled"]))
+    output_enabled = bool(config_data.get("output_enabled", current["output_enabled"]))
+    words_raw = config_data.get("words", current["words"])
+    if isinstance(words_raw, str):
+        words = [w.strip().lower() for w in words_raw.replace("\r\n", "\n").split("\n") if w.strip()]
+    elif isinstance(words_raw, list):
+        words = [str(w).strip().lower() for w in words_raw if str(w).strip()]
+    else:
+        words = current["words"]
+
+    unique_words = list(dict.fromkeys(words))
+    payload = {
+        "enabled": enabled,
+        "input_enabled": input_enabled,
+        "output_enabled": output_enabled,
+        "words": unique_words,
+    }
+    success = set_config_value(SENSITIVE_WORDS_CONFIG_KEY, payload)
+    if success:
+        try:
+            from src.services.sensitive_word_service import reload_sensitive_words_cache
+            reload_sensitive_words_cache()
+        except Exception as e:
+            logger.warning(f"重载敏感词缓存失败: {e}")
+    return success
+
+
 TG_SEARCH_CONFIG_KEY = "telegram_search_settings"
 PLUGIN_SETTINGS_KEY = "plugin_settings"
 

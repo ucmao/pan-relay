@@ -8,11 +8,13 @@ from src.services.system_config_service import (
     get_allow_excel_download_config,
     get_frontend_display_netdisk_config,
     get_frontend_link_mode,
+    get_sensitive_words_config,
     get_tg_search_config,
     save_public_search_api_config,
     save_allow_excel_download_config,
     save_frontend_display_netdisk_config,
     save_frontend_link_mode,
+    save_sensitive_words_config,
     save_tg_search_config,
 )
 from src.services.telegram_channel_service import (
@@ -488,3 +490,28 @@ def test_tg_search_api():
     )
     save_tg_channel_health(channel, result)
     return jsonify(result)
+
+
+@system_config_bp.route("/admin/api/sensitive-words-config", methods=["GET"])
+@token_required
+def get_sensitive_words_config_api():
+    """获取敏感词过滤配置与词库"""
+    config = get_sensitive_words_config()
+    return jsonify({"success": True, "config": config})
+
+
+@system_config_bp.route("/admin/api/sensitive-words-config", methods=["PUT"])
+@token_required
+def update_sensitive_words_config_api():
+    """更新敏感词过滤配置与词库"""
+    data = request.get_json() or {}
+    success = save_sensitive_words_config(data)
+    if not success:
+        return jsonify({"success": False, "message": "敏感词配置保存失败"}), 400
+
+    return jsonify({
+        "success": True,
+        "message": "敏感词配置保存成功",
+        "config": get_sensitive_words_config(),
+    })
+

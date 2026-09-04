@@ -40,87 +40,71 @@
     <!-- TAB 1: 前台与接口策略 -->
     <div id="tab-pane-strategy" class="system-tab-pane is-active space-y-6">
         
-        <!-- 1. 前台与 API 功能开关 -->
+        <!-- 1. 全局功能开关 -->
         <section class="admin-panel">
             <div class="admin-panel-header">
                 <div class="admin-panel-title-area">
                     <h2 class="admin-panel-title">
                         <i class="fas fa-toggle-on text-blue-600"></i> 全局功能开关
                     </h2>
-                    <p class="admin-panel-desc">集中管理公开 API 端点与前台快捷下载控制项</p>
+                    <p class="admin-panel-desc">集中管理公开 API 端点、前台快捷导出与搜索出链转存策略</p>
                 </div>
-            </div>
-            <div class="admin-panel-body divide-y divide-slate-100">
-                <!-- 开关 1: 公开聚合搜索接口 -->
-                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-900 text-sm">公开聚合搜索接口</span>
-                            <span class="badge badge-success text-[10px]" id="publicSearchApiBadge">已开启</span>
-                        </div>
-                        <p class="text-xs text-slate-500">对外提供与前台同源的 JSON 聚合搜索端点 (<code>GET /api?keyword=xxx</code>)</p>
-                    </div>
-                    <div class="flex items-center space-x-3 flex-shrink-0">
-                        <button class="btn btn-outline-secondary btn-sm" data-ui-modal-target="#publicSearchApiModal" type="button">
-                            <i class="fas fa-code text-[10px]"></i> 查看文档
-                        </button>
-                        <label class="plugin-switch" title="切换公开 API 状态">
-                            <input type="checkbox" id="publicSearchApiToggle" onchange="savePublicSearchApiConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 开关 2: 前台 Excel 下载与导出 -->
-                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-900 text-sm">前台 Excel 下载与导出</span>
-                            <span class="badge badge-success text-[10px]" id="allowExcelDownloadBadge">允许下载</span>
-                        </div>
-                        <p class="text-xs text-slate-500">控制前台搜索结果页面工具栏中是否显示“导出 Excel”按钮</p>
-                    </div>
-                    <div class="flex items-center space-x-3 flex-shrink-0">
-                        <label class="plugin-switch" title="切换 Excel 导出按钮">
-                            <input type="checkbox" id="allowExcelDownloadToggle" onchange="saveAllowExcelDownloadConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 2. 搜索出链策略与动态转存 -->
-        <section class="admin-panel">
-            <div class="admin-panel-header">
-                <div class="admin-panel-title-area">
-                    <h2 class="admin-panel-title">
-                        <i class="fas fa-share-alt text-blue-600"></i> 搜索出链与动态转存策略
-                    </h2>
-                    <p class="admin-panel-desc">控制前台资源点击行为：直接提供原始分享链接，或转存为私有链接</p>
-                </div>
-                <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton" onclick="saveFrontendLinkMode()">
-                    <i class="fas fa-save text-[10px]"></i> 保存出链策略
-                </button>
             </div>
             <div class="admin-panel-body">
-                <div class="frontend-link-mode-options">
-                    <label class="frontend-link-mode-card" for="frontendLinkModeCopy">
-                        <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeCopy" value="copy" checked>
-                        <div class="frontend-link-mode-copy">
-                            <span class="frontend-link-mode-title">原始链接模式 (推荐)</span>
-                            <span class="frontend-link-mode-desc">展示原始分享链接，用户直接复制提取码使用，速度快无额外延迟</span>
+                <div class="divide-y divide-slate-100">
+                    <!-- 开关 1: 公开聚合搜索接口 -->
+                    <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900 text-sm">公开聚合搜索接口</span>
+                                <span class="badge badge-success text-[10px]" id="publicSearchApiBadge">已开启</span>
+                            </div>
+                            <p class="text-xs text-slate-500">对外提供与前台同源的 JSON 聚合搜索端点 (<code>GET /api?keyword=xxx</code>)</p>
                         </div>
-                        <span class="frontend-link-mode-switch"></span>
-                    </label>
-                    <label class="frontend-link-mode-card" for="frontendLinkModeView">
-                        <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeView" value="view">
-                        <div class="frontend-link-mode-copy">
-                            <span class="frontend-link-mode-title">动态转存模式</span>
-                            <span class="frontend-link-mode-desc">隐藏原链接，用户点击时通过已配置的凭证自动转存并生成新分享链接</span>
+                        <div class="flex items-center space-x-3 flex-shrink-0">
+                            <button class="btn btn-outline-secondary btn-sm" data-ui-modal-target="#publicSearchApiModal" type="button">
+                                <i class="fas fa-code text-[10px]"></i> 查看文档
+                            </button>
+                            <label class="plugin-switch" title="切换公开 API 状态">
+                                <input type="checkbox" id="publicSearchApiToggle" onchange="savePublicSearchApiConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
                         </div>
-                        <span class="frontend-link-mode-switch"></span>
-                    </label>
+                    </div>
+
+                    <!-- 开关 2: 前台 Excel 下载与导出 -->
+                    <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900 text-sm">前台 Excel 下载与导出</span>
+                                <span class="badge badge-success text-[10px]" id="allowExcelDownloadBadge">允许下载</span>
+                            </div>
+                            <p class="text-xs text-slate-500">控制前台搜索结果页面工具栏中是否显示“导出 Excel”按钮</p>
+                        </div>
+                        <div class="flex items-center space-x-3 flex-shrink-0">
+                            <label class="plugin-switch" title="切换 Excel 导出按钮">
+                                <input type="checkbox" id="allowExcelDownloadToggle" onchange="saveAllowExcelDownloadConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 配置 3: 搜索出链与动态转存策略 -->
+                    <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900 text-sm">搜索出链与动态转存策略</span>
+                                <span class="badge badge-info text-[10px]" id="frontendLinkModeBadge">原始链接模式</span>
+                            </div>
+                            <p class="text-xs text-slate-500">控制前台资源点击行为：直接提供原始分享链接，或转存为私有链接</p>
+                        </div>
+                        <div class="flex items-center space-x-3 flex-shrink-0">
+                            <select id="frontendLinkModeSelect" class="form-select form-select-sm" onchange="saveFrontendLinkMode()" style="min-width: 170px;">
+                                <option value="copy">原始链接模式 (推荐)</option>
+                                <option value="view">动态转存模式</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="dynamic-transfer-status-panel d-none mt-4 p-4.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3.5" id="dynamicTransferStatusPanel">
@@ -147,9 +131,6 @@
                 <div class="flex items-center space-x-2">
                     <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button" onclick="toggleAllFrontendDisplayNetdisks()">
                         全选 / 反选
-                    </button>
-                    <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton" onclick="saveFrontendDisplayNetdisks()">
-                        <i class="fas fa-save text-[10px]"></i> 保存设置
                     </button>
                 </div>
             </div>
