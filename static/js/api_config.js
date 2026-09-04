@@ -95,7 +95,9 @@
                 }
                 const data = await response.json();
 
-                if (data.status) {
+                if (data.test_outcome === 'no_data') {
+                    showToast(`API ${apiName} 可正常访问，但“仙逆、逆袭、总裁”均无结果，未自动禁用。`, 'warning');
+                } else if (data.status) {
                     showToast(`API ${apiName} 测试成功！耗时 ${data.response_time_ms}ms`, 'success');
                 } else {
                     showToast(`API ${apiName} 测试失败/异常！请检查配置。`, 'danger');
@@ -515,7 +517,9 @@
                 }
 
                 const data = await response.json();
-                if (data.status) {
+                if (data.test_outcome === 'no_data') {
+                    showToast(`API ${api.name} 可正常访问，但“仙逆、逆袭、总裁”均无结果，未自动禁用。`, 'warning');
+                } else if (data.status) {
                     showToast(`API ${api.name} 测试成功！耗时 ${data.response_time_ms}ms`, 'success');
                 } else {
                     showToast(`API ${api.name} 测试完成，状态异常，已自动禁止。`, 'warning');

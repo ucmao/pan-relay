@@ -14,7 +14,6 @@ from src.services.api_config_service import (
     set_api_enabled_in_db,
     enable_all_apis_in_db,
     disable_all_apis_in_db,
-    update_config_with_keyword,
     test_single_api,
     test_all_apis_and_update_status,
 )
@@ -127,9 +126,15 @@ def test_api():
     """测试单个 API (需要 JWT 验证)"""
     api_config = request.get_json()
     api_id = api_config.get("id", "未知ID") if isinstance(api_config, dict) else "未知ID"
-    api_config = update_config_with_keyword(api_config, "[[keyword]]", "凡人修仙传")
     logger.info(f"开始测试单个 API，配置: {api_config}")
-    url, new_status, status_code, response_rule_status, response_time_ms = test_single_api(api_id, api_config)
+    test_result = test_single_api(api_id, api_config, return_details=True)
+    url, new_status, status_code, response_rule_status, response_time_ms = test_result[:5]
+    if len(test_result) >= 8:
+        test_outcome, result_count, matched_keyword = test_result[5:8]
+    else:
+        test_outcome = "success" if new_status else "error"
+        result_count = 0
+        matched_keyword = None
 
     if status_code is None:
         return (
@@ -143,17 +148,21 @@ def test_api():
             500,
         )
 
-    response_rule = (
-        "请求失败"
-        if not (200 <= status_code < 300)
-        else ("匹配成功" if response_rule_status else "匹配失败，请检查匹配规则")
-    )
+    if test_outcome == "no_data":
+        response_rule = "接口正常，轮询关键词均无结果"
+    elif not (200 <= status_code < 300):
+        response_rule = "请求失败"
+    else:
+        response_rule = "匹配成功" if response_rule_status else "匹配失败，请检查匹配规则"
     return jsonify(
         {
             "status_code": status_code,
             "response_rule": response_rule,
-            "status_text": "正常" if new_status else "异常",
+            "status_text": "无结果" if test_outcome == "no_data" else ("正常" if new_status else "异常"),
             "status": new_status,
+            "test_outcome": test_outcome,
+            "result_count": result_count,
+            "matched_keyword": matched_keyword,
             "response_time_ms": response_time_ms,
         }
     )

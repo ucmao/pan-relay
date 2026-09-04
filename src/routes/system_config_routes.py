@@ -317,7 +317,7 @@ def test_tg_search_api():
     """测试指定 Telegram 公开频道的检索与连通性"""
     data = request.get_json() or {}
     channel = str(data.get("channel", "")).strip()
-    keyword = str(data.get("keyword", "测试")).strip() or "测试"
+    keyword = str(data.get("keyword", "")).strip() or None
     proxy = data.get("proxy")
     timeout = data.get("timeout")
     if timeout is not None:
@@ -333,4 +333,3 @@ def test_tg_search_api():
         timeout=timeout,
     )
     return jsonify(result)
-

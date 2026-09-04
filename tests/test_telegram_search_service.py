@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import Mock, patch
 
+import requests
+
 from src.services import search_service
 from src.services.telegram_search_service import (
     parse_telegram_search_html,
@@ -76,6 +78,13 @@ class TelegramSearchServiceTest(unittest.TestCase):
         mock_get.return_value = response
 
         self.assertEqual([], search_telegram_channel("流浪地球", "tgsearchers6"))
+
+        with self.assertRaises(requests.RequestException):
+            search_telegram_channel(
+                "流浪地球",
+                "tgsearchers6",
+                raise_on_error=True,
+            )
 
     @patch("src.services.telegram_search_service.requests.get")
     def test_search_channel_parses_public_preview(self, mock_get):

@@ -218,7 +218,7 @@ function openTestModal(name, displayName, timeout) {
 async function runPluginTest() {
     const pluginName = document.getElementById('currentTestPluginName').value;
     const keywordInput = document.getElementById('pluginTestKeyword');
-    const keyword = (keywordInput?.value || '测试').trim() || '测试';
+    const keyword = (keywordInput?.value || '仙逆').trim() || '仙逆';
     const btn = document.getElementById('startPluginTestBtn');
     const resultArea = document.getElementById('pluginTestResultArea');
     const statusAlert = document.getElementById('pluginTestStatusAlert');
@@ -233,7 +233,7 @@ async function runPluginTest() {
     if (resultArea) resultArea.classList.remove('d-none');
     if (statusAlert) {
         statusAlert.className = 'alert alert-info py-2 px-3 small mb-2';
-        statusAlert.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> 正在调用插件 [${escapeHtml(pluginName)}] 执行搜索: "<strong>${escapeHtml(keyword)}</strong>"...`;
+        statusAlert.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> 正在调用插件 [${escapeHtml(pluginName)}] 执行多关键词测试，优先词: "<strong>${escapeHtml(keyword)}</strong>"...`;
     }
     if (tbody) tbody.innerHTML = '';
 
@@ -254,8 +254,12 @@ async function runPluginTest() {
         }
 
         const results = data.results || [];
-        statusAlert.className = 'alert alert-success py-2 px-3 small mb-2';
-        statusAlert.innerHTML = `<i class="fas fa-check-circle me-1"></i> 测试成功！耗时: <strong>${latencyMs}ms</strong>，共获取到 <strong>${results.length}</strong> 条资源。`;
+        statusAlert.className = results.length > 0
+            ? 'alert alert-success py-2 px-3 small mb-2'
+            : 'alert alert-warning py-2 px-3 small mb-2';
+        statusAlert.innerHTML = results.length > 0
+            ? `<i class="fas fa-check-circle me-1"></i> 使用关键词“${escapeHtml(data.keyword || keyword)}”测试成功！耗时: <strong>${latencyMs}ms</strong>，共获取到 <strong>${results.length}</strong> 条资源。`
+            : `<i class="fas fa-info-circle me-1"></i> ${escapeHtml(data.message || '插件可调用，但轮询关键词均无结果。')}`;
 
         if (results.length === 0) {
             tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">该插件在此关键词下未返回任何有效资源。</td></tr>`;

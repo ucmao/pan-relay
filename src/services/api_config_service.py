@@ -6,6 +6,8 @@ import concurrent.futures
 import jmespath
 import requests
 
+from src.utils.test_keywords import build_test_keywords
+
 from src.db.api_configs import (
     get_all_configs,
     get_config_by_id,
@@ -59,6 +61,58 @@ def extract_from_json(json_data, rule):
         return None
 
 
+def _response_indicates_no_data(response_text, extracted_data):
+    """识别“请求成功但关键词无结果”，避免把它当成接口故障。"""
+    if extracted_data == []:
+        return True
+
+    try:
+        data = json.loads(response_text)
+    except (TypeError, json.JSONDecodeError):
+        return False
+
+    no_data_markers = (
+        "未找到",
+        "无结果",
+        "暂无",
+        "没有找到",
+        "没有相关",
+        "no data",
+        "not found",
+        "no result",
+    )
+
+    def contains_marker(value):
+        if isinstance(value, dict):
+            return any(contains_marker(item) for item in value.values())
+        if isinstance(value, list):
+            return any(contains_marker(item) for item in value)
+        if isinstance(value, str):
+            lowered = value.lower()
+            return any(marker in lowered for marker in no_data_markers)
+        return False
+
+    return extracted_data is None and contains_marker(data)
+
+
+def _request_api(api_config):
+    """按配置发起一次测试请求。"""
+    method = api_config["method"].lower()
+    url = api_config.get("url", "未知 URL")
+    request_body = api_config.get("request", "{}")
+
+    if method == "get":
+        try:
+            request_params = json.loads(request_body)
+            return requests.get(url, params=request_params, verify=False, timeout=5)
+        except json.JSONDecodeError:
+            return requests.get(url, verify=False, timeout=5)
+    if method == "post":
+        headers = {"Content-Type": "application/json"}
+        return requests.post(url, data=request_body, headers=headers, verify=False, timeout=5)
+    raise ValueError(f"不支持的 HTTP 方法: {method}")
+
+
 def add_api_config_to_db(new_config):
     """向数据库中添加一条 API 配置记录"""
     return insert_config(new_config)
@@ -110,13 +164,30 @@ def update_config_with_keyword(config, placeholder, keyword):
     return new_config
 
 
-def test_single_api(api_id, api_config=None, update_status=False):
-    """测试单个 API 并更新数据库状态、响应时间和is_enabled"""
+def _test_result(values, return_details, outcome, count=0, keyword=None):
+    """兼容原有五元组，并为健康检测脚本提供详细判定。"""
+    if return_details:
+        return (*values, outcome, count, keyword)
+    return values
+
+
+def test_single_api(
+    api_id,
+    api_config=None,
+    update_status=False,
+    return_details=False,
+    keywords=None,
+):
+    """使用多个关键词测试 API；任一关键词有效即判定正常。"""
     if api_config is None:
         api_config = get_config_by_id(api_id)
         if not api_config:
             logger.error(f"测试 API ID:{api_id} 失败: API 配置不存在")
-            return "未知 URL", False, None, False, 0
+            return _test_result(
+                ("未知 URL", False, None, False, 0),
+                return_details,
+                "error",
+            )
 
     # 使用传入的api_id参数，确保是字符串或整数类型
     if isinstance(api_id, dict):
@@ -129,72 +200,79 @@ def test_single_api(api_id, api_config=None, update_status=False):
         logger.info(f"API {url} (ID:{api_id}) 当前处于禁用状态，但仍执行测试。")
 
     start_time = time.time()
-    response_time_ms = 0
-    new_status = False  # 默认失败
+    response_rule = api_config.get("response", "{}")
+    last_status_code = None
+    no_data_status_code = None
+    saw_no_data = False
+    last_error = None
 
-    try:
-        method = api_config["method"].lower()
-        request_body = api_config.get("request", "{}")
-        response_rule = api_config.get("response", "{}")
+    for keyword in build_test_keywords(keywords):
+        candidate_config = update_config_with_keyword(api_config, "[[keyword]]", keyword)
+        candidate_url = candidate_config.get("url", url)
+        try:
+            response = _request_api(candidate_config)
+            last_status_code = response.status_code
+            if not 200 <= response.status_code < 300:
+                last_error = f"关键词“{keyword}”返回 HTTP {response.status_code}"
+                continue
 
-        # 执行请求 (代码逻辑与之前保持一致)
-        if method == "get":
-            try:
-                request_params = json.loads(request_body)
-                response = requests.get(url, params=request_params, verify=False, timeout=5)
-            except json.JSONDecodeError:
-                response = requests.get(url, verify=False, timeout=5)
-        elif method == "post":
-            headers = {"Content-Type": "application/json"}
-            response = requests.post(url, data=request_body, headers=headers, verify=False, timeout=5)
-        else:
-            logger.warning(f"API {url} (ID:{api_id}) 不支持的 HTTP 方法: {method}，更新状态为不可用")
-            # **核心修改：测试失败，强制禁止**
-            if api_id != "未知ID" and api_id.isdigit():
-                update_api_enabled_status_in_db(api_id, is_enabled=False, new_status=False, response_time_ms=0)
-            return url, False, response.status_code if "response" in locals() else None, False, 0
-
-        # 计算响应时间（毫秒）
-        end_time = time.time()
-        response_time_ms = int((end_time - start_time) * 1000)
-
-        # 检查响应状态码和规则匹配
-        response_rule_status = bool(extract_from_json(response.text, response_rule))
-        new_status = 200 <= response.status_code < 300 and response_rule_status
-
-        if api_id != "未知ID" and api_id.isdigit():
-            if new_status:
-                # 正常情况：只更新 status 和 time
-                update_api_status_in_db(api_id, new_status, response_time_ms)
-            else:
-                # **核心修改：测试失败，强制禁止 (is_enabled=False)**
-                update_api_enabled_status_in_db(
+            extracted_data = extract_from_json(response.text, response_rule)
+            if bool(extracted_data):
+                response_time_ms = int((time.time() - start_time) * 1000)
+                if api_id != "未知ID" and api_id.isdigit():
+                    update_api_status_in_db(api_id, True, response_time_ms)
+                logger.info(
+                    "API %s (ID:%s) 使用关键词“%s”测试成功，耗时: %sms",
+                    candidate_url,
                     api_id,
-                    is_enabled=False,
-                    new_status=False,
-                    response_time_ms=response_time_ms,
+                    keyword,
+                    response_time_ms,
                 )
-                logger.warning(f"API {url} (ID:{api_id}) 测试失败，已自动禁止。")
+                result_count = len(extracted_data) if hasattr(extracted_data, "__len__") else 1
+                return _test_result(
+                    (candidate_url, True, response.status_code, True, response_time_ms),
+                    return_details,
+                    "success",
+                    result_count,
+                    keyword,
+                )
 
-        logger.info(
-            f"API {url} (ID:{api_id}) 测试完毕，状态码: {response.status_code}，耗时: {response_time_ms}ms，是否有效: {new_status}"
-        )
-        return url, new_status, response.status_code, response_rule_status, response_time_ms
+            if _response_indicates_no_data(response.text, extracted_data):
+                saw_no_data = True
+                no_data_status_code = response.status_code
+                logger.info("API %s 使用关键词“%s”无结果，继续轮询。", candidate_url, keyword)
+            else:
+                last_error = f"关键词“{keyword}”的响应不符合提取规则"
+        except Exception as e:
+            last_error = f"关键词“{keyword}”测试异常: {e}"
+            logger.warning("API %s (ID:%s) %s，继续轮询。", candidate_url, api_id, last_error)
 
-    except Exception as e:
-        end_time = time.time()
-        response_time_ms = int((end_time - start_time) * 1000)
-        new_status = False
+    response_time_ms = int((time.time() - start_time) * 1000)
+
+    if saw_no_data:
+        # 接口可访问且明确表示无搜索结果，不应误判为故障或自动禁用。
         if api_id != "未知ID" and api_id.isdigit():
-            # **核心修改：测试失败，强制禁止 (is_enabled=False)**
-            update_api_enabled_status_in_db(
-                api_id,
-                is_enabled=False,
-                new_status=False,
-                response_time_ms=response_time_ms,
-            )
-        logger.error(f"API {url} (ID:{api_id}) 测试出错: {e}，更新状态为不可用，并自动禁止。")
-        return url, new_status, None, False, response_time_ms
+            update_api_status_in_db(api_id, True, response_time_ms)
+        logger.info("API %s (ID:%s) 所有测试关键词均无结果，保留为正常状态。", url, api_id)
+        return _test_result(
+            (url, True, no_data_status_code, True, response_time_ms),
+            return_details,
+            "no_data",
+        )
+
+    if api_id != "未知ID" and api_id.isdigit():
+        update_api_enabled_status_in_db(
+            api_id,
+            is_enabled=False,
+            new_status=False,
+            response_time_ms=response_time_ms,
+        )
+    logger.error("API %s (ID:%s) 多关键词测试均失败: %s，已自动禁止。", url, api_id, last_error)
+    return _test_result(
+        (url, False, last_status_code, False, response_time_ms),
+        return_details,
+        "error",
+    )
 
 
 def test_all_apis_and_update_status():
@@ -209,4 +287,3 @@ def test_all_apis_and_update_status():
 
     logger.info("所有 API 测试并更新状态完毕 (失败的 API 已自动禁止)")
     return True, "所有 API 测试并更新状态成功 (异常的已自动禁止)"
-

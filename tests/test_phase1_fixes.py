@@ -98,7 +98,34 @@ class Phase1FixesTest(unittest.TestCase):
         data = resp.get_json()
         self.assertEqual("正常", data.get("status_text"))
         self.assertEqual(True, data.get("status"))
+        self.assertEqual("success", data.get("test_outcome"))
         self.assertEqual(120, data.get("response_time_ms"))
+
+    @patch("src.routes.api_config_routes.test_single_api")
+    def test_api_test_distinguishes_no_data_from_error(self, mock_test_single):
+        mock_test_single.return_value = (
+            "https://test.api",
+            True,
+            200,
+            True,
+            150,
+            "no_data",
+            0,
+            None,
+        )
+        token = create_jwt_token()
+        self.client.set_cookie("token", token)
+
+        resp = self.client.post(
+            "/admin/api/test",
+            json={"id": 1, "name": "测试API", "url": "https://test.api", "method": "GET"},
+        )
+
+        self.assertEqual(200, resp.status_code)
+        data = resp.get_json()
+        self.assertEqual("无结果", data["status_text"])
+        self.assertEqual("no_data", data["test_outcome"])
+        self.assertTrue(data["status"])
 
     def test_resources_page_renders_resource_template(self):
         token = create_jwt_token()

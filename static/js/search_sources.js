@@ -4,6 +4,8 @@
  */
 
 (function () {
+    let tgDisabledChannels = [];
+
     // 1. Tab 切换控制器
     function switchTab(tabName, updateHash = true) {
         if (!tabName) return;
@@ -87,6 +89,7 @@
 
                 const channelsEl = document.getElementById('tgChannelsInput');
                 const channelsArr = Array.isArray(cfg.channels) ? cfg.channels : [];
+                tgDisabledChannels = Array.isArray(cfg.disabled_channels) ? cfg.disabled_channels : [];
                 if (channelsEl) {
                     channelsEl.value = channelsArr.join(', ');
                     const testChanEl = document.getElementById('tgTestChannel');
@@ -96,7 +99,7 @@
                 }
 
                 // 同步 KPI 与 Badge
-                updateTgKPI(cfg.enabled, channelsArr.length, cfg.proxy);
+                updateTgKPI(cfg.enabled, channelsArr.length, tgDisabledChannels.length, cfg.proxy);
             }
         } catch (error) {
             console.error('加载 TG 搜索配置失败:', error);
@@ -106,7 +109,7 @@
         }
     }
 
-    function updateTgKPI(enabled, channelCount, proxy) {
+    function updateTgKPI(enabled, channelCount, disabledCount, proxy) {
         const kpiStatus = document.getElementById('kpiTgStatus');
         const kpiDetail = document.getElementById('kpiTgDetail');
         const tabBadgeTg = document.getElementById('tabBadgeTg');
@@ -118,11 +121,12 @@
 
         if (kpiDetail) {
             const proxyNote = proxy ? ' · 代理启用' : '';
-            kpiDetail.textContent = `监控 ${channelCount} 个频道${proxyNote}`;
+            const activeCount = Math.max(channelCount - disabledCount, 0);
+            kpiDetail.textContent = `总计 ${channelCount} 个 · 启用 ${activeCount} 个${proxyNote}`;
         }
 
         if (tabBadgeTg) {
-            tabBadgeTg.textContent = enabled ? `${channelCount} 个频道` : '已停用';
+            tabBadgeTg.textContent = enabled ? `${channelCount - disabledCount}/${channelCount} 启用` : '已停用';
         }
     }
 
@@ -143,6 +147,7 @@
             timeout,
             max_workers,
             channels,
+            disabled_channels: tgDisabledChannels,
         };
 
         try {
@@ -177,7 +182,7 @@
         const tbody = document.getElementById('tgTestTableBody');
 
         const channel = (chanInput?.value || '').trim();
-        const keyword = (kwInput?.value || '测试').trim() || '测试';
+        const keyword = (kwInput?.value || '仙逆').trim() || '仙逆';
         const proxy = (document.getElementById('tgProxyInput')?.value || '').trim();
         const timeout = parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10);
 
@@ -193,7 +198,7 @@
         if (resultArea) resultArea.classList.remove('d-none');
         if (statusAlert) {
             statusAlert.className = 'alert alert-info py-2 px-3 small mb-2';
-            statusAlert.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> 正在向频道 <strong>@${channel}</strong> 发起测试检索（关键词: "${keyword}"）...`;
+            statusAlert.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> 正在向频道 <strong>@${channel}</strong> 发起多关键词测试（优先: "${keyword}"）...`;
         }
         if (tbody) tbody.innerHTML = '';
 

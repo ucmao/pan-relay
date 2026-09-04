@@ -18,6 +18,7 @@ from src.configs.app_config import (
 )
 from src.models.search_item import SearchResultItem
 from src.utils.netdisk_utils import match_netdisk_link
+from src.utils.test_keywords import build_test_keywords
 
 logger = logging.getLogger(__name__)
 
@@ -439,9 +440,11 @@ def parse_telegram_search_html(html, channel):
     return results
 
 
-def search_telegram_channel(keyword, channel, proxy=None, timeout=None):
+def search_telegram_channel(keyword, channel, proxy=None, timeout=None, raise_on_error=False):
     channel = _normalize_channel(channel)
     if not channel:
+        if raise_on_error:
+            raise ValueError("Telegram 频道名称不能为空")
         return []
 
     if timeout is None:
@@ -475,11 +478,15 @@ def search_telegram_channel(keyword, channel, proxy=None, timeout=None):
                 channel,
                 response.url,
             )
+            if raise_on_error:
+                raise requests.RequestException(f"频道 @{channel} 未返回公开预览页")
             return []
 
         return parse_telegram_search_html(response.text, channel)
     except requests.RequestException as err:
         logger.warning("Telegram 频道 '%s' 搜索失败: %s", channel, err)
+        if raise_on_error:
+            raise
         return []
 
 
@@ -490,6 +497,8 @@ def search_telegram_resources(keyword):
         cfg = get_tg_search_config()
         is_enabled = cfg.get("enabled", TG_SEARCH_ENABLED)
         channels = cfg.get("channels", TG_CHANNELS)
+        disabled_channels = set(cfg.get("disabled_channels", []))
+        channels = [channel for channel in channels if channel not in disabled_channels]
         timeout = cfg.get("timeout", TG_SEARCH_TIMEOUT)
         max_workers = cfg.get("max_workers", TG_SEARCH_MAX_WORKERS)
         proxy = cfg.get("proxy", TG_PROXY)
@@ -537,7 +546,7 @@ def search_telegram_resources(keyword):
 
 def test_telegram_connection(
     channel: str,
-    keyword: str = "测试",
+    keyword: Optional[str] = None,
     proxy: Optional[str] = None,
     timeout: Optional[int] = None,
 ) -> Dict[str, Any]:
@@ -568,41 +577,69 @@ def test_telegram_connection(
         proxy = proxy or TG_PROXY
         timeout = timeout or 10
 
+    keywords = build_test_keywords(keyword)
     start_time = time.time()
-    try:
-        results = search_telegram_channel(
-            keyword=keyword,
-            channel=channel,
-            proxy=proxy,
-            timeout=timeout,
-        )
-        latency_ms = int((time.time() - start_time) * 1000)
-        serialized = [
-            r.to_dict() if hasattr(r, "to_dict") else {
-                "source": r[0],
-                "title": r[1],
-                "share_link": r[2],
-                "cloud_name": r[3],
+    saw_empty_response = False
+    last_error = None
+
+    for test_keyword in keywords:
+        try:
+            results = search_telegram_channel(
+                keyword=test_keyword,
+                channel=channel,
+                proxy=proxy,
+                timeout=timeout,
+                raise_on_error=True,
+            )
+            if not results:
+                saw_empty_response = True
+                continue
+
+            latency_ms = int((time.time() - start_time) * 1000)
+            serialized = [
+                r.to_dict() if hasattr(r, "to_dict") else {
+                    "source": r[0],
+                    "title": r[1],
+                    "share_link": r[2],
+                    "cloud_name": r[3],
+                }
+                for r in results
+            ]
+            return {
+                "success": True,
+                "message": f"频道 @{channel} 使用关键词“{test_keyword}”测试成功，发现 {len(results)} 条网盘资源",
+                "channel": channel,
+                "keyword": test_keyword,
+                "tested_keywords": keywords,
+                "latency_ms": latency_ms,
+                "count": len(results),
+                "results": serialized[:10],
             }
-            for r in results
-        ]
+        except Exception as e:
+            last_error = str(e)
+            logger.warning("测试 Telegram 频道 @%s 使用关键词“%s”异常，继续轮询: %s", channel, test_keyword, e)
+
+    latency_ms = int((time.time() - start_time) * 1000)
+    if saw_empty_response:
         return {
             "success": True,
-            "message": f"频道 @{channel} 测试完成，耗时 {latency_ms}ms，发现 {len(results)} 条网盘资源",
+            "message": f"频道 @{channel} 连通正常，但轮询关键词均未发现网盘资源",
             "channel": channel,
-            "latency_ms": latency_ms,
-            "count": len(results),
-            "results": serialized[:10],
-        }
-    except Exception as e:
-        latency_ms = int((time.time() - start_time) * 1000)
-        logger.error(f"测试 Telegram 频道 @{channel} 异常: {e}")
-        return {
-            "success": False,
-            "message": f"测试失败: {e}",
-            "channel": channel,
+            "keyword": None,
+            "tested_keywords": keywords,
             "latency_ms": latency_ms,
             "count": 0,
             "results": [],
         }
 
+    logger.error("测试 Telegram 频道 @%s 多关键词轮询均异常: %s", channel, last_error)
+    return {
+        "success": False,
+        "message": f"多关键词测试均失败: {last_error or '未知异常'}",
+        "channel": channel,
+        "keyword": None,
+        "tested_keywords": keywords,
+        "latency_ms": latency_ms,
+        "count": 0,
+        "results": [],
+    }

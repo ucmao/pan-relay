@@ -40,9 +40,22 @@ TG_SEARCH_ENABLED = _get_bool_env("TG_SEARCH_ENABLED", True)
 DEFAULT_TG_CHANNELS = (
     "txtyzy,BaiduCloudDisk,tianyifc,yp123pan,PanjClub,tgsearchers7,peccxinpd,yunpanxunlei,bsbdbfjfjff,gotopan,Aliyun_4K_Movies,yunpanx,sbsbsnsqq,tgsearchers3,tgsearchers6,bdbdndn11,ysxb48,ucwpzy,MCPH086,Q66Share,zaihuayun,MCPH01,MCPH03,MCPH02,baicaoZY,bdwpzhpd,shareAliyun,jdjdn1111,yggpan,kkxlzy,dianyingshare,alyp_1,tianyirigeng,yingshifenxiang123,tyypzhpd,oneonefivewpfx,ucquark,zyfb123,yunpan189,xx123pan,Quark_Movies,hdhhd21,Lsp115,XiangxiuNBB,vip115hot,tyysypzypd,TG654TG,Channel_Shares_115,taoxgzy,cloudtianyi,yunpanuc,Q_dongman,movielover8888_film3,yydf_hzl,yeqingjie_GJG666,leoziyuan,yunpan139,wp123zy,qixingzhenren,KaiPanshare,D_wusun,pxyunpanxunlei,FLMdongtianfudi,QukanMovie,ydypzyfx,yunpanNB,newproductsourcing,rjyxfx,QQZYDAPP,xxzlzn,zdqxm,btzhi,PikPak_Share_Channel,Baidu_netdisk,solidsexydoll,cilidianying,CBduanju,WFYSFX02,jxwpzy,cctv1211,SharePanFilms,yoyokuakeduanju,guoman4K,dzsgx,duan_ju,kduanju,kuakedongman,douerpan,ciliziyuanku,domgmingapk,baidu_yppan,BooksRealm,Q_dianying,xiangnikanj,dianying4k,kkdj001,Oscar_4Kmovies,liangxingzhinan,yunpanquark,godupan,ucshare,Q_jilupian,Netdisk_Movies,jzmm_123pan,WFYSFX03,ammmziyuan,cili8888,gimy115,tgbokee,q_dianshiju,gimy115iso,wpan8,gimy100,mqte5,regengguangya,regeng123,QuarkFree,gokuapan,regeng115,yunpanguangya,peccxin,guangyapan_episode,xlwpzy,yy80986098,zyywpzy,pan_guangya,Movie888035,wydwpzy,pikpakpan,yoyokuakeduanjujiaoliuqun,AV688"
 )
+DEFAULT_DISABLED_TG_CHANNELS = (
+    "tgsearchers3,sbsbsnsqq,tgsearchers6,yggpan,kkxlzy,dianyingshare,alyp_1,cloudtianyi,qixingzhenren,ydypzyfx,WFYSFX02,cctv1211,duan_ju,liangxingzhinan,ammmziyuan,cili8888,q_dianshiju,peccxin,xlwpzy,zyywpzy,Movie888035,wydwpzy,yoyokuakeduanjujiaoliuqun,AV688,pikpakpan"
+)
+
+# 插件首次初始化状态；由发布前健康检测脚本同步。
+DEFAULT_PLUGIN_SETTINGS = {
+    'sample_scraper': False,
+}
 TG_CHANNELS = [
     channel.strip().lstrip("@").strip("/")
     for channel in os.getenv("TG_CHANNELS", DEFAULT_TG_CHANNELS).split(",")
+    if channel.strip()
+]
+TG_DISABLED_CHANNELS = [
+    channel.strip().lstrip("@").strip("/")
+    for channel in os.getenv("TG_DISABLED_CHANNELS", ",".join(DEFAULT_DISABLED_TG_CHANNELS)).split(",")
     if channel.strip()
 ]
 TG_SEARCH_TIMEOUT = _get_int_env("TG_SEARCH_TIMEOUT", 10)

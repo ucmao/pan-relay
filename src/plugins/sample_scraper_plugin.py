@@ -29,6 +29,7 @@ class SampleScraperPlugin(BasePlugin):
     description = "演示插件体系标准的请求、DOM解析、链接提取与异常防护流程"
     priority = 120
     is_enabled = False
+    publish_by_default = False
     timeout = 5.0
 
     def search(self, keyword: str) -> List[SearchResultItem]:

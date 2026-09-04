@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 
 from src.services.plugin_manager import plugin_manager
 from src.utils.auth_utils import token_required
+from src.utils.test_keywords import build_test_keywords
 
 logger = logging.getLogger(__name__)
 
@@ -149,25 +150,48 @@ def test_plugin_api(plugin_name):
         return jsonify({"success": False, "message": f"未找到插件: {plugin_name}"}), 404
 
     payload = request.get_json(silent=True) or {}
-    keyword = str(payload.get("keyword") or "测试").strip()
+    keyword = str(payload.get("keyword") or "").strip() or None
+    keywords = build_test_keywords(keyword)
+    saw_empty_response = False
+    last_error = None
 
-    try:
-        results = plugin.search(keyword)
-        serialized = [item.to_dict() for item in results]
+    for test_keyword in keywords:
+        try:
+            results = plugin.search(test_keyword)
+            if not results:
+                saw_empty_response = True
+                continue
+            serialized = [item.to_dict() for item in results]
+            return jsonify({
+                "success": True,
+                "plugin": plugin_name,
+                "keyword": test_keyword,
+                "tested_keywords": keywords,
+                "count": len(serialized),
+                "results": serialized,
+            })
+        except Exception as e:
+            last_error = str(e)
+            logger.warning("测试插件 [%s] 使用关键词“%s”异常，继续轮询: %s", plugin_name, test_keyword, e)
+
+    if saw_empty_response:
         return jsonify({
             "success": True,
             "plugin": plugin_name,
-            "keyword": keyword,
-            "count": len(serialized),
-            "results": serialized,
+            "keyword": None,
+            "tested_keywords": keywords,
+            "count": 0,
+            "results": [],
+            "message": "插件可调用，但轮询关键词均无结果",
         })
-    except Exception as e:
-        logger.error(f"测试插件 [{plugin_name}] 出错: {e}")
-        return jsonify({
-            "success": False,
-            "plugin": plugin_name,
-            "message": f"插件测试异常: {e}",
-        }), 500
+
+    logger.error("测试插件 [%s] 多关键词轮询均异常: %s", plugin_name, last_error)
+    return jsonify({
+        "success": False,
+        "plugin": plugin_name,
+        "tested_keywords": keywords,
+        "message": f"插件多关键词测试均异常: {last_error or '未知异常'}",
+    }), 500
 
 
 @plugin_bp.route("/api/plugins/<plugin_name>/health", methods=["GET"])

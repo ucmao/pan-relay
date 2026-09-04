@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from app import app
+from src.models.search_item import SearchResultItem
 from src.plugins.base_plugin import BasePlugin
 from src.services.plugin_manager import PluginManager, plugin_manager
 from src.services.system_config_service import (
@@ -54,6 +55,7 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
         cfg = get_tg_search_config()
         self.assertIn("enabled", cfg)
         self.assertIn("channels", cfg)
+        self.assertIn("disabled_channels", cfg)
         self.assertIn("proxy", cfg)
         self.assertIn("timeout", cfg)
 
@@ -61,6 +63,7 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
         new_payload = {
             "enabled": False,
             "channels": "testchan1, @testchan2",
+            "disabled_channels": ["testchan2"],
             "proxy": "socks5://127.0.0.1:1080",
             "timeout": 15,
             "max_workers": 2,
@@ -70,7 +73,9 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
 
         saved = get_tg_search_config()
         self.assertFalse(saved["enabled"])
-        self.assertEqual(["testchan1", "testchan2"], saved["channels"])
+        self.assertIn("testchan1", saved["channels"])
+        self.assertIn("testchan2", saved["channels"])
+        self.assertEqual(["testchan2"], saved["disabled_channels"])
         self.assertEqual("socks5://127.0.0.1:1080", saved["proxy"])
         self.assertEqual(15, saved["timeout"])
         self.assertEqual(2, saved["max_workers"])
@@ -97,6 +102,20 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
         self.assertEqual(1, result["count"])
         self.assertGreaterEqual(result["latency_ms"], 0)
         self.assertEqual(1, len(result["results"]))
+
+    @patch("src.services.telegram_search_service.search_telegram_channel")
+    def test_telegram_connection_rotates_after_empty_result(self, mock_search):
+        mock_search.side_effect = [
+            [],
+            [("tg", "逆袭资源", "https://pan.quark.cn/s/sample2", "夸克网盘")],
+        ]
+
+        result = test_telegram_connection("tgsearchers7", proxy="", timeout=5)
+
+        self.assertTrue(result["success"])
+        self.assertEqual("逆袭", result["keyword"])
+        self.assertEqual(["仙逆", "逆袭", "总裁"], result["tested_keywords"])
+        self.assertEqual(2, mock_search.call_count)
 
     def test_admin_tg_config_api_unauthorized(self):
         resp = self.client.get("/admin/api/tg-search-config")
@@ -129,7 +148,8 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
         self.assertEqual(200, put_resp.status_code)
         put_data = put_resp.get_json()
         self.assertTrue(put_data["success"])
-        self.assertEqual(["chanA", "chanB"], put_data["config"]["channels"])
+        self.assertIn("chanA", put_data["config"]["channels"])
+        self.assertIn("chanB", put_data["config"]["channels"])
 
     # --- 插件配置与持久化测试 ---
 
@@ -205,6 +225,27 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
 
         # 恢复状态
         self.mgr.enable_plugin("test_mock_plugin")
+
+    def test_plugin_test_rotates_after_empty_result(self):
+        self.client.set_cookie("token", self.token)
+        self.mock_plugin.search = MagicMock(side_effect=[
+            [],
+            [SearchResultItem(
+                source="plugin:test_mock_plugin",
+                title="逆袭资源",
+                share_link="https://pan.quark.cn/s/sample3",
+                cloud_name="夸克网盘",
+            )],
+        ])
+
+        response = self.client.post("/admin/api/plugins/test_mock_plugin/test", json={})
+        data = response.get_json()
+
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(data["success"])
+        self.assertEqual("逆袭", data["keyword"])
+        self.assertEqual(["仙逆", "逆袭", "总裁"], data["tested_keywords"])
+        self.assertEqual(2, self.mock_plugin.search.call_count)
 
     # --- 统一检索源管理工作区测试 ---
 

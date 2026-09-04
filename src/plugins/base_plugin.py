@@ -34,6 +34,9 @@ class BasePlugin(ABC):
     # 默认是否启用
     is_enabled: bool = True
 
+    # 健康检测通过后是否允许进入新安装的默认启用列表；演示插件可关闭此项。
+    publish_by_default: bool = True
+
     # 搜索超时时间（秒）
     timeout: float = 6.0
 
@@ -65,5 +68,6 @@ class BasePlugin(ABC):
             "description": self.description,
             "priority": self.priority,
             "is_enabled": self.is_enabled,
+            "publish_by_default": self.publish_by_default,
             "timeout": self.timeout,
         }

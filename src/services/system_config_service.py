@@ -127,11 +127,13 @@ def get_tg_search_config() -> Dict[str, Any]:
         TG_PROXY,
         TG_SEARCH_TIMEOUT,
         TG_SEARCH_MAX_WORKERS,
+        TG_DISABLED_CHANNELS,
     )
 
     default_config = {
         "enabled": TG_SEARCH_ENABLED,
         "channels": TG_CHANNELS.copy() if isinstance(TG_CHANNELS, list) else ["tgsearchers7", "tgsearchers3", "tgsearchers6"],
+        "disabled_channels": TG_DISABLED_CHANNELS.copy(),
         "proxy": TG_PROXY or "",
         "timeout": TG_SEARCH_TIMEOUT or 10,
         "max_workers": TG_SEARCH_MAX_WORKERS or 4,
@@ -146,14 +148,22 @@ def get_tg_search_config() -> Dict[str, Any]:
         if not isinstance(parsed, dict):
             return default_config
 
-        channels = [
+        configured_channels = [
             str(c).strip().lstrip("@").strip("/")
             for c in parsed.get("channels", default_config["channels"])
             if str(c).strip()
         ]
+        # 默认频道是固定总表；数据库仅记录状态，不能因一次检测失败而缩减总数。
+        channels = list(dict.fromkeys(default_config["channels"] + configured_channels))
+        disabled_channels = [
+            str(c).strip().lstrip("@").strip("/")
+            for c in parsed.get("disabled_channels", default_config["disabled_channels"])
+            if str(c).strip() and str(c).strip().lstrip("@").strip("/") in channels
+        ]
         return {
             "enabled": bool(parsed.get("enabled", default_config["enabled"])),
             "channels": channels,
+            "disabled_channels": list(dict.fromkeys(disabled_channels)),
             "proxy": str(parsed.get("proxy", default_config["proxy"])).strip(),
             "timeout": max(int(parsed.get("timeout", default_config["timeout"])), 1),
             "max_workers": max(int(parsed.get("max_workers", default_config["max_workers"])), 1),
@@ -187,6 +197,23 @@ def save_tg_search_config(data: Dict[str, Any]) -> bool:
     else:
         channels = []
 
+    raw_disabled_channels = data.get("disabled_channels", [])
+    if isinstance(raw_disabled_channels, str):
+        disabled_channels = [
+            c.strip().lstrip("@").strip("/")
+            for c in raw_disabled_channels.replace("\n", ",").split(",")
+            if c.strip()
+        ]
+    elif isinstance(raw_disabled_channels, list):
+        disabled_channels = [
+            str(c).strip().lstrip("@").strip("/")
+            for c in raw_disabled_channels
+            if str(c).strip()
+        ]
+    else:
+        disabled_channels = []
+    disabled_channels = list(dict.fromkeys(c for c in disabled_channels if c in channels))
+
     proxy = str(data.get("proxy", "")).strip()
     try:
         timeout = max(int(data.get("timeout", 10)), 1)
@@ -201,6 +228,7 @@ def save_tg_search_config(data: Dict[str, Any]) -> bool:
     payload = {
         "enabled": enabled,
         "channels": channels,
+        "disabled_channels": disabled_channels,
         "proxy": proxy,
         "timeout": timeout,
         "max_workers": max_workers,
@@ -245,7 +273,8 @@ def init_default_search_sources():
         TG_PROXY,
         TG_SEARCH_TIMEOUT,
         TG_SEARCH_MAX_WORKERS,
-        BASE_DIR,
+        TG_DISABLED_CHANNELS,
+        DEFAULT_PLUGIN_SETTINGS,
     )
 
     # 1. 首次初始化 TG 频道配置至 system_config
@@ -254,6 +283,7 @@ def init_default_search_sources():
         save_tg_search_config({
             "enabled": True,
             "channels": TG_CHANNELS,
+            "disabled_channels": TG_DISABLED_CHANNELS,
             "proxy": TG_PROXY,
             "timeout": TG_SEARCH_TIMEOUT,
             "max_workers": TG_SEARCH_MAX_WORKERS,
@@ -273,23 +303,16 @@ def init_default_search_sources():
     except Exception as e:
         logger.warning(f"初始化 API 接口状态失败: {e}")
 
-    # 3. 首次初始化插件状态至 plugin_settings
+    # 3. 首次初始化插件状态至 plugin_settings，使用发布前健康检测生成的默认值。
     current_plugins = get_config_value(PLUGIN_SETTINGS_KEY)
     if not current_plugins:
         try:
-            plugins_dir = os.path.join(BASE_DIR, "src", "plugins")
-            plugin_names = []
-            if os.path.exists(plugins_dir):
-                for fn in os.listdir(plugins_dir):
-                    if fn.endswith("_plugin.py") and fn != "base_plugin.py":
-                        plugin_names.append(fn[:-10])
-
-            settings = {}
-            for p_name in plugin_names:
-                settings[p_name] = {"is_enabled": True}
+            settings = {
+                name: {"is_enabled": bool(is_enabled)}
+                for name, is_enabled in DEFAULT_PLUGIN_SETTINGS.items()
+            }
             set_config_value(PLUGIN_SETTINGS_KEY, settings)
-            logger.info(f"已完成全量 {len(plugin_names)} 个插件默认开启配置写入。")
+            enabled_count = sum(1 for item in settings.values() if item["is_enabled"])
+            logger.info("已写入 %d 个插件默认状态，其中 %d 个启用。", len(settings), enabled_count)
         except Exception as e:
             logger.warning(f"初始化插件配置失败: {e}")
-
-
