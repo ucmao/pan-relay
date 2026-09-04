@@ -70,8 +70,9 @@ class ApiConfigKeywordRotationTestCase(unittest.TestCase):
         mock_disable.assert_not_called()
 
     @patch("src.services.api_config_service.update_api_enabled_status_in_db")
+    @patch("src.services.api_config_service.update_api_status_in_db")
     @patch("src.services.api_config_service.requests.get")
-    def test_all_request_errors_are_disabled(self, mock_get, mock_disable):
+    def test_all_request_errors_updates_health_status_without_disabling(self, mock_get, mock_update_status, mock_disable):
         mock_get.side_effect = requests.ConnectionError("连接失败")
 
         _url, status, status_code, rule_status, _elapsed = test_single_api(1, self.config)
@@ -80,7 +81,8 @@ class ApiConfigKeywordRotationTestCase(unittest.TestCase):
         self.assertIsNone(status_code)
         self.assertFalse(rule_status)
         self.assertEqual(3, mock_get.call_count)
-        mock_disable.assert_called_once()
+        mock_update_status.assert_called_once_with("1", False, unittest.mock.ANY)
+        mock_disable.assert_not_called()
 
 
 if __name__ == "__main__":

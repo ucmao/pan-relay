@@ -229,6 +229,24 @@ def save_plugin_status(plugin_name: str, is_enabled: bool) -> bool:
     return set_config_value(PLUGIN_SETTINGS_KEY, settings)
 
 
+def save_plugin_health(plugin_name: str, health_data: Dict[str, Any]) -> bool:
+    """
+    保存指定插件的客观健康度数据（status, latency_ms, count, message, checked_at）至数据库。
+    """
+    import time
+    settings = get_plugin_settings()
+    if plugin_name not in settings:
+        settings[plugin_name] = {}
+    settings[plugin_name]["health"] = {
+        "status": health_data.get("status", "unknown"),
+        "latency_ms": health_data.get("latency_ms", 0),
+        "result_count": health_data.get("count", 0),
+        "message": health_data.get("message", ""),
+        "checked_at": health_data.get("checked_at") or time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    return set_config_value(PLUGIN_SETTINGS_KEY, settings)
+
+
 def init_default_search_sources():
     """
     首次初始化时自动将默认全量搜索源（API、TG频道、插件）写入数据库。

@@ -1,7 +1,9 @@
+import time
 import logging
 from flask import Blueprint, jsonify, request
 
 from src.services.plugin_manager import plugin_manager
+from src.services.system_config_service import get_plugin_settings, save_plugin_health
 from src.utils.auth_utils import token_required
 from src.utils.test_keywords import build_test_keywords
 
@@ -100,7 +102,7 @@ def get_plugins_api():
     获取系统中所有已发现并注册的插件列表及元数据
     """
     plugins = plugin_manager.get_all_plugins()
-    data = [p.to_dict() for p in plugins]
+    data = [_enrich_plugin_dict(p) for p in plugins]
     return jsonify({
         "success": True,
         "total": len(data),
@@ -154,6 +156,7 @@ def test_plugin_api(plugin_name):
     keywords = build_test_keywords(keyword)
     saw_empty_response = False
     last_error = None
+    start_time = time.time()
 
     for test_keyword in keywords:
         try:
@@ -162,6 +165,13 @@ def test_plugin_api(plugin_name):
                 saw_empty_response = True
                 continue
             serialized = [item.to_dict() for item in results]
+            latency_ms = int((time.time() - start_time) * 1000)
+            save_plugin_health(plugin_name, {
+                "status": "healthy",
+                "latency_ms": latency_ms,
+                "count": len(serialized),
+                "message": f"使用关键词“{test_keyword}”测试成功，发现 {len(serialized)} 条资源",
+            })
             return jsonify({
                 "success": True,
                 "plugin": plugin_name,
@@ -174,7 +184,14 @@ def test_plugin_api(plugin_name):
             last_error = str(e)
             logger.warning("测试插件 [%s] 使用关键词“%s”异常，继续轮询: %s", plugin_name, test_keyword, e)
 
+    latency_ms = int((time.time() - start_time) * 1000)
     if saw_empty_response:
+        save_plugin_health(plugin_name, {
+            "status": "no_data",
+            "latency_ms": latency_ms,
+            "count": 0,
+            "message": "插件可调用，但轮询关键词均无结果",
+        })
         return jsonify({
             "success": True,
             "plugin": plugin_name,
@@ -186,6 +203,12 @@ def test_plugin_api(plugin_name):
         })
 
     logger.error("测试插件 [%s] 多关键词轮询均异常: %s", plugin_name, last_error)
+    save_plugin_health(plugin_name, {
+        "status": "error",
+        "latency_ms": latency_ms,
+        "count": 0,
+        "message": f"插件多关键词测试均异常: {last_error or '未知异常'}",
+    })
     return jsonify({
         "success": False,
         "plugin": plugin_name,
@@ -205,6 +228,13 @@ def health_plugin_api(plugin_name):
 
     try:
         ok, msg = plugin.health_check()
+        status = "healthy" if ok else "error"
+        save_plugin_health(plugin_name, {
+            "status": status,
+            "latency_ms": 0,
+            "count": 0,
+            "message": msg,
+        })
         return jsonify({
             "success": True,
             "plugin": plugin_name,

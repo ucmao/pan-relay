@@ -12,6 +12,7 @@ from src.routes.auth_routes import auth_bp
 from src.routes.system_config_routes import system_config_bp
 from src.routes.plugin_routes import plugin_bp
 from src.routes.search_sources_routes import search_sources_bp
+from src.routes.dashboard_routes import dashboard_bp
 from src.configs.app_config import SECRET_KEY
 from src.db.connection import init_sqlite_db
 from src.services.scheduler_service import start_scheduler
@@ -27,6 +28,7 @@ init_sqlite_db()
 
 # 注册蓝图
 app.register_blueprint(auth_bp)
+app.register_blueprint(dashboard_bp)
 app.register_blueprint(api_config_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(resources_bp)

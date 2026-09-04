@@ -261,13 +261,8 @@ def test_single_api(
         )
 
     if api_id != "未知ID" and api_id.isdigit():
-        update_api_enabled_status_in_db(
-            api_id,
-            is_enabled=False,
-            new_status=False,
-            response_time_ms=response_time_ms,
-        )
-    logger.error("API %s (ID:%s) 多关键词测试均失败: %s，已自动禁止。", url, api_id, last_error)
+        update_api_status_in_db(api_id, False, response_time_ms)
+    logger.error("API %s (ID:%s) 多关键词测试均失败: %s，健康状态已标记为异常。", url, api_id, last_error)
     return _test_result(
         (url, False, last_status_code, False, response_time_ms),
         return_details,
@@ -285,5 +280,5 @@ def test_all_apis_and_update_status():
         for _ in concurrent.futures.as_completed(futures):
             pass
 
-    logger.info("所有 API 测试并更新状态完毕 (失败的 API 已自动禁止)")
-    return True, "所有 API 测试并更新状态成功 (异常的已自动禁止)"
+    logger.info("所有 API 测试并更新健康状态完毕")
+    return True, "所有 API 测试并更新健康状态成功"

@@ -20,7 +20,7 @@ def login():
     if request.method == 'GET' and token:
         try:
             jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-            return redirect(url_for('resources.resources_page'))
+            return redirect(url_for('dashboard.dashboard_page'))
         except jwt.PyJWTError:
             pass
 
@@ -36,7 +36,7 @@ def login():
             token = create_jwt_token()
             
             # 创建响应对象，重定向到后台资源页
-            response = redirect(url_for('resources.resources_page'))
+            response = redirect(url_for('dashboard.dashboard_page'))
             # 设置JWT令牌到cookie
             response.set_cookie('token', token, httponly=True)
             

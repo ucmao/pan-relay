@@ -53,7 +53,7 @@
     <aside id="sidebar" class="admin-sidebar fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/80 flex-shrink-0 flex flex-col transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out">
         <!-- Brand Logo Header -->
         <div class="h-16 px-6 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
-            <a href="{{ url_for('resources.resources_page') }}" class="flex items-center space-x-2.5 group">
+            <a href="{{ url_for('dashboard.dashboard_page') }}" class="flex items-center space-x-2.5 group">
                 <img src="{{ url_for('static', filename='images/search_logo.png') }}" class="w-7 h-7 rounded-lg object-contain shadow-2xs group-hover:scale-105 transition-transform" alt="Logo">
                 <div class="flex items-center space-x-1.5">
                     <span class="text-base font-extrabold tracking-tight text-slate-900">Pan-Relay</span>
@@ -68,6 +68,11 @@
         <!-- Navigation Links -->
         <nav class="admin-sidebar-nav flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             <div class="px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">核心控制台</div>
+
+            <a href="{{ url_for('dashboard.dashboard_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'dashboard' else '' }}">
+                <i class="fas fa-gauge-high w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'dashboard' else '' }}"></i>
+                <span>工作台仪表盘</span>
+            </a>
 
             <a href="{{ url_for('resources.resources_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'resources' else '' }}">
                 <i class="fas fa-layer-group w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'resources' else '' }}"></i>
