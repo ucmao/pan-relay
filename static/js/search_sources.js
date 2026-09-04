@@ -57,18 +57,17 @@
     function updateTgKPI() {
         const total = tgChannels.length;
         const enabledCount = tgChannels.filter((item) => item.is_enabled).length;
-        const enabled = Boolean(tgConfig?.enabled);
         const proxyNote = tgConfig?.proxy ? ' · 代理启用' : '';
         const kpiStatus = document.getElementById('kpiTgStatus');
         const kpiDetail = document.getElementById('kpiTgDetail');
         const tabBadgeTg = document.getElementById('tabBadgeTg');
 
         if (kpiStatus) {
-            kpiStatus.textContent = enabled ? `${enabledCount} / ${total}` : '已停用';
-            kpiStatus.style.color = enabled ? 'var(--admin-success-text)' : 'var(--admin-text-muted)';
+            kpiStatus.textContent = `${enabledCount} / ${total}`;
+            kpiStatus.style.color = enabledCount > 0 ? 'var(--admin-success-text)' : 'var(--admin-text-muted)';
         }
         if (kpiDetail) kpiDetail.textContent = `总计 ${total} 个 · 启用 ${enabledCount} 个${proxyNote}`;
-        if (tabBadgeTg) tabBadgeTg.textContent = enabled ? `${enabledCount}/${total} 启用` : '已停用';
+        if (tabBadgeTg) tabBadgeTg.textContent = `${enabledCount}/${total} 启用`;
     }
 
     function formatCheckedAt(value) {
@@ -81,7 +80,7 @@
         const tbody = document.getElementById('tgChannelTableBody');
         if (!tbody) return;
         if (tgChannels.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">暂无频道，请点击“新增频道”添加</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">暂无频道，请点击“新增频道”添加</td></tr>';
             updateTgKPI();
             return;
         }
@@ -113,12 +112,10 @@
                     <td class="text-center">${latency}</td>
                     <td class="text-center text-xs text-slate-500">${formatCheckedAt(health.checked_at)}</td>
                     <td class="action-buttons text-center">
-                        <button class="btn btn-sm ${toggleClass}" onclick="toggleTgChannel('${encodedChannel}', ${nextEnabled})" title="点击切换状态">
-                            <i class="fas ${toggleIcon}"></i> ${toggleText}
-                        </button>
-                    </td>
-                    <td class="action-buttons text-center">
                         <div class="inline-flex items-center gap-1.5 justify-center">
+                            <button class="btn btn-sm ${toggleClass}" onclick="toggleTgChannel('${encodedChannel}', ${nextEnabled})" title="点击切换状态">
+                                <i class="fas ${toggleIcon}"></i> ${toggleText}
+                            </button>
                             <button class="btn btn-sm btn-info" onclick="testTgChannel('${encodedChannel}', this)" title="测试频道"><i class="fas fa-vial"></i> 测试</button>
                             <button class="btn btn-sm btn-secondary" onclick="deleteTgChannel('${encodedChannel}')" title="删除频道"><i class="fas fa-trash"></i></button>
                         </div>
@@ -139,9 +136,6 @@
             tgConfig = configData.config || {};
             tgChannels = Array.isArray(channelsData.channels) ? channelsData.channels : [];
 
-            const targetVal = tgConfig.enabled ? 'true' : 'false';
-            const radio = document.querySelector(`.frontend-link-mode-radio[name="tgSearchEnabled"][value="${targetVal}"]`);
-            if (radio) radio.checked = true;
             const proxyEl = document.getElementById('tgProxyInput');
             const timeoutEl = document.getElementById('tgTimeoutInput');
             const workersEl = document.getElementById('tgMaxWorkersInput');
@@ -158,9 +152,8 @@
     async function saveTgSearchConfig() {
         const button = document.getElementById('saveTgSearchConfigBtn');
         if (button) button.disabled = true;
-        const enabledRadio = document.querySelector('.frontend-link-mode-radio[name="tgSearchEnabled"]:checked');
         const payload = {
-            enabled: enabledRadio ? enabledRadio.value === 'true' : true,
+            enabled: true,
             proxy: (document.getElementById('tgProxyInput')?.value || '').trim(),
             timeout: parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10),
             max_workers: parseInt(document.getElementById('tgMaxWorkersInput')?.value || '4', 10),

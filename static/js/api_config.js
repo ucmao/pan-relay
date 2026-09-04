@@ -179,14 +179,14 @@
                 const requestDisplay = api.request && api.request.trim() ? '<span>已配置</span>' : '<span>无</span>';
                 const responseDisplay = api.response && api.response.trim() ? '<i class="fas fa-code"></i>' : '<i class="fas fa-times-circle text-danger"></i>';
                 row.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><span class="status-button ${statusClass}" title="最新测试结果">${statusText}</span></td>
+                    <td class="text-center">${index + 1}</td>
+                    <td class="text-center"><span class="status-button ${statusClass}" title="最新测试结果">${statusText}</span></td>
                     <td>${api.name}</td>
                     <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: normal; word-wrap: break-word;">${api.url}</td>
-                    <td>${api.method.toUpperCase()}</td>
-                    <td>${timeDisplay}</td>
-                    <td>${requestDisplay}</td>
-                    <td>${responseDisplay}</td>
+                    <td class="text-center font-mono">${api.method.toUpperCase()}</td>
+                    <td class="text-center">${timeDisplay}</td>
+                    <td class="text-center">${requestDisplay}</td>
+                    <td class="text-center">${responseDisplay}</td>
                     <td class="action-buttons text-center">
                         <div class="inline-flex items-center gap-1.5 justify-center">
                             <button class="btn btn-sm ${toggleBtnClass}" title="${api.status === false && !api.is_enabled ? 'API异常，请先测试修复后再启用' : '点击切换状态'}"

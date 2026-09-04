@@ -33,7 +33,7 @@ async function loadPlugins() {
         if (currentPluginsData.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="11" class="text-center text-muted py-5">
+                    <td colspan="10" class="text-center text-muted py-5">
                         <i class="fas fa-puzzle-piece fa-2x mb-2 text-secondary d-block"></i>
                         暂未发现任何插件。请在 <code>src/plugins/</code> 目录下创建继承自 <code>BasePlugin</code> 的 Python 模块。
                     </td>
@@ -47,6 +47,10 @@ async function loadPlugins() {
             const statusBadge = isEnabled
                 ? `<span class="plugin-status-badge is-enabled"><i class="fas fa-check-circle"></i> 已启用</span>`
                 : `<span class="plugin-status-badge is-disabled"><i class="fas fa-pause-circle"></i> 已停用</span>`;
+            const toggleClass = isEnabled ? 'btn-success' : 'btn-danger';
+            const toggleIcon = isEnabled ? 'fa-toggle-on' : 'fa-toggle-off';
+            const toggleText = isEnabled ? '启用' : '停用';
+            const nextEnabled = !isEnabled;
 
             return `
                 <tr>
@@ -67,19 +71,15 @@ async function loadPlugins() {
                     <td class="align-middle text-muted small text-break" style="max-width: 260px;">
                         ${escapeHtml(p.description || '无说明')}
                     </td>
-                    <td class="text-center align-middle">
-                        <label class="plugin-switch" title="${isEnabled ? '点击停用' : '点击启用'}">
-                            <input type="checkbox" id="switch-${escapeHtml(p.name)}" ${isEnabled ? 'checked' : ''} onchange="togglePlugin('${escapeHtml(p.name)}', this.checked)">
-                            <span class="plugin-slider"></span>
-                        </label>
-                    </td>
-                    <td class="text-center align-middle">
-                        <button class="btn btn-outline-primary btn-sm me-1" onclick="openTestModal('${escapeHtml(p.name)}', '${escapeHtml(p.display_name || p.name)}', ${p.timeout || 6.0})" title="在线检索测试">
-                            <i class="fas fa-play me-1"></i> 测试
-                        </button>
-                        <button class="btn btn-outline-info btn-sm" onclick="checkPluginHealth('${escapeHtml(p.name)}')" title="健康检查探测">
-                            <i class="fas fa-heartbeat me-1"></i> 探测
-                        </button>
+                    <td class="action-buttons text-center align-middle">
+                        <div class="inline-flex items-center gap-1.5 justify-center">
+                            <button class="btn btn-sm ${toggleClass}" onclick="togglePlugin('${escapeHtml(p.name)}', ${nextEnabled})" title="点击切换状态">
+                                <i class="fas ${toggleIcon}"></i> ${toggleText}
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="openTestModal('${escapeHtml(p.name)}', '${escapeHtml(p.display_name || p.name)}', ${p.timeout || 6.0})" title="在线检索测试">
+                                <i class="fas fa-vial"></i> 测试
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -90,7 +90,7 @@ async function loadPlugins() {
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="11" class="text-center text-danger py-4">
+                    <td colspan="10" class="text-center text-danger py-4">
                         <i class="fas fa-exclamation-circle me-1"></i> 加载插件数据失败: ${escapeHtml(err.message)}
                     </td>
                 </tr>
