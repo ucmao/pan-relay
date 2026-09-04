@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS api_config (
 CREATE TABLE IF NOT EXISTS telegram_channel (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL UNIQUE,
+  title TEXT DEFAULT NULL,
   is_enabled INTEGER NOT NULL DEFAULT 1,
   health_status TEXT NOT NULL DEFAULT 'unknown',
   latency_ms INTEGER NOT NULL DEFAULT 0,
@@ -111,17 +112,9 @@ INSERT OR IGNORE INTO api_config (name, url, method, request, response, status, 
 ('qsdurl', 'https://api.qsdurl.cn/tool/duanju?name=[[keyword]]', 'get', '', '[*].[name, url]', 0, 23344, 0),
 ('mywl', 'https://cx.mywl.top/api/duanju/search?keyword=[[keyword]]', 'get', '', 'data[*].[title, url]', 0, 10452, 0),
 ('kuleu', 'https://api.kuleu.com/api/action?text=[[keyword]]', 'get', '', 'data[*].[name, viewlink]', 1, 1232, 1),
-('kuoapp', 'https://kuoapp.com/duanju/api.php?param=1&name=[[keyword]]', 'get', '', 'data[*].[name, url]', 1, 1956, 1),
+('短剧列表（niurl）', 'https://kuoapp.com/duanju/api.php?param=1&name=[[keyword]]&page=1', 'get', '', 'data[*].[name, url]', 1, 1956, 1),
 ('狗狗盘搜', 'https://gogopanso.com:3642/search?keyword=[[keyword]]', 'get', '', 'data[*].[name, downurl]', 1, 1148, 1),
 ('趣盘搜', 'https://v.funletu.com/search', 'post', '{"style": "get", "datasrc": "search", "query": {"id": "", "datetime": "", "courseid": 1, "categoryid": "", "filetypeid": "", "filetype": "", "reportid": "", "validid": "", "searchtext": "[[keyword]]", "fileid": ""}, "page": {"pageSize": 10, "pageIndex": 1}, "order": {"prop": "sort", "order": "desc"}, "message": "请求资源列表数据"}', 'data[*].[title, url]', 0, 866, 0),
 ('pansou', 'https://so.252035.xyz/api/search?kw=[[keyword]]', 'get', '', 'data.merged_by_type.* | [].[note, url]', 1, 5753, 1);
 
--- ----------------------------
--- Default data for `resources`
--- ----------------------------
-INSERT OR IGNORE INTO resources (file_id, name, share_link, cloud_name, type, remarks) VALUES
-('file_123456', '电影资源分享', 'https://pan.baidu.com/s/test0001', '百度网盘', '电影', '这是一个电影资源分享'),
-('file_789012', '音乐专辑合集', 'https://www.aliyundrive.com/s/test0001', '阿里云盘', '音乐', '精选音乐专辑合集'),
-('file_345678', '软件工具包', 'https://pan.quark.cn/s/test0001', '夸克网盘', '软件', '常用软件工具包'),
-('file_901234', '学习资料', 'https://cloud.189.cn/t/test0001', '天翼云盘', '文档', '学习资料合集'),
-('file_567890', '图片素材', 'https://pan.xunlei.com/s/test0001', '迅雷网盘', '图片', '高清图片素材集');
+

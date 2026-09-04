@@ -13,7 +13,7 @@ def get_all_channels() -> List[Dict[str, Any]]:
     cursor = conn.cursor(as_dict=True)
     try:
         cursor.execute(
-            "SELECT id, channel, is_enabled, health_status, latency_ms, result_count, "
+            "SELECT id, channel, title, is_enabled, health_status, latency_ms, result_count, "
             "health_message, checked_at, created_at, updated_at "
             "FROM telegram_channel ORDER BY id ASC"
         )
@@ -46,7 +46,7 @@ def get_channel(channel: str) -> Optional[Dict[str, Any]]:
     cursor = conn.cursor(as_dict=True)
     try:
         cursor.execute(
-            "SELECT id, channel, is_enabled, health_status, latency_ms, result_count, "
+            "SELECT id, channel, title, is_enabled, health_status, latency_ms, result_count, "
             "health_message, checked_at, created_at, updated_at "
             "FROM telegram_channel WHERE channel = ?",
             (channel,),
@@ -63,15 +63,15 @@ def get_channel(channel: str) -> Optional[Dict[str, Any]]:
         conn.close()
 
 
-def insert_channel(channel: str, is_enabled: bool = True) -> Tuple[bool, str, Optional[int]]:
+def insert_channel(channel: str, is_enabled: bool = True, title: Optional[str] = None) -> Tuple[bool, str, Optional[int]]:
     conn = get_db_connection()
     if not conn:
         return False, "数据库连接失败", None
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "INSERT INTO telegram_channel (channel, is_enabled) VALUES (?, ?)",
-            (channel, 1 if is_enabled else 0),
+            "INSERT INTO telegram_channel (channel, title, is_enabled) VALUES (?, ?, ?)",
+            (channel, title, 1 if is_enabled else 0),
         )
         conn.commit()
         return True, f"频道 @{channel} 添加成功", cursor.lastrowid
@@ -81,6 +81,27 @@ def insert_channel(channel: str, is_enabled: bool = True) -> Tuple[bool, str, Op
             return False, f"频道 @{channel} 已存在", None
         logger.error("添加 Telegram 频道 @%s 失败: %s", channel, error)
         return False, f"频道添加失败: {error}", None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def update_channel_title(channel: str, title: str) -> bool:
+    conn = get_db_connection()
+    if not conn:
+        return False
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE telegram_channel SET title = ?, updated_at = CURRENT_TIMESTAMP WHERE channel = ?",
+            (title, channel),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    except Error as error:
+        conn.rollback()
+        logger.error("更新 Telegram 频道 @%s 标题失败: %s", channel, error)
+        return False
     finally:
         cursor.close()
         conn.close()
@@ -180,7 +201,7 @@ def update_channel_health(
         conn.close()
 
 
-def seed_channels(channels: Iterable[str], disabled_channels: Iterable[str]) -> int:
+def seed_channels(channels: Iterable[str], disabled_channels: Iterable[str], titles: Optional[Dict[str, str]] = None) -> int:
     """仅在频道表为空时写入版本内置的初始频道。"""
     conn = get_db_connection()
     if not conn:
@@ -191,9 +212,10 @@ def seed_channels(channels: Iterable[str], disabled_channels: Iterable[str]) -> 
         if cursor.fetchone()[0] > 0:
             return 0
         disabled = set(disabled_channels)
-        rows = [(channel, 0 if channel in disabled else 1) for channel in channels]
+        title_map = titles or {}
+        rows = [(channel, title_map.get(channel), 0 if channel in disabled else 1) for channel in channels]
         cursor.executemany(
-            "INSERT INTO telegram_channel (channel, is_enabled) VALUES (?, ?)",
+            "INSERT INTO telegram_channel (channel, title, is_enabled) VALUES (?, ?, ?)",
             rows,
         )
         conn.commit()

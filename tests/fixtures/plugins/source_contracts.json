@@ -1,6 +1,7 @@
 {
   "clxiong": {"protocol": "empirecms_redirect_detail", "sample": {"location": "/e/search/result/?searchid=42", "link": "magnet:?xt=urn:btih:0000000000000000000000000000000000000042"}},
   "duoduo": {"protocol": "maccms_detail", "sample": {"detail_id": "42", "link": "https://pan.quark.cn/s/redacted42"}},
+  "duanjuku": {"protocol": "html_search_detail", "sample": {"detail_id": "77553", "link": "https://pan.quark.cn/s/redacted42"}},
   "erxiao": {"protocol": "maccms_mirror_detail", "sample": {"detail_id": "42", "link": "https://pan.baidu.com/s/redacted42?pwd=a1b2"}},
   "jutoushe": {"protocol": "html_detail", "sample": {"path": "/detail/42", "link": "https://pan.quark.cn/s/redacted42"}},
   "kkv": {"protocol": "wordpress_detail", "sample": {"path": "/entry/42", "link": "https://pan.baidu.com/s/redacted42?pwd=a1b2"}},

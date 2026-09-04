@@ -13,6 +13,9 @@
                 <button class="btn btn-outline-primary btn-sm" id="reloadPluginsButton" onclick="reloadPlugins()">
                     <i class="fas fa-sync-alt text-[10px]"></i> 重新扫描
                 </button>
+                <button class="btn btn-outline-primary btn-sm" id="testAllPluginsButton" onclick="testAllPlugins()">
+                    <i class="fas fa-vial text-[10px]"></i> 全部测试
+                </button>
                 <button class="btn btn-outline-primary btn-sm" id="enableAllPluginsButton" onclick="enableAllPlugins()">
                     <i class="fas fa-play text-[10px]"></i> 全部启用
                 </button>
@@ -27,20 +30,20 @@
                 <thead>
                     <tr>
                         <th style="width: 50px; text-align: center;">#</th>
-                        <th style="width: 85px; text-align: center;">状态</th>
-                        <th style="width: 130px;">标识</th>
+                        <th style="width: 85px; text-align: center;">启用状态</th>
+                        <th style="width: 85px; text-align: center;">健康状态</th>
+                        <th style="width: 120px;">标识</th>
                         <th>插件名称</th>
-                        <th style="width: 70px; text-align: center;">版本</th>
-                        <th style="width: 85px; text-align: center;">作者</th>
-                        <th style="width: 70px; text-align: center;">权重</th>
+                        <th style="width: 85px; text-align: center;">耗时</th>
                         <th style="width: 70px; text-align: center;">超时</th>
+                        <th style="width: 70px; text-align: center;">版本</th>
                         <th>描述</th>
                         <th style="width: 145px; text-align: center;">操作</th>
                     </tr>
                 </thead>
                 <tbody id="pluginTableBody">
                     <tr>
-                        <td colspan="10" class="text-center text-slate-400 py-8 text-xs">
+                        <td colspan="10" class="text-slate-400 text-center py-8 text-xs">
                             <i class="fas fa-spinner fa-spin mr-2"></i> 正在加载插件数据...
                         </td>
                     </tr>

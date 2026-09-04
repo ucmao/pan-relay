@@ -85,15 +85,13 @@ def delete_api_config(api_id):
 @api_config_bp.route("/admin/api/configs/<int:api_id>/enabled", methods=["PUT"])
 @token_required
 def toggle_api_enabled(api_id):
-    """切换单个 API 的启用状态，限制异常状态下启用 (需要 JWT 验证)"""
+    """切换单个 API 的启用状态 (需要 JWT 验证)"""
     data = request.get_json()
     is_enabled = bool(data.get("is_enabled"))
     success, message = set_api_enabled_in_db(api_id, is_enabled)
     if not success:
         if "未找到" in message:
             return jsonify({"message": message}), 404
-        if "状态异常" in message:
-            return jsonify({"message": message}), 400
         if "数据库连接失败" in message:
             return jsonify({"message": message}), 500
         return jsonify({"message": message}), 500
@@ -103,7 +101,7 @@ def toggle_api_enabled(api_id):
 @api_config_bp.route("/admin/api/configs/enable-all", methods=["PUT"])
 @token_required
 def enable_all_apis():
-    """一键启用所有【状态正常 (status=1)】的 API (需要 JWT 验证)"""
+    """一键启用所有 API 配置 (需要 JWT 验证)"""
     success, message, _count = enable_all_apis_in_db()
     if not success:
         return jsonify({"message": message}), 500
@@ -168,7 +166,7 @@ def test_api():
     )
 
 
-@api_config_bp.route("/admin/api/test-all", methods=["GET"])
+@api_config_bp.route("/admin/api/test-all", methods=["GET", "POST"])
 @token_required
 def test_all_apis():
     """测试所有API配置并更新其状态 (需要 JWT 验证)"""

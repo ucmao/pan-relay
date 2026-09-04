@@ -96,6 +96,44 @@ def disable_all_admin_plugins_api():
     return jsonify({"success": True, "message": "已全部停用所有插件"})
 
 
+@plugin_bp.route("/admin/api/plugins/test-all", methods=["POST", "GET"])
+@token_required
+def test_all_admin_plugins_api():
+    """全部测试/检测插件健康度"""
+    try:
+        plugins = plugin_manager.get_all_plugins()
+        healthy_count = 0
+        for p in plugins:
+            try:
+                ok, msg = p.health_check()
+                status = "healthy" if ok else "error"
+                if ok:
+                    healthy_count += 1
+                save_plugin_health(p.name, {
+                    "status": status,
+                    "latency_ms": 0,
+                    "count": 0,
+                    "message": msg,
+                })
+            except Exception as e:
+                save_plugin_health(p.name, {
+                    "status": "error",
+                    "latency_ms": 0,
+                    "count": 0,
+                    "message": str(e),
+                })
+        return jsonify({
+            "success": True,
+            "message": f"成功检测 {len(plugins)} 个插件，正常: {healthy_count} 个",
+            "total": len(plugins),
+            "healthy_count": healthy_count,
+        })
+    except Exception as e:
+        logger.error(f"批量测试插件异常: {e}")
+        return jsonify({"success": False, "message": f"批量测试插件失败: {e}"}), 500
+
+
+
 def _enrich_plugin_dict(plugin):
     d = plugin.to_dict()
     settings = get_plugin_settings()

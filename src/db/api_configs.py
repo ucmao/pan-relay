@@ -197,11 +197,6 @@ def update_config(api_id: int, updated_config: Dict[str, Any]) -> Tuple[bool, st
 
     new_is_enabled = bool(updated_config.get("is_enabled"))
 
-    # 1. 检查是否尝试启用异常状态的 API
-    if new_is_enabled and not current_api_status["status"]:  # status=0 (异常)
-        logger.warning(f"尝试修改 API ID:{api_id}，但无法在异常状态下启用")
-        return False, "API 状态异常，无法启用。请先测试并修复。"
-
     conn = get_db_connection()
     if not conn:
         return False, "数据库连接失败"
@@ -332,18 +327,8 @@ def update_enabled_status(
 
 
 def set_enabled(api_id: int, is_enabled: bool) -> Tuple[bool, str]:
-    """切换单个 API 的启用状态，限制异常状态下启用"""
+    """切换单个 API 的启用状态"""
     is_enabled = bool(is_enabled)
-
-    # 1. 如果是尝试启用 (is_enabled=True)，则需要检查 status
-    if is_enabled:
-        current_api_status = get_config_status(api_id)
-        if current_api_status is None:
-            return False, "未找到该 API 配置"
-
-        if not current_api_status["status"]:  # status=0 (异常)
-            logger.warning(f"尝试启用 API ID:{api_id} 失败，状态异常")
-            return False, "API 状态异常，无法启用。请先测试并修复。"
 
     conn = get_db_connection()
     if not conn:
@@ -372,19 +357,19 @@ def set_enabled(api_id: int, is_enabled: bool) -> Tuple[bool, str]:
 
 
 def enable_all_normal() -> Tuple[bool, str, int]:
-    """一键启用所有【状态正常 (status=1)】的 API"""
+    """一键启用所有 API"""
     conn = get_db_connection()
     if not conn:
         return False, "数据库连接失败", 0
 
-    query = "UPDATE api_config SET is_enabled = 1 WHERE status = 1"
+    query = "UPDATE api_config SET is_enabled = 1"
 
     try:
         cursor = conn.cursor()
         cursor.execute(query)
         conn.commit()
-        logger.info(f"成功一键启用所有【正常状态】的 API 配置，共更新 {cursor.rowcount} 条")
-        return True, f"成功一键启用 {cursor.rowcount} 条【正常状态】的 API 配置", cursor.rowcount
+        logger.info(f"成功一键启用所有 API 配置，共更新 {cursor.rowcount} 条")
+        return True, f"成功一键启用 {cursor.rowcount} 条 API 配置", cursor.rowcount
     except Error as err:
         logger.error(f"一键启用所有 API 时出错: {err}")
         conn.rollback()

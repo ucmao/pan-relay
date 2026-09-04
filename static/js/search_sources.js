@@ -80,7 +80,7 @@
         const tbody = document.getElementById('tgChannelTableBody');
         if (!tbody) return;
         if (tgChannels.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">暂无频道，请点击“新增频道”添加</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">暂无频道，请点击“新增频道”添加</td></tr>';
             updateTgKPI();
             return;
         }
@@ -89,23 +89,40 @@
             const health = item.health || {};
             const status = health.status || 'unknown';
             const statusText = health.status_text || '未检测';
-            const statusClass = status === 'healthy' ? 'status-available' : (status === 'error' ? 'status-unavailable' : '');
-            const statusStyle = status === 'no_data'
-                ? 'background:linear-gradient(135deg,#d97706,#f59e0b);color:white;'
-                : (status === 'unknown' ? 'background:#e2e8f0;color:#64748b;' : '');
+            const hStatusClassMap = {
+                'healthy': 'health-normal',
+                'error': 'health-error',
+                'no_data': 'health-nodata',
+                'unknown': 'health-unknown'
+            };
+            const hStatusIconMap = {
+                'healthy': 'fa-check-circle',
+                'error': 'fa-exclamation-circle',
+                'no_data': 'fa-info-circle',
+                'unknown': 'fa-minus-circle'
+            };
+            const hClass = hStatusClassMap[status] || 'health-unknown';
+            const hIcon = hStatusIconMap[status] || 'fa-minus-circle';
+            const healthBadge = `<span class="health-text-badge ${hClass}" title="${escapeHtml(health.message || '尚未检测')}"><i class="fas ${hIcon}"></i> ${escapeHtml(statusText)}</span>`;
             const latency = Number(health.latency_ms) > 0 ? `${health.latency_ms} ms` : '--';
             const nextEnabled = !item.is_enabled;
+            const enableBadge = item.is_enabled
+                ? '<span class="status-dot-badge is-enabled"><span class="dot"></span>已启用</span>'
+                : '<span class="status-dot-badge is-disabled"><span class="dot"></span>已停用</span>';
             const toggleClass = item.is_enabled ? 'btn-success' : 'btn-danger';
             const toggleIcon = item.is_enabled ? 'fa-toggle-on' : 'fa-toggle-off';
             const toggleText = item.is_enabled ? '启用' : '停用';
             const rowClass = item.is_enabled ? '' : 'disabled-api';
             const channel = escapeHtml(item.channel);
+            const title = escapeHtml(item.title || item.channel);
             const encodedChannel = encodeURIComponent(item.channel);
 
             return `
                 <tr class="${rowClass}">
                     <td class="text-center">${index + 1}</td>
-                    <td class="text-center"><span class="status-button ${statusClass}" style="${statusStyle}" title="${escapeHtml(health.message || '尚未检测')}">${escapeHtml(statusText)}</span></td>
+                    <td class="text-center">${enableBadge}</td>
+                    <td class="text-center">${healthBadge}</td>
+                    <td class="font-medium text-slate-800 text-xs">${title}</td>
                     <td>
                         <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-blue-600 hover:text-blue-700">@${channel}</a>
                     </td>
@@ -216,7 +233,8 @@
 
     async function setAllTgChannelsEnabled(isEnabled) {
         const action = isEnabled ? '启用' : '停用';
-        if (!(await showConfirm(`确定要${action}全部 Telegram 频道吗？`))) return;
+        const modalType = isEnabled ? 'primary' : 'danger';
+        if (!(await showConfirm(`确定要${action}全部 Telegram 频道吗？`, modalType, `批量${action}确认`))) return;
         const button = document.getElementById(isEnabled ? 'enableAllTgChannelsButton' : 'disableAllTgChannelsButton');
         if (button) button.disabled = true;
         try {
@@ -232,7 +250,7 @@
 
     async function deleteTgChannel(encodedChannel) {
         const channel = decodeURIComponent(encodedChannel);
-        if (!(await showConfirm(`确定要删除频道 @${channel} 吗？`))) return;
+        if (!(await showConfirm(`确定要删除频道 @${channel} 吗？`, 'danger', '删除频道确认'))) return;
         try {
             const data = await readJson(await fetch(`/admin/api/tg-channels/${encodedChannel}`, { method: 'DELETE' }));
             showToast?.(data.message, 'success');
@@ -288,6 +306,7 @@
     }
 
     async function testAllTgChannels() {
+        if (!(await showConfirm('确定要检测全部 Telegram 频道吗？', 'primary', '批量检测确认'))) return;
         const button = document.getElementById('testAllTgChannelsButton');
         if (button) button.disabled = true;
         showToast?.('正在并发检测全部 Telegram 频道，请稍候...', 'info');

@@ -422,7 +422,8 @@
             });
     }
 
-    function triggerBatchApiTest() {
+    async function triggerBatchApiTest() {
+        if (typeof showConfirm === 'function' && !(await showConfirm('确定要批量检测所有 API 连通性吗？', 'primary', '批量检测确认'))) return;
         showToast('正在批量检测所有 API 连通性...', 'info');
         fetch('/admin/api/test-all')
             .then(res => res.json())
@@ -433,7 +434,8 @@
             .catch(err => showToast('API 检测出错', 'error'));
     }
 
-    function triggerBatchTgTest() {
+    async function triggerBatchTgTest() {
+        if (typeof showConfirm === 'function' && !(await showConfirm('确定要批量检测所有 Telegram 频道吗？', 'primary', '批量检测确认'))) return;
         showToast('正在批量检测 Telegram 频道...', 'info');
         fetch('/admin/api/tg-channels/test-all', { method: 'POST' })
             .then(res => res.json())

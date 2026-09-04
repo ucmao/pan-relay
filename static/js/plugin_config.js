@@ -33,7 +33,7 @@ async function loadPlugins() {
         if (currentPluginsData.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" class="text-center text-muted py-5">
+                    <td colspan="11" class="text-center text-muted py-5">
                         <i class="fas fa-puzzle-piece fa-2x mb-2 text-secondary d-block"></i>
                         暂未发现任何插件。请在 <code>src/plugins/</code> 目录下创建继承自 <code>BasePlugin</code> 的 Python 模块。
                     </td>
@@ -45,8 +45,30 @@ async function loadPlugins() {
         tbody.innerHTML = currentPluginsData.map((p, idx) => {
             const isEnabled = Boolean(p.is_enabled);
             const statusBadge = isEnabled
-                ? `<span class="plugin-status-badge is-enabled"><i class="fas fa-check-circle"></i> 已启用</span>`
-                : `<span class="plugin-status-badge is-disabled"><i class="fas fa-pause-circle"></i> 已停用</span>`;
+                ? `<span class="status-dot-badge is-enabled"><span class="dot"></span>已启用</span>`
+                : `<span class="status-dot-badge is-disabled"><span class="dot"></span>已停用</span>`;
+            const health = p.health || {};
+            const hStatus = health.status || 'unknown';
+            const hText = hStatus === 'healthy' ? '正常' : (hStatus === 'error' ? '异常' : (hStatus === 'no_data' ? '无数据' : '未检测'));
+            const hStatusClassMap = {
+                'healthy': 'health-normal',
+                'error': 'health-error',
+                'no_data': 'health-nodata',
+                'unknown': 'health-unknown'
+            };
+            const hStatusIconMap = {
+                'healthy': 'fa-check-circle',
+                'error': 'fa-exclamation-circle',
+                'no_data': 'fa-info-circle',
+                'unknown': 'fa-minus-circle'
+            };
+            const hClass = hStatusClassMap[hStatus] || 'health-unknown';
+            const hIcon = hStatusIconMap[hStatus] || 'fa-minus-circle';
+            const healthBadge = `<span class="health-text-badge ${hClass}" title="${escapeHtml(health.message || '尚未检测')}"><i class="fas ${hIcon}"></i> ${escapeHtml(hText)}</span>`;
+
+            const latencyMs = Number(health.latency_ms);
+            const latencyDisplay = latencyMs > 0 ? `${latencyMs} ms` : '--';
+
             const toggleClass = isEnabled ? 'btn-success' : 'btn-danger';
             const toggleIcon = isEnabled ? 'fa-toggle-on' : 'fa-toggle-off';
             const toggleText = isEnabled ? '启用' : '停用';
@@ -56,18 +78,16 @@ async function loadPlugins() {
                 <tr>
                     <td class="text-center text-muted align-middle">${idx + 1}</td>
                     <td class="text-center align-middle" id="statusBadge-${escapeHtml(p.name)}">${statusBadge}</td>
+                    <td class="text-center align-middle">${healthBadge}</td>
                     <td class="align-middle">
                         <span class="plugin-code-tag">${escapeHtml(p.name)}</span>
                     </td>
                     <td class="align-middle">
                         <strong class="text-dark">${escapeHtml(p.display_name || p.name)}</strong>
                     </td>
-                    <td class="text-center align-middle text-muted small">v${escapeHtml(p.version || '1.0.0')}</td>
-                    <td class="text-center align-middle text-muted small">${escapeHtml(p.author || '-')}</td>
-                    <td class="text-center align-middle">
-                        <span class="badge bg-light text-secondary border">${p.priority || 100}</span>
-                    </td>
+                    <td class="text-center align-middle font-mono text-xs">${latencyDisplay}</td>
                     <td class="text-center align-middle text-muted small">${p.timeout || 6.0}s</td>
+                    <td class="text-center align-middle text-muted small">v${escapeHtml(p.version || '1.0.0')}</td>
                     <td class="align-middle text-muted small text-break" style="max-width: 260px;">
                         ${escapeHtml(p.description || '无说明')}
                     </td>
@@ -146,6 +166,7 @@ async function reloadPlugins() {
 }
 
 async function enableAllPlugins() {
+    if (!(await showConfirm('确定要启用所有 Python 插件扩展吗？', 'primary', '批量启用确认'))) return;
     const btn = document.getElementById('enableAllPluginsButton');
     if (btn) btn.disabled = true;
     try {
@@ -164,6 +185,7 @@ async function enableAllPlugins() {
 }
 
 async function disableAllPlugins() {
+    if (!(await showConfirm('确定要【禁用】所有 Python 插件扩展吗？', 'danger', '批量禁用确认'))) return;
     const btn = document.getElementById('disableAllPluginsButton');
     if (btn) btn.disabled = true;
     try {
@@ -176,6 +198,29 @@ async function disableAllPlugins() {
         await loadPlugins();
     } catch (err) {
         showToast(`全部禁用失败: ${err.message}`, 'danger');
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function testAllPlugins() {
+    if (!(await showConfirm('确定要测试所有 Python 插件扩展吗？', 'primary', '批量测试确认'))) return;
+    const btn = document.getElementById('testAllPluginsButton');
+    if (btn) btn.disabled = true;
+    showToast('正在探测所有插件健康度...', 'info');
+    try {
+        const response = await fetch('/admin/api/plugins/test-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.message || '全部测试失败');
+        }
+        showToast(data.message || '全部插件检测完成', 'success');
+        await loadPlugins();
+    } catch (err) {
+        showToast(`全部测试失败: ${err.message}`, 'danger');
     } finally {
         if (btn) btn.disabled = false;
     }
@@ -292,6 +337,11 @@ async function runPluginTest() {
         if (btn) btn.disabled = false;
     }
 }
+
+window.enableAllPlugins = enableAllPlugins;
+window.disableAllPlugins = disableAllPlugins;
+window.testAllPlugins = testAllPlugins;
+window.reloadPlugins = reloadPlugins;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadPlugins();

@@ -127,6 +127,10 @@ def init_sqlite_db():
             else:
                 logger.error(f"未找到数据库初始化脚本: {schema_file}")
         else:
+            try:
+                raw_conn.execute("ALTER TABLE telegram_channel ADD COLUMN title TEXT DEFAULT NULL;")
+            except Exception:
+                pass
             logger.info("SQLite 数据库表结构校验正常。")
 
         raw_conn.close()

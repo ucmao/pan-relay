@@ -9,6 +9,7 @@ from src.configs.app_config import DEFAULT_PLUGIN_SETTINGS
 from src.models.search_item import SearchResultItem
 from src.plugins.base_plugin import BasePlugin
 from src.plugins.duoduo_plugin import DuoduoPlugin
+from src.plugins.duanjuku_plugin import DuanjukuPlugin
 from src.plugins.kkv_plugin import KkvPlugin
 from src.plugins.pansearch_plugin import PansearchPlugin
 from src.plugins.ting77_plugin import Ting77Plugin
@@ -18,7 +19,7 @@ from src.services.plugin_manager import PluginManager
 
 FIXTURES = Path(__file__).parent / "fixtures" / "plugins"
 REMAINING = {
-    "clxiong", "duoduo", "erxiao", "jutoushe", "kkv", "labi", "muou", "shandian",
+    "clxiong", "duoduo", "duanjuku", "erxiao", "jutoushe", "kkv", "labi", "muou", "shandian",
     "xb6v", "xiaokupan", "zhizhen", "huban", "pansearch", "ting77", "u3c3", "javdb",
 }
 
@@ -99,6 +100,18 @@ class RemainingPluginsTest(unittest.TestCase):
         results = plugin.search("三体")
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].share_link, "https://pan.quark.cn/s/redacted42")
+
+    def test_duanjuku_search_and_detail_fixtures(self):
+        plugin = DuanjukuPlugin()
+        search_html = '<a href="/77553.html">三体（30集）</a><a href="/page_2.html">下一页</a>'
+        detail_html = '<a href="https://pan.quark.cn/s/redacted42">观看</a>'
+        plugin.request = lambda method, url, **kwargs: FakeResponse(
+            text=detail_html if url.endswith("/77553.html") else search_html
+        )
+        results = plugin.search("三体")
+        self.assertEqual(1, len(results))
+        self.assertEqual("三体（30集）", results[0].title)
+        self.assertEqual("https://pan.quark.cn/s/redacted42", results[0].share_link)
 
     def test_pansearch_json_fixture(self):
         plugin = PansearchPlugin()

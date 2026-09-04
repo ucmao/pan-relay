@@ -3,15 +3,20 @@
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
-                <h3 class="admin-panel-title"><i class="fas fa-satellite-dish text-sky-500"></i> 监控公开频道列表</h3>
+                <h3 class="admin-panel-title"><i class="fas fa-satellite-dish text-sky-500"></i> Telegram 公开频道列表</h3>
                 <p class="admin-panel-desc">逐个管理频道状态；检测结果只更新健康状态，不会自动停用频道</p>
             </div>
             <div class="flex items-center space-x-2 flex-wrap">
-                <button class="btn btn-primary btn-sm" data-ui-modal-target="#addTgChannelModal"><i class="fas fa-plus text-[10px]"></i> 新增频道</button>
-                <button class="btn btn-outline-primary btn-sm" id="testAllTgChannelsButton" onclick="testAllTgChannels()"><i class="fas fa-vial text-[10px]"></i> 全部检测</button>
-                <button class="btn btn-outline-primary btn-sm" id="enableAllTgChannelsButton" onclick="setAllTgChannelsEnabled(true)"><i class="fas fa-play text-[10px]"></i> 全部启用</button>
-                <button class="btn btn-outline-secondary btn-sm" id="disableAllTgChannelsButton" onclick="setAllTgChannelsEnabled(false)"><i class="fas fa-ban text-[10px]"></i> 全部停用</button>
-                <button class="btn btn-outline-secondary btn-sm" data-ui-modal-target="#tgSettingsModal"><i class="fas fa-cog text-[10px]"></i> 抓取设置</button>
+                <button class="btn btn-primary btn-sm" data-ui-modal-target="#addTgChannelModal"><i
+                        class="fas fa-plus text-[10px]"></i> 新增频道</button>
+                <button class="btn btn-outline-primary btn-sm" id="testAllTgChannelsButton"
+                    onclick="testAllTgChannels()"><i class="fas fa-vial text-[10px]"></i> 全部检测</button>
+                <button class="btn btn-outline-primary btn-sm" id="enableAllTgChannelsButton"
+                    onclick="setAllTgChannelsEnabled(true)"><i class="fas fa-play text-[10px]"></i> 全部启用</button>
+                <button class="btn btn-outline-secondary btn-sm" id="disableAllTgChannelsButton"
+                    onclick="setAllTgChannelsEnabled(false)"><i class="fas fa-ban text-[10px]"></i> 全部停用</button>
+                <button class="btn btn-outline-secondary btn-sm" data-ui-modal-target="#tgSettingsModal"><i
+                        class="fas fa-cog text-[10px]"></i> 抓取设置</button>
             </div>
         </div>
         <div class="data-table-shell" style="max-height: 620px; overflow-y: auto;">
@@ -19,15 +24,20 @@
                 <thead>
                     <tr>
                         <th style="width: 50px; text-align: center;">#</th>
+                        <th style="width: 85px; text-align: center;">启用状态</th>
                         <th style="width: 90px; text-align: center;">健康状态</th>
-                        <th>频道</th>
+                        <th>频道名称</th>
+                        <th style="width: 130px;">频道标识</th>
                         <th style="width: 100px; text-align: center;">耗时</th>
                         <th style="width: 170px; text-align: center;">最近检测</th>
                         <th style="width: 210px; text-align: center;">操作</th>
                     </tr>
                 </thead>
                 <tbody id="tgChannelTableBody">
-                    <tr><td colspan="6" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i> 正在加载频道列表...</td></tr>
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i>
+                            正在加载频道列表...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -39,7 +49,8 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="tgSettingsModalLabel"><i class="fas fa-cog text-sky-500"></i> Telegram 抓取高级参数</h5>
+                <h5 class="modal-title" id="tgSettingsModalLabel"><i class="fas fa-cog text-sky-500"></i> Telegram
+                    抓取高级参数</h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body space-y-4">
@@ -47,49 +58,75 @@
                     <label for="tgProxyInput" class="block text-xs font-semibold text-slate-700 mb-1.5">
                         网络代理 (Proxy) <span class="text-slate-400 font-normal ml-1">（如 socks5://127.0.0.1:7890）</span>
                     </label>
-                    <input type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800" id="tgProxyInput" placeholder="留空则使用系统直连">
+                    <input type="text"
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800"
+                        id="tgProxyInput" placeholder="留空则使用系统直连">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label for="tgTimeoutInput" class="block text-xs font-semibold text-slate-700 mb-1.5">单频道超时（秒）</label>
-                        <input type="number" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-xs text-slate-800" id="tgTimeoutInput" min="1" max="60" value="10">
+                        <label for="tgTimeoutInput"
+                            class="block text-xs font-semibold text-slate-700 mb-1.5">单频道超时（秒）</label>
+                        <input type="number"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-xs text-slate-800"
+                            id="tgTimeoutInput" min="1" max="60" value="10">
                     </div>
                     <div>
-                        <label for="tgMaxWorkersInput" class="block text-xs font-semibold text-slate-700 mb-1.5">并发拉取线程数</label>
-                        <input type="number" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-xs text-slate-800" id="tgMaxWorkersInput" min="1" max="16" value="4">
+                        <label for="tgMaxWorkersInput"
+                            class="block text-xs font-semibold text-slate-700 mb-1.5">并发拉取线程数</label>
+                        <input type="number"
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-xs text-slate-800"
+                            id="tgMaxWorkersInput" min="1" max="16" value="4">
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl" data-ui-dismiss="modal">取消</button>
-                <button type="button" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl" id="saveTgSearchConfigBtn" onclick="saveTgSearchConfig()"><i class="fas fa-save text-[10px]"></i> 保存设置</button>
+                <button type="button"
+                    class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl"
+                    data-ui-dismiss="modal">取消</button>
+                <button type="button"
+                    class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl"
+                    id="saveTgSearchConfigBtn" onclick="saveTgSearchConfig()"><i class="fas fa-save text-[10px]"></i>
+                    保存设置</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="addTgChannelModal" tabindex="-1" aria-labelledby="addTgChannelModalLabel" aria-hidden="true">
+<div class="modal fade" id="addTgChannelModal" tabindex="-1" aria-labelledby="addTgChannelModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addTgChannelModalLabel"><i class="fab fa-telegram-plane text-sky-500"></i> 新增公开频道</h5>
+                <h5 class="modal-title" id="addTgChannelModalLabel"><i class="fab fa-telegram-plane text-sky-500"></i>
+                    新增公开频道</h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body space-y-4">
                 <div>
-                    <label for="newTgChannelInput" class="block text-xs font-semibold text-slate-700 mb-1.5">频道用户名或公开链接</label>
-                    <input type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800" id="newTgChannelInput" placeholder="例如：tgsearchers7 或 https://t.me/tgsearchers7">
+                    <label for="newTgChannelInput"
+                        class="block text-xs font-semibold text-slate-700 mb-1.5">频道用户名或公开链接</label>
+                    <input type="text"
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800"
+                        id="newTgChannelInput" placeholder="例如：tgsearchers7 或 https://t.me/tgsearchers7">
                 </div>
                 <div>
-                    <label for="newTgChannelEnabled" class="block text-xs font-semibold text-slate-700 mb-1.5">初始状态</label>
-                    <select class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800" id="newTgChannelEnabled">
-                        <option value="true">启用</option><option value="false">停用</option>
+                    <label for="newTgChannelEnabled"
+                        class="block text-xs font-semibold text-slate-700 mb-1.5">初始状态</label>
+                    <select
+                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800"
+                        id="newTgChannelEnabled">
+                        <option value="true">启用</option>
+                        <option value="false">停用</option>
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl" data-ui-dismiss="modal">取消</button>
-                <button type="button" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl" id="addTgChannelButton" onclick="addTgChannel()"><i class="fas fa-save text-[10px]"></i> 保存</button>
+                <button type="button"
+                    class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl"
+                    data-ui-dismiss="modal">取消</button>
+                <button type="button"
+                    class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl"
+                    id="addTgChannelButton" onclick="addTgChannel()"><i class="fas fa-save text-[10px]"></i> 保存</button>
             </div>
         </div>
     </div>
@@ -99,19 +136,31 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="tgTestModalLabel"><i class="fas fa-vial text-sky-500"></i> <span id="tgTestTitle">频道连通性测试</span></h5>
+                <h5 class="modal-title" id="tgTestModalLabel"><i class="fas fa-vial text-sky-500"></i> <span
+                        id="tgTestTitle">频道连通性测试</span></h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body space-y-3">
-                <div class="p-3 bg-blue-50 border border-blue-200/60 rounded-xl text-xs text-blue-800 font-medium" id="tgTestStatusAlert"></div>
-                <div class="border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs" style="max-height: 280px; overflow-y: auto;">
+                <div class="p-3 bg-blue-50 border border-blue-200/60 rounded-xl text-xs text-blue-800 font-medium"
+                    id="tgTestStatusAlert"></div>
+                <div class="border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs"
+                    style="max-height: 280px; overflow-y: auto;">
                     <table class="table mb-0">
-                        <thead><tr><th style="width: 50px; text-align: center;">#</th><th>标题</th><th style="width: 90px;">网盘</th><th>链接 / 提取码</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th style="width: 50px; text-align: center;">#</th>
+                                <th>标题</th>
+                                <th style="width: 90px;">网盘</th>
+                                <th>链接 / 提取码</th>
+                            </tr>
+                        </thead>
                         <tbody id="tgTestTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
                     </table>
                 </div>
             </div>
-            <div class="modal-footer"><button type="button" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl" data-ui-dismiss="modal">关闭</button></div>
+            <div class="modal-footer"><button type="button"
+                    class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl"
+                    data-ui-dismiss="modal">关闭</button></div>
         </div>
     </div>
 </div>

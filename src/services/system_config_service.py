@@ -344,8 +344,9 @@ def init_default_search_sources():
             "max_workers": TG_SEARCH_MAX_WORKERS,
         })
         try:
+            from src.configs.app_config import DEFAULT_TG_CHANNEL_TITLES
             from src.db.telegram_channels import seed_channels
-            seeded_count = seed_channels(TG_CHANNELS, TG_DISABLED_CHANNELS)
+            seeded_count = seed_channels(TG_CHANNELS, TG_DISABLED_CHANNELS, DEFAULT_TG_CHANNEL_TITLES)
             if seeded_count:
                 logger.info("已写入 %d 个默认 TG 频道。", seeded_count)
         except Exception as error:

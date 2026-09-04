@@ -649,6 +649,89 @@ body.admin-body::before {
     border: 1px solid rgba(254, 205, 211, 0.8);
 }
 
+.plugin-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.plugin-status-badge.is-enabled {
+    background-color: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.plugin-status-badge.is-disabled {
+    background-color: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+/* 低调/轻量状态指示点 UI */
+.status-dot-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-dot-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot-badge.is-enabled {
+    color: #15803d;
+}
+
+.status-dot-badge.is-enabled .dot {
+    background-color: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.status-dot-badge.is-disabled {
+    color: #94a3b8;
+}
+
+.status-dot-badge.is-disabled .dot {
+    background-color: #cbd5e1;
+}
+
+.health-text-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.health-text-badge.health-normal {
+    color: #16a34a;
+}
+
+.health-text-badge.health-error {
+    color: #e11d48;
+}
+
+.health-text-badge.health-nodata {
+    color: #d97706;
+}
+
+.health-text-badge.health-unknown {
+    color: #94a3b8;
+}
+
 /* Status Badges */
 .badge {
     display: inline-flex;
