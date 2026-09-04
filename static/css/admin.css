@@ -258,6 +258,74 @@ body.admin-body::before {
     animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.system-tab-pane {
+    display: none;
+}
+
+.system-tab-pane.is-active {
+    display: block;
+    animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Credential Sub-Tabs */
+.credential-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--admin-slate-600);
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.credential-tab-btn:hover {
+    background: #f1f5f9;
+    color: var(--admin-slate-900);
+}
+
+.credential-tab-btn.is-active {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+    font-weight: 600;
+}
+
+.credential-tab-pane {
+    display: none;
+}
+
+.credential-tab-pane.is-active {
+    display: block;
+    animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cred-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.cred-status-dot.enabled {
+    background-color: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.cred-status-dot.invalid {
+    background-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.cred-status-dot.missing {
+    background-color: #cbd5e1;
+}
+
 /* --------------------------------------------------------------------------
    Panels & Cards (Rounded-2xl, Border Slate-200/80, Shadow-2xs)
    -------------------------------------------------------------------------- */

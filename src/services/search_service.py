@@ -22,7 +22,57 @@ from src.utils.netdisk_utils import (
     extract_password_from_url,
 )
 
+import threading
+
 logger = logging.getLogger(__name__)
+
+# --- 高频搜索词 TTL 内存缓存机制 ---
+_SEARCH_CACHE: Dict[str, Tuple[float, List[SearchResultItem]]] = {}
+_SEARCH_CACHE_LOCK = threading.Lock()
+SEARCH_CACHE_TTL_SECONDS = 300  # 默认缓存 5 分钟 (300 秒)
+
+
+def get_cached_search_items(keyword: str) -> Optional[List[SearchResultItem]]:
+    """读取未过期的搜索结果缓存"""
+    clean_kw = str(keyword or "").strip().lower()
+    if not clean_kw:
+        return None
+    now = time.time()
+    with _SEARCH_CACHE_LOCK:
+        if clean_kw in _SEARCH_CACHE:
+            ts, items = _SEARCH_CACHE[clean_kw]
+            if now - ts < SEARCH_CACHE_TTL_SECONDS:
+                return [SearchResultItem.from_item(i) for i in items]
+            else:
+                del _SEARCH_CACHE[clean_kw]
+    return None
+
+
+def set_cached_search_items(keyword: str, items: List[Any]):
+    """将搜索结果存入 TTL 缓存，支持淘汰机制"""
+    clean_kw = str(keyword or "").strip().lower()
+    if not clean_kw or not items:
+        return
+    typed_items = [SearchResultItem.from_item(i) for i in items if i]
+    now = time.time()
+    with _SEARCH_CACHE_LOCK:
+        if len(_SEARCH_CACHE) > 500:
+            expired_keys = [k for k, (ts, _) in _SEARCH_CACHE.items() if now - ts >= SEARCH_CACHE_TTL_SECONDS]
+            for k in expired_keys:
+                del _SEARCH_CACHE[k]
+            if len(_SEARCH_CACHE) > 500:
+                sorted_keys = sorted(_SEARCH_CACHE.keys(), key=lambda k: _SEARCH_CACHE[k][0])
+                for k in sorted_keys[:100]:
+                    del _SEARCH_CACHE[k]
+        _SEARCH_CACHE[clean_kw] = (now, typed_items)
+
+
+def clear_search_cache():
+    """主动清空搜索结果缓存（用于后台配置变动时）"""
+    with _SEARCH_CACHE_LOCK:
+        _SEARCH_CACHE.clear()
+    logger.info("搜索结果内存缓存已主动清空。")
+
 
 
 def filter_results_by_frontend_netdisks(results):
@@ -278,7 +328,16 @@ def generate_search_stream_events(keyword):
                 for item in items
             ]
 
-        seen_keys = set()
+        # 1. 优先检查高频词内存缓存
+        cached_items = get_cached_search_items(keyword)
+        if cached_items is not None:
+            logger.info(f"关键词 '{keyword}' 流式搜索击中内存缓存 ({len(cached_items)} 条)。")
+            if cached_items:
+                yield json.dumps({"type": "initial", "results": _serialize_items(cached_items)})
+            yield json.dumps({"type": "end"})
+            return
+
+        seen_items_map: Dict[str, SearchResultItem] = {}
 
         def _dedupe_stream_chunk(items):
             unique_items = []
@@ -291,10 +350,20 @@ def generate_search_stream_events(keyword):
                 if not url:
                     continue
                 key = extract_canonical_resource_key(url) or f"url:{url}"
-                if key in seen_keys:
-                    continue
-                seen_keys.add(key)
-                unique_items.append(typed)
+                if key not in seen_items_map:
+                    seen_items_map[key] = typed
+                    unique_items.append(typed)
+                else:
+                    existing_item = seen_items_map[key]
+                    better_item = merge_or_select_better(existing_item, typed)
+                    existing_pwd = existing_item.password or extract_password_from_url(existing_item.share_link)
+                    better_pwd = better_item.password or extract_password_from_url(better_item.share_link)
+                    has_new_pwd = bool(better_pwd and not existing_pwd)
+                    has_higher_score = calculate_completeness_score(better_item) > calculate_completeness_score(existing_item)
+
+                    if has_new_pwd or has_higher_score:
+                        seen_items_map[key] = better_item
+                        unique_items.append(better_item)
             return unique_items
 
         db_results = search_in_database(keyword)
@@ -338,7 +407,12 @@ def generate_search_stream_events(keyword):
 
                 time.sleep(0.01)
 
-        logger.info(f"关键词 '{keyword}' 所有流式搜索完成。")
+        # 搜索完成，将所有去重并排序后的最终结果加入 TTL 缓存
+        final_stream_items = sort_search_results(list(seen_items_map.values()), keyword=keyword)
+        if final_stream_items:
+            set_cached_search_items(keyword, final_stream_items)
+
+        logger.info(f"关键词 '{keyword}' 所有流式搜索完成，共 {len(final_stream_items)} 条。")
         yield json.dumps({"type": "end"})
 
     return _event_generator()
@@ -563,11 +637,18 @@ def calculate_rank_score(item: SearchResultItem, keyword: str = "") -> float:
     """
     score = 0.0
 
-    # 1. 数据源层级分 (hot 自有收益盘绝对优先)
+    # 1. 数据源层级分 (hot 自有收益盘绝对优先，已注册插件结合其 priority 动态计分)
     if item.source == "hot":
         score += 1000.0
     elif item.source == "tg":
         score += 150.0
+    elif item.source:
+        plugin_name = item.source.split(":", 1)[1] if item.source.startswith("plugin:") else item.source
+        plugin_obj = plugin_manager.get_plugin(plugin_name)
+        if plugin_obj:
+            score += float(getattr(plugin_obj, "priority", 100)) * 0.5
+        else:
+            score += 50.0
     else:
         score += 50.0
 
@@ -617,6 +698,12 @@ def search_public_resources(keyword="", limit=100):
     if not keyword:
         return False, "请提供搜索关键词", []
 
+    cached_items = get_cached_search_items(keyword)
+    if cached_items is not None:
+        logger.info(f"关键词 '{keyword}' 聚合搜索击中内存缓存 ({len(cached_items)} 条)。")
+        limited_cached = cached_items[: max(limit, 1)]
+        return True, "聚合搜索成功 (缓存)", [item.to_dict() for item in limited_cached]
+
     aggregated_results = []
 
     db_results = search_in_database(keyword)
@@ -641,6 +728,9 @@ def search_public_resources(keyword="", limit=100):
 
     deduped_results = dedupe_search_results(aggregated_results)
     sorted_results = sort_search_results(deduped_results, keyword=keyword)
+    if sorted_results:
+        set_cached_search_items(keyword, sorted_results)
+
     limited_results = sorted_results[: max(limit, 1)]
 
     return True, "聚合搜索成功", [

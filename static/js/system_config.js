@@ -26,45 +26,112 @@ function bindFrontendLinkModeEvents() {
     });
 }
 
+function bindSystemTabEvents() {
+    document.querySelectorAll('[data-system-tab-target]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-system-tab-target');
+            document.querySelectorAll('[data-system-tab-target]').forEach((b) => b.classList.remove('is-active'));
+            document.querySelectorAll('.system-tab-pane').forEach((pane) => pane.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            const targetPane = document.getElementById(`tab-pane-${target}`);
+            if (targetPane) {
+                targetPane.classList.add('is-active');
+            }
+        });
+    });
+}
+
+function bindCredentialTabEvents() {
+    document.querySelectorAll('[data-cred-target]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-cred-target');
+            document.querySelectorAll('[data-cred-target]').forEach((b) => b.classList.remove('is-active'));
+            document.querySelectorAll('.credential-tab-pane').forEach((pane) => pane.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            const targetPane = document.getElementById(`cred-pane-${target}`);
+            if (targetPane) {
+                targetPane.classList.add('is-active');
+            }
+        });
+    });
+}
+
 function renderDynamicTransferStatuses(statuses, summary) {
     const summaryEl = document.getElementById('dynamicTransferStatusSummary');
     const gridEl = document.getElementById('dynamicTransferStatusGrid');
-
-    if (!summaryEl || !gridEl) {
-        return;
-    }
 
     const safeStatuses = Array.isArray(statuses) ? statuses : [];
     const enabledCount = Number(summary?.enabled_count || 0);
     const totalCount = Number(summary?.total_count || safeStatuses.length || 5);
 
-    summaryEl.textContent = `当前有 ${enabledCount} / ${totalCount} 个云盘具备自动转存替换条件。未配置或基础校验未通过的平台，查看时会自动回退原始链接。`;
+    const credentialsTabBadge = document.getElementById('credentialsTabBadge');
+    if (credentialsTabBadge) {
+        credentialsTabBadge.textContent = String(enabledCount);
+    }
 
-    gridEl.innerHTML = safeStatuses.map((item) => {
-        const statusClass = item.status || 'missing';
-        const badgeTextMap = {
-            enabled: '已启用',
-            invalid: '待处理',
-            missing: '未配置',
-        };
-        const badgeText = badgeTextMap[statusClass] || '未配置';
+    if (summaryEl) {
+        summaryEl.textContent = `当前有 ${enabledCount} / ${totalCount} 个云盘具备自动转存替换条件。未配置或基础校验未通过的平台，查看时会自动回退原始链接。`;
+    }
 
-        return `
-            <article class="dynamic-transfer-status-card status-${statusClass}">
-                <div class="dynamic-transfer-status-card-top">
-                    <div>
-                        <h4 class="dynamic-transfer-status-card-title">${item.cloud_name || ''}</h4>
-                        <p class="dynamic-transfer-status-card-meta">${item.credential_type || ''}</p>
+    if (gridEl) {
+        gridEl.innerHTML = safeStatuses.map((item) => {
+            const statusClass = item.status || 'missing';
+            const badgeTextMap = {
+                enabled: '已启用',
+                invalid: '待处理',
+                missing: '未配置',
+            };
+            const badgeText = badgeTextMap[statusClass] || '未配置';
+
+            return `
+                <article class="dynamic-transfer-status-card status-${statusClass}">
+                    <div class="dynamic-transfer-status-card-top">
+                        <div>
+                            <h4 class="dynamic-transfer-status-card-title">${item.cloud_name || ''}</h4>
+                            <p class="dynamic-transfer-status-card-meta">${item.credential_type || ''}</p>
+                        </div>
+                        <span class="dynamic-transfer-status-badge">${badgeText}</span>
                     </div>
-                    <span class="dynamic-transfer-status-badge">${badgeText}</span>
-                </div>
-                <div class="dynamic-transfer-status-card-body">
-                    <strong>${item.title || ''}</strong>
-                    <p>${item.description || ''}</p>
-                </div>
-            </article>
-        `;
-    }).join('');
+                    <div class="dynamic-transfer-status-card-body">
+                        <strong>${item.title || ''}</strong>
+                        <p>${item.description || ''}</p>
+                    </div>
+                </article>
+            `;
+        }).join('');
+    }
+
+    // 更新网盘 Sub-Tab 的健康状态点与状态文本
+    const cloudKeyMap = {
+        '百度网盘': { dotId: 'dot-baidu', textId: 'baiduStatusText' },
+        '夸克网盘': { dotId: 'dot-quark', textId: 'quarkStatusText' },
+        '阿里云盘': { dotId: 'dot-aliyun', textId: 'aliyunStatusText' },
+        'UC网盘': { dotId: 'dot-uc', textId: 'ucStatusText' },
+        '迅雷网盘': { dotId: 'dot-xunlei', textId: 'xunleiStatusText' },
+    };
+
+    safeStatuses.forEach((item) => {
+        const keyInfo = cloudKeyMap[item.cloud_name];
+        if (!keyInfo) return;
+
+        const dotEl = document.getElementById(keyInfo.dotId);
+        const textEl = document.getElementById(keyInfo.textId);
+        const statusClass = item.status || 'missing';
+
+        if (dotEl) {
+            dotEl.className = `cred-status-dot ${statusClass}`;
+        }
+        if (textEl) {
+            textEl.textContent = item.title || '未配置';
+            if (statusClass === 'enabled') {
+                textEl.className = 'text-[11px] text-emerald-600 font-semibold';
+            } else if (statusClass === 'invalid') {
+                textEl.className = 'text-[11px] text-amber-600 font-semibold';
+            } else {
+                textEl.className = 'text-[11px] text-slate-400 font-medium';
+            }
+        }
+    });
 }
 
 function updateFrontendNetdiskSelectionUI() {
@@ -96,10 +163,14 @@ async function loadPublicSearchApiConfig() {
         }
 
         const data = await response.json();
-        const targetValue = data.enabled ? 'true' : 'false';
-        const radio = document.querySelector(`.frontend-link-mode-radio[name="publicSearchApiEnabled"][value="${targetValue}"]`);
-        if (radio) {
-            radio.checked = true;
+        const toggle = document.getElementById('publicSearchApiToggle');
+        const badge = document.getElementById('publicSearchApiBadge');
+        if (toggle) {
+            toggle.checked = Boolean(data.enabled);
+        }
+        if (badge) {
+            badge.textContent = data.enabled ? '已开启' : '已关闭';
+            badge.className = data.enabled ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
         }
 
         const kpiPublicApiStatus = document.getElementById('kpiPublicApiStatus');
@@ -114,11 +185,9 @@ async function loadPublicSearchApiConfig() {
 }
 
 async function savePublicSearchApiConfig() {
-    const saveButton = document.getElementById('savePublicSearchApiButton');
-    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="publicSearchApiEnabled"]:checked');
-    const enabled = selectedMode ? selectedMode.value === 'true' : true;
+    const toggle = document.getElementById('publicSearchApiToggle');
+    const enabled = toggle ? toggle.checked : true;
 
-    saveButton.disabled = true;
     try {
         const response = await fetch('/admin/api/public-search-api-config', {
             method: 'PUT',
@@ -132,11 +201,11 @@ async function savePublicSearchApiConfig() {
         }
 
         showToast(data.message, 'success');
+        await loadPublicSearchApiConfig();
     } catch (error) {
         console.error('保存公开聚合接口配置失败:', error);
         showToast(`保存公开聚合接口配置失败: ${error.message}`, 'danger');
-    } finally {
-        saveButton.disabled = false;
+        await loadPublicSearchApiConfig();
     }
 }
 
@@ -148,10 +217,14 @@ async function loadAllowExcelDownloadConfig() {
         }
 
         const data = await response.json();
-        const targetValue = data.enabled ? 'true' : 'false';
-        const radio = document.querySelector(`.frontend-link-mode-radio[name="allowExcelDownload"][value="${targetValue}"]`);
-        if (radio) {
-            radio.checked = true;
+        const toggle = document.getElementById('allowExcelDownloadToggle');
+        const badge = document.getElementById('allowExcelDownloadBadge');
+        if (toggle) {
+            toggle.checked = Boolean(data.enabled);
+        }
+        if (badge) {
+            badge.textContent = data.enabled ? '允许下载' : '禁止下载';
+            badge.className = data.enabled ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
         }
     } catch (error) {
         console.error('加载 Excel 下载配置失败:', error);
@@ -160,11 +233,9 @@ async function loadAllowExcelDownloadConfig() {
 }
 
 async function saveAllowExcelDownloadConfig() {
-    const saveButton = document.getElementById('saveAllowExcelDownloadButton');
-    const selectedMode = document.querySelector('.frontend-link-mode-radio[name="allowExcelDownload"]:checked');
-    const enabled = selectedMode ? selectedMode.value === 'true' : true;
+    const toggle = document.getElementById('allowExcelDownloadToggle');
+    const enabled = toggle ? toggle.checked : true;
 
-    saveButton.disabled = true;
     try {
         const response = await fetch('/admin/api/allow-excel-download-config', {
             method: 'PUT',
@@ -178,11 +249,11 @@ async function saveAllowExcelDownloadConfig() {
         }
 
         showToast(data.message, 'success');
+        await loadAllowExcelDownloadConfig();
     } catch (error) {
         console.error('保存 Excel 下载配置失败:', error);
         showToast(`保存 Excel 下载配置失败: ${error.message}`, 'danger');
-    } finally {
-        saveButton.disabled = false;
+        await loadAllowExcelDownloadConfig();
     }
 }
 
@@ -225,7 +296,7 @@ async function saveFrontendDisplayNetdisks() {
         return;
     }
 
-    saveButton.disabled = true;
+    if (saveButton) saveButton.disabled = true;
     try {
         const response = await fetch('/admin/api/frontend-display-netdisks', {
             method: 'PUT',
@@ -243,7 +314,7 @@ async function saveFrontendDisplayNetdisks() {
         console.error('保存前端显示网盘配置失败:', error);
         showToast(`保存前端显示网盘配置失败: ${error.message}`, 'danger');
     } finally {
-        saveButton.disabled = false;
+        if (saveButton) saveButton.disabled = false;
     }
 }
 
@@ -270,7 +341,7 @@ async function saveFrontendLinkMode() {
     const selectedMode = document.querySelector('.frontend-link-mode-radio[name="frontendLinkMode"]:checked');
     const saveButton = document.getElementById('saveFrontendLinkModeButton');
 
-    saveButton.disabled = true;
+    if (saveButton) saveButton.disabled = true;
     try {
         const response = await fetch('/admin/api/frontend-link-mode', {
             method: 'PUT',
@@ -288,7 +359,7 @@ async function saveFrontendLinkMode() {
         console.error('保存前端出链模式失败:', error);
         showToast(`保存前端出链模式失败: ${error.message}`, 'danger');
     } finally {
-        saveButton.disabled = false;
+        if (saveButton) saveButton.disabled = false;
     }
 }
 
@@ -322,7 +393,7 @@ async function saveCookieConfig() {
         xunlei_user_id: document.getElementById('xunleiUserId').value.trim(),
     };
 
-    saveButton.disabled = true;
+    if (saveButton) saveButton.disabled = true;
     try {
         const response = await fetch('/admin/api/credential-config', {
             method: 'POST',
@@ -340,11 +411,13 @@ async function saveCookieConfig() {
     } catch (error) {
         showToast(`云盘凭证保存失败: ${error.message}`, 'danger');
     } finally {
-        saveButton.disabled = false;
+        if (saveButton) saveButton.disabled = false;
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    bindSystemTabEvents();
+    bindCredentialTabEvents();
     bindFrontendNetdiskCheckboxEvents();
     bindFrontendLinkModeEvents();
     loadPublicSearchApiConfig();
@@ -359,4 +432,3 @@ document.addEventListener('DOMContentLoaded', () => {
         saveCookieConfigBtn.addEventListener('click', saveCookieConfig);
     }
 });
-

@@ -67,6 +67,10 @@ class SearchDeduplicationTest(unittest.TestCase):
         )
         self.assertEqual(
             "123pan:abcd-1234",
+            extract_canonical_resource_key("https://www.123pan.cn/s/abcd-1234"),
+        )
+        self.assertEqual(
+            "123pan:abcd-1234",
             extract_canonical_resource_key("https://123684.com/s/abcd-1234"),
         )
 
@@ -87,12 +91,54 @@ class SearchDeduplicationTest(unittest.TestCase):
             "mobile:mob123",
             extract_canonical_resource_key("https://caiyun.139.com/w/i/mob123"),
         )
+        self.assertEqual(
+            "mobile:mob123",
+            extract_canonical_resource_key("https://caiyun.feixin.10086.cn/mob123"),
+        )
 
-        # 10. 磁力与电驴
+        # 10. PikPak
+        self.assertEqual(
+            "pikpak:pk123",
+            extract_canonical_resource_key("https://mypikpak.com/s/pk123"),
+        )
+
+        # 11. 新增网盘类型 (蓝奏云, 光鸭云盘, 腾讯微云, 坚果云)
+        self.assertEqual(
+            "lanzou:lz123",
+            extract_canonical_resource_key("https://wwa.lanzoui.com/lz123"),
+        )
+        self.assertEqual(
+            "guangya:gy123",
+            extract_canonical_resource_key("https://guangyapan.com/s/gy123"),
+        )
+        self.assertEqual(
+            "weiyun:wy123",
+            extract_canonical_resource_key("https://weiyun.com/wy123"),
+        )
+        self.assertEqual(
+            "jianguoyun:jgy123",
+            extract_canonical_resource_key("https://jianguoyun.com/p/jgy123"),
+        )
+
+        # 12. 磁力与电驴
         self.assertEqual(
             "magnet:a1b2c3d4e5f6",
             extract_canonical_resource_key("magnet:?xt=urn:btih:A1B2C3D4E5F6&dn=Ubuntu"),
         )
+
+    def test_match_netdisk_link(self):
+        from src.utils.netdisk_utils import match_netdisk_link, FRONTEND_DISPLAY_NETDISK_OPTIONS
+
+        self.assertEqual("蓝奏云", match_netdisk_link("https://wwa.lanzoui.com/b123456"))
+        self.assertEqual("蓝奏云", match_netdisk_link("https://www.lanzoux.com/b123456"))
+        self.assertEqual("光鸭云盘", match_netdisk_link("https://guangyapan.com/s/abc"))
+        self.assertEqual("腾讯微云", match_netdisk_link("https://weiyun.com/abc"))
+        self.assertEqual("坚果云", match_netdisk_link("https://jianguoyun.com/p/abc"))
+        self.assertEqual("123云盘", match_netdisk_link("https://123pan.cn/s/abc"))
+        self.assertEqual("PikPak", match_netdisk_link("https://mypikpak.com/s/abc"))
+        self.assertEqual("移动云盘", match_netdisk_link("https://caiyun.feixin.10086.cn/abc"))
+
+        self.assertEqual(20, len(FRONTEND_DISPLAY_NETDISK_OPTIONS) - 1)  # 不算"其他"共20种
 
     def test_extract_password_from_url(self):
         self.assertEqual("1234", extract_password_from_url("https://pan.baidu.com/s/xxx?pwd=1234"))

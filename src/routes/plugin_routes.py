@@ -96,6 +96,16 @@ def disable_all_admin_plugins_api():
     return jsonify({"success": True, "message": "已全部停用所有插件"})
 
 
+def _enrich_plugin_dict(plugin):
+    d = plugin.to_dict()
+    settings = get_plugin_settings()
+    if plugin.name in settings:
+        h = settings[plugin.name].get("health")
+        if h:
+            d["health"] = h
+    return d
+
+
 @plugin_bp.route("/api/plugins", methods=["GET"])
 def get_plugins_api():
     """

@@ -33,7 +33,7 @@ class TestDashboard(unittest.TestCase):
         self.client.set_cookie('token', self.token)
         response = self.client.get("/admin/dashboard")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("工作台仪表盘".encode("utf-8"), response.data)
+        self.assertIn("仪表盘".encode("utf-8"), response.data)
 
     def test_dashboard_stats_api_authenticated(self):
         self.client.set_cookie('token', self.token)

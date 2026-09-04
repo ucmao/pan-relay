@@ -126,6 +126,11 @@ class PluginManager:
                     save_plugin_status(name, True)
                 except Exception as e:
                     logger.error(f"持久化插件 [{name}] 启用状态失败: {e}")
+                try:
+                    from src.services.search_service import clear_search_cache
+                    clear_search_cache()
+                except Exception:
+                    pass
                 return True
             return False
 
@@ -140,6 +145,11 @@ class PluginManager:
                     save_plugin_status(name, False)
                 except Exception as e:
                     logger.error(f"持久化插件 [{name}] 停用状态失败: {e}")
+                try:
+                    from src.services.search_service import clear_search_cache
+                    clear_search_cache()
+                except Exception:
+                    pass
                 return True
             return False
 

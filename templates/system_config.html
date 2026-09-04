@@ -24,206 +24,291 @@
     </div>
 </div>
 
-<div class="space-y-6">
-    <!-- 1. 公开聚合搜索接口 -->
-    <section class="admin-panel">
-        <div class="admin-panel-header">
-            <div class="admin-panel-title-area">
-                <h2 class="admin-panel-title">
-                    <i class="fas fa-globe text-blue-600"></i> 公开聚合搜索接口
-                </h2>
-                <p class="admin-panel-desc">对外提供与前台同源的 JSON 聚合搜索端点 (<code>/api</code>)</p>
-            </div>
-            <div class="flex items-center space-x-2">
-                <button class="btn btn-outline-secondary btn-sm" data-ui-modal-target="#publicSearchApiModal">
-                    <i class="fas fa-code text-[10px]"></i> 查看文档
-                </button>
-                <button class="btn btn-primary btn-sm" id="savePublicSearchApiButton" onclick="savePublicSearchApiConfig()">
-                    <i class="fas fa-save text-[10px]"></i> 保存接口设置
-                </button>
-            </div>
-        </div>
-        <div class="admin-panel-body">
-            <div class="frontend-link-mode-options">
-                <label class="frontend-link-mode-card" for="publicSearchApiEnabledOn">
-                    <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled" id="publicSearchApiEnabledOn" value="true" checked>
-                    <div class="frontend-link-mode-copy">
-                        <span class="frontend-link-mode-title">开启公开访问</span>
-                        <span class="frontend-link-mode-desc">允许外部调用 <code>GET /api?keyword=xxx</code> 正常请求聚合搜索数据</span>
-                    </div>
-                    <span class="frontend-link-mode-switch"></span>
-                </label>
-                <label class="frontend-link-mode-card" for="publicSearchApiEnabledOff">
-                    <input class="frontend-link-mode-radio" type="radio" name="publicSearchApiEnabled" id="publicSearchApiEnabledOff" value="false">
-                    <div class="frontend-link-mode-copy">
-                        <span class="frontend-link-mode-title">关闭公开访问</span>
-                        <span class="frontend-link-mode-desc">对外返回服务关闭提示，但管理员前台搜索仍可正常使用</span>
-                    </div>
-                    <span class="frontend-link-mode-switch"></span>
-                </label>
-            </div>
-        </div>
-    <!-- 2. 前台 Excel 下载与导出 -->
-    <section class="admin-panel">
-        <div class="admin-panel-header">
-            <div class="admin-panel-title-area">
-                <h2 class="admin-panel-title">
-                    <i class="fas fa-file-excel text-emerald-600"></i> 前台 Excel 下载与导出
-                </h2>
-                <p class="admin-panel-desc">控制前台搜索结果页面是否显示“导出 Excel”下载按钮</p>
-            </div>
-            <button class="btn btn-primary btn-sm" id="saveAllowExcelDownloadButton" onclick="saveAllowExcelDownloadConfig()">
-                <i class="fas fa-save text-[10px]"></i> 保存导出设置
-            </button>
-        </div>
-        <div class="admin-panel-body">
-            <div class="frontend-link-mode-options">
-                <label class="frontend-link-mode-card" for="allowExcelDownloadOn">
-                    <input class="frontend-link-mode-radio" type="radio" name="allowExcelDownload" id="allowExcelDownloadOn" value="true" checked>
-                    <div class="frontend-link-mode-copy">
-                        <span class="frontend-link-mode-title">允许下载 (默认)</span>
-                        <span class="frontend-link-mode-desc">前台搜索结果页面工具栏中显示“导出 Excel”按钮</span>
-                    </div>
-                    <span class="frontend-link-mode-switch"></span>
-                </label>
-                <label class="frontend-link-mode-card" for="allowExcelDownloadOff">
-                    <input class="frontend-link-mode-radio" type="radio" name="allowExcelDownload" id="allowExcelDownloadOff" value="false">
-                    <div class="frontend-link-mode-copy">
-                        <span class="frontend-link-mode-title">不允许下载</span>
-                        <span class="frontend-link-mode-desc">隐藏前台搜索结果页面的“导出 Excel”按钮</span>
-                    </div>
-                    <span class="frontend-link-mode-switch"></span>
-                </label>
-            </div>
-        </div>
-    </section>
+<!-- 分段控制 Tab 导航 -->
+<div class="source-tabs-header mb-6">
+    <button class="source-tab-btn is-active" data-system-tab-target="strategy" type="button">
+        <i class="fas fa-sliders-h"></i> 前台与接口策略
+    </button>
+    <button class="source-tab-btn" data-system-tab-target="credentials" type="button">
+        <i class="fas fa-key"></i> 云盘转存凭证
+        <span class="source-tab-badge" id="credentialsTabBadge">0</span>
+    </button>
+</div>
 
-    <!-- 3. 搜索出链策略与动态转存 -->
-    <section class="admin-panel">
-        <div class="admin-panel-header">
-            <div class="admin-panel-title-area">
-                <h2 class="admin-panel-title">
-                    <i class="fas fa-share-alt text-blue-600"></i> 搜索出链与动态转存策略
-                </h2>
-                <p class="admin-panel-desc">控制前台资源点击行为：直接提供原始分享链接，或转存为私有链接</p>
-            </div>
-            <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton" onclick="saveFrontendLinkMode()">
-                <i class="fas fa-save text-[10px]"></i> 保存出链策略
-            </button>
-        </div>
-        <div class="admin-panel-body">
-            <div class="frontend-link-mode-options">
-                <label class="frontend-link-mode-card" for="frontendLinkModeCopy">
-                    <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeCopy" value="copy" checked>
-                    <div class="frontend-link-mode-copy">
-                        <span class="frontend-link-mode-title">原始链接模式 (推荐)</span>
-                        <span class="frontend-link-mode-desc">展示原始分享链接，用户直接复制提取码使用，速度快无额外延迟</span>
-                    </div>
-                    <span class="frontend-link-mode-switch"></span>
-                </label>
-                <label class="frontend-link-mode-card" for="frontendLinkModeView">
-                    <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeView" value="view">
-                    <div class="frontend-link-mode-copy">
-                        <span class="frontend-link-mode-title">动态转存模式</span>
-                        <span class="frontend-link-mode-desc">隐藏原链接，用户点击时通过已配置的凭证自动转存并生成新分享链接</span>
-                    </div>
-                    <span class="frontend-link-mode-switch"></span>
-                </label>
-            </div>
-
-            <div class="dynamic-transfer-status-panel d-none mt-4 p-4.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3.5" id="dynamicTransferStatusPanel">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2.5 border-b border-slate-200/60">
-                    <h3 class="text-xs font-bold text-slate-800 flex items-center gap-2 flex-shrink-0">
-                        <i class="fas fa-heartbeat text-emerald-500"></i> 转存凭证可用状态
-                    </h3>
-                    <span class="text-slate-400 text-[11px] leading-relaxed" id="dynamicTransferStatusSummary">正在检测云盘凭证可用状态...</span>
+<!-- Tab 内容区域 -->
+<div class="system-tab-content">
+    <!-- TAB 1: 前台与接口策略 -->
+    <div id="tab-pane-strategy" class="system-tab-pane is-active space-y-6">
+        
+        <!-- 1. 前台与 API 功能开关 -->
+        <section class="admin-panel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-toggle-on text-blue-600"></i> 全局功能开关
+                    </h2>
+                    <p class="admin-panel-desc">集中管理公开 API 端点与前台快捷下载控制项</p>
                 </div>
-                <div class="dynamic-transfer-status-grid" id="dynamicTransferStatusGrid"></div>
             </div>
-        </div>
-    </section>
-
-    <!-- 4. 网盘类型配置 -->
-    <section class="admin-panel">
-        <div class="admin-panel-header">
-            <div class="admin-panel-title-area">
-                <h2 class="admin-panel-title">
-                    <i class="fas fa-filter text-blue-600"></i> 前台展示网盘类型
-                </h2>
-                <p class="admin-panel-desc">控制前台与 API 允许展示的网盘类型，已选 <span id="frontendNetdiskSelectedCount" class="font-bold text-blue-600">0</span> / <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></p>
-            </div>
-            <div class="flex items-center space-x-2">
-                <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button" onclick="toggleAllFrontendDisplayNetdisks()">
-                    全选 / 反选
-                </button>
-                <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton" onclick="saveFrontendDisplayNetdisks()">
-                    <i class="fas fa-save text-[10px]"></i> 保存设置
-                </button>
-            </div>
-        </div>
-        <div class="admin-panel-body">
-            <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
-                {% for netdisk_name in frontend_netdisk_options %}
-                <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
-                    <input class="frontend-display-netdisk-checkbox" type="checkbox" id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
-                    <span class="frontend-netdisk-card-name">{{ netdisk_name }}</span>
-                    <span class="frontend-netdisk-card-check text-blue-600">
-                        <i class="fas fa-check"></i>
-                    </span>
-                </label>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
-    <!-- 5. 云盘凭证 -->
-    <section class="admin-panel">
-        <div class="admin-panel-header">
-            <div class="admin-panel-title-area">
-                <h2 class="admin-panel-title">
-                    <i class="fas fa-key text-amber-500"></i> 云盘账号凭证与密钥
-                </h2>
-                <p class="admin-panel-desc">用于后台自动转存与生成私有分享，仅保存在服务端安全数据库中</p>
-            </div>
-            <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
-                <i class="fas fa-save text-[10px]"></i> 保存凭证
-            </button>
-        </div>
-        <div class="admin-panel-body">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="baiduCookie" class="form-label">百度网盘 Cookie</label>
-                    <textarea class="form-control font-mono" id="baiduCookie" rows="5" placeholder="请输入百度网盘网页端抓取的完整 Cookie"></textarea>
+            <div class="admin-panel-body divide-y divide-slate-100">
+                <!-- 开关 1: 公开聚合搜索接口 -->
+                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-900 text-sm">公开聚合搜索接口</span>
+                            <span class="badge badge-success text-[10px]" id="publicSearchApiBadge">已开启</span>
+                        </div>
+                        <p class="text-xs text-slate-500">对外提供与前台同源的 JSON 聚合搜索端点 (<code>GET /api?keyword=xxx</code>)</p>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-shrink-0">
+                        <button class="btn btn-outline-secondary btn-sm" data-ui-modal-target="#publicSearchApiModal" type="button">
+                            <i class="fas fa-code text-[10px]"></i> 查看文档
+                        </button>
+                        <label class="plugin-switch" title="切换公开 API 状态">
+                            <input type="checkbox" id="publicSearchApiToggle" onchange="savePublicSearchApiConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
                 </div>
-                <div>
-                    <label for="quarkCookie" class="form-label">夸克网盘 Cookie</label>
-                    <textarea class="form-control font-mono" id="quarkCookie" rows="5" placeholder="请输入夸克网盘网页端抓取的完整 Cookie"></textarea>
+
+                <!-- 开关 2: 前台 Excel 下载与导出 -->
+                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-900 text-sm">前台 Excel 下载与导出</span>
+                            <span class="badge badge-success text-[10px]" id="allowExcelDownloadBadge">允许下载</span>
+                        </div>
+                        <p class="text-xs text-slate-500">控制前台搜索结果页面工具栏中是否显示“导出 Excel”按钮</p>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-shrink-0">
+                        <label class="plugin-switch" title="切换 Excel 导出按钮">
+                            <input type="checkbox" id="allowExcelDownloadToggle" onchange="saveAllowExcelDownloadConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
                 </div>
-                <div>
-                    <label for="aliyunToken" class="form-label">阿里云盘 Refresh Token</label>
+            </div>
+        </section>
+
+        <!-- 2. 搜索出链策略与动态转存 -->
+        <section class="admin-panel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-share-alt text-blue-600"></i> 搜索出链与动态转存策略
+                    </h2>
+                    <p class="admin-panel-desc">控制前台资源点击行为：直接提供原始分享链接，或转存为私有链接</p>
+                </div>
+                <button class="btn btn-primary btn-sm" id="saveFrontendLinkModeButton" onclick="saveFrontendLinkMode()">
+                    <i class="fas fa-save text-[10px]"></i> 保存出链策略
+                </button>
+            </div>
+            <div class="admin-panel-body">
+                <div class="frontend-link-mode-options">
+                    <label class="frontend-link-mode-card" for="frontendLinkModeCopy">
+                        <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeCopy" value="copy" checked>
+                        <div class="frontend-link-mode-copy">
+                            <span class="frontend-link-mode-title">原始链接模式 (推荐)</span>
+                            <span class="frontend-link-mode-desc">展示原始分享链接，用户直接复制提取码使用，速度快无额外延迟</span>
+                        </div>
+                        <span class="frontend-link-mode-switch"></span>
+                    </label>
+                    <label class="frontend-link-mode-card" for="frontendLinkModeView">
+                        <input class="frontend-link-mode-radio" type="radio" name="frontendLinkMode" id="frontendLinkModeView" value="view">
+                        <div class="frontend-link-mode-copy">
+                            <span class="frontend-link-mode-title">动态转存模式</span>
+                            <span class="frontend-link-mode-desc">隐藏原链接，用户点击时通过已配置的凭证自动转存并生成新分享链接</span>
+                        </div>
+                        <span class="frontend-link-mode-switch"></span>
+                    </label>
+                </div>
+
+                <div class="dynamic-transfer-status-panel d-none mt-4 p-4.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3.5" id="dynamicTransferStatusPanel">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2.5 border-b border-slate-200/60">
+                        <h3 class="text-xs font-bold text-slate-800 flex items-center gap-2 flex-shrink-0">
+                            <i class="fas fa-heartbeat text-emerald-500"></i> 转存凭证可用状态
+                        </h3>
+                        <span class="text-slate-400 text-[11px] leading-relaxed" id="dynamicTransferStatusSummary">正在检测云盘凭证可用状态...</span>
+                    </div>
+                    <div class="dynamic-transfer-status-grid" id="dynamicTransferStatusGrid"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 网盘类型配置 -->
+        <section class="admin-panel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-filter text-blue-600"></i> 前台展示网盘类型
+                    </h2>
+                    <p class="admin-panel-desc">控制前台与 API 允许展示的网盘类型，已选 <span id="frontendNetdiskSelectedCount" class="font-bold text-blue-600">0</span> / <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button" onclick="toggleAllFrontendDisplayNetdisks()">
+                        全选 / 反选
+                    </button>
+                    <button class="btn btn-primary btn-sm" id="saveFrontendNetdiskConfigButton" onclick="saveFrontendDisplayNetdisks()">
+                        <i class="fas fa-save text-[10px]"></i> 保存设置
+                    </button>
+                </div>
+            </div>
+            <div class="admin-panel-body">
+                <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
+                    {% for netdisk_name in frontend_netdisk_options %}
+                    <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
+                        <input class="frontend-display-netdisk-checkbox" type="checkbox" id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
+                        <span class="frontend-netdisk-card-name">{{ netdisk_name }}</span>
+                        <span class="frontend-netdisk-card-check text-blue-600">
+                            <i class="fas fa-check"></i>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- TAB 2: 云盘转存凭证 -->
+    <div id="tab-pane-credentials" class="system-tab-pane space-y-6">
+        
+        <!-- 云盘账号凭证与密钥 Tab 容器 -->
+        <section class="admin-panel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-key text-amber-500"></i> 云盘账号凭证与密钥
+                    </h2>
+                    <p class="admin-panel-desc">用于后台自动转存与生成私有分享，仅保存在服务端安全数据库中</p>
+                </div>
+                <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
+                    <i class="fas fa-save text-[10px]"></i> 保存凭证
+                </button>
+            </div>
+            
+            <div class="admin-panel-body space-y-5">
+                <!-- 网盘 Sub-Tabs 导航 -->
+                <div class="credential-tabs-nav flex flex-wrap gap-2 border-b border-slate-200/80 pb-3">
+                    <button class="credential-tab-btn is-active" data-cred-target="baidu" type="button">
+                        <i class="fas fa-paw text-blue-500"></i> 百度网盘
+                        <span class="cred-status-dot missing" id="dot-baidu"></span>
+                    </button>
+                    <button class="credential-tab-btn" data-cred-target="quark" type="button">
+                        <i class="fas fa-bolt text-indigo-500"></i> 夸克网盘
+                        <span class="cred-status-dot missing" id="dot-quark"></span>
+                    </button>
+                    <button class="credential-tab-btn" data-cred-target="aliyun" type="button">
+                        <i class="fas fa-cloud text-amber-500"></i> 阿里云盘
+                        <span class="cred-status-dot missing" id="dot-aliyun"></span>
+                    </button>
+                    <button class="credential-tab-btn" data-cred-target="uc" type="button">
+                        <i class="fas fa-globe text-orange-500"></i> UC 网盘
+                        <span class="cred-status-dot missing" id="dot-uc"></span>
+                    </button>
+                    <button class="credential-tab-btn" data-cred-target="xunlei" type="button">
+                        <i class="fas fa-bolt-lightning text-sky-500"></i> 迅雷网盘
+                        <span class="cred-status-dot missing" id="dot-xunlei"></span>
+                    </button>
+                </div>
+
+                <!-- Sub-Tab 1: 百度网盘 -->
+                <div id="cred-pane-baidu" class="credential-tab-pane is-active space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label for="baiduCookie" class="form-label font-bold text-slate-800 text-xs mb-0">百度网盘 Cookie</label>
+                        <span class="text-[11px] text-slate-400 font-medium" id="baiduStatusText">未配置</span>
+                    </div>
+                    <textarea class="form-control font-mono" id="baiduCookie" rows="6" placeholder="请输入百度网盘网页端抓取的完整 Cookie (如 BDUSS, STOKEN 等)"></textarea>
+                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-semibold text-slate-700">获取指引：</span>
+                            登录 <a href="https://pan.baidu.com" target="_blank" class="text-blue-600 hover:underline">pan.baidu.com</a>，按 F12 打开开发者工具，在网络 (Network) 请求标头中复制完整 <code>Cookie</code> 粘贴到此处。
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-Tab 2: 夸克网盘 -->
+                <div id="cred-pane-quark" class="credential-tab-pane space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label for="quarkCookie" class="form-label font-bold text-slate-800 text-xs mb-0">夸克网盘 Cookie</label>
+                        <span class="text-[11px] text-slate-400 font-medium" id="quarkStatusText">未配置</span>
+                    </div>
+                    <textarea class="form-control font-mono" id="quarkCookie" rows="6" placeholder="请输入夸克网盘网页端抓取的完整 Cookie"></textarea>
+                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-semibold text-slate-700">获取指引：</span>
+                            登录 <a href="https://pan.quark.cn" target="_blank" class="text-blue-600 hover:underline">pan.quark.cn</a>，复制 Request Headers 中的 <code>Cookie</code> 字段。
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-Tab 3: 阿里云盘 -->
+                <div id="cred-pane-aliyun" class="credential-tab-pane space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label for="aliyunToken" class="form-label font-bold text-slate-800 text-xs mb-0">阿里云盘 Refresh Token</label>
+                        <span class="text-[11px] text-slate-400 font-medium" id="aliyunStatusText">未配置</span>
+                    </div>
                     <textarea class="form-control font-mono" id="aliyunToken" rows="5" placeholder="请输入阿里云盘的 refresh_token"></textarea>
-                </div>
-                <div>
-                    <label for="ucCookie" class="form-label">UC 网盘 Cookie</label>
-                    <textarea class="form-control font-mono" id="ucCookie" rows="5" placeholder="请输入 UC 网盘网页端抓取的完整 Cookie"></textarea>
-                </div>
-                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="sm:col-span-2">
-                        <label for="xunleiRefreshToken" class="form-label">迅雷网盘 Refresh Token</label>
-                        <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="3" placeholder="请输入迅雷网盘 refresh_token"></textarea>
-                    </div>
-                    <div>
-                        <label for="xunleiCaptchaSign" class="form-label">迅雷 Captcha Sign</label>
-                        <textarea class="form-control font-mono" id="xunleiCaptchaSign" rows="3" placeholder="请输入 captcha_sign"></textarea>
+                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-semibold text-slate-700">获取指引：</span>
+                            打开 <a href="https://www.alipan.com" target="_blank" class="text-blue-600 hover:underline">alipan.com</a> 开发者工具 Application/Local Storage 中的 <code>token</code> JSON 数据，获取 <code>refresh_token</code> 字符串。
+                        </div>
                     </div>
                 </div>
-                <div class="md:col-span-2">
-                    <label for="xunleiUserId" class="form-label">迅雷 User ID</label>
-                    <input type="text" class="form-control font-mono" id="xunleiUserId" placeholder="请输入 user_id">
+
+                <!-- Sub-Tab 4: UC网盘 -->
+                <div id="cred-pane-uc" class="credential-tab-pane space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label for="ucCookie" class="form-label font-bold text-slate-800 text-xs mb-0">UC 网盘 Cookie</label>
+                        <span class="text-[11px] text-slate-400 font-medium" id="ucStatusText">未配置</span>
+                    </div>
+                    <textarea class="form-control font-mono" id="ucCookie" rows="6" placeholder="请输入 UC 网盘网页端抓取的完整 Cookie"></textarea>
+                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-semibold text-slate-700">获取指引：</span>
+                            登录 <a href="https://drive.uc.cn" target="_blank" class="text-blue-600 hover:underline">drive.uc.cn</a>，复制网络请求标头中的完整 <code>Cookie</code>。
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Sub-Tab 5: 迅雷网盘 -->
+                <div id="cred-pane-xunlei" class="credential-tab-pane space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-800 text-xs">迅雷网盘凭证组</span>
+                        <span class="text-[11px] text-slate-400 font-medium" id="xunleiStatusText">未配置</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="xunleiRefreshToken" class="form-label">Refresh Token</label>
+                            <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="3" placeholder="请输入迅雷网盘 refresh_token"></textarea>
+                        </div>
+                        <div>
+                            <label for="xunleiCaptchaSign" class="form-label">Captcha Sign</label>
+                            <textarea class="form-control font-mono" id="xunleiCaptchaSign" rows="3" placeholder="请输入 captcha_sign"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="xunleiUserId" class="form-label">User ID</label>
+                            <input type="text" class="form-control font-mono" id="xunleiUserId" placeholder="请输入 user_id">
+                        </div>
+                    </div>
+                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-semibold text-slate-700">说明：</span>
+                            迅雷网盘需要同时配置 <code>refresh_token</code>、<code>captcha_sign</code> 和 <code>user_id</code> 三个凭证项方可生效。
+                        </div>
+                    </div>
+                </div>
+
             </div>
-        </div>
-    </section>
+        </section>
+
+    </div>
 </div>
 
 <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
