@@ -100,18 +100,6 @@ python app.py
 
 > 💡 **提示**：如需自定义后台密码或 TG 代理，可复制 `cp .env.example .env` 后按需修改。
 
-### 发布前刷新默认搜索源
-
-维护者准备提交到 GitHub 前，可全量检测预置 API、Telegram 频道和插件，并把检测结果同步到新用户首次启动所使用的默认配置：
-
-```bash
-python3 scripts/check_sources_health.py \
-  --sync-defaults \
-  --output source-health-report.json
-```
-
-脚本默认轮询“仙逆、逆袭、总裁”。任一关键词命中即视为健康；接口可连通但均无结果时保留启用；只有多关键词请求或解析均失败时才禁用。API、TG 和插件的源总表不会因检测结果而删减，只更新启用/禁用状态。执行后请检查并提交 `schema_sqlite.sql` 与 `src/configs/app_config.py`；健康报告仅供核对，通常无需提交。运行时数据库文件不需要提交，新用户首次启动时会由这些版本化配置生成最新数据库。
-
 ---
 
 ## ⚙️ 网盘凭证说明

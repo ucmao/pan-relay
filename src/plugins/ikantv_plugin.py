@@ -12,7 +12,7 @@ class IkanTVPlugin(HttpPlugin):
     description = "爱看公开网盘聚合 API"
     priority = 160
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 8.0
     endpoint = "https://api.naspt.vip/api/open/pansou/search"
     allowed_types = {

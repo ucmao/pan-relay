@@ -1,0 +1,18 @@
+{
+  "clxiong": {"protocol": "empirecms_redirect_detail", "sample": {"location": "/e/search/result/?searchid=42", "link": "magnet:?xt=urn:btih:0000000000000000000000000000000000000042"}},
+  "duoduo": {"protocol": "maccms_detail", "sample": {"detail_id": "42", "link": "https://pan.quark.cn/s/redacted42"}},
+  "erxiao": {"protocol": "maccms_mirror_detail", "sample": {"detail_id": "42", "link": "https://pan.baidu.com/s/redacted42?pwd=a1b2"}},
+  "jutoushe": {"protocol": "html_detail", "sample": {"path": "/detail/42", "link": "https://pan.quark.cn/s/redacted42"}},
+  "kkv": {"protocol": "wordpress_detail", "sample": {"path": "/entry/42", "link": "https://pan.baidu.com/s/redacted42?pwd=a1b2"}},
+  "labi": {"protocol": "maccms_mirror_detail", "sample": {"detail_id": "42", "link": "https://pan.quark.cn/s/redacted42"}},
+  "muou": {"protocol": "maccms_mirror_detail", "sample": {"detail_id": "42", "link": "https://pan.quark.cn/s/redacted42"}},
+  "shandian": {"protocol": "maccms_mirror_detail", "sample": {"detail_id": "42", "link": "https://pan.quark.cn/s/redacted42"}},
+  "xb6v": {"protocol": "empirecms_redirect_detail", "sample": {"location": "/e/search/result/?searchid=42", "link": "magnet:?xt=urn:btih:0000000000000000000000000000000000000042"}},
+  "xiaokupan": {"protocol": "tanstack_server_function", "sample": {"function_id": "0000000000000000000000000000000000000000000000000000000000000042", "link": "https://pan.quark.cn/s/redacted42"}},
+  "zhizhen": {"protocol": "maccms_mirror_detail", "sample": {"detail_id": "42", "link": "https://pan.quark.cn/s/redacted42"}},
+  "huban": {"protocol": "maccms_mirror_detail", "sample": {"detail_id": "42", "link": "https://pan.quark.cn/s/redacted42"}},
+  "pansearch": {"protocol": "nextjs_data", "sample": {"build_id": "redacted-build", "link": "https://pan.quark.cn/s/redacted42"}},
+  "ting77": {"protocol": "token_redirect", "sample": {"token": "redacted-token", "link": "https://pan.baidu.com/s/redacted42?pwd=a1b2"}},
+  "u3c3": {"protocol": "dynamic_search_parameter", "sample": {"search2": "redacted", "link": "magnet:?xt=urn:btih:0000000000000000000000000000000000000042"}},
+  "javdb": {"protocol": "adult_html_detail", "sample": {"path": "/v/redacted", "link": "magnet:?xt=urn:btih:0000000000000000000000000000000000000042"}}
+}

@@ -19,7 +19,7 @@ class YunsoPlugin(HttpPlugin):
     description = "小云搜索 HTML 片段 API"
     priority = 145
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 9.0
     endpoint = "https://www.yunso.net/api/Core/search2"
     search_page = "https://www.yunso.net/index/user/s"

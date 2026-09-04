@@ -15,7 +15,7 @@ class Quark4KPlugin(HttpPlugin):
     description = "Quark4K 论坛公开讨论 API"
     priority = 135
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 9.0
     endpoint = "https://quark4k.com/api/discussions"
     page_size = 50

@@ -88,6 +88,12 @@ class PluginManager:
             try:
                 from src.services.system_config_service import get_plugin_settings
                 settings = get_plugin_settings()
+                if not settings:
+                    from src.configs.app_config import DEFAULT_PLUGIN_SETTINGS
+                    settings = {
+                        name: {"is_enabled": enabled}
+                        for name, enabled in DEFAULT_PLUGIN_SETTINGS.items()
+                    }
                 for name, plugin in self._plugins.items():
                     if name in settings and "is_enabled" in settings[name]:
                         plugin.is_enabled = bool(settings[name]["is_enabled"])
@@ -166,8 +172,12 @@ class PluginManager:
             return []
 
         all_results: List[SearchResultItem] = []
+        started_at: Dict[str, float] = {}
+        started_lock = threading.Lock()
 
         def _do_search(plugin: BasePlugin) -> List[SearchResultItem]:
+            with started_lock:
+                started_at[plugin.name] = time.monotonic()
             try:
                 logger.info(f"插件 [{plugin.name}] 开始搜索: {keyword}")
                 res = plugin.search(keyword)
@@ -182,16 +192,18 @@ class PluginManager:
             thread_name_prefix="plugin-search",
         )
         future_to_plugin = {executor.submit(_do_search, p): p for p in enabled}
-        deadlines = {
-            future: time.monotonic() + max(float(plugin.timeout), 0.1)
-            for future, plugin in future_to_plugin.items()
-        }
         pending = set(future_to_plugin)
 
         try:
             while pending:
                 now = time.monotonic()
-                expired = [future for future in pending if deadlines[future] <= now]
+                with started_lock:
+                    deadlines = {
+                        future: started_at[plugin.name] + max(float(plugin.timeout), 0.1)
+                        for future, plugin in future_to_plugin.items()
+                        if future in pending and plugin.name in started_at
+                    }
+                expired = [future for future, deadline in deadlines.items() if deadline <= now]
                 for future in expired:
                     plugin = future_to_plugin[future]
                     future.cancel()
@@ -205,9 +217,9 @@ class PluginManager:
                 if not pending:
                     break
 
-                wait_timeout = max(
-                    min(deadlines[future] for future in pending) - time.monotonic(),
-                    0.0,
+                wait_timeout = (
+                    max(min(deadlines.values()) - time.monotonic(), 0.0)
+                    if deadlines else 0.05
                 )
                 done, _ = concurrent.futures.wait(
                     pending,

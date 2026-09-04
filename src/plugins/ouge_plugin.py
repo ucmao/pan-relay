@@ -12,7 +12,7 @@ class OugePlugin(HttpPlugin):
     description = "欧歌影视资源 JSON API"
     priority = 130
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 7.0
     endpoint = "https://woog.nxog.eu.org/api.php/provide/vod"
 

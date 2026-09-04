@@ -13,7 +13,7 @@ class HunhepanPlugin(HttpPlugin):
     description = "并行聚合混合盘、轻快盘搜、夸克吧和米搜搜"
     priority = 140
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 9.0
     health_keyword = "庆余年"
 

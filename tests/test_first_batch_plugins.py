@@ -3,6 +3,7 @@ import time
 import unittest
 from unittest.mock import MagicMock, patch
 
+from src.configs.app_config import DEFAULT_PLUGIN_SETTINGS
 from src.models.search_item import SearchResultItem
 from src.plugins.hunhepan_plugin import HunhepanPlugin
 from src.plugins.ikantv_plugin import IkanTVPlugin
@@ -27,11 +28,11 @@ def response(*, payload=None, text="", status=200):
 class FirstBatchPluginsTest(unittest.TestCase):
     expected_names = {"ikantv", "hunhepan", "ouge", "quark4k", "quarksoo", "yunso", "nyaa"}
 
-    def test_all_plugins_are_discovered_and_disabled(self):
+    def test_all_plugins_are_discovered_with_synced_defaults(self):
         plugins = {plugin.name: plugin for plugin in PluginManager().get_all_plugins()}
         self.assertTrue(self.expected_names.issubset(plugins))
         for name in self.expected_names:
-            self.assertFalse(plugins[name].is_enabled)
+            self.assertEqual(DEFAULT_PLUGIN_SETTINGS[name], plugins[name].publish_by_default)
 
     def test_ikantv_parses_supported_links(self):
         plugin = IkanTVPlugin()

@@ -149,6 +149,7 @@ def check_single_api(api_info: Dict[str, Any], keywords: List[str]) -> Dict[str,
     start_time = time.time()
     result = {
         "type": "API",
+        "id": api_info.get("id"),
         "name": name,
         "url": url,
         "status": "FAIL",
@@ -170,7 +171,7 @@ def check_single_api(api_info: Dict[str, Any], keywords: List[str]) -> Dict[str,
             count,
             matched_keyword,
         ) = test_single_api(
-            "未知ID",
+            str(api_info.get("id") or name),
             api_info,
             return_details=True,
             keywords=keywords,
@@ -356,6 +357,7 @@ def main():
     tg_timeout = tg_config.get("timeout", 10)
 
     # 3. 提取全量 Plugins
+    # wanou 与 ouge 使用同一个上游 API，保留 ouge、删除 wanou，避免重复请求和重复结果。
     plugins = plugin_manager.get_all_plugins()
 
     print(f"📦 载入检测对象: API 接口 ({len(apis)} 个), TG 频道 ({len(tg_channels)} 个), 插件 ({len(plugins)} 个)\n")

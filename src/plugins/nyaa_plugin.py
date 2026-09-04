@@ -14,7 +14,7 @@ class NyaaPlugin(HttpPlugin):
     description = "Nyaa 单页种子与磁力搜索"
     priority = 90
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 8.0
     endpoint = "https://nyaa.si/"
 
