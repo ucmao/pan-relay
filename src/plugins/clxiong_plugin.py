@@ -10,7 +10,7 @@ class ClxiongPlugin(DetailPagePlugin):
     description = "磁力熊搜索重定向与详情页磁力资源"
     priority = 105
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 9.0
     base_url = "https://www.cilixiong.org"
     search_selector = ".row.row-cols-2.row-cols-lg-4 .col"

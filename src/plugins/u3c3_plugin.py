@@ -14,7 +14,7 @@ class U3c3Plugin(HttpPlugin):
     description = "成人内容动态参数磁力源；独立标记并默认关闭"
     priority = 60
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 8.0
     base_url = "https://u3c3u3c3.u3c3u3c3u3c3.com"
 

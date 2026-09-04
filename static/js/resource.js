@@ -611,7 +611,9 @@ function setBatchResourceMode(mode) {
     }
 
     if (batchAddResourceModalLabel) {
-        batchAddResourceModalLabel.textContent = isTransferMode ? '批量转存入库' : '批量导入资源';
+        batchAddResourceModalLabel.innerHTML = isTransferMode
+            ? '<i class="fas fa-cloud-upload-alt text-primary me-1"></i> 批量转存入库'
+            : '<i class="fas fa-file-import text-primary me-1"></i> 批量导入资源';
     }
 
     if (batchTransferOptions) {

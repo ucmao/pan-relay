@@ -7,7 +7,7 @@ class JavdbPlugin(DetailPagePlugin):
     description = "成人内容磁力源；独立标记并默认关闭"
     priority = 60
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 9.0
     base_url = "https://javdb.com"
     search_selector = ".movie-list .item"

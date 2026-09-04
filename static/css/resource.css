@@ -525,25 +525,7 @@ textarea::placeholder {
     justify-content: center;
 }
 
-#addResourceModal .modal-header {
-    background: linear-gradient(135deg, #f8ca72, #eeaf46);
-    color: #1f2937;
-}
 
-#editResourceModal .modal-header {
-    background: linear-gradient(135deg, #f4bd5b, #e39c2a);
-    color: #1f2937;
-}
-
-#batchAddResourceModal.mode-import .modal-header {
-    background: linear-gradient(135deg, #4fb968, #2e9d4b);
-    color: white;
-}
-
-#batchAddResourceModal.mode-transfer .modal-header {
-    background: linear-gradient(135deg, #5a7de6, #3f63cf);
-    color: white;
-}
 
 #addResourceModal fieldset,
 #editResourceModal fieldset,

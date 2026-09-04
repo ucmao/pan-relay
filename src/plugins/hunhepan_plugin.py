@@ -10,7 +10,7 @@ class HunhepanPlugin(HttpPlugin):
     display_name = "混合盘搜索"
     version = "1.0.0"
     author = "pan-relay"
-    description = "并行聚合混合盘、轻快盘搜、夸克吧和米搜搜"
+    description = "并行聚合混合盘、夸克吧和米搜搜"
     priority = 140
     is_enabled = False
     publish_by_default = True
@@ -19,7 +19,6 @@ class HunhepanPlugin(HttpPlugin):
 
     endpoints: Tuple[Tuple[str, str], ...] = (
         ("https://hunhepan.com/open/search/disk", "https://hunhepan.com/search"),
-        ("https://qkpanso.com/v1/search/disk", "https://qkpanso.com/search"),
         ("https://kuake8.com/v1/search/disk", "https://kuake8.com/search"),
         ("https://www.misoso.cc/v1/search/disk", "https://www.misoso.cc/search"),
     )

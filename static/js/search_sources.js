@@ -122,10 +122,10 @@
                     <td class="text-center">${index + 1}</td>
                     <td class="text-center">${enableBadge}</td>
                     <td class="text-center">${healthBadge}</td>
-                    <td class="font-medium text-slate-800 text-xs">${title}</td>
                     <td>
                         <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-blue-600 hover:text-blue-700">@${channel}</a>
                     </td>
+                    <td class="font-medium text-slate-800 text-xs">${title}</td>
                     <td class="text-center">${latency}</td>
                     <td class="text-center text-xs text-slate-500">${formatCheckedAt(health.checked_at)}</td>
                     <td class="action-buttons text-center">

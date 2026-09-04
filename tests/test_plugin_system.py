@@ -45,15 +45,14 @@ class PluginSystemTest(unittest.TestCase):
             self.mgr._plugins.pop("dummy_test_plugin", None)
 
     def test_plugin_discovery_and_metadata(self):
-        # 验证自动发现了内置的 sample_scraper 插件
-        scraper = self.mgr.get_plugin("sample_scraper")
+        # 验证自动发现了内置插件
+        scraper = self.mgr.get_plugin("yunso")
         self.assertIsNotNone(scraper)
-        self.assertEqual("sample_scraper", scraper.name)
-        self.assertEqual("参考爬虫插件", scraper.display_name)
+        self.assertEqual("yunso", scraper.name)
 
         # 验证元数据字典
         info = scraper.to_dict()
-        self.assertEqual("sample_scraper", info["name"])
+        self.assertEqual("yunso", info["name"])
         self.assertTrue("priority" in info)
         self.assertTrue("is_enabled" in info)
 

@@ -338,20 +338,7 @@
     background: linear-gradient(180deg, rgba(255, 251, 235, 0.96) 0%, rgba(255, 255, 255, 0.96) 100%);
 }
 
-#addApiModal .modal-header {
-    background: linear-gradient(135deg, #f8ca72, #eeaf46);
-    color: #1f2937;
-}
 
-#editApiModal .modal-header {
-    background: linear-gradient(135deg, #f59e0b, #fbbf24);
-    color: #1f2937;
-}
-
-#addApiModal .modal-header .btn-close,
-#editApiModal .modal-header .btn-close {
-    background: rgba(255, 255, 255, 0.18);
-}
 
 .api-doc-modal {
     background: linear-gradient(180deg, rgba(248, 250, 252, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);

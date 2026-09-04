@@ -33,7 +33,7 @@ async function loadPlugins() {
         if (currentPluginsData.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="11" class="text-center text-muted py-5">
+                    <td colspan="9" class="text-center text-muted py-5">
                         <i class="fas fa-puzzle-piece fa-2x mb-2 text-secondary d-block"></i>
                         暂未发现任何插件。请在 <code>src/plugins/</code> 目录下创建继承自 <code>BasePlugin</code> 的 Python 模块。
                     </td>
@@ -87,7 +87,6 @@ async function loadPlugins() {
                     </td>
                     <td class="text-center align-middle font-mono text-xs">${latencyDisplay}</td>
                     <td class="text-center align-middle text-muted small">${p.timeout || 6.0}s</td>
-                    <td class="text-center align-middle text-muted small">v${escapeHtml(p.version || '1.0.0')}</td>
                     <td class="align-middle text-muted small text-break" style="max-width: 260px;">
                         ${escapeHtml(p.description || '无说明')}
                     </td>

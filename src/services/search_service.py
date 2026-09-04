@@ -386,9 +386,9 @@ def generate_search_stream_events(keyword):
             yield json.dumps({"type": "initial", "results": _serialize_items(db_results)})
 
         urls_config = read_all_api_configs_from_db()
-        enabled_configs = [c for c in urls_config if c.get("status", False) and c.get("is_enabled", False)]
+        enabled_configs = [c for c in urls_config if c.get("is_enabled", False)]
 
-        enabled_configs.sort(key=lambda x: x.get("response_time_ms", 9999))
+        enabled_configs.sort(key=lambda x: x.get("response_time_ms") or 9999)
 
         enabled_urls = [c["url"] for c in enabled_configs]
         logger.info(f"本次搜索启用的 API 数量: {len(enabled_urls)} 个。")

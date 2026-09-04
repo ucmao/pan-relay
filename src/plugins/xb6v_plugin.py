@@ -13,7 +13,7 @@ class Xb6vPlugin(DetailPagePlugin):
     description = "6V 电影搜索与详情页磁力资源"
     priority = 115
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 9.0
     base_urls = ("https://www.66ss.org", "https://www.xb6v.com")
     resource_selector = "a[href^='magnet:']"

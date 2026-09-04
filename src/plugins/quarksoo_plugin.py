@@ -14,7 +14,7 @@ class QuarksooPlugin(HttpPlugin):
     description = "夸克搜单页 HTML 搜索"
     priority = 120
     is_enabled = False
-    publish_by_default = False
+    publish_by_default = True
     timeout = 7.0
     endpoint = "https://quarksoo.cc/search.php"
 

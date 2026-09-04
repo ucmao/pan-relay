@@ -11,7 +11,7 @@ class PortedPluginsTest(unittest.TestCase):
         plugins = self.mgr.get_all_plugins()
         self.assertGreaterEqual(len(plugins), 1)
 
-        expected_names = ["sample_scraper"]
+        expected_names = ["yunso", "pansearch", "clxiong"]
 
         registered_names = [p.name for p in plugins]
         for name in expected_names:
