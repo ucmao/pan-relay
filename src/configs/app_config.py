@@ -55,7 +55,7 @@ TG_CHANNELS = [
 ]
 TG_DISABLED_CHANNELS = [
     channel.strip().lstrip("@").strip("/")
-    for channel in os.getenv("TG_DISABLED_CHANNELS", ",".join(DEFAULT_DISABLED_TG_CHANNELS)).split(",")
+    for channel in os.getenv("TG_DISABLED_CHANNELS", DEFAULT_DISABLED_TG_CHANNELS).split(",")
     if channel.strip()
 ]
 TG_SEARCH_TIMEOUT = _get_int_env("TG_SEARCH_TIMEOUT", 10)

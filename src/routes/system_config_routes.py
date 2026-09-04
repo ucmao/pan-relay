@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, render_template, request
+import concurrent.futures
 import json
 
 from src.db.credentials import delete_cookie, get_cookie_by_cloud_name, save_cookie
@@ -11,6 +12,15 @@ from src.services.system_config_service import (
     save_frontend_display_netdisk_config,
     save_frontend_link_mode,
     save_tg_search_config,
+)
+from src.services.telegram_channel_service import (
+    add_tg_channel,
+    delete_tg_channel,
+    get_tg_channel_items,
+    normalize_tg_channel,
+    save_tg_channel_health,
+    set_all_tg_channels_enabled,
+    set_tg_channel_enabled,
 )
 from src.services.telegram_search_service import test_telegram_connection
 from src.utils.auth_utils import token_required
@@ -311,6 +321,124 @@ def update_tg_search_config_api():
     })
 
 
+@system_config_bp.route("/admin/api/tg-channels", methods=["GET"])
+@token_required
+def get_tg_channels_api():
+    """获取 Telegram 公开频道列表及最近一次健康状态。"""
+    channels = get_tg_channel_items()
+    return jsonify({
+        "success": True,
+        "channels": channels,
+        "summary": {
+            "total_count": len(channels),
+            "enabled_count": sum(1 for item in channels if item["is_enabled"]),
+        },
+    })
+
+
+@system_config_bp.route("/admin/api/tg-channels", methods=["POST"])
+@token_required
+def add_tg_channel_api():
+    data = request.get_json() or {}
+    success, message, channel = add_tg_channel(
+        data.get("channel"),
+        bool(data.get("is_enabled", True)),
+    )
+    if not success:
+        return jsonify({"success": False, "message": message}), 400
+    return jsonify({"success": True, "message": message, "channel": channel}), 201
+
+
+@system_config_bp.route("/admin/api/tg-channels/<string:channel>", methods=["DELETE"])
+@token_required
+def delete_tg_channel_api(channel):
+    success, message = delete_tg_channel(channel)
+    return jsonify({"success": success, "message": message}), 200 if success else 404
+
+
+@system_config_bp.route("/admin/api/tg-channels/<string:channel>/enabled", methods=["PUT"])
+@token_required
+def toggle_tg_channel_api(channel):
+    data = request.get_json() or {}
+    if "is_enabled" not in data:
+        return jsonify({"success": False, "message": "缺少 is_enabled 参数"}), 400
+    success, message = set_tg_channel_enabled(channel, bool(data["is_enabled"]))
+    return jsonify({"success": success, "message": message}), 200 if success else 404
+
+
+@system_config_bp.route("/admin/api/tg-channels/enable-all", methods=["PUT"])
+@token_required
+def enable_all_tg_channels_api():
+    success, message, count = set_all_tg_channels_enabled(True)
+    return jsonify({"success": success, "message": message, "count": count}), 200 if success else 500
+
+
+@system_config_bp.route("/admin/api/tg-channels/disable-all", methods=["PUT"])
+@token_required
+def disable_all_tg_channels_api():
+    success, message, count = set_all_tg_channels_enabled(False)
+    return jsonify({"success": success, "message": message, "count": count}), 200 if success else 500
+
+
+def _run_and_record_tg_test(channel, keyword=None):
+    result = test_telegram_connection(channel=channel, keyword=keyword)
+    save_tg_channel_health(channel, result)
+    return result
+
+
+@system_config_bp.route("/admin/api/tg-channels/<string:channel>/test", methods=["POST"])
+@token_required
+def test_single_tg_channel_api(channel):
+    normalized = normalize_tg_channel(channel)
+    known_channels = {item["channel"] for item in get_tg_channel_items()}
+    if normalized not in known_channels:
+        return jsonify({"success": False, "message": "未找到该频道"}), 404
+    data = request.get_json() or {}
+    result = _run_and_record_tg_test(normalized, str(data.get("keyword", "")).strip() or None)
+    return jsonify(result)
+
+
+@system_config_bp.route("/admin/api/tg-channels/test-all", methods=["POST"])
+@token_required
+def test_all_tg_channels_api():
+    data = request.get_json() or {}
+    keyword = str(data.get("keyword", "")).strip() or None
+    channels = [item["channel"] for item in get_tg_channel_items()]
+    if not channels:
+        return jsonify({"success": True, "message": "暂无可检测的频道", "results": []})
+
+    config = get_tg_search_config()
+    workers = min(max(int(config.get("max_workers", 4)), 1), len(channels))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(test_telegram_connection, channel, keyword): channel
+            for channel in channels
+        }
+        results = []
+        for future in concurrent.futures.as_completed(futures):
+            channel = futures[future]
+            try:
+                result = future.result()
+            except Exception as error:
+                result = {
+                    "success": False,
+                    "channel": channel,
+                    "message": str(error),
+                    "latency_ms": 0,
+                    "count": 0,
+                    "results": [],
+                }
+            save_tg_channel_health(channel, result)
+            results.append(result)
+
+    healthy_count = sum(1 for result in results if result.get("success"))
+    return jsonify({
+        "success": True,
+        "message": f"检测完成：{healthy_count}/{len(results)} 个频道可连通",
+        "results": results,
+    })
+
+
 @system_config_bp.route("/admin/api/tg-search-config/test", methods=["POST"])
 @token_required
 def test_tg_search_api():
@@ -332,4 +460,5 @@ def test_tg_search_api():
         proxy=proxy,
         timeout=timeout,
     )
+    save_tg_channel_health(channel, result)
     return jsonify(result)

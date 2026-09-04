@@ -4,6 +4,7 @@ from . import credentials
 from . import resources
 from . import system_configs
 from . import temp_shares
+from . import telegram_channels
 
 __all__ = [
     "Error",
@@ -15,4 +16,5 @@ __all__ = [
     "system_configs",
     "temp_shares",
     "credentials",
+    "telegram_channels",
 ]

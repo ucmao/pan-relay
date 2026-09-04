@@ -1,291 +1,351 @@
 /**
- * static/js/search_sources.js
- * 统一检索源管理工作区：Tab 切换驱动、Telegram 频道检索配置与联调、全源状态统计
+ * 统一检索源管理工作区：Tab 切换、Telegram 全局配置与频道列表治理。
  */
-
 (function () {
-    let tgDisabledChannels = [];
+    let tgChannels = [];
+    let tgConfig = null;
 
-    // 1. Tab 切换控制器
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = String(value ?? '');
+        return div.innerHTML;
+    }
+
+    async function readJson(response) {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success === false) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+        return data;
+    }
+
     function switchTab(tabName, updateHash = true) {
         if (!tabName) return;
-
-        // 规范化 Tab 标识
         const validTabs = ['api', 'plugins', 'telegram'];
         const normalized = validTabs.includes(tabName) ? tabName : 'api';
 
-        // 更新按钮高亮
-        const tabBtns = document.querySelectorAll('.source-tab-btn');
-        tabBtns.forEach((btn) => {
-            const target = btn.getAttribute('data-tab-target');
-            btn.classList.toggle('is-active', target === normalized);
+        document.querySelectorAll('.source-tab-btn').forEach((btn) => {
+            btn.classList.toggle('is-active', btn.getAttribute('data-tab-target') === normalized);
         });
-
-        // 切换内容显隐
-        const panes = document.querySelectorAll('.source-tab-pane');
-        panes.forEach((pane) => {
+        document.querySelectorAll('.source-tab-pane').forEach((pane) => {
             pane.classList.toggle('is-active', pane.id === `tab-pane-${normalized}`);
         });
 
-        // 写入 URL Hash
-        if (updateHash && window.history && window.history.replaceState) {
+        if (updateHash && window.history?.replaceState) {
             window.history.replaceState(null, '', `#${normalized}`);
         }
-
-        // 切换到 TG 时若尚未加载配置则触发加载
-        if (normalized === 'telegram') {
-            loadTgSearchConfig();
-        }
+        if (normalized === 'telegram') loadTgSearchConfig();
     }
 
     function initTabNavigation() {
-        const tabBtns = document.querySelectorAll('.source-tab-btn');
-        tabBtns.forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const target = btn.getAttribute('data-tab-target');
-                switchTab(target, true);
+        document.querySelectorAll('.source-tab-btn').forEach((btn) => {
+            btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                switchTab(btn.getAttribute('data-tab-target'), true);
             });
         });
 
-        // 优先读取 URL hash，其次读取 search params
         const hash = (window.location.hash || '').replace('#', '').trim();
-        const urlParams = new URLSearchParams(window.location.search);
-        const queryTab = urlParams.get('tab');
-        const initialTab = hash || queryTab || 'api';
-
-        switchTab(initialTab, false);
-
+        const queryTab = new URLSearchParams(window.location.search).get('tab');
+        switchTab(hash || queryTab || 'api', false);
         window.addEventListener('hashchange', () => {
             const currentHash = (window.location.hash || '').replace('#', '').trim();
-            if (currentHash) {
-                switchTab(currentHash, false);
-            }
+            if (currentHash) switchTab(currentHash, false);
         });
     }
 
-    // 2. Telegram 频道配置与联调
-    async function loadTgSearchConfig() {
-        try {
-            const response = await fetch('/admin/api/tg-search-config');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            if (data.success && data.config) {
-                const cfg = data.config;
-                const targetVal = cfg.enabled ? 'true' : 'false';
-                const radio = document.querySelector(`.frontend-link-mode-radio[name="tgSearchEnabled"][value="${targetVal}"]`);
-                if (radio) radio.checked = true;
-
-                const proxyEl = document.getElementById('tgProxyInput');
-                if (proxyEl) proxyEl.value = cfg.proxy || '';
-
-                const timeoutEl = document.getElementById('tgTimeoutInput');
-                if (timeoutEl) timeoutEl.value = cfg.timeout || 10;
-
-                const workersEl = document.getElementById('tgMaxWorkersInput');
-                if (workersEl) workersEl.value = cfg.max_workers || 4;
-
-                const channelsEl = document.getElementById('tgChannelsInput');
-                const channelsArr = Array.isArray(cfg.channels) ? cfg.channels : [];
-                tgDisabledChannels = Array.isArray(cfg.disabled_channels) ? cfg.disabled_channels : [];
-                if (channelsEl) {
-                    channelsEl.value = channelsArr.join(', ');
-                    const testChanEl = document.getElementById('tgTestChannel');
-                    if (testChanEl && !testChanEl.value && channelsArr.length > 0) {
-                        testChanEl.value = channelsArr[0];
-                    }
-                }
-
-                // 同步 KPI 与 Badge
-                updateTgKPI(cfg.enabled, channelsArr.length, tgDisabledChannels.length, cfg.proxy);
-            }
-        } catch (error) {
-            console.error('加载 TG 搜索配置失败:', error);
-            if (typeof showToast === 'function') {
-                showToast('加载 TG 搜索配置失败，请检查网络或后端状态', 'danger');
-            }
-        }
-    }
-
-    function updateTgKPI(enabled, channelCount, disabledCount, proxy) {
+    function updateTgKPI() {
+        const total = tgChannels.length;
+        const enabledCount = tgChannels.filter((item) => item.is_enabled).length;
+        const enabled = Boolean(tgConfig?.enabled);
+        const proxyNote = tgConfig?.proxy ? ' · 代理启用' : '';
         const kpiStatus = document.getElementById('kpiTgStatus');
         const kpiDetail = document.getElementById('kpiTgDetail');
         const tabBadgeTg = document.getElementById('tabBadgeTg');
 
         if (kpiStatus) {
-            kpiStatus.textContent = enabled ? '已启用' : '已停用';
+            kpiStatus.textContent = enabled ? `${enabledCount} / ${total}` : '已停用';
             kpiStatus.style.color = enabled ? 'var(--admin-success-text)' : 'var(--admin-text-muted)';
         }
+        if (kpiDetail) kpiDetail.textContent = `总计 ${total} 个 · 启用 ${enabledCount} 个${proxyNote}`;
+        if (tabBadgeTg) tabBadgeTg.textContent = enabled ? `${enabledCount}/${total} 启用` : '已停用';
+    }
 
-        if (kpiDetail) {
-            const proxyNote = proxy ? ' · 代理启用' : '';
-            const activeCount = Math.max(channelCount - disabledCount, 0);
-            kpiDetail.textContent = `总计 ${channelCount} 个 · 启用 ${activeCount} 个${proxyNote}`;
+    function formatCheckedAt(value) {
+        if (!value) return '--';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? '--' : date.toLocaleString('zh-CN', { hour12: false });
+    }
+
+    function renderTgChannels() {
+        const tbody = document.getElementById('tgChannelTableBody');
+        if (!tbody) return;
+        if (tgChannels.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">暂无频道，请点击“新增频道”添加</td></tr>';
+            updateTgKPI();
+            return;
         }
 
-        if (tabBadgeTg) {
-            tabBadgeTg.textContent = enabled ? `${channelCount - disabledCount}/${channelCount} 启用` : '已停用';
+        tbody.innerHTML = tgChannels.map((item, index) => {
+            const health = item.health || {};
+            const status = health.status || 'unknown';
+            const statusText = health.status_text || '未检测';
+            const statusClass = status === 'healthy' ? 'status-available' : (status === 'error' ? 'status-unavailable' : '');
+            const statusStyle = status === 'no_data'
+                ? 'background:linear-gradient(135deg,#d97706,#f59e0b);color:white;'
+                : (status === 'unknown' ? 'background:#e2e8f0;color:#64748b;' : '');
+            const latency = Number(health.latency_ms) > 0 ? `${health.latency_ms} ms` : '--';
+            const nextEnabled = !item.is_enabled;
+            const toggleClass = item.is_enabled ? 'btn-success' : 'btn-danger';
+            const toggleIcon = item.is_enabled ? 'fa-toggle-on' : 'fa-toggle-off';
+            const toggleText = item.is_enabled ? '启用' : '停用';
+            const rowClass = item.is_enabled ? '' : 'disabled-api';
+            const channel = escapeHtml(item.channel);
+            const encodedChannel = encodeURIComponent(item.channel);
+
+            return `
+                <tr class="${rowClass}">
+                    <td class="text-center">${index + 1}</td>
+                    <td class="text-center"><span class="status-button ${statusClass}" style="${statusStyle}" title="${escapeHtml(health.message || '尚未检测')}">${escapeHtml(statusText)}</span></td>
+                    <td>
+                        <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-blue-600 hover:text-blue-700">@${channel}</a>
+                    </td>
+                    <td class="text-center">${latency}</td>
+                    <td class="text-center text-xs text-slate-500">${formatCheckedAt(health.checked_at)}</td>
+                    <td class="action-buttons text-center">
+                        <button class="btn btn-sm ${toggleClass}" onclick="toggleTgChannel('${encodedChannel}', ${nextEnabled})" title="点击切换状态">
+                            <i class="fas ${toggleIcon}"></i> ${toggleText}
+                        </button>
+                    </td>
+                    <td class="action-buttons text-center">
+                        <div class="inline-flex items-center gap-1.5 justify-center">
+                            <button class="btn btn-sm btn-info" onclick="testTgChannel('${encodedChannel}', this)" title="测试频道"><i class="fas fa-vial"></i> 测试</button>
+                            <button class="btn btn-sm btn-secondary" onclick="deleteTgChannel('${encodedChannel}')" title="删除频道"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+        }).join('');
+        updateTgKPI();
+    }
+
+    async function loadTgSearchConfig() {
+        try {
+            const [configResponse, channelsResponse] = await Promise.all([
+                fetch('/admin/api/tg-search-config'),
+                fetch('/admin/api/tg-channels'),
+            ]);
+            const configData = await readJson(configResponse);
+            const channelsData = await readJson(channelsResponse);
+            tgConfig = configData.config || {};
+            tgChannels = Array.isArray(channelsData.channels) ? channelsData.channels : [];
+
+            const targetVal = tgConfig.enabled ? 'true' : 'false';
+            const radio = document.querySelector(`.frontend-link-mode-radio[name="tgSearchEnabled"][value="${targetVal}"]`);
+            if (radio) radio.checked = true;
+            const proxyEl = document.getElementById('tgProxyInput');
+            const timeoutEl = document.getElementById('tgTimeoutInput');
+            const workersEl = document.getElementById('tgMaxWorkersInput');
+            if (proxyEl) proxyEl.value = tgConfig.proxy || '';
+            if (timeoutEl) timeoutEl.value = tgConfig.timeout || 10;
+            if (workersEl) workersEl.value = tgConfig.max_workers || 4;
+            renderTgChannels();
+        } catch (error) {
+            console.error('加载 TG 配置失败:', error);
+            showToast?.(`加载 TG 配置失败：${error.message}`, 'danger');
         }
     }
 
     async function saveTgSearchConfig() {
-        const saveBtn = document.getElementById('saveTgSearchConfigBtn');
-        if (saveBtn) saveBtn.disabled = true;
-
+        const button = document.getElementById('saveTgSearchConfigBtn');
+        if (button) button.disabled = true;
         const enabledRadio = document.querySelector('.frontend-link-mode-radio[name="tgSearchEnabled"]:checked');
-        const enabled = enabledRadio ? enabledRadio.value === 'true' : true;
-        const proxy = (document.getElementById('tgProxyInput')?.value || '').trim();
-        const timeout = parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10);
-        const max_workers = parseInt(document.getElementById('tgMaxWorkersInput')?.value || '4', 10);
-        const channels = (document.getElementById('tgChannelsInput')?.value || '').trim();
-
         const payload = {
-            enabled,
-            proxy,
-            timeout,
-            max_workers,
-            channels,
-            disabled_channels: tgDisabledChannels,
+            enabled: enabledRadio ? enabledRadio.value === 'true' : true,
+            proxy: (document.getElementById('tgProxyInput')?.value || '').trim(),
+            timeout: parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10),
+            max_workers: parseInt(document.getElementById('tgMaxWorkersInput')?.value || '4', 10),
         };
-
         try {
-            const response = await fetch('/admin/api/tg-search-config', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            const data = await response.json();
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || `HTTP error! status: ${response.status}`);
-            }
-            if (typeof showToast === 'function') {
-                showToast(data.message || 'Telegram 搜索配置已成功保存！', 'success');
-            }
+            const data = await readJson(await fetch('/admin/api/tg-search-config', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+            }));
+            showToast?.(data.message || 'Telegram 抓取设置已保存', 'success');
             await loadTgSearchConfig();
         } catch (error) {
-            if (typeof showToast === 'function') {
-                showToast(`保存 TG 配置失败: ${error.message}`, 'danger');
-            }
+            showToast?.(`保存 TG 配置失败：${error.message}`, 'danger');
         } finally {
-            if (saveBtn) saveBtn.disabled = false;
+            if (button) button.disabled = false;
         }
     }
 
-    async function runTgTest() {
-        const btn = document.getElementById('doTgTestBtn');
-        const chanInput = document.getElementById('tgTestChannel');
-        const kwInput = document.getElementById('tgTestKeyword');
-        const resultArea = document.getElementById('tgTestResultArea');
-        const statusAlert = document.getElementById('tgTestStatusAlert');
-        const tbody = document.getElementById('tgTestTableBody');
-
-        const channel = (chanInput?.value || '').trim();
-        const keyword = (kwInput?.value || '仙逆').trim() || '仙逆';
-        const proxy = (document.getElementById('tgProxyInput')?.value || '').trim();
-        const timeout = parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10);
-
+    async function addTgChannel() {
+        const button = document.getElementById('addTgChannelButton');
+        const input = document.getElementById('newTgChannelInput');
+        const channel = (input?.value || '').trim();
         if (!channel) {
-            if (typeof showToast === 'function') {
-                showToast('请先输入要测试的 Telegram 频道名称', 'warning');
-            }
-            if (chanInput) chanInput.focus();
+            showToast?.('请输入频道用户名或公开链接', 'warning');
+            input?.focus();
             return;
         }
-
-        if (btn) btn.disabled = true;
-        if (resultArea) resultArea.classList.remove('d-none');
-        if (statusAlert) {
-            statusAlert.className = 'alert alert-info py-2 px-3 small mb-2';
-            statusAlert.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> 正在向频道 <strong>@${channel}</strong> 发起多关键词测试（优先: "${keyword}"）...`;
-        }
-        if (tbody) tbody.innerHTML = '';
-
+        if (button) button.disabled = true;
         try {
-            const response = await fetch('/admin/api/tg-search-config/test', {
+            const data = await readJson(await fetch('/admin/api/tg-channels', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ channel, keyword, proxy, timeout }),
-            });
-            const data = await response.json();
-
-            if (!data.success) {
-                statusAlert.className = 'alert alert-warning py-2 px-3 small mb-2';
-                statusAlert.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i> ${data.message || '测试未返回有效结果'}`;
-                return;
-            }
-
-            statusAlert.className = 'alert alert-success py-2 px-3 small mb-2';
-            statusAlert.innerHTML = `<i class="fas fa-check-circle me-1"></i> ${data.message} (耗时: ${data.latency_ms}ms)`;
-
-            const results = data.results || [];
-            if (results.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">该频道在本次搜索中未匹配到公开网盘链接（可能为私有频道、防抓取跳转或无对应关键词资源）</td></tr>`;
-            } else {
-                tbody.innerHTML = results.map((item, idx) => `
-                    <tr>
-                        <td class="text-center text-muted">${idx + 1}</td>
-                        <td><span class="text-break">${escapeHtml(item.title || item[1] || '无标题')}</span></td>
-                        <td><span class="badge bg-secondary">${escapeHtml(item.cloud_name || item[3] || '未知')}</span></td>
-                        <td>
-                            <a href="${escapeHtml(item.share_link || item[2] || '#')}" target="_blank" class="text-break small text-decoration-none">
-                                ${escapeHtml(item.share_link || item[2] || '')}
-                            </a>
-                        </td>
-                    </tr>
-                `).join('');
-            }
+                body: JSON.stringify({
+                    channel,
+                    is_enabled: document.getElementById('newTgChannelEnabled')?.value !== 'false',
+                }),
+            }));
+            showToast?.(data.message, 'success');
+            if (input) input.value = '';
+            window.AppUI?.closeModal('#addTgChannelModal');
+            await loadTgSearchConfig();
         } catch (error) {
-            if (statusAlert) {
-                statusAlert.className = 'alert alert-danger py-2 px-3 small mb-2';
-                statusAlert.innerHTML = `<i class="fas fa-times-circle me-1"></i> 请求出错: ${error.message}`;
-            }
+            showToast?.(`新增频道失败：${error.message}`, 'danger');
         } finally {
-            if (btn) btn.disabled = false;
+            if (button) button.disabled = false;
         }
     }
 
-    // 3. 跨 Tab 指标监听与更新
+    async function toggleTgChannel(encodedChannel, isEnabled) {
+        const channel = decodeURIComponent(encodedChannel);
+        try {
+            const data = await readJson(await fetch(`/admin/api/tg-channels/${encodedChannel}/enabled`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_enabled: isEnabled }),
+            }));
+            showToast?.(data.message, 'success');
+            await loadTgSearchConfig();
+        } catch (error) {
+            showToast?.(`频道 @${channel} 状态更新失败：${error.message}`, 'danger');
+        }
+    }
+
+    async function setAllTgChannelsEnabled(isEnabled) {
+        const action = isEnabled ? '启用' : '停用';
+        if (!(await showConfirm(`确定要${action}全部 Telegram 频道吗？`))) return;
+        const button = document.getElementById(isEnabled ? 'enableAllTgChannelsButton' : 'disableAllTgChannelsButton');
+        if (button) button.disabled = true;
+        try {
+            const data = await readJson(await fetch(`/admin/api/tg-channels/${isEnabled ? 'enable-all' : 'disable-all'}`, { method: 'PUT' }));
+            showToast?.(data.message, 'success');
+            await loadTgSearchConfig();
+        } catch (error) {
+            showToast?.(`批量${action}失败：${error.message}`, 'danger');
+        } finally {
+            if (button) button.disabled = false;
+        }
+    }
+
+    async function deleteTgChannel(encodedChannel) {
+        const channel = decodeURIComponent(encodedChannel);
+        if (!(await showConfirm(`确定要删除频道 @${channel} 吗？`))) return;
+        try {
+            const data = await readJson(await fetch(`/admin/api/tg-channels/${encodedChannel}`, { method: 'DELETE' }));
+            showToast?.(data.message, 'success');
+            await loadTgSearchConfig();
+        } catch (error) {
+            showToast?.(`删除频道失败：${error.message}`, 'danger');
+        }
+    }
+
+    function renderTgTestResult(data) {
+        const alert = document.getElementById('tgTestStatusAlert');
+        const tbody = document.getElementById('tgTestTableBody');
+        if (alert) {
+            const type = data.success ? (data.count > 0 ? 'success' : 'warning') : 'danger';
+            alert.className = `alert alert-${type} py-2 px-3 small mb-2`;
+            alert.innerHTML = `${escapeHtml(data.message || '测试完成')}（耗时：${Number(data.latency_ms) || 0} ms）`;
+        }
+        const results = Array.isArray(data.results) ? data.results : [];
+        if (!tbody) return;
+        if (results.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">本次检测未匹配到网盘资源</td></tr>';
+            return;
+        }
+        tbody.innerHTML = results.map((item, index) => `
+            <tr>
+                <td class="text-center text-muted">${index + 1}</td>
+                <td><span class="text-break">${escapeHtml(item.title || '无标题')}</span></td>
+                <td><span class="badge bg-secondary">${escapeHtml(item.cloud_name || '未知')}</span></td>
+                <td><a href="${escapeHtml(item.share_link || '#')}" target="_blank" rel="noopener noreferrer" class="text-break small text-decoration-none">${escapeHtml(item.share_link || '')}</a></td>
+            </tr>`).join('');
+    }
+
+    async function testTgChannel(encodedChannel, triggerButton = null) {
+        const channel = decodeURIComponent(encodedChannel);
+        if (triggerButton) triggerButton.disabled = true;
+        document.getElementById('tgTestTitle').textContent = `测试频道 @${channel}`;
+        document.getElementById('tgTestStatusAlert').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> 正在轮询测试关键词，请稍候...';
+        document.getElementById('tgTestTableBody').innerHTML = '';
+        window.AppUI?.openModal('#tgTestModal');
+        try {
+            const response = await fetch(`/admin/api/tg-channels/${encodedChannel}/test`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.message || `HTTP error! status: ${response.status}`);
+            renderTgTestResult(data);
+            await loadTgSearchConfig();
+        } catch (error) {
+            renderTgTestResult({ success: false, message: error.message, latency_ms: 0, results: [] });
+        } finally {
+            if (triggerButton) triggerButton.disabled = false;
+        }
+    }
+
+    async function testAllTgChannels() {
+        const button = document.getElementById('testAllTgChannelsButton');
+        if (button) button.disabled = true;
+        showToast?.('正在并发检测全部 Telegram 频道，请稍候...', 'info');
+        try {
+            const data = await readJson(await fetch('/admin/api/tg-channels/test-all', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+            }));
+            showToast?.(data.message, 'success');
+            await loadTgSearchConfig();
+        } catch (error) {
+            showToast?.(`全部检测失败：${error.message}`, 'danger');
+        } finally {
+            if (button) button.disabled = false;
+        }
+    }
+
     function setupKPIWatchers() {
-        // 定期或在数据渲染后同步 API & Plugin 计数至 Badge
         const syncBadges = () => {
-            // API
             const kpiTotalEl = document.getElementById('kpiApiTotal');
             const kpiEnabledEl = document.getElementById('kpiApiEnabled');
             const kpiApiStat = document.getElementById('kpiApiStat');
             const tabBadgeApi = document.getElementById('tabBadgeApi');
-
             if (typeof apiConfigs !== 'undefined' && Array.isArray(apiConfigs)) {
                 const total = apiConfigs.length;
-                const enabled = apiConfigs.filter((a) => a.is_enabled).length;
+                const enabled = apiConfigs.filter((api) => api.is_enabled).length;
                 if (kpiApiStat) kpiApiStat.textContent = `${enabled} / ${total}`;
                 if (tabBadgeApi) tabBadgeApi.textContent = `${enabled}/${total}`;
             } else if (kpiTotalEl && kpiEnabledEl && kpiTotalEl.textContent !== '--') {
-                const totalText = parseInt(kpiTotalEl.textContent, 10) || 0;
-                const enabledText = parseInt(kpiEnabledEl.textContent, 10) || 0;
-                if (kpiApiStat) kpiApiStat.textContent = `${enabledText} / ${totalText}`;
-                if (tabBadgeApi) tabBadgeApi.textContent = `${enabledText}/${totalText}`;
+                const total = parseInt(kpiTotalEl.textContent, 10) || 0;
+                const enabled = parseInt(kpiEnabledEl.textContent, 10) || 0;
+                if (kpiApiStat) kpiApiStat.textContent = `${enabled} / ${total}`;
+                if (tabBadgeApi) tabBadgeApi.textContent = `${enabled}/${total}`;
             }
-
-            // Plugins
-            const pluginCountsEl = document.getElementById('statPluginCounts');
-            const tabBadgePlugins = document.getElementById('tabBadgePlugins');
-            if (pluginCountsEl && pluginCountsEl.textContent !== '0 / 0' && pluginCountsEl.textContent !== '-- / --') {
-                if (tabBadgePlugins) tabBadgePlugins.textContent = pluginCountsEl.textContent;
-            }
+            const pluginCounts = document.getElementById('statPluginCounts');
+            const pluginBadge = document.getElementById('tabBadgePlugins');
+            if (pluginCounts && pluginBadge) pluginBadge.textContent = pluginCounts.textContent;
+            updateTgKPI();
         };
-
-        // 初始化延迟 300ms 和 800ms 执行两次同步以捕获异步加载的数据
         setTimeout(syncBadges, 300);
         setTimeout(syncBadges, 900);
         setInterval(syncBadges, 3000);
     }
 
-    // 暴露方法至全局供内联 onclick 或其他脚本调用
     window.saveTgSearchConfig = saveTgSearchConfig;
-    window.runTgTest = runTgTest;
     window.loadTgSearchConfig = loadTgSearchConfig;
+    window.addTgChannel = addTgChannel;
+    window.toggleTgChannel = toggleTgChannel;
+    window.setAllTgChannelsEnabled = setAllTgChannelsEnabled;
+    window.deleteTgChannel = deleteTgChannel;
+    window.testTgChannel = testTgChannel;
+    window.testAllTgChannels = testAllTgChannels;
     window.switchSourceTab = switchTab;
 
     document.addEventListener('DOMContentLoaded', () => {

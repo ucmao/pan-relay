@@ -18,6 +18,24 @@ CREATE TABLE IF NOT EXISTS api_config (
 );
 
 -- ----------------------------
+-- Table structure for `telegram_channel`
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS telegram_channel (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL UNIQUE,
+  is_enabled INTEGER NOT NULL DEFAULT 1,
+  health_status TEXT NOT NULL DEFAULT 'unknown',
+  latency_ms INTEGER NOT NULL DEFAULT 0,
+  result_count INTEGER NOT NULL DEFAULT 0,
+  health_message TEXT DEFAULT NULL,
+  checked_at DATETIME DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_telegram_channel_enabled ON telegram_channel(is_enabled);
+
+-- ----------------------------
 -- Table structure for `resources`
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS resources (

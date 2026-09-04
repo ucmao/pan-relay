@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from src.db.system_configs import get_config_value, set_config_value
 from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
@@ -113,27 +113,21 @@ def save_public_search_api_config(enabled: bool) -> bool:
     )
 
 
-TG_SEARCH_CONFIG_KEY = "telegram_search_config"
+TG_SEARCH_CONFIG_KEY = "telegram_search_settings"
 PLUGIN_SETTINGS_KEY = "plugin_settings"
 
 
 def get_tg_search_config() -> Dict[str, Any]:
-    """
-    获取 Telegram 频道搜索配置，优先从数据库获取，否则回退至环境变量默认值。
-    """
+    """获取 Telegram 抓取引擎的全局设置。"""
     from src.configs.app_config import (
         TG_SEARCH_ENABLED,
-        TG_CHANNELS,
         TG_PROXY,
         TG_SEARCH_TIMEOUT,
         TG_SEARCH_MAX_WORKERS,
-        TG_DISABLED_CHANNELS,
     )
 
     default_config = {
         "enabled": TG_SEARCH_ENABLED,
-        "channels": TG_CHANNELS.copy() if isinstance(TG_CHANNELS, list) else ["tgsearchers7", "tgsearchers3", "tgsearchers6"],
-        "disabled_channels": TG_DISABLED_CHANNELS.copy(),
         "proxy": TG_PROXY or "",
         "timeout": TG_SEARCH_TIMEOUT or 10,
         "max_workers": TG_SEARCH_MAX_WORKERS or 4,
@@ -142,93 +136,39 @@ def get_tg_search_config() -> Dict[str, Any]:
     raw_value = get_config_value(TG_SEARCH_CONFIG_KEY)
     if not raw_value:
         return default_config
-
     try:
         parsed = json.loads(raw_value)
-        if not isinstance(parsed, dict):
-            return default_config
-
-        configured_channels = [
-            str(c).strip().lstrip("@").strip("/")
-            for c in parsed.get("channels", default_config["channels"])
-            if str(c).strip()
-        ]
-        # 默认频道是固定总表；数据库仅记录状态，不能因一次检测失败而缩减总数。
-        channels = list(dict.fromkeys(default_config["channels"] + configured_channels))
-        disabled_channels = [
-            str(c).strip().lstrip("@").strip("/")
-            for c in parsed.get("disabled_channels", default_config["disabled_channels"])
-            if str(c).strip() and str(c).strip().lstrip("@").strip("/") in channels
-        ]
         return {
             "enabled": bool(parsed.get("enabled", default_config["enabled"])),
-            "channels": channels,
-            "disabled_channels": list(dict.fromkeys(disabled_channels)),
             "proxy": str(parsed.get("proxy", default_config["proxy"])).strip(),
             "timeout": max(int(parsed.get("timeout", default_config["timeout"])), 1),
             "max_workers": max(int(parsed.get("max_workers", default_config["max_workers"])), 1),
         }
-    except Exception as e:
-        logger.warning(f"TG 搜索配置格式无效，已回退到默认值: {e}")
+    except (TypeError, ValueError, json.JSONDecodeError) as error:
+        logger.warning("TG 搜索设置格式无效，已回退到默认值: %s", error)
         return default_config
 
 
 def save_tg_search_config(data: Dict[str, Any]) -> bool:
-    """
-    保存 Telegram 频道搜索配置至数据库。
-    """
+    """保存 Telegram 抓取引擎的全局设置。"""
     if not isinstance(data, dict):
         return False
 
-    enabled = bool(data.get("enabled", True))
-    raw_channels = data.get("channels", [])
-    if isinstance(raw_channels, str):
-        channels = [
-            c.strip().lstrip("@").strip("/")
-            for c in raw_channels.replace("\n", ",").split(",")
-            if c.strip()
-        ]
-    elif isinstance(raw_channels, list):
-        channels = [
-            str(c).strip().lstrip("@").strip("/")
-            for c in raw_channels
-            if str(c).strip()
-        ]
-    else:
-        channels = []
-
-    raw_disabled_channels = data.get("disabled_channels", [])
-    if isinstance(raw_disabled_channels, str):
-        disabled_channels = [
-            c.strip().lstrip("@").strip("/")
-            for c in raw_disabled_channels.replace("\n", ",").split(",")
-            if c.strip()
-        ]
-    elif isinstance(raw_disabled_channels, list):
-        disabled_channels = [
-            str(c).strip().lstrip("@").strip("/")
-            for c in raw_disabled_channels
-            if str(c).strip()
-        ]
-    else:
-        disabled_channels = []
-    disabled_channels = list(dict.fromkeys(c for c in disabled_channels if c in channels))
-
-    proxy = str(data.get("proxy", "")).strip()
+    current = get_tg_search_config()
+    enabled = bool(data.get("enabled", current.get("enabled", True)))
+    proxy = str(data.get("proxy", current.get("proxy", ""))).strip()
     try:
-        timeout = max(int(data.get("timeout", 10)), 1)
+        timeout = max(int(data.get("timeout", current.get("timeout", 10))), 1)
     except (TypeError, ValueError):
         timeout = 10
 
     try:
-        max_workers = max(int(data.get("max_workers", 4)), 1)
+        max_workers = max(int(data.get("max_workers", current.get("max_workers", 4))), 1)
     except (TypeError, ValueError):
         max_workers = 4
 
     payload = {
         "enabled": enabled,
-        "channels": channels,
-        "disabled_channels": disabled_channels,
         "proxy": proxy,
         "timeout": timeout,
         "max_workers": max_workers,
@@ -277,18 +217,22 @@ def init_default_search_sources():
         DEFAULT_PLUGIN_SETTINGS,
     )
 
-    # 1. 首次初始化 TG 频道配置至 system_config
+    # 1. 首次初始化 TG 全局设置与频道表
     current_tg = get_config_value(TG_SEARCH_CONFIG_KEY)
     if not current_tg:
         save_tg_search_config({
             "enabled": True,
-            "channels": TG_CHANNELS,
-            "disabled_channels": TG_DISABLED_CHANNELS,
             "proxy": TG_PROXY,
             "timeout": TG_SEARCH_TIMEOUT,
             "max_workers": TG_SEARCH_MAX_WORKERS,
         })
-        logger.info(f"数据库未初始化，已自动写入全量 {len(TG_CHANNELS)} 个默认 TG 频道。")
+        try:
+            from src.db.telegram_channels import seed_channels
+            seeded_count = seed_channels(TG_CHANNELS, TG_DISABLED_CHANNELS)
+            if seeded_count:
+                logger.info("已写入 %d 个默认 TG 频道。", seeded_count)
+        except Exception as error:
+            logger.warning("初始化 TG 频道失败: %s", error)
 
     # 2. 首次初始化 API 接口至 api_config（若表为空）
     try:

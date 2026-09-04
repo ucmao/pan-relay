@@ -19,12 +19,11 @@ from typing import Any, Dict, List
 # 确保全局可载入项目 src 模块
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.configs.app_config import TG_CHANNELS
 from src.db.connection import get_db_connection, init_sqlite_db
+from src.db.telegram_channels import get_all_channels, set_channel_enabled, update_channel_health
 from src.services.plugin_manager import plugin_manager
 from src.services.system_config_service import (
     get_tg_search_config,
-    save_tg_search_config,
     save_plugin_status,
 )
 from src.services.telegram_search_service import search_telegram_channel
@@ -352,7 +351,7 @@ def main():
 
     # 2. 提取全量 TG 频道
     tg_config = get_tg_search_config()
-    tg_channels = list(dict.fromkeys(TG_CHANNELS + tg_config.get("channels", [])))
+    tg_channels = [item["channel"] for item in get_all_channels()]
     tg_proxy = tg_config.get("proxy", "")
     tg_timeout = tg_config.get("timeout", 10)
 
@@ -428,9 +427,18 @@ def main():
         conn.commit()
         conn.close()
 
-        # 2. 保留完整频道总表，只更新逐频道禁用状态。
-        disabled_tg = [r["name"].lstrip("@") for r in tg_results if r["status"] == "FAIL"]
-        save_tg_search_config({**tg_config, "channels": tg_channels, "disabled_channels": disabled_tg})
+        # 2. 更新逐频道启用状态与健康检测结果。
+        for result in tg_results:
+            channel = result["name"].lstrip("@")
+            is_healthy = result["status"] in ("PASS", "NO_DATA")
+            set_channel_enabled(channel, is_healthy)
+            update_channel_health(
+                channel=channel,
+                health_status=("healthy" if result["status"] == "PASS" else "no_data" if result["status"] == "NO_DATA" else "error"),
+                latency_ms=result["elapsed_ms"],
+                result_count=result["count"],
+                health_message=result.get("error") or "",
+            )
 
         # 3. 按检测结果统一更新插件状态
         for r in plugin_results:

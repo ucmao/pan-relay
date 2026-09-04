@@ -1,31 +1,22 @@
 <!-- Telegram 频道检索 Tab -->
-<div class="tab-pane-inner">
-    <!-- 主配置面板 -->
+<div class="tab-pane-inner space-y-4">
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
-                <h3 class="admin-panel-title">
-                    <i class="fab fa-telegram-plane text-sky-500"></i> Telegram 频道检索网络
-                </h3>
-                <p class="admin-panel-desc">配置公开频道并发抓取参数、代理隧道与连通性自检</p>
+                <h3 class="admin-panel-title"><i class="fab fa-telegram-plane text-sky-500"></i> Telegram 抓取设置</h3>
+                <p class="admin-panel-desc">控制 Telegram 抓取引擎、代理隧道、超时与并发参数</p>
             </div>
-            <div class="flex items-center space-x-2">
-                <button class="btn btn-outline-primary btn-sm" id="testTgModalBtn" data-ui-modal-target="#tgTestModal">
-                    <i class="fas fa-satellite-dish text-[10px]"></i> 联调测试
-                </button>
-                <button class="btn btn-primary btn-sm" id="saveTgSearchConfigBtn" onclick="saveTgSearchConfig()">
-                    <i class="fas fa-save text-[10px]"></i> 保存配置
-                </button>
-            </div>
+            <button class="btn btn-primary btn-sm" id="saveTgSearchConfigBtn" onclick="saveTgSearchConfig()">
+                <i class="fas fa-save text-[10px]"></i> 保存设置
+            </button>
         </div>
         <div class="admin-panel-body">
-            <!-- 开启/关闭选择卡片 -->
             <div class="frontend-link-mode-options mb-4">
                 <label class="frontend-link-mode-card" for="tgSearchEnabledOn">
                     <input class="frontend-link-mode-radio" type="radio" name="tgSearchEnabled" id="tgSearchEnabledOn" value="true" checked>
                     <div class="frontend-link-mode-copy">
                         <span class="frontend-link-mode-title">开启 TG 搜索</span>
-                        <span class="frontend-link-mode-desc">搜索时并发抓取监控频道，自动解析网盘链接与提取码</span>
+                        <span class="frontend-link-mode-desc">搜索时并发抓取列表中已启用的公开频道</span>
                     </div>
                     <span class="frontend-link-mode-switch"></span>
                 </label>
@@ -33,88 +24,108 @@
                     <input class="frontend-link-mode-radio" type="radio" name="tgSearchEnabled" id="tgSearchEnabledOff" value="false">
                     <div class="frontend-link-mode-copy">
                         <span class="frontend-link-mode-title">关闭 TG 搜索</span>
-                        <span class="frontend-link-mode-desc">停用 Telegram 抓取引擎，仅检索本地资源与第三方 API/插件</span>
+                        <span class="frontend-link-mode-desc">停用整个 Telegram 抓取引擎，频道配置仍会保留</span>
                     </div>
                     <span class="frontend-link-mode-switch"></span>
                 </label>
             </div>
-
-            <!-- 参数设置网格 -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 <div class="lg:col-span-6">
                     <label for="tgProxyInput" class="block text-xs font-semibold text-slate-700 mb-1.5">
-                        网络代理 (Proxy)
-                        <span class="text-slate-400 font-normal ml-1">（如 socks5://127.0.0.1:7890，境内服务器直连受限时必填）</span>
+                        网络代理 (Proxy) <span class="text-slate-400 font-normal ml-1">（如 socks5://127.0.0.1:7890）</span>
                     </label>
                     <input type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800" id="tgProxyInput" placeholder="留空则使用系统直连">
                 </div>
                 <div class="lg:col-span-3">
-                    <label for="tgTimeoutInput" class="block text-xs font-semibold text-slate-700 mb-1.5">单频道抓取超时 (秒)</label>
+                    <label for="tgTimeoutInput" class="block text-xs font-semibold text-slate-700 mb-1.5">单频道超时（秒）</label>
                     <input type="number" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-xs text-slate-800" id="tgTimeoutInput" min="1" max="60" value="10">
                 </div>
                 <div class="lg:col-span-3">
                     <label for="tgMaxWorkersInput" class="block text-xs font-semibold text-slate-700 mb-1.5">并发拉取线程数</label>
                     <input type="number" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-xs text-slate-800" id="tgMaxWorkersInput" min="1" max="16" value="4">
                 </div>
-                <div class="lg:col-span-12">
-                    <label for="tgChannelsInput" class="block text-xs font-semibold text-slate-700 mb-1.5">
-                        监控公开频道列表
-                        <span class="text-slate-400 font-normal ml-1">（多个频道用英文逗号或换行分隔，例如：tgsearchers7, tgsearchers3）</span>
-                    </label>
-                    <textarea class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800" id="tgChannelsInput" rows="4" placeholder="例如：tgsearchers7, tgsearchers3, tgsearchers6"></textarea>
-                </div>
             </div>
+        </div>
+    </section>
+
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h3 class="admin-panel-title"><i class="fas fa-satellite-dish text-sky-500"></i> 监控公开频道列表</h3>
+                <p class="admin-panel-desc">逐个管理频道状态；检测结果只更新健康状态，不会自动停用频道</p>
+            </div>
+            <div class="flex items-center space-x-2 flex-wrap">
+                <button class="btn btn-primary btn-sm" data-ui-modal-target="#addTgChannelModal"><i class="fas fa-plus text-[10px]"></i> 新增频道</button>
+                <button class="btn btn-outline-primary btn-sm" id="testAllTgChannelsButton" onclick="testAllTgChannels()"><i class="fas fa-vial text-[10px]"></i> 全部检测</button>
+                <button class="btn btn-outline-primary btn-sm" id="enableAllTgChannelsButton" onclick="setAllTgChannelsEnabled(true)"><i class="fas fa-play text-[10px]"></i> 全部启用</button>
+                <button class="btn btn-outline-secondary btn-sm" id="disableAllTgChannelsButton" onclick="setAllTgChannelsEnabled(false)"><i class="fas fa-ban text-[10px]"></i> 全部停用</button>
+            </div>
+        </div>
+        <div class="data-table-shell" style="max-height: 620px; overflow-y: auto;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center;">#</th>
+                        <th style="width: 90px; text-align: center;">健康状态</th>
+                        <th>频道</th>
+                        <th style="width: 100px; text-align: center;">耗时</th>
+                        <th style="width: 170px; text-align: center;">最近检测</th>
+                        <th style="width: 85px; text-align: center;">启停</th>
+                        <th style="width: 145px; text-align: center;">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tgChannelTableBody">
+                    <tr><td colspan="7" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i> 正在加载频道列表...</td></tr>
+                </tbody>
+            </table>
         </div>
     </section>
 </div>
 
-<!-- Telegram 联调测试模态框 -->
+<div class="modal fade" id="addTgChannelModal" tabindex="-1" aria-labelledby="addTgChannelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTgChannelModalLabel"><i class="fab fa-telegram-plane text-sky-500"></i> 新增公开频道</h5>
+                <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
+            </div>
+            <div class="modal-body space-y-4">
+                <div>
+                    <label for="newTgChannelInput" class="block text-xs font-semibold text-slate-700 mb-1.5">频道用户名或公开链接</label>
+                    <input type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800" id="newTgChannelInput" placeholder="例如：tgsearchers7 或 https://t.me/tgsearchers7">
+                </div>
+                <div>
+                    <label for="newTgChannelEnabled" class="block text-xs font-semibold text-slate-700 mb-1.5">初始状态</label>
+                    <select class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800" id="newTgChannelEnabled">
+                        <option value="true">启用</option><option value="false">停用</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl" data-ui-dismiss="modal">取消</button>
+                <button type="button" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl" id="addTgChannelButton" onclick="addTgChannel()"><i class="fas fa-save text-[10px]"></i> 保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="tgTestModal" tabindex="-1" aria-labelledby="tgTestModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="tgTestModalLabel">
-                    <i class="fab fa-telegram-plane text-sky-500"></i>
-                    <span>Telegram 频道联调与检索测试</span>
-                </h5>
+                <h5 class="modal-title" id="tgTestModalLabel"><i class="fas fa-vial text-sky-500"></i> <span id="tgTestTitle">频道连通性测试</span></h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
-            <div class="modal-body space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                    <div class="sm:col-span-5">
-                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">测试频道用户名</label>
-                        <input type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800" id="tgTestChannel" placeholder="例如：tgsearchers7">
-                    </div>
-                    <div class="sm:col-span-4">
-                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">测试关键词</label>
-                        <input type="text" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all text-xs text-slate-800" id="tgTestKeyword" value="仙逆" placeholder="无结果时自动轮询：仙逆、逆袭、总裁">
-                    </div>
-                    <div class="sm:col-span-3 flex items-end">
-                        <button type="button" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer" id="doTgTestBtn" onclick="runTgTest()">
-                            <i class="fas fa-play text-[10px]"></i> 发起联调
-                        </button>
-                    </div>
-                </div>
-                <div id="tgTestResultArea" class="d-none space-y-3">
-                    <div class="p-3 bg-blue-50 border border-blue-200/60 rounded-xl text-xs text-blue-800 font-medium" id="tgTestStatusAlert"></div>
-                    <div class="border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs" style="max-height: 280px; overflow-y: auto;">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr>
-                                    <th style="width: 50px; text-align: center;">#</th>
-                                    <th>标题</th>
-                                    <th style="width: 90px;">网盘</th>
-                                    <th>链接 / 提取码</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tgTestTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
-                        </table>
-                    </div>
+            <div class="modal-body space-y-3">
+                <div class="p-3 bg-blue-50 border border-blue-200/60 rounded-xl text-xs text-blue-800 font-medium" id="tgTestStatusAlert"></div>
+                <div class="border border-slate-200/80 rounded-xl overflow-hidden shadow-2xs" style="max-height: 280px; overflow-y: auto;">
+                    <table class="table mb-0">
+                        <thead><tr><th style="width: 50px; text-align: center;">#</th><th>标题</th><th style="width: 90px;">网盘</th><th>链接 / 提取码</th></tr></thead>
+                        <tbody id="tgTestTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+                    </table>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer" data-ui-dismiss="modal">关闭</button>
-            </div>
+            <div class="modal-footer"><button type="button" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl" data-ui-dismiss="modal">关闭</button></div>
         </div>
     </div>
 </div>

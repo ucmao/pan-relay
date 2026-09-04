@@ -9,7 +9,6 @@ import requests
 from bs4 import BeautifulSoup
 
 from src.configs.app_config import (
-    TG_CHANNELS,
     TG_PROXY,
     TG_SEARCH_ENABLED,
     TG_SEARCH_MAX_WORKERS,
@@ -493,18 +492,17 @@ def search_telegram_channel(keyword, channel, proxy=None, timeout=None, raise_on
 def search_telegram_resources(keyword):
     """并发搜索配置的 Telegram 公开频道（优先使用数据库配置）。"""
     try:
+        from src.db.telegram_channels import get_enabled_channel_names
         from src.services.system_config_service import get_tg_search_config
         cfg = get_tg_search_config()
         is_enabled = cfg.get("enabled", TG_SEARCH_ENABLED)
-        channels = cfg.get("channels", TG_CHANNELS)
-        disabled_channels = set(cfg.get("disabled_channels", []))
-        channels = [channel for channel in channels if channel not in disabled_channels]
+        channels = get_enabled_channel_names()
         timeout = cfg.get("timeout", TG_SEARCH_TIMEOUT)
         max_workers = cfg.get("max_workers", TG_SEARCH_MAX_WORKERS)
         proxy = cfg.get("proxy", TG_PROXY)
     except Exception:
         is_enabled = TG_SEARCH_ENABLED
-        channels = TG_CHANNELS
+        channels = []
         timeout = TG_SEARCH_TIMEOUT
         max_workers = TG_SEARCH_MAX_WORKERS
         proxy = TG_PROXY

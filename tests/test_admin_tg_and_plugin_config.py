@@ -1,4 +1,3 @@
-import json
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -11,6 +10,13 @@ from src.services.system_config_service import (
     get_tg_search_config,
     save_plugin_status,
     save_tg_search_config,
+)
+from src.services.telegram_channel_service import (
+    add_tg_channel,
+    delete_tg_channel,
+    get_tg_channel_items,
+    save_tg_channel_health,
+    set_tg_channel_enabled,
 )
 from src.services.telegram_search_service import (
     search_telegram_resources,
@@ -54,16 +60,13 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
         # 1. 默认配置应包含基础字段
         cfg = get_tg_search_config()
         self.assertIn("enabled", cfg)
-        self.assertIn("channels", cfg)
-        self.assertIn("disabled_channels", cfg)
         self.assertIn("proxy", cfg)
         self.assertIn("timeout", cfg)
+        self.assertNotIn("channels", cfg)
 
         # 2. 保存新配置并验证读取
         new_payload = {
             "enabled": False,
-            "channels": "testchan1, @testchan2",
-            "disabled_channels": ["testchan2"],
             "proxy": "socks5://127.0.0.1:1080",
             "timeout": 15,
             "max_workers": 2,
@@ -73,23 +76,20 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
 
         saved = get_tg_search_config()
         self.assertFalse(saved["enabled"])
-        self.assertIn("testchan1", saved["channels"])
-        self.assertIn("testchan2", saved["channels"])
-        self.assertEqual(["testchan2"], saved["disabled_channels"])
         self.assertEqual("socks5://127.0.0.1:1080", saved["proxy"])
         self.assertEqual(15, saved["timeout"])
         self.assertEqual(2, saved["max_workers"])
 
         # 恢复默认启用状态
-        save_tg_search_config({"enabled": True, "channels": ["tgsearchers7", "tgsearchers3"], "proxy": ""})
+        save_tg_search_config({"enabled": True, "proxy": ""})
 
     def test_tg_search_disabled_returns_empty(self):
-        save_tg_search_config({"enabled": False, "channels": ["tgsearchers7"], "proxy": ""})
+        save_tg_search_config({"enabled": False, "proxy": ""})
         res = search_telegram_resources("流浪地球")
         self.assertEqual([], res)
 
         # 恢复
-        save_tg_search_config({"enabled": True, "channels": ["tgsearchers7"], "proxy": ""})
+        save_tg_search_config({"enabled": True, "proxy": ""})
 
     @patch("src.services.telegram_search_service.search_telegram_channel")
     def test_test_telegram_connection(self, mock_search):
@@ -140,7 +140,6 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
         # 2. PUT
         put_resp = self.client.put("/admin/api/tg-search-config", json={
             "enabled": True,
-            "channels": "chanA, chanB",
             "proxy": "http://127.0.0.1:7890",
             "timeout": 12,
             "max_workers": 3
@@ -148,8 +147,40 @@ class AdminTgAndPluginConfigTest(unittest.TestCase):
         self.assertEqual(200, put_resp.status_code)
         put_data = put_resp.get_json()
         self.assertTrue(put_data["success"])
-        self.assertIn("chanA", put_data["config"]["channels"])
-        self.assertIn("chanB", put_data["config"]["channels"])
+        self.assertEqual("http://127.0.0.1:7890", put_data["config"]["proxy"])
+
+    def test_tg_channel_list_crud_and_health(self):
+        channel = "codex_test_channel"
+        delete_tg_channel(channel)
+        try:
+            success, _, item = add_tg_channel(f"https://t.me/{channel}", is_enabled=False)
+            self.assertTrue(success)
+            self.assertEqual(channel, item["channel"])
+            self.assertFalse(item["is_enabled"])
+
+            items = {entry["channel"]: entry for entry in get_tg_channel_items()}
+            self.assertIn(channel, items)
+            self.assertFalse(items[channel]["is_enabled"])
+
+            self.assertTrue(save_tg_channel_health(channel, {
+                "success": False,
+                "message": "连接超时",
+                "latency_ms": 1200,
+                "count": 0,
+            }))
+
+            item = {entry["channel"]: entry for entry in get_tg_channel_items()}[channel]
+            self.assertFalse(item["is_enabled"])
+            self.assertEqual("error", item["health"]["status"])
+            self.assertEqual(1200, item["health"]["latency_ms"])
+
+            success, _ = set_tg_channel_enabled(channel, True)
+            self.assertTrue(success)
+            item = {entry["channel"]: entry for entry in get_tg_channel_items()}[channel]
+            self.assertTrue(item["is_enabled"])
+            self.assertEqual("error", item["health"]["status"])
+        finally:
+            delete_tg_channel(channel)
 
     # --- 插件配置与持久化测试 ---
 
