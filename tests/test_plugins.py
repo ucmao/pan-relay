@@ -61,23 +61,21 @@ class PluginSystemTest(unittest.TestCase):
         self.mgr.enable_plugin("dummy_test_plugin")
         self.assertTrue(self.dummy.is_enabled)
 
-    def test_plugin_search_all_and_error_isolation(self):
+    def test_plugin_search_and_error_isolation(self):
         self.dummy.is_enabled = True
-        with patch.object(self.mgr, "get_enabled_plugins", return_value=[self.dummy]):
-            results = self.mgr.search_all("繁花")
-            found = any("繁花 插件专属4K" in item.title for item in results)
-            self.assertTrue(found)
+        results = self.dummy.search("繁花")
+        found = any("繁花 插件专属4K" in item.title for item in results)
+        self.assertTrue(found)
 
-            safe_res = self.mgr.search_all("error")
-            self.assertIsInstance(safe_res, list)
+        with self.assertRaises(RuntimeError):
+            self.dummy.search("error")
 
-    @patch("src.services.search_service.search_telegram_resources", return_value=[])
-    @patch("src.services.search_service.read_all_api_configs_from_db", return_value=[])
-    def test_search_service_aggregation_includes_plugins(self, mock_apis, mock_tg):
-        with patch.object(self.mgr, "get_enabled_plugins", return_value=[self.dummy]):
-            success, msg, results = search_public_resources("繁花", limit=500)
-            self.assertTrue(success)
-            self.assertIsInstance(results, list)
+    @patch("src.services.search_service.iter_upstream_search_results")
+    def test_search_service_aggregation_includes_plugins(self, mock_upstreams):
+        mock_upstreams.return_value = iter([self.dummy.search("繁花")])
+        success, msg, results = search_public_resources("繁花", limit=500)
+        self.assertTrue(success)
+        self.assertIsInstance(results, list)
 
     def test_plugin_routes_api(self):
         resp = self.client.get("/api/plugins")

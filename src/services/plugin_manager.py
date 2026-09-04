@@ -1,13 +1,10 @@
-import concurrent.futures
 import importlib.util
 import inspect
 import logging
 import os
 import threading
-import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-from src.models.search_item import SearchResultItem
 from src.plugins.base_plugin import BasePlugin
 
 logger = logging.getLogger(__name__)
@@ -160,88 +157,6 @@ class PluginManager:
                     pass
                 return True
             return False
-
-
-    def search_all(self, keyword: str, max_workers: int = 6) -> List[SearchResultItem]:
-        """
-        并发调度所有已启用的插件执行搜索，并汇聚返回标准结果。
-        单插件异常或超时自动隔离，不影响整体流程。
-        """
-        enabled = self.get_enabled_plugins()
-        if not enabled or not keyword:
-            return []
-
-        all_results: List[SearchResultItem] = []
-        started_at: Dict[str, float] = {}
-        started_lock = threading.Lock()
-
-        def _do_search(plugin: BasePlugin) -> List[SearchResultItem]:
-            with started_lock:
-                started_at[plugin.name] = time.monotonic()
-            try:
-                logger.info(f"插件 [{plugin.name}] 开始搜索: {keyword}")
-                res = plugin.search(keyword)
-                logger.info(f"插件 [{plugin.name}] 搜索完成，找到 {len(res)} 条结果。")
-                return res
-            except Exception as err:
-                logger.error(f"插件 [{plugin.name}] 搜索异常: {err}")
-                return []
-
-        executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=min(max_workers, len(enabled)),
-            thread_name_prefix="plugin-search",
-        )
-        future_to_plugin = {executor.submit(_do_search, p): p for p in enabled}
-        pending = set(future_to_plugin)
-
-        try:
-            while pending:
-                now = time.monotonic()
-                with started_lock:
-                    deadlines = {
-                        future: started_at[plugin.name] + max(float(plugin.timeout), 0.1)
-                        for future, plugin in future_to_plugin.items()
-                        if future in pending and plugin.name in started_at
-                    }
-                expired = [future for future, deadline in deadlines.items() if deadline <= now]
-                for future in expired:
-                    plugin = future_to_plugin[future]
-                    future.cancel()
-                    pending.remove(future)
-                    logger.warning(
-                        "插件 [%s] 搜索超时 (限制: %.1fs)",
-                        plugin.name,
-                        plugin.timeout,
-                    )
-
-                if not pending:
-                    break
-
-                wait_timeout = (
-                    max(min(deadlines.values()) - time.monotonic(), 0.0)
-                    if deadlines else 0.05
-                )
-                done, _ = concurrent.futures.wait(
-                    pending,
-                    timeout=wait_timeout,
-                    return_when=concurrent.futures.FIRST_COMPLETED,
-                )
-                for future in done:
-                    pending.remove(future)
-                    plugin = future_to_plugin[future]
-                    try:
-                        results = future.result()
-                        if results:
-                            all_results.extend(results)
-                    except Exception as error:
-                        logger.error("处理插件 [%s] 结果时发生异常: %s", plugin.name, error)
-        finally:
-            for future in pending:
-                future.cancel()
-            executor.shutdown(wait=False, cancel_futures=True)
-
-        return all_results
-
 
 # 全局单例便捷访问
 plugin_manager = PluginManager()

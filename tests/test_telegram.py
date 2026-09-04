@@ -1,4 +1,5 @@
 import unittest
+import time
 from unittest.mock import Mock, patch
 import requests
 
@@ -114,22 +115,45 @@ class TelegramSearchServiceTest(unittest.TestCase):
 
 
 class TelegramSearchIntegrationTest(unittest.TestCase):
-    @patch("src.services.search_service.plugin_manager.search_all", return_value=[])
-    @patch("src.services.search_service.filter_results_by_frontend_netdisks", side_effect=lambda value: value)
-    @patch("src.services.search_service.search_telegram_resources")
+    @patch("src.services.search_service.plugin_manager.get_enabled_plugins", return_value=[])
+    @patch("src.services.search_service.search_telegram_channel")
+    @patch("src.services.search_service.get_enabled_channel_names", return_value=["slow_channel", "fast_channel"])
+    @patch(
+        "src.services.system_config_service.get_tg_search_config",
+        return_value={"enabled": True, "max_workers": 2, "timeout": 10, "proxy": ""},
+    )
     @patch("src.services.search_service.read_all_api_configs_from_db", return_value=[])
+    def test_upstream_iterator_yields_each_tg_channel_when_ready(
+        self,
+        _mock_configs,
+        _mock_tg_config,
+        _mock_channels,
+        mock_search_channel,
+        _mock_plugins,
+    ):
+        def search_channel(_keyword, channel, **_kwargs):
+            if channel == "slow_channel":
+                time.sleep(0.05)
+            return [["tg", channel, f"https://pan.quark.cn/s/{channel}", "夸克网盘"]]
+
+        mock_search_channel.side_effect = search_channel
+
+        results = list(search_service.iter_upstream_search_results("流浪地球"))
+        self.assertEqual("fast_channel", results[0][0][1])
+        self.assertEqual("slow_channel", results[1][0][1])
+
+    @patch("src.services.search_service.filter_results_by_frontend_netdisks", side_effect=lambda value: value)
+    @patch("src.services.search_service.iter_upstream_search_results")
     @patch("src.services.search_service.search_in_database", return_value=[])
     def test_public_search_includes_telegram_results(
         self,
         _mock_database,
-        _mock_configs,
-        mock_telegram,
+        mock_upstreams,
         _mock_filter,
-        _mock_plugins,
     ):
-        mock_telegram.return_value = [
+        mock_upstreams.return_value = iter([[
             ["tg", "流浪地球", "https://pan.quark.cn/s/abc123", "夸克网盘"]
-        ]
+        ]])
 
         success, _, results = search_service.search_public_resources("流浪地球")
         self.assertTrue(success)

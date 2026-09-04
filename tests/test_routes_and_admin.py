@@ -23,10 +23,7 @@ from src.services.telegram_channel_service import (
     save_tg_channel_health,
     set_tg_channel_enabled,
 )
-from src.services.telegram_search_service import (
-    search_telegram_resources,
-    test_telegram_connection,
-)
+from src.services.telegram_search_service import test_telegram_connection
 from src.utils.auth_utils import create_jwt_token
 from src.utils.test_keywords import build_test_keywords
 

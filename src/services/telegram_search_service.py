@@ -1,4 +1,3 @@
-import concurrent.futures
 import logging
 import re
 from html import unescape
@@ -495,59 +494,6 @@ def search_telegram_channel(keyword, channel, proxy=None, timeout=None, raise_on
         if raise_on_error:
             raise
         return []
-
-
-def search_telegram_resources(keyword):
-    """并发搜索配置的 Telegram 公开频道（优先使用数据库配置）。"""
-    try:
-        from src.db.telegram_channels import get_enabled_channel_names
-        from src.services.system_config_service import get_tg_search_config
-        cfg = get_tg_search_config()
-        is_enabled = cfg.get("enabled", TG_SEARCH_ENABLED)
-        channels = get_enabled_channel_names()
-        timeout = cfg.get("timeout", TG_SEARCH_TIMEOUT)
-        max_workers = cfg.get("max_workers", TG_SEARCH_MAX_WORKERS)
-        proxy = cfg.get("proxy", TG_PROXY)
-    except Exception:
-        is_enabled = TG_SEARCH_ENABLED
-        channels = []
-        timeout = TG_SEARCH_TIMEOUT
-        max_workers = TG_SEARCH_MAX_WORKERS
-        proxy = TG_PROXY
-
-    keyword = str(keyword or "").strip()
-    if not is_enabled or not keyword or not channels:
-        return []
-
-    workers = min(max_workers, len(channels))
-    results = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = [
-            executor.submit(search_telegram_channel, keyword, channel, proxy=proxy, timeout=timeout)
-            for channel in channels
-        ]
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                results.extend(future.result())
-            except Exception as err:
-                logger.warning("收集 Telegram 搜索结果失败: %s", err)
-
-    deduped = []
-    seen = set()
-    for item in results:
-        share_link = item.share_link if hasattr(item, "share_link") else item[2]
-        if share_link in seen:
-            continue
-        seen.add(share_link)
-        deduped.append(item)
-
-    logger.info(
-        "Telegram 搜索完成：关键词 '%s'，频道 %d 个，资源 %d 条。",
-        keyword,
-        len(channels),
-        len(deduped),
-    )
-    return deduped
 
 
 def test_telegram_connection(

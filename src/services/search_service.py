@@ -16,7 +16,8 @@ from src.models.search_item import SearchResultItem
 from src.services.plugin_manager import plugin_manager
 from src.services.sensitive_word_service import check_input_keyword, filter_search_results
 from src.services.system_config_service import get_allowed_frontend_netdisks
-from src.services.telegram_search_service import search_telegram_resources
+from src.services.telegram_search_service import search_telegram_channel
+from src.db.telegram_channels import get_enabled_channel_names
 from src.utils.netdisk_utils import (
     match_netdisk_link,
     extract_canonical_resource_key,
@@ -276,6 +277,89 @@ def process_config(config, keyword):
     return final_results
 
 
+def _search_plugin(plugin, keyword):
+    """执行单个插件搜索，避免一个插件失败中断其他检索源。"""
+    try:
+        logger.info("插件 [%s] 开始搜索: %s", plugin.name, keyword)
+        results = plugin.search(keyword)
+        logger.info("插件 [%s] 搜索完成，找到 %d 条结果。", plugin.name, len(results))
+        return results
+    except Exception as error:
+        logger.error("插件 [%s] 搜索异常: %s", plugin.name, error)
+        return []
+
+
+def iter_upstream_search_results(keyword):
+    """按单个上游完成顺序产出 API、Telegram 频道和插件的搜索结果。"""
+    from src.services.system_config_service import get_tg_search_config
+
+    api_configs = [
+        config
+        for config in read_all_api_configs_from_db()
+        if config.get("is_enabled", False)
+    ]
+    api_configs.sort(key=lambda config: config.get("response_time_ms") or 9999)
+    api_configs = replace_keyword_in_config(api_configs, "[[keyword]]", keyword)
+
+    tg_config = get_tg_search_config()
+    tg_channels = get_enabled_channel_names() if tg_config.get("enabled", True) else []
+    tg_workers = min(max(int(tg_config.get("max_workers", 4)), 1), len(tg_channels))
+    tg_timeout = max(int(tg_config.get("timeout", 10)), 1)
+    tg_proxy = tg_config.get("proxy") or None
+
+    plugins = plugin_manager.get_enabled_plugins()
+
+    executors = []
+    future_types = {}
+    try:
+        if api_configs:
+            api_executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=min(8, len(api_configs)), thread_name_prefix="api-search"
+            )
+            executors.append(api_executor)
+            for config in api_configs:
+                future_types[api_executor.submit(process_config, config, keyword)] = "API"
+
+        if tg_channels:
+            tg_executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=tg_workers, thread_name_prefix="tg-search"
+            )
+            executors.append(tg_executor)
+            for channel in tg_channels:
+                future_types[
+                    tg_executor.submit(
+                        search_telegram_channel,
+                        keyword,
+                        channel,
+                        proxy=tg_proxy,
+                        timeout=tg_timeout,
+                    )
+                ] = f"Telegram @{channel}"
+
+        if plugins:
+            plugin_executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=min(6, len(plugins)), thread_name_prefix="plugin-search"
+            )
+            executors.append(plugin_executor)
+            for plugin in plugins:
+                future_types[plugin_executor.submit(_search_plugin, plugin, keyword)] = f"插件 {plugin.name}"
+
+        pending = set(future_types)
+        while pending:
+            done, pending = concurrent.futures.wait(
+                pending, return_when=concurrent.futures.FIRST_COMPLETED
+            )
+            for future in done:
+                source_name = future_types[future]
+                try:
+                    yield future.result()
+                except Exception as error:
+                    logger.error("%s 搜索任务异常: %s", source_name, error)
+    finally:
+        for executor in executors:
+            executor.shutdown(wait=False, cancel_futures=True)
+
+
 def search_in_database(keyword):
     """
     从内部数据库搜索，并新增网盘信息。
@@ -385,40 +469,12 @@ def generate_search_stream_events(keyword):
         if db_results:
             yield json.dumps({"type": "initial", "results": _serialize_items(db_results)})
 
-        urls_config = read_all_api_configs_from_db()
-        enabled_configs = [c for c in urls_config if c.get("is_enabled", False)]
-
-        enabled_configs.sort(key=lambda x: x.get("response_time_ms") or 9999)
-
-        enabled_urls = [c["url"] for c in enabled_configs]
-        logger.info(f"本次搜索启用的 API 数量: {len(enabled_urls)} 个。")
-        logger.info(f"启用的 API URL 列表: {enabled_urls}")
-
-        urls_config_search = replace_keyword_in_config(enabled_configs, "[[keyword]]", keyword)
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            futures = [executor.submit(process_config, config, keyword) for config in urls_config_search]
-            futures.append(executor.submit(search_telegram_resources, keyword))
-            futures.append(executor.submit(plugin_manager.search_all, keyword))
-            pending_futures = set(futures)
-
-            while pending_futures:
-                done, pending_futures = concurrent.futures.wait(
-                    pending_futures, timeout=None, return_when=concurrent.futures.FIRST_COMPLETED
-                )
-
-                for future in done:
-                    try:
-                        results = future.result()
-                        results = filter_results_by_frontend_netdisks(results)
-                        results = filter_search_results(results)
-                        results = _dedupe_stream_chunk(results)
-                        if results:
-                            yield json.dumps({"type": "update", "results": _serialize_items(results)})
-                    except Exception as e:
-                        logger.error(f"SSE 收集结果时发生异常: {e}")
-
-                time.sleep(0.01)
+        for results in iter_upstream_search_results(keyword):
+            results = filter_results_by_frontend_netdisks(results)
+            results = filter_search_results(results)
+            results = _dedupe_stream_chunk(results)
+            if results:
+                yield json.dumps({"type": "update", "results": _serialize_items(results)})
 
         # 搜索完成，将所有去重并排序后的最终结果加入 TTL 缓存
         final_stream_items = sort_search_results(list(seen_items_map.values()), keyword=keyword)
@@ -727,22 +783,9 @@ def search_public_resources(keyword="", limit=100):
     db_results = search_in_database(keyword)
     aggregated_results.extend(filter_results_by_frontend_netdisks(db_results))
 
-    urls_config = read_all_api_configs_from_db()
-    enabled_configs = [c for c in urls_config if c.get("status", False) and c.get("is_enabled", False)]
-    enabled_configs.sort(key=lambda x: x.get("response_time_ms", 9999))
-    urls_config_search = replace_keyword_in_config(enabled_configs, "[[keyword]]", keyword)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        futures = [executor.submit(process_config, config, keyword) for config in urls_config_search]
-        futures.append(executor.submit(search_telegram_resources, keyword))
-        futures.append(executor.submit(plugin_manager.search_all, keyword))
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                results = future.result()
-                if results:
-                    aggregated_results.extend(filter_results_by_frontend_netdisks(results))
-            except Exception as err:
-                logger.error(f"公开聚合接口收集结果时发生异常: {err}")
+    for results in iter_upstream_search_results(keyword):
+        if results:
+            aggregated_results.extend(filter_results_by_frontend_netdisks(results))
 
     # 敏感词过滤、去重与排序
     aggregated_results = filter_search_results(aggregated_results)
