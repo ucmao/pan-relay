@@ -399,8 +399,7 @@ def generate_search_stream_events(keyword):
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             futures = [executor.submit(process_config, config, keyword) for config in urls_config_search]
             futures.append(executor.submit(search_telegram_resources, keyword))
-            for plugin in plugin_manager.get_enabled_plugins():
-                futures.append(executor.submit(plugin.search, keyword))
+            futures.append(executor.submit(plugin_manager.search_all, keyword))
             pending_futures = set(futures)
 
             while pending_futures:

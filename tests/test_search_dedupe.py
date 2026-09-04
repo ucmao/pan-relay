@@ -138,7 +138,7 @@ class SearchDeduplicationTest(unittest.TestCase):
         self.assertEqual("PikPak", match_netdisk_link("https://mypikpak.com/s/abc"))
         self.assertEqual("移动云盘", match_netdisk_link("https://caiyun.feixin.10086.cn/abc"))
 
-        self.assertEqual(20, len(FRONTEND_DISPLAY_NETDISK_OPTIONS) - 1)  # 不算"其他"共20种
+        self.assertEqual(26, len(FRONTEND_DISPLAY_NETDISK_OPTIONS) - 1)  # 不算"其他"共26种
 
     def test_extract_password_from_url(self):
         self.assertEqual("1234", extract_password_from_url("https://pan.baidu.com/s/xxx?pwd=1234"))

@@ -46,7 +46,14 @@ DEFAULT_DISABLED_TG_CHANNELS = (
 
 # 插件首次初始化状态；由发布前健康检测脚本同步。
 DEFAULT_PLUGIN_SETTINGS = {
+    'hunhepan': False,
+    'ikantv': False,
+    'nyaa': False,
+    'ouge': False,
+    'quark4k': False,
+    'quarksoo': False,
     'sample_scraper': False,
+    'yunso': False,
 }
 TG_CHANNELS = [
     channel.strip().lstrip("@").strip("/")

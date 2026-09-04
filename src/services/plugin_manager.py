@@ -4,6 +4,7 @@ import inspect
 import logging
 import os
 import threading
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.models.search_item import SearchResultItem
@@ -47,10 +48,10 @@ class PluginManager:
             return
 
         with self._plugin_lock:
-            for filename in os.listdir(plugin_dir):
-                if not filename.endswith(".py"):
+            for filename in sorted(os.listdir(plugin_dir)):
+                if not filename.endswith("_plugin.py"):
                     continue
-                if filename in ("__init__.py", "base_plugin.py"):
+                if filename == "http_plugin.py":
                     continue
 
                 filepath = os.path.join(plugin_dir, filename)
@@ -69,6 +70,7 @@ class PluginManager:
                             inspect.isclass(attr)
                             and issubclass(attr, BasePlugin)
                             and attr is not BasePlugin
+                            and attr.__module__ == module.__name__
                         ):
                             try:
                                 instance = attr()
@@ -154,7 +156,7 @@ class PluginManager:
             return False
 
 
-    def search_all(self, keyword: str, max_workers: int = 4) -> List[SearchResultItem]:
+    def search_all(self, keyword: str, max_workers: int = 6) -> List[SearchResultItem]:
         """
         并发调度所有已启用的插件执行搜索，并汇聚返回标准结果。
         单插件异常或超时自动隔离，不影响整体流程。
@@ -175,18 +177,56 @@ class PluginManager:
                 logger.error(f"插件 [{plugin.name}] 搜索异常: {err}")
                 return []
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_plugin = {executor.submit(_do_search, p): p for p in enabled}
-            for future in concurrent.futures.as_completed(future_to_plugin):
-                p = future_to_plugin[future]
-                try:
-                    res = future.result(timeout=p.timeout + 1.0)
-                    if res:
-                        all_results.extend(res)
-                except concurrent.futures.TimeoutError:
-                    logger.warning(f"插件 [{p.name}] 搜索超时 (限制: {p.timeout}s)")
-                except Exception as e:
-                    logger.error(f"处理插件 [{p.name}] 结果时发生异常: {e}")
+        executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=min(max_workers, len(enabled)),
+            thread_name_prefix="plugin-search",
+        )
+        future_to_plugin = {executor.submit(_do_search, p): p for p in enabled}
+        deadlines = {
+            future: time.monotonic() + max(float(plugin.timeout), 0.1)
+            for future, plugin in future_to_plugin.items()
+        }
+        pending = set(future_to_plugin)
+
+        try:
+            while pending:
+                now = time.monotonic()
+                expired = [future for future in pending if deadlines[future] <= now]
+                for future in expired:
+                    plugin = future_to_plugin[future]
+                    future.cancel()
+                    pending.remove(future)
+                    logger.warning(
+                        "插件 [%s] 搜索超时 (限制: %.1fs)",
+                        plugin.name,
+                        plugin.timeout,
+                    )
+
+                if not pending:
+                    break
+
+                wait_timeout = max(
+                    min(deadlines[future] for future in pending) - time.monotonic(),
+                    0.0,
+                )
+                done, _ = concurrent.futures.wait(
+                    pending,
+                    timeout=wait_timeout,
+                    return_when=concurrent.futures.FIRST_COMPLETED,
+                )
+                for future in done:
+                    pending.remove(future)
+                    plugin = future_to_plugin[future]
+                    try:
+                        results = future.result()
+                        if results:
+                            all_results.extend(results)
+                    except Exception as error:
+                        logger.error("处理插件 [%s] 结果时发生异常: %s", plugin.name, error)
+        finally:
+            for future in pending:
+                future.cancel()
+            executor.shutdown(wait=False, cancel_futures=True)
 
         return all_results
 
