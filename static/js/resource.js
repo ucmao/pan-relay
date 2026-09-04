@@ -53,22 +53,34 @@ const batchTransferResourceBtn = document.getElementById('batchTransferResourceB
 function matchNetdiskLink(link) {
     if (!link) return "其他";
     const netdiskRules = [
-        // 网盘
+        // 国内主流网盘
         ["百度网盘", /(?:https?:\/\/)?(?:pan\.baidu\.com|bdpan\.com|baiduyun\.com)\//i],
         ["夸克网盘", /(?:https?:\/\/)?pan\.quark\.cn\//i],
+        ["阿里云盘", /(?:https?:\/\/)?(?:drive\.aliyun\.com|aliyundrive\.com|alipan\.com)\//i],
         ["迅雷网盘", /(?:https?:\/\/)?pan\.xunlei\.com\//i],
         ["UC网盘", /(?:https?:\/\/)?(?:pan\.uc\.cn|drive\.uc\.cn)\//i],
+        ["123云盘", /(?:https?:\/\/)?(?:123pan\.(?:com|cn)|123\d{3}\.(?:com|cn))\//i],
+        ["115网盘", /(?:https?:\/\/)?(?:115\.com|115pan\.com|115cdn\.com|anxia\.com)\//i],
+        // 运营商云盘
+        ["天翼云盘", /(?:https?:\/\/)?cloud\.189\.cn\//i],
+        ["移动云盘", /(?:https?:\/\/)?(?:pan\.10086\.cn|caiyun\.139\.com|yun\.139\.com|caiyun\.feixin\.10086\.cn)\//i],
+        ["联通云盘", /(?:https?:\/\/)?pan\.wo\.cn\//i],
+        // 国内特色/小众网盘
+        ["蓝奏云", /(?:https?:\/\/)?(?:www\.)?(?:lanzou[uixys]*|lan[zs]o[ux])\.(?:com|net|org)\//i],
+        ["城通网盘", /(?:https?:\/\/)?(?:www\.)?(?:ctfile|pipipan|400gb|t004)\.(?:com|cn)\//i],
+        ["腾讯微云", /(?:https?:\/\/)?(?:www\.)?weiyun\.com\//i],
+        ["坚果云", /(?:https?:\/\/)?(?:www\.)?jianguoyun\.com\//i],
         ["悟空网盘", /(?:https?:\/\/)?pan\.wkbrowser\.com\//i],
         ["快兔网盘", /(?:https?:\/\/)?(?:diskyun\.com|www\.diskyun\.com)\//i],
-        ["115网盘", /(?:https?:\/\/)?(?:115\.com|115pan\.com|115cdn\.com|anxia\.com)\//i],
-        // 云盘
-        ["阿里云盘", /(?:https?:\/\/)?(?:drive\.aliyun\.com|aliyundrive\.com|alipan\.com)\//i],
-        ["天翼云盘", /(?:https?:\/\/)?cloud\.189\.cn\//i],
-        ["移动云盘", /(?:https?:\/\/)?(?:pan\.10086\.cn|caiyun\.139\.com|yun\.139\.com)\//i],
-        ["联通云盘", /(?:https?:\/\/)?pan\.wo\.cn\//i],
-        ["123云盘", /(?:https?:\/\/)?(?:123pan\.com|123\d{3}\.com)\//i],
-        // 其他
-        ["PikPak", /(?:https?:\/\/)?(?:www\.)?pikpak\.com\//i],
+        ["光鸭云盘", /(?:https?:\/\/)?(?:www\.)?guangyapan\.com\//i],
+        // 海外及跨境网盘
+        ["TeraBox", /(?:https?:\/\/)?(?:www\.)?(?:terabox|teraboxapp|1024tera|freeterabox)\.(?:com|app)\//i],
+        ["Google Drive", /(?:https?:\/\/)?(?:drive|docs)\.google\.com\//i],
+        ["MEGA", /(?:https?:\/\/)?mega\.(?:nz|co\.nz)\//i],
+        ["GoFile", /(?:https?:\/\/)?(?:www\.)?gofile\.io\//i],
+        ["OneDrive", /(?:https?:\/\/)?(?:1drv\.ms|(?:[\w-]+\.)?onedrive\.live\.com|[\w-]+\.sharepoint\.com)\//i],
+        ["PikPak", /(?:https?:\/\/)?(?:www\.)?(?:pikpak|mypikpak|pikpakdrive)\.com\//i],
+        // P2P 下载与协议链接
         ["磁力链接", /^magnet:\?xt=urn:btih:/i],
         ["迅雷链接", /thunder:\/\/[A-Za-z0-9+\/=]+/i],
         ["电驴链接", /^ed2k:\/\//i]

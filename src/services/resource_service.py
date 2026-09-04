@@ -30,6 +30,10 @@ def add_resource_and_share(resource_data: dict):
     if not resource_data.get("name") or not resource_data.get("share_link"):
         return False, "标题和分享链接为必填项", None
 
+    if not resource_data.get("cloud_name"):
+        from src.utils.netdisk_utils import match_netdisk_link
+        resource_data["cloud_name"] = match_netdisk_link(resource_data["share_link"])
+
     # 向数据库插入资源
     success, message, new_id = insert_resource_simple(resource_data)
     if not success:
@@ -66,6 +70,10 @@ def update_resource_info(resource_id: int, resource_data: dict):
     """更新资源信息（标题、云盘名称、类型和备注）"""
     if not resource_data.get("name"):
         return False, "标题为必填项"
+
+    if resource_data.get("share_link") and not resource_data.get("cloud_name"):
+        from src.utils.netdisk_utils import match_netdisk_link
+        resource_data["cloud_name"] = match_netdisk_link(resource_data["share_link"])
 
     return update_resource_basic_info(resource_id, resource_data)
 

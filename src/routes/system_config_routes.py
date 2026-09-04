@@ -460,11 +460,17 @@ def test_all_tg_channels_api():
             results.append(result)
 
     healthy_count = sum(1 for result in results if result.get("success"))
+    total = len(results)
+    failed_count = total - healthy_count
     return jsonify({
         "success": True,
-        "message": f"检测完成：{healthy_count}/{len(results)} 个频道可连通",
+        "message": f"检测完成：{healthy_count}/{total} 个频道可连通",
+        "total": total,
+        "healthy_count": healthy_count,
+        "failed_count": failed_count,
         "results": results,
     })
+
 
 
 @system_config_bp.route("/admin/api/tg-search-config/test", methods=["POST"])

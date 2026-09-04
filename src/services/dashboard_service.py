@@ -107,10 +107,10 @@ def get_dashboard_summary() -> Dict[str, Any]:
                 cursor.execute("SELECT COUNT(*) AS enabled FROM api_config WHERE is_enabled = 1")
                 summary["sources"]["api"]["enabled_count"] = cursor.fetchone()["enabled"]
 
-                cursor.execute("SELECT COUNT(*) AS healthy FROM api_config WHERE status = 1")
+                cursor.execute("SELECT COUNT(*) AS healthy FROM api_config WHERE status = 'healthy'")
                 summary["sources"]["api"]["healthy_count"] = cursor.fetchone()["healthy"]
 
-                cursor.execute("SELECT COUNT(*) AS unhealthy FROM api_config WHERE status = 0")
+                cursor.execute("SELECT COUNT(*) AS unhealthy FROM api_config WHERE status = 'unhealthy'")
                 summary["sources"]["api"]["unhealthy_count"] = cursor.fetchone()["unhealthy"]
 
                 cursor.execute(

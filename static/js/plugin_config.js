@@ -33,7 +33,7 @@ async function loadPlugins() {
         if (currentPluginsData.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="9" class="text-center text-muted py-5">
+                    <td colspan="8" class="text-center text-muted py-5">
                         <i class="fas fa-puzzle-piece fa-2x mb-2 text-secondary d-block"></i>
                         暂未发现任何插件。请在 <code>src/plugins/</code> 目录下创建继承自 <code>BasePlugin</code> 的 Python 模块。
                     </td>
@@ -68,6 +68,7 @@ async function loadPlugins() {
 
             const latencyMs = Number(health.latency_ms);
             const latencyDisplay = latencyMs > 0 ? `${latencyMs} ms` : '--';
+            const checkedAtDisplay = formatPluginCheckedAt(health.checked_at);
 
             const toggleClass = isEnabled ? 'btn-success' : 'btn-danger';
             const toggleIcon = isEnabled ? 'fa-toggle-on' : 'fa-toggle-off';
@@ -77,16 +78,13 @@ async function loadPlugins() {
             return `
                 <tr>
                     <td class="text-center text-muted align-middle">${idx + 1}</td>
-                    <td class="text-center align-middle" id="statusBadge-${escapeHtml(p.name)}">${statusBadge}</td>
-                    <td class="text-center align-middle">${healthBadge}</td>
-                    <td class="align-middle">
-                        <span class="plugin-code-tag">${escapeHtml(p.name)}</span>
-                    </td>
                     <td class="align-middle">
                         <strong class="text-dark">${escapeHtml(p.display_name || p.name)}</strong>
                     </td>
+                    <td class="text-center align-middle" id="statusBadge-${escapeHtml(p.name)}">${statusBadge}</td>
+                    <td class="text-center align-middle">${healthBadge}</td>
                     <td class="text-center align-middle font-mono text-xs">${latencyDisplay}</td>
-                    <td class="text-center align-middle text-muted small">${p.timeout || 6.0}s</td>
+                    <td class="text-center align-middle text-xs text-slate-500">${checkedAtDisplay}</td>
                     <td class="align-middle text-muted small text-break" style="max-width: 260px;">
                         ${escapeHtml(p.description || '无说明')}
                     </td>
@@ -109,7 +107,7 @@ async function loadPlugins() {
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="10" class="text-center text-danger py-4">
+                    <td colspan="8" class="text-center text-danger py-4">
                         <i class="fas fa-exclamation-circle me-1"></i> 加载插件数据失败: ${escapeHtml(err.message)}
                     </td>
                 </tr>
@@ -117,6 +115,12 @@ async function loadPlugins() {
         }
         showToast(`加载插件失败: ${err.message}`, 'danger');
     }
+}
+
+function formatPluginCheckedAt(value) {
+    if (!value) return '--';
+    const date = new Date(String(value).replace(' ', 'T'));
+    return Number.isNaN(date.getTime()) ? '--' : date.toLocaleString('zh-CN', { hour12: false });
 }
 
 async function togglePlugin(pluginName, isEnabled) {
@@ -205,8 +209,13 @@ async function disableAllPlugins() {
 async function testAllPlugins() {
     if (!(await showConfirm('确定要测试所有 Python 插件扩展吗？', 'primary', '批量测试确认'))) return;
     const btn = document.getElementById('testAllPluginsButton');
-    if (btn) btn.disabled = true;
-    showToast('正在探测所有插件健康度...', 'info');
+    let originalHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> 检测中...';
+    }
+    showToast('正在并发探测所有插件健康度...', 'info');
     try {
         const response = await fetch('/admin/api/plugins/test-all', {
             method: 'POST',
@@ -216,12 +225,16 @@ async function testAllPlugins() {
         if (!data.success) {
             throw new Error(data.message || '全部测试失败');
         }
-        showToast(data.message || '全部插件检测完成', 'success');
+        const toastType = (data.failed_count && data.failed_count > 0) ? 'warning' : 'success';
+        showToast(data.message || '全部插件检测完成', toastType);
         await loadPlugins();
     } catch (err) {
         showToast(`全部测试失败: ${err.message}`, 'danger');
     } finally {
-        if (btn) btn.disabled = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 }
 

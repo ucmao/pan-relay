@@ -120,12 +120,12 @@
             return `
                 <tr class="${rowClass}">
                     <td class="text-center">${index + 1}</td>
-                    <td class="text-center">${enableBadge}</td>
-                    <td class="text-center">${healthBadge}</td>
+                    <td class="font-medium text-slate-800 text-xs">${title}</td>
                     <td>
                         <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-blue-600 hover:text-blue-700">@${channel}</a>
                     </td>
-                    <td class="font-medium text-slate-800 text-xs">${title}</td>
+                    <td class="text-center">${enableBadge}</td>
+                    <td class="text-center">${healthBadge}</td>
                     <td class="text-center">${latency}</td>
                     <td class="text-center text-xs text-slate-500">${formatCheckedAt(health.checked_at)}</td>
                     <td class="action-buttons text-center">
@@ -308,18 +308,27 @@
     async function testAllTgChannels() {
         if (!(await showConfirm('确定要检测全部 Telegram 频道吗？', 'primary', '批量检测确认'))) return;
         const button = document.getElementById('testAllTgChannelsButton');
-        if (button) button.disabled = true;
+        let originalHtml = '';
+        if (button) {
+            button.disabled = true;
+            originalHtml = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> 检测中...';
+        }
         showToast?.('正在并发检测全部 Telegram 频道，请稍候...', 'info');
         try {
             const data = await readJson(await fetch('/admin/api/tg-channels/test-all', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
             }));
-            showToast?.(data.message, 'success');
+            const toastType = (data.failed_count && data.failed_count > 0) ? 'warning' : 'success';
+            showToast?.(data.message || 'Telegram 频道检测完成', toastType);
             await loadTgSearchConfig();
         } catch (error) {
             showToast?.(`全部检测失败：${error.message}`, 'danger');
         } finally {
-            if (button) button.disabled = false;
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            }
         }
     }
 

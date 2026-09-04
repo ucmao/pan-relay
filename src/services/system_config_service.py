@@ -326,12 +326,14 @@ def init_default_search_sources():
     若数据库已有配置，则保留数据库现有设置，不覆盖用户的修改或自动禁用状态。
     """
     from src.configs.app_config import (
-        TG_CHANNELS,
         TG_PROXY,
         TG_SEARCH_TIMEOUT,
         TG_SEARCH_MAX_WORKERS,
-        TG_DISABLED_CHANNELS,
-        DEFAULT_PLUGIN_SETTINGS,
+    )
+    from src.configs.preset_loader import (
+        load_preset_api_configs,
+        load_preset_tg_channels,
+        load_preset_plugin_settings,
     )
 
     # 1. 首次初始化 TG 全局设置与频道表
@@ -344,34 +346,50 @@ def init_default_search_sources():
             "max_workers": TG_SEARCH_MAX_WORKERS,
         })
         try:
-            from src.configs.app_config import DEFAULT_TG_CHANNEL_TITLES
             from src.db.telegram_channels import seed_channels
-            seeded_count = seed_channels(TG_CHANNELS, TG_DISABLED_CHANNELS, DEFAULT_TG_CHANNEL_TITLES)
+            preset_channels = load_preset_tg_channels()
+            seeded_count = seed_channels(preset_channels)
             if seeded_count:
-                logger.info("已写入 %d 个默认 TG 频道。", seeded_count)
+                logger.info("已从 tg_channels_preset.json 写入 %d 个默认 TG 频道。", seeded_count)
         except Exception as error:
             logger.warning("初始化 TG 频道失败: %s", error)
 
-    # 2. 首次初始化 API 接口至 api_config（若表为空）
+    # 2. 首次初始化 API 接口至 api_config（若表为空时从 api_configs_preset.json 导入）
     try:
         from src.db.connection import db_cursor
         with db_cursor() as cursor:
             if cursor:
                 cursor.execute("SELECT count(*) FROM api_config;")
                 row = cursor.fetchone()
-                if row and (row[0] if isinstance(row, tuple) else row.get("count(*)", 0)) == 0:
-                    cursor.execute("UPDATE api_config SET is_enabled = 1;")
-                    logger.info("已完成全量 API 接口默认开启写入。")
+                count = row[0] if isinstance(row, tuple) else row.get("count(*)", 0)
+                if count == 0:
+                    preset_apis = load_preset_api_configs()
+                    for item in preset_apis:
+                        cursor.execute(
+                            "INSERT OR IGNORE INTO api_config (name, url, method, request, response, status, response_time_ms, is_enabled) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                            (
+                                item.get("name"),
+                                item.get("url"),
+                                item.get("method", "get"),
+                                item.get("request", ""),
+                                item.get("response", ""),
+                                item.get("status", "unknown"),
+                                int(item.get("response_time_ms", 0)),
+                                1 if item.get("is_enabled") else 0,
+                            ),
+                        )
+                    logger.info("已从 api_configs_preset.json 成功导入 %d 个默认 API 接口。", len(preset_apis))
     except Exception as e:
         logger.warning(f"初始化 API 接口状态失败: {e}")
 
-    # 3. 首次初始化插件状态至 plugin_settings，使用发布前健康检测生成的默认值。
+    # 3. 首次初始化插件状态至 plugin_settings
     current_plugins = get_config_value(PLUGIN_SETTINGS_KEY)
     if not current_plugins:
         try:
+            default_plugin_settings = load_preset_plugin_settings()
             settings = {
                 name: {"is_enabled": bool(is_enabled)}
-                for name, is_enabled in DEFAULT_PLUGIN_SETTINGS.items()
+                for name, is_enabled in default_plugin_settings.items()
             }
             set_config_value(PLUGIN_SETTINGS_KEY, settings)
             enabled_count = sum(1 for item in settings.values() if item["is_enabled"])

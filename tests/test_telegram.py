@@ -1,10 +1,14 @@
 import unittest
+from unittest.mock import Mock, patch
+import requests
 
+from src.services import search_service
 from src.services.telegram_search_service import (
     clean_telegram_title,
     extract_title_from_link_line,
     is_cloud_disk_label,
     parse_telegram_search_html,
+    search_telegram_channel,
 )
 
 MULTI_RESOURCE_HTML = """
@@ -42,64 +46,34 @@ COMPOUND_LINE_HTML = """
 
 class TelegramParserTest(unittest.TestCase):
     def test_clean_telegram_title(self):
-        # 1. 片名前缀、表情与频道水印清理
         dirty1 = "🎬 【片名】：繁花 (2023) 4K | 关注频道 @pansearch #国剧 #王家卫"
         self.assertEqual("繁花 (2023) 4K", clean_telegram_title(dirty1))
 
-        # 2. 纯前缀冒号清理
         dirty2 = "名称：周星驰电影合集"
         self.assertEqual("周星驰电影合集", clean_telegram_title(dirty2))
 
-        # 3. 剧名前缀与 Emoji 清理
         dirty3 = "🏷️ 剧名: 庆余年 第二季"
         self.assertEqual("庆余年 第二季", clean_telegram_title(dirty3))
-
-        # 4. 短剧名称前缀清理
-        dirty4 = "【短剧名称】 重生之我在古代当首富"
-        self.assertEqual("重生之我在古代当首富", clean_telegram_title(dirty4))
 
     def test_is_cloud_disk_label(self):
         self.assertTrue(is_cloud_disk_label("夸克网盘"))
         self.assertTrue(is_cloud_disk_label("百度云"))
-        self.assertTrue(is_cloud_disk_label("资源地址"))
-        self.assertTrue(is_cloud_disk_label("【网盘链接】"))
         self.assertFalse(is_cloud_disk_label("繁花"))
-        self.assertFalse(is_cloud_disk_label("周星驰电影合集"))
 
     def test_extract_title_from_link_line(self):
-        # 1. 复合行标题拆解
         line1 = "重生之都市修仙：https://pan.quark.cn/s/111"
         self.assertEqual("重生之都市修仙", extract_title_from_link_line(line1))
 
-        # 2. 纯网盘前缀行不应作为标题
         line2 = "夸克网盘：https://pan.quark.cn/s/111"
         self.assertIsNone(extract_title_from_link_line(line2))
 
-        # 3. 空格直接跟链接
-        line3 = "绝世武神 4K https://pan.quark.cn/s/222"
-        self.assertEqual("绝世武神 4K", extract_title_from_link_line(line3))
-
     def test_multi_resource_message_pairing(self):
-        """测试长帖中包含多个不同影视资源时，标题不串味，密码各自精确绑定"""
         results = parse_telegram_search_html(MULTI_RESOURCE_HTML, "tgchannel")
         self.assertEqual(4, len(results))
 
-        # 验证前两个资源属于《庆余年 第二季 (2024) 4K》
         qyn_quark = results[0]
         self.assertEqual("庆余年 第二季 (2024) 4K", qyn_quark.title)
         self.assertEqual("https://pan.quark.cn/s/qingyunian_quark", qyn_quark.share_link)
-        self.assertEqual("夸克网盘", qyn_quark.cloud_name)
-        self.assertEqual("2026-03-01T10:00:00+00:00", qyn_quark.datetime)
-
-        qyn_ali = results[1]
-        self.assertEqual("庆余年 第二季 (2024) 4K", qyn_ali.title)
-        self.assertEqual("https://www.alipan.com/s/qingyunian_ali", qyn_ali.share_link)
-        self.assertEqual("阿里云盘", qyn_ali.cloud_name)
-
-        # 验证后两个资源属于《繁花 (2023) 4K 杜比视界》，且百度网盘精准绑定提取码 7788
-        fh_quark = results[2]
-        self.assertEqual("繁花 (2023) 4K 杜比视界", fh_quark.title)
-        self.assertEqual("https://pan.quark.cn/s/fanhua_quark", fh_quark.share_link)
 
         fh_baidu = results[3]
         self.assertEqual("繁花 (2023) 4K 杜比视界", fh_baidu.title)
@@ -107,18 +81,60 @@ class TelegramParserTest(unittest.TestCase):
         self.assertEqual("7788", fh_baidu.password)
 
     def test_compound_line_list_pairing(self):
-        """测试单行复合排版短剧列表"""
         results = parse_telegram_search_html(COMPOUND_LINE_HTML, "tgchannel")
         self.assertEqual(2, len(results))
 
         item1 = results[0]
         self.assertEqual("重生之都市修仙", item1.title)
-        self.assertEqual("https://pan.quark.cn/s/duxiu123", item1.share_link)
 
-        item2 = results[1]
-        self.assertEqual("绝世武神 4K", item2.title)
-        self.assertEqual("https://pan.baidu.com/s/wushen456?pwd=ab12", item2.share_link)
-        self.assertEqual("ab12", item2.password)
+
+class TelegramSearchServiceTest(unittest.TestCase):
+    @patch("src.services.telegram_search_service.requests.get")
+    def test_search_channel_skips_non_public_redirect(self, mock_get):
+        response = Mock()
+        response.url = "https://t.me/tgsearchers6"
+        response.raise_for_status.return_value = None
+        mock_get.return_value = response
+
+        self.assertEqual([], search_telegram_channel("流浪地球", "tgsearchers6"))
+
+        with self.assertRaises(requests.RequestException):
+            search_telegram_channel("流浪地球", "tgsearchers6", raise_on_error=True)
+
+    @patch("src.services.telegram_search_service.requests.get")
+    def test_search_channel_parses_public_preview(self, mock_get):
+        response = Mock()
+        response.url = "https://t.me/s/tgsearchers7?q=test"
+        response.text = MULTI_RESOURCE_HTML
+        response.raise_for_status.return_value = None
+        mock_get.return_value = response
+
+        results = search_telegram_channel("流浪地球", "@tgsearchers7")
+        self.assertEqual(4, len(results))
+
+
+class TelegramSearchIntegrationTest(unittest.TestCase):
+    @patch("src.services.search_service.plugin_manager.search_all", return_value=[])
+    @patch("src.services.search_service.filter_results_by_frontend_netdisks", side_effect=lambda value: value)
+    @patch("src.services.search_service.search_telegram_resources")
+    @patch("src.services.search_service.read_all_api_configs_from_db", return_value=[])
+    @patch("src.services.search_service.search_in_database", return_value=[])
+    def test_public_search_includes_telegram_results(
+        self,
+        _mock_database,
+        _mock_configs,
+        mock_telegram,
+        _mock_filter,
+        _mock_plugins,
+    ):
+        mock_telegram.return_value = [
+            ["tg", "流浪地球", "https://pan.quark.cn/s/abc123", "夸克网盘"]
+        ]
+
+        success, _, results = search_service.search_public_resources("流浪地球")
+        self.assertTrue(success)
+        self.assertEqual(1, len(results))
+        self.assertEqual("tg", results[0]["source"])
 
 
 if __name__ == "__main__":

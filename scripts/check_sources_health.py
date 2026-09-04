@@ -48,99 +48,55 @@ def _sql_literal(value: Any) -> str:
     return "'" + str(value).replace("'", "''") + "'"
 
 
-def sync_api_defaults(schema_path: str, api_configs: List[Dict[str, Any]]) -> None:
-    """把当前数据库中的 API 配置和健康状态写回首次初始化 SQL。"""
-    with open(schema_path, "r", encoding="utf-8") as file:
-        content = file.read()
-
-    rows = []
-    for config in sorted(api_configs, key=lambda item: int(item.get("id") or 0)):
-        values = (
-            _sql_literal(config.get("name")),
-            _sql_literal(config.get("url")),
-            _sql_literal(str(config.get("method") or "get").lower()),
-            _sql_literal(config.get("request") or ""),
-            _sql_literal(config.get("response") or ""),
-            "1" if config.get("status") else "0",
-            str(int(config.get("response_time_ms") or 0)),
-            "1" if config.get("is_enabled") else "0",
-        )
-        rows.append("(" + ", ".join(values) + ")")
-
-    if not rows:
+def sync_api_defaults(preset_path: str, api_configs: List[Dict[str, Any]]) -> None:
+    """把当前数据库中的 API 配置和健康状态写回预置 JSON 文件。"""
+    if not api_configs:
         raise RuntimeError("没有可同步的 API 配置")
 
-    replacement = (
-        "INSERT OR IGNORE INTO api_config "
-        "(name, url, method, request, response, status, response_time_ms, is_enabled) VALUES\n"
-        + ",\n".join(rows)
-        + ";"
-    )
-    pattern = re.compile(
-        r"INSERT OR IGNORE INTO api_config "
-        r"\(name, url, method, request, response, status, response_time_ms, is_enabled\) VALUES\n"
-        r".*?;(?=\n\n-- ----------------------------\n-- Default data for `resources`)",
-        re.DOTALL,
-    )
-    updated, count = pattern.subn(replacement, content, count=1)
-    if count != 1:
-        raise RuntimeError("未找到 schema_sqlite.sql 中的 API 默认数据块")
+    preset_data = []
+    for config in sorted(api_configs, key=lambda item: int(item.get("id") or 0)):
+        status_str = (
+            "healthy"
+            if config.get("status") in (True, 1, "healthy", "1")
+            else "unhealthy"
+            if config.get("status") in (False, 0, "unhealthy", "0")
+            else str(config.get("status") or "unknown")
+        )
+        preset_data.append({
+            "name": config.get("name"),
+            "url": config.get("url"),
+            "method": str(config.get("method") or "get").lower(),
+            "request": config.get("request") or "",
+            "response": config.get("response") or "",
+            "status": status_str,
+            "response_time_ms": int(config.get("response_time_ms") or 0),
+            "is_enabled": 1 if config.get("is_enabled") else 0,
+        })
 
-    with open(schema_path, "w", encoding="utf-8") as file:
-        file.write(updated)
+    with open(preset_path, "w", encoding="utf-8") as file:
+        json.dump(preset_data, file, ensure_ascii=False, indent=2)
 
 
-def sync_app_defaults(
-    app_config_path: str,
-    tg_channels: List[str],
+def sync_preset_defaults(
+    tg_preset_path: str,
+    plugin_preset_path: str,
     disabled_tg_channels: List[str],
     plugin_statuses: Dict[str, bool],
 ) -> None:
-    """同步 TG 频道和插件的首次初始化状态。"""
-    with open(app_config_path, "r", encoding="utf-8") as file:
-        content = file.read()
+    """同步 TG 频道和插件的预置 JSON 配置文件。"""
+    disabled_set = set(disabled_tg_channels)
+    if os.path.exists(tg_preset_path):
+        with open(tg_preset_path, "r", encoding="utf-8") as f:
+            preset_tg = json.load(f)
+        for item in preset_tg:
+            ch = item.get("channel")
+            if ch:
+                item["is_enabled"] = ch not in disabled_set
+        with open(tg_preset_path, "w", encoding="utf-8") as f:
+            json.dump(preset_tg, f, ensure_ascii=False, indent=2)
 
-    tg_value = ",".join(tg_channels)
-    tg_replacement = f'DEFAULT_TG_CHANNELS = (\n    "{tg_value}"\n)'
-    content, tg_count = re.subn(
-        r"DEFAULT_TG_CHANNELS\s*=\s*\([\s\S]*?^\)",
-        tg_replacement,
-        content,
-        count=1,
-        flags=re.MULTILINE,
-    )
-    if tg_count != 1:
-        raise RuntimeError("未找到 app_config.py 中的 DEFAULT_TG_CHANNELS")
-
-    disabled_tg_value = ",".join(disabled_tg_channels)
-    disabled_tg_replacement = f'DEFAULT_DISABLED_TG_CHANNELS = (\n    "{disabled_tg_value}"\n)'
-    content, disabled_tg_count = re.subn(
-        r"DEFAULT_DISABLED_TG_CHANNELS\s*=\s*(?:\([\s\S]*?^\)|\(\))",
-        disabled_tg_replacement,
-        content,
-        count=1,
-        flags=re.MULTILINE,
-    )
-    if disabled_tg_count != 1:
-        raise RuntimeError("未找到 app_config.py 中的 DEFAULT_DISABLED_TG_CHANNELS")
-
-    plugin_lines = ["DEFAULT_PLUGIN_SETTINGS = {"]
-    for name in sorted(plugin_statuses):
-        plugin_lines.append(f"    {name!r}: {bool(plugin_statuses[name])},")
-    plugin_lines.append("}")
-    plugin_replacement = "\n".join(plugin_lines)
-    content, plugin_count = re.subn(
-        r"DEFAULT_PLUGIN_SETTINGS\s*=\s*\{[\s\S]*?^\}",
-        plugin_replacement,
-        content,
-        count=1,
-        flags=re.MULTILINE,
-    )
-    if plugin_count != 1:
-        raise RuntimeError("未找到 app_config.py 中的 DEFAULT_PLUGIN_SETTINGS")
-
-    with open(app_config_path, "w", encoding="utf-8") as file:
-        file.write(content)
+    with open(plugin_preset_path, "w", encoding="utf-8") as f:
+        json.dump(plugin_statuses, f, ensure_ascii=False, indent=2)
 
 
 def check_single_api(api_info: Dict[str, Any], keywords: List[str]) -> Dict[str, Any]:
@@ -328,6 +284,14 @@ def main():
         action="store_true",
         help="发布前同步 API、TG、插件健康状态至首次初始化配置",
     )
+    parser.add_argument(
+        "--yes",
+        "-y",
+        "--force",
+        action="store_true",
+        dest="yes",
+        help="跳过二次确认，静默应用写库与配置文件同步操作",
+    )
     parser.add_argument("--output", "-o", help="导出 JSON 格式测试报告路径")
     args = parser.parse_args()
 
@@ -414,6 +378,34 @@ def main():
     print_section("Telegram 频道", tg_results)
     print_section("第三方网站插件", plugin_results)
 
+    # 安全防误触与变更预览提示
+    if args.auto_disable or args.sync_defaults:
+        disabled_apis = [r["name"] for r in api_results if r["status"] not in ("PASS", "NO_DATA")]
+        disabled_tgs = [r["name"] for r in tg_results if r["status"] not in ("PASS", "NO_DATA")]
+        disabled_plugins = [
+            r["name"] for r in plugin_results
+            if not (r["status"] in ("PASS", "NO_DATA") and r.get("publish_by_default", True))
+        ]
+
+        print(f"\n{Color.BOLD}{Color.YELLOW}⚠️  【安全提示】检测到将执行带有副作用的更新操作：{Color.RESET}")
+        if args.auto_disable:
+            print(f"  • 将更新 SQLite 数据库中的搜索源状态:")
+            print(f"    - 将停用断链 API 接口 ({len(disabled_apis)} 个): {', '.join(disabled_apis) if disabled_apis else '无'}")
+            print(f"    - 将停用断链 TG 频道 ({len(disabled_tgs)} 个): {', '.join(disabled_tgs) if disabled_tgs else '无'}")
+            print(f"    - 将停用断链 插件 ({len(disabled_plugins)} 个): {', '.join(disabled_plugins) if disabled_plugins else '无'}")
+        if args.sync_defaults:
+            print(f"  • 将反写同步健康源初始默认值至源代码 (`app_config.py` 和 `schema_sqlite.sql`)")
+
+        if not args.yes:
+            try:
+                confirm = input(f"\n{Color.BOLD}{Color.YELLOW}确认执行上述更新操作吗？ [y/N]: {Color.RESET}").strip().lower()
+            except (EOFError, KeyboardInterrupt):
+                confirm = "n"
+            if confirm not in ("y", "yes"):
+                print(f"{Color.RED}✖ 操作已取消，未对数据库或配置文件进行任何修改。{Color.RESET}")
+                args.auto_disable = False
+                args.sync_defaults = False
+
     # 自动禁用处理
     if args.auto_disable:
         print(f"\n{Color.BOLD}{Color.YELLOW}⚡ 正在执行自动禁用选项 (--auto-disable)...{Color.RESET}")
@@ -424,7 +416,7 @@ def main():
             is_healthy = r["status"] in ("PASS", "NO_DATA")
             cursor.execute(
                 "UPDATE api_config SET status = ?, is_enabled = ?, response_time_ms = ? WHERE name = ?",
-                (1 if is_healthy else 0, 1 if is_healthy else 0, r["elapsed_ms"], r["name"]),
+                ("healthy" if is_healthy else "unhealthy", 1 if is_healthy else 0, r["elapsed_ms"], r["name"]),
             )
         conn.commit()
         conn.close()
@@ -466,8 +458,10 @@ def main():
             for r in plugin_results
         }
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        app_config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "configs", "app_config.py"))
-        schema_path = os.path.join(project_root, "schema_sqlite.sql")
+        presets_dir = os.path.join(project_root, "src", "configs", "presets")
+        api_preset_path = os.path.join(presets_dir, "api_configs_preset.json")
+        tg_preset_path = os.path.join(presets_dir, "tg_channels_preset.json")
+        plugin_preset_path = os.path.join(presets_dir, "plugin_settings_preset.json")
 
         conn = get_db_connection()
         cursor = conn.cursor(as_dict=True)
@@ -475,8 +469,8 @@ def main():
         synced_apis = cursor.fetchall()
         conn.close()
 
-        sync_api_defaults(schema_path, synced_apis)
-        sync_app_defaults(app_config_path, tg_channels, disabled_tg_channels, plugin_statuses)
+        sync_api_defaults(api_preset_path, synced_apis)
+        sync_preset_defaults(tg_preset_path, plugin_preset_path, disabled_tg_channels, plugin_statuses)
         enabled_apis = sum(1 for item in synced_apis if item.get("is_enabled"))
         enabled_plugins = sum(1 for enabled in plugin_statuses.values() if enabled)
         print(f"{Color.GREEN}✔ API 默认状态已同步：{enabled_apis}/{len(synced_apis)} 个启用{Color.RESET}")

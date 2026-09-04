@@ -20,7 +20,7 @@ def get_all_configs(order_by_created: bool = True) -> List[Dict[str, Any]]:
     if order_by_created:
         query = (
             "SELECT id, name, url, method, request, response, status, "
-            "is_enabled, response_time_ms, created_at, updated_at "
+            "is_enabled, response_time_ms, checked_at, created_at, updated_at "
             "FROM api_config ORDER BY created_at DESC"
         )
     else:
@@ -42,9 +42,10 @@ def get_all_configs(order_by_created: bool = True) -> List[Dict[str, Any]]:
                 "method": row["method"],
                 "request": row["request"] if row["request"] is not None else "{}",
                 "response": row["response"] if row["response"] is not None else "[]",
-                "status": bool(row["status"]),
+                "status": str(row["status"]) if row["status"] is not None else "unknown",
                 "is_enabled": bool(row["is_enabled"]),
                 "response_time_ms": row["response_time_ms"] if row["response_time_ms"] is not None else (0 if order_by_created else 9999),
+                "checked_at": str(row["checked_at"]) if row.get("checked_at") else None,
             }
             if order_by_created:
                 config["created_at"] = str(row["created_at"])
@@ -78,7 +79,7 @@ def get_config_by_id(api_id: int) -> Optional[Dict[str, Any]]:
         conn.close()
 
 
-def get_config_status(api_id: int) -> Optional[Dict[str, bool]]:
+def get_config_status(api_id: int) -> Optional[Dict[str, Any]]:
     """从数据库中获取单个 API 的 status 和 is_enabled 状态"""
     conn = get_db_connection()
     if not conn:
@@ -90,7 +91,7 @@ def get_config_status(api_id: int) -> Optional[Dict[str, bool]]:
         cursor.execute(query, (api_id,))
         result = cursor.fetchone()
         if result:
-            result["status"] = bool(result["status"])
+            result["status"] = str(result["status"]) if result["status"] is not None else "unknown"
             result["is_enabled"] = bool(result["is_enabled"])
         return result
     except Error as err:
@@ -101,11 +102,28 @@ def get_config_status(api_id: int) -> Optional[Dict[str, bool]]:
         conn.close()
 
 
+def _normalize_status_str(status_val: Any) -> str:
+    if isinstance(status_val, bool):
+        return "healthy" if status_val else "unhealthy"
+    if status_val is None:
+        return "unknown"
+    val = str(status_val).strip().lower()
+    if val in ("1", "true", "healthy", "pass", "ok"):
+        return "healthy"
+    if val in ("0", "false", "unhealthy", "error", "fail"):
+        return "unhealthy"
+    if val in ("unknown", "no_data"):
+        return val
+    return str(status_val)
+
+
 def insert_config(new_config: Dict[str, Any]) -> Tuple[bool, str, Optional[int]]:
     """向数据库中添加一条 API 配置记录"""
     conn = get_db_connection()
     if not conn:
         return False, "数据库连接失败", None
+
+    status_str = _normalize_status_str(new_config.get("status", "unknown"))
 
     query = (
         "INSERT INTO api_config (name, url, method, request, response, status, "
@@ -117,7 +135,7 @@ def insert_config(new_config: Dict[str, Any]) -> Tuple[bool, str, Optional[int]]
         new_config["method"],
         new_config.get("request", "{}"),
         new_config.get("response", "[]"),
-        1 if new_config.get("status", True) else 0,
+        status_str,
         1 if new_config.get("is_enabled", True) else 0,
         0,  # 默认响应时间为 0
     )
@@ -169,7 +187,7 @@ def copy_config(api_id: int) -> Tuple[bool, str, Optional[int]]:
             original_config["method"],
             original_config["request"],
             original_config["response"],
-            original_config["status"],
+            original_config["status"] or "unknown",
             original_config["is_enabled"],
             original_config["response_time_ms"],
         )
@@ -196,6 +214,9 @@ def update_config(api_id: int, updated_config: Dict[str, Any]) -> Tuple[bool, st
         return False, "未找到该 API 配置"
 
     new_is_enabled = bool(updated_config.get("is_enabled"))
+    status_str = _normalize_status_str(
+        updated_config.get("status", current_api_status.get("status", "unknown"))
+    )
 
     conn = get_db_connection()
     if not conn:
@@ -212,7 +233,7 @@ def update_config(api_id: int, updated_config: Dict[str, Any]) -> Tuple[bool, st
         updated_config["method"],
         updated_config.get("request", "{}"),
         updated_config.get("response", "[]"),
-        1 if updated_config.get("status", True) else 0,
+        status_str,
         1 if new_is_enabled else 0,
         api_id,
     )
@@ -262,20 +283,20 @@ def delete_config(api_id: int) -> Tuple[bool, str]:
         conn.close()
 
 
-def update_status(api_id: int, new_status: bool, response_time_ms: int = 0) -> bool:
+def update_status(api_id: int, new_status: Any, response_time_ms: int = 0) -> bool:
     """更新 API 配置的状态和响应时间 (不修改 is_enabled)"""
     conn = get_db_connection()
     if not conn:
         return False
 
-    query = "UPDATE api_config SET status = ?, response_time_ms = ? WHERE id = ?"
-    status_int = 1 if new_status else 0
+    query = "UPDATE api_config SET status = ?, response_time_ms = ?, checked_at = CURRENT_TIMESTAMP WHERE id = ?"
+    status_str = _normalize_status_str(new_status)
 
     try:
         cursor = conn.cursor()
-        cursor.execute(query, (status_int, response_time_ms, api_id))
+        cursor.execute(query, (status_str, response_time_ms, api_id))
         conn.commit()
-        logger.info(f"更新 API ID:{api_id} 的状态为 {new_status}，耗时: {response_time_ms}ms")
+        logger.info(f"更新 API ID:{api_id} 的状态为 {status_str}，耗时: {response_time_ms}ms")
         return True
     except Error as err:
         logger.error(f"更新 API 状态时出错: {err}")
@@ -287,7 +308,7 @@ def update_status(api_id: int, new_status: bool, response_time_ms: int = 0) -> b
 
 
 def update_enabled_status(
-    api_id: int, is_enabled: bool, new_status: Optional[bool] = None, response_time_ms: Optional[int] = None
+    api_id: int, is_enabled: bool, new_status: Optional[Any] = None, response_time_ms: Optional[int] = None
 ) -> bool:
     """
     更新 API 配置的启用状态，可同时更新 status 和 response_time_ms。
@@ -302,7 +323,7 @@ def update_enabled_status(
 
     if new_status is not None:
         fields.append("status = ?")
-        params.append(1 if new_status else 0)
+        params.append(_normalize_status_str(new_status))
 
     if response_time_ms is not None:
         fields.append("response_time_ms = ?")

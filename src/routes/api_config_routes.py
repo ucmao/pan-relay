@@ -170,6 +170,20 @@ def test_api():
 @token_required
 def test_all_apis():
     """测试所有API配置并更新其状态 (需要 JWT 验证)"""
-    success, message = test_all_apis_and_update_status()
+    res = test_all_apis_and_update_status()
+    if len(res) == 3:
+        success, message, summary = res
+    else:
+        success, message = res[:2]
+        summary = {}
+
     status_code = 200 if success else 500
-    return jsonify({"message": message}), status_code
+    return jsonify({
+        "success": success,
+        "message": message,
+        "total": summary.get("total", 0),
+        "healthy_count": summary.get("healthy_count", 0),
+        "failed_count": summary.get("failed_count", 0),
+        "results": summary.get("results", []),
+    }), status_code
+

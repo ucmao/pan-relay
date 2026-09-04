@@ -201,7 +201,7 @@ def update_channel_health(
         conn.close()
 
 
-def seed_channels(channels: Iterable[str], disabled_channels: Iterable[str], titles: Optional[Dict[str, str]] = None) -> int:
+def seed_channels(items: Iterable[Any]) -> int:
     """仅在频道表为空时写入版本内置的初始频道。"""
     conn = get_db_connection()
     if not conn:
@@ -211,9 +211,27 @@ def seed_channels(channels: Iterable[str], disabled_channels: Iterable[str], tit
         cursor.execute("SELECT COUNT(*) FROM telegram_channel")
         if cursor.fetchone()[0] > 0:
             return 0
-        disabled = set(disabled_channels)
-        title_map = titles or {}
-        rows = [(channel, title_map.get(channel), 0 if channel in disabled else 1) for channel in channels]
+
+        rows = []
+        for item in items:
+            if isinstance(item, dict):
+                ch = item.get("channel")
+                title = item.get("title")
+                is_enabled = 1 if item.get("is_enabled", True) else 0
+            elif isinstance(item, (tuple, list)):
+                ch = item[0]
+                title = item[1] if len(item) > 1 else None
+                is_enabled = 1 if (len(item) <= 2 or item[2]) else 0
+            else:
+                ch = str(item)
+                title = None
+                is_enabled = 1
+            if ch:
+                rows.append((ch, title, is_enabled))
+
+        if not rows:
+            return 0
+
         cursor.executemany(
             "INSERT INTO telegram_channel (channel, title, is_enabled) VALUES (?, ?, ?)",
             rows,

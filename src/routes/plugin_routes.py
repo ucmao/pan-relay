@@ -1,3 +1,4 @@
+import concurrent.futures
 import time
 import logging
 from flask import Blueprint, jsonify, request
@@ -12,6 +13,59 @@ logger = logging.getLogger(__name__)
 plugin_bp = Blueprint("plugin", __name__)
 
 
+def _check_single_plugin_health(p):
+    start = time.time()
+    p_name = str(getattr(p, "name", "unknown"))
+    p_display_name = getattr(p, "display_name", p_name)
+    if not isinstance(p_display_name, str):
+        p_display_name = p_name
+
+    try:
+        ok, msg = p.health_check()
+        latency = int((time.time() - start) * 1000)
+        status = "healthy" if ok else "error"
+        save_plugin_health(p_name, {
+            "status": status,
+            "latency_ms": latency,
+            "count": 0,
+            "message": msg,
+        })
+        return {
+            "name": p_name,
+            "display_name": p_display_name,
+            "success": ok,
+            "message": msg,
+            "latency_ms": latency,
+        }
+    except Exception as e:
+        latency = int((time.time() - start) * 1000)
+        save_plugin_health(p_name, {
+            "status": "error",
+            "latency_ms": latency,
+            "count": 0,
+            "message": str(e),
+        })
+        return {
+            "name": p_name,
+            "display_name": p_display_name,
+            "success": False,
+            "message": str(e),
+            "latency_ms": latency,
+        }
+
+
+
+
+def _enrich_plugin_dict(plugin):
+    d = plugin.to_dict()
+    settings = get_plugin_settings()
+    if plugin.name in settings:
+        h = settings[plugin.name].get("health")
+        if h:
+            d["health"] = h
+    return d
+
+
 @plugin_bp.route("/admin/api/plugins", methods=["GET"])
 @token_required
 def get_admin_plugins_api():
@@ -19,7 +73,7 @@ def get_admin_plugins_api():
     获取系统中所有插件列表及元数据 (管理员接口)
     """
     plugins = plugin_manager.get_all_plugins()
-    data = [p.to_dict() for p in plugins]
+    data = [_enrich_plugin_dict(p) for p in plugins]
     return jsonify({
         "success": True,
         "total": len(data),
@@ -63,7 +117,7 @@ def reload_admin_plugins_api():
     """
     try:
         plugins = plugin_manager.reload_plugins()
-        data = [p.to_dict() for p in plugins]
+        data = [_enrich_plugin_dict(p) for p in plugins]
         return jsonify({
             "success": True,
             "message": f"成功重新扫描插件目录，共载入 {len(data)} 个插件",
@@ -99,38 +153,42 @@ def disable_all_admin_plugins_api():
 @plugin_bp.route("/admin/api/plugins/test-all", methods=["POST", "GET"])
 @token_required
 def test_all_admin_plugins_api():
-    """全部测试/检测插件健康度"""
+    """全部测试/检测插件健康度 (多线程并发加速)"""
     try:
         plugins = plugin_manager.get_all_plugins()
-        healthy_count = 0
-        for p in plugins:
-            try:
-                ok, msg = p.health_check()
-                status = "healthy" if ok else "error"
-                if ok:
-                    healthy_count += 1
-                save_plugin_health(p.name, {
-                    "status": status,
-                    "latency_ms": 0,
-                    "count": 0,
-                    "message": msg,
-                })
-            except Exception as e:
-                save_plugin_health(p.name, {
-                    "status": "error",
-                    "latency_ms": 0,
-                    "count": 0,
-                    "message": str(e),
-                })
+        if not plugins:
+            return jsonify({
+                "success": True,
+                "message": "暂无可检测的 Python 插件",
+                "total": 0,
+                "healthy_count": 0,
+                "failed_count": 0,
+                "results": [],
+            })
+
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(plugins), 5)) as executor:
+            futures = {executor.submit(_check_single_plugin_health, p): p for p in plugins}
+            for future in concurrent.futures.as_completed(futures):
+                results.append(future.result())
+
+        total = len(results)
+        healthy_count = sum(1 for r in results if r.get("success"))
+        failed_count = total - healthy_count
+        message = f"插件检测完成：{healthy_count}/{total} 个正常"
+
         return jsonify({
             "success": True,
-            "message": f"成功检测 {len(plugins)} 个插件，正常: {healthy_count} 个",
-            "total": len(plugins),
+            "message": message,
+            "total": total,
             "healthy_count": healthy_count,
+            "failed_count": failed_count,
+            "results": results,
         })
     except Exception as e:
         logger.error(f"批量测试插件异常: {e}")
         return jsonify({"success": False, "message": f"批量测试插件失败: {e}"}), 500
+
 
 
 

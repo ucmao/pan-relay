@@ -34,7 +34,8 @@ def validate_tg_channel(value: Any) -> tuple[bool, str, str]:
 
 
 def get_tg_channel_items() -> List[Dict[str, Any]]:
-    from src.configs.app_config import DEFAULT_TG_CHANNEL_TITLES
+    from src.configs.preset_loader import load_preset_tg_channels
+    preset_titles = {item["channel"]: item["title"] for item in load_preset_tg_channels() if "channel" in item and "title" in item}
     items = []
     for row in get_all_channels():
         status = row.get("health_status") or "unknown"
@@ -43,7 +44,7 @@ def get_tg_channel_items() -> List[Dict[str, Any]]:
             "no_data": "无结果",
             "error": "异常",
         }.get(status, "未检测")
-        title = row.get("title") or DEFAULT_TG_CHANNEL_TITLES.get(row["channel"]) or row["channel"]
+        title = row.get("title") or preset_titles.get(row["channel"]) or row["channel"]
         items.append({
             "id": row["id"],
             "channel": row["channel"],

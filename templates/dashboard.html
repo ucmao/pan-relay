@@ -117,14 +117,9 @@
                             <span>全量检索源治理看板</span>
                         </h2>
                     </div>
-                    <div class="flex space-x-2">
-                        <button onclick="triggerBatchApiTest()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100 transition-colors">
-                            <i class="fas fa-vial mr-1"></i>检测 API 连通
-                        </button>
-                        <button onclick="triggerBatchTgTest()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
-                            <i class="fab fa-telegram-plane mr-1"></i>检测 TG 频道
-                        </button>
-                    </div>
+                    <a href="{{ url_for('search_sources.sources_page') }}" class="text-xs font-semibold text-blue-600 hover:underline">
+                        管理检索源 &rarr;
+                    </a>
                 </div>
 
                 <!-- 扁平 3 列网格，无嵌套内边框卡片 -->
@@ -359,26 +354,24 @@
 
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1">分享链接 *</label>
-                <input type="url" id="quick-res-link" required placeholder="https://pan.baidu.com/s/xxxx" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <input type="text" id="quick-res-link" required placeholder="https://pan.baidu.com/s/xxxx" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">云盘类型</label>
-                    <select id="quick-res-cloud" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <option value="百度网盘">百度网盘</option>
-                        <option value="夸克网盘">夸克网盘</option>
-                        <option value="阿里云盘">阿里云盘</option>
-                        <option value="UC网盘">UC网盘</option>
-                        <option value="迅雷网盘">迅雷网盘</option>
-                        <option value="天翼云盘">天翼云盘</option>
-                        <option value="其他">其他</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">资源分类</label>
-                    <input type="text" id="quick-res-type" placeholder="如: 影视/音乐/软件" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">资源分类</label>
+                <select id="quick-res-type" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                    <option value="">请选择类型（可选）</option>
+                    <option value="电影">电影</option>
+                    <option value="电视剧">电视剧</option>
+                    <option value="音乐">音乐</option>
+                    <option value="软件">软件</option>
+                    <option value="图片">图片</option>
+                    <option value="游戏">游戏</option>
+                    <option value="素材">素材</option>
+                    <option value="教程">教程</option>
+                    <option value="文档">文档</option>
+                    <option value="其他">其他</option>
+                </select>
             </div>
 
             <div>
@@ -396,7 +389,18 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/resource.js') }}"></script>
 <script>
+    function autoDetectQuickAddCloudType(url) {
+        if (typeof matchNetdiskLink === 'function') {
+            const detected = matchNetdiskLink(url);
+            const selectElem = document.getElementById('quick-res-cloud');
+            if (selectElem && detected) {
+                selectElem.value = detected;
+            }
+        }
+    }
+
     function refreshDashboardStats() {
         const icon = document.getElementById('refresh-icon');
         if (icon) icon.classList.add('fa-spin');
@@ -422,29 +426,6 @@
             });
     }
 
-    async function triggerBatchApiTest() {
-        if (typeof showConfirm === 'function' && !(await showConfirm('确定要批量检测所有 API 连通性吗？', 'primary', '批量检测确认'))) return;
-        showToast('正在批量检测所有 API 连通性...', 'info');
-        fetch('/admin/api/test-all')
-            .then(res => res.json())
-            .then(res => {
-                showToast(res.message || 'API 连通性检测已完成', 'success');
-                refreshDashboardStats();
-            })
-            .catch(err => showToast('API 检测出错', 'error'));
-    }
-
-    async function triggerBatchTgTest() {
-        if (typeof showConfirm === 'function' && !(await showConfirm('确定要批量检测所有 Telegram 频道吗？', 'primary', '批量检测确认'))) return;
-        showToast('正在批量检测 Telegram 频道...', 'info');
-        fetch('/admin/api/tg-channels/test-all', { method: 'POST' })
-            .then(res => res.json())
-            .then(res => {
-                showToast(res.message || 'Telegram 频道检测完成', 'success');
-                refreshDashboardStats();
-            })
-            .catch(err => showToast('TG 频道检测出错', 'error'));
-    }
 
     function openQuickAddModal() {
         document.getElementById('quickAddResourceModal').classList.remove('hidden');
@@ -456,11 +437,13 @@
 
     function submitQuickAddResource(e) {
         e.preventDefault();
+        const shareLink = document.getElementById('quick-res-link').value.trim();
+        const cloudName = typeof matchNetdiskLink === 'function' ? matchNetdiskLink(shareLink) : '';
         const payload = {
             name: document.getElementById('quick-res-name').value.trim(),
-            share_link: document.getElementById('quick-res-link').value.trim(),
-            cloud_name: document.getElementById('quick-res-cloud').value,
-            type: document.getElementById('quick-res-type').value.trim(),
+            share_link: shareLink,
+            cloud_name: cloudName,
+            type: document.getElementById('quick-res-type').value,
             remarks: document.getElementById('quick-res-remarks').value.trim()
         };
 

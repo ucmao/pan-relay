@@ -143,11 +143,14 @@ function renderTable() {
     if (tabBadgeApi) tabBadgeApi.textContent = `${enabledCount}/${totalCount}`;
 
     apiConfigs.forEach((api, index) => {
-        const healthClass = api.status === true ? 'health-normal' : (api.status === false ? 'health-error' : 'health-unknown');
-        const healthIcon = api.status === true ? 'fa-check-circle' : (api.status === false ? 'fa-exclamation-circle' : 'fa-minus-circle');
-        const healthText = api.status === true ? '正常' : (api.status === false ? '异常' : '未检测');
+        const isHealthy = api.status === 'healthy' || api.status === true;
+        const isUnhealthy = api.status === 'unhealthy' || api.status === false;
+        const healthClass = isHealthy ? 'health-normal' : (isUnhealthy ? 'health-error' : 'health-unknown');
+        const healthIcon = isHealthy ? 'fa-check-circle' : (isUnhealthy ? 'fa-exclamation-circle' : 'fa-minus-circle');
+        const healthText = isHealthy ? '正常' : (isUnhealthy ? '异常' : '未检测');
         const healthBadge = `<span class="health-text-badge ${healthClass}" title="最新测试结果"><i class="fas ${healthIcon}"></i> ${healthText}</span>`;
-        const timeDisplay = api.response_time_ms !== null && api.response_time_ms > 0 ? `${api.response_time_ms}` : '--';
+        const timeDisplay = api.response_time_ms !== null && api.response_time_ms > 0 ? `${api.response_time_ms} ms` : '--';
+        const checkedAtDisplay = formatCheckedAt(api.checked_at);
 
         let toggleBtnClass;
         let toggleBtnText;
@@ -173,19 +176,14 @@ function renderTable() {
 
         const row = document.createElement('tr');
         row.className = rowClass;
-        // 处理请求体和响应体显示
-        const requestDisplay = api.request && api.request.trim() ? '<span>已配置</span>' : '<span>无</span>';
-        const responseDisplay = api.response && api.response.trim() ? '<i class="fas fa-code"></i>' : '<i class="fas fa-times-circle text-danger"></i>';
         row.innerHTML = `
                     <td class="text-center">${index + 1}</td>
+                    <td><strong>${escapeHtml(api.name)}</strong></td>
                     <td class="text-center">${enableBadge}</td>
                     <td class="text-center">${healthBadge}</td>
-                    <td>${api.name}</td>
+                    <td class="text-center text-xs text-slate-500">${checkedAtDisplay}</td>
                     <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: normal; word-wrap: break-word;">${api.url}</td>
-                    <td class="text-center font-mono">${api.method.toUpperCase()}</td>
                     <td class="text-center">${timeDisplay}</td>
-                    <td class="text-center">${requestDisplay}</td>
-                    <td class="text-center">${responseDisplay}</td>
                     <td class="action-buttons text-center">
                         <div class="inline-flex items-center gap-1.5 justify-center">
                             <button class="btn btn-sm ${toggleBtnClass}" title="点击切换状态"
@@ -224,6 +222,12 @@ function renderTable() {
                 `;
         tbody.appendChild(row);
     });
+}
+
+function formatCheckedAt(value) {
+    if (!value) return '--';
+    const date = new Date(value.replace(' ', 'T'));
+    return Number.isNaN(date.getTime()) ? '--' : date.toLocaleString('zh-CN', { hour12: false });
 }
 
 // 辅助函数：转义HTML字符，防止XSS攻击
@@ -281,11 +285,16 @@ async function toggleEnabled(apiId, isEnabled) {
 
 // 全部测试 API
 async function testAllApis() {
-    const testAllApiButton = document.getElementById('testAllApiButton');
+    const btn = document.getElementById('testAllApiButton');
     if (!(await showConfirm('确定要测试所有 API 检索源吗？', 'primary', '批量测试确认'))) return;
 
-    if (testAllApiButton) testAllApiButton.disabled = true;
-    showToast('正在检测所有 API 检索源连通性...', 'info');
+    let originalHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> 检测中...';
+    }
+    showToast('正在并发检测所有 API 检索源连通性...', 'info');
 
     try {
         const response = await fetch('/admin/api/test-all', { method: 'POST' });
@@ -299,13 +308,17 @@ async function testAllApis() {
             }
         }
         const data = await response.json();
-        showToast(data.message || '全量 API 测试完成', 'success');
+        const toastType = (data.failed_count && data.failed_count > 0) ? 'warning' : 'success';
+        showToast(data.message || '全量 API 测试完成', toastType);
         await loadApiConfigs();
     } catch (error) {
         console.error('全部测试 API 时出错:', error);
         showToast(`全部测试失败: ${error.message}`, 'danger');
     } finally {
-        if (testAllApiButton) testAllApiButton.disabled = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 }
 
@@ -437,7 +450,7 @@ async function saveEditedApi() {
         return;
     }
 
-    if (isEnabledValue === 'true' && originalApi.status === false) {
+    if (isEnabledValue === 'true' && (originalApi.status === 'unhealthy' || originalApi.status === false)) {
         showToast(`API "${originalApi.name}" 状态异常，无法启用。请先测试并修复。`, 'danger');
         return;
     }

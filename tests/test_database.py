@@ -1,5 +1,6 @@
 import unittest
 
+from app import app
 from src.db.api_configs import (
     delete_config,
     get_config_by_id,
@@ -25,13 +26,13 @@ from src.db.resources import (
 from src.db.temp_shares import (
     create_temp_share_record,
     get_active_temp_share,
-    list_expired_temp_shares,
-    mark_temp_share_deleted,
     touch_temp_share,
+    mark_temp_share_deleted,
 )
+from src.services.dashboard_service import get_dashboard_summary
 
 
-class Phase4NativeSqlTest(unittest.TestCase):
+class NativeSqlDatabaseTest(unittest.TestCase):
     def test_resources_db_crud_and_purified_sql(self):
         # 1. 插入资源
         success, msg, res_id = insert_resource_simple({
@@ -69,7 +70,7 @@ class Phase4NativeSqlTest(unittest.TestCase):
             results = search_resources_by_keyword("纯净化_更新")
             self.assertGreaterEqual(len(results), 1)
 
-            # 6. 高级搜索 (测试 ORDER BY RANDOM() 与 LIMIT ?)
+            # 6. 高级搜索
             success, msg, adv_results = search_resources_advanced(
                 name="纯净化", sort="random", limit=5
             )
@@ -162,20 +163,32 @@ class Phase4NativeSqlTest(unittest.TestCase):
         self.assertIsNotNone(rec_id)
 
         try:
-            # 2. 查询有效分享 (WHERE expires_at > datetime('now'))
+            # 2. 查询有效分享
             active = get_active_temp_share(orig_url, cloud_name)
             self.assertIsNotNone(active)
             self.assertEqual(temp_url, active["temp_share_url"])
 
-            # 3. 刷新访问时间 (SET last_accessed_at = datetime('now'))
+            # 3. 刷新访问时间
             touched = touch_temp_share(rec_id)
             self.assertTrue(touched)
 
         finally:
-            # 4. 标记删除 (SET status = 'deleted', deleted_at = datetime('now'))
+            # 4. 标记删除
             deleted = mark_temp_share_deleted(rec_id)
             self.assertTrue(deleted)
             self.assertIsNone(get_active_temp_share(orig_url, cloud_name))
+
+    def test_dashboard_summary_structure(self):
+        summary = get_dashboard_summary()
+        self.assertIn("resources", summary)
+        self.assertIn("sources", summary)
+        self.assertIn("credentials", summary)
+        self.assertIn("system", summary)
+        self.assertIn("total_count", summary["resources"])
+        self.assertIn("api", summary["sources"])
+        self.assertIn("plugins", summary["sources"])
+        self.assertIn("telegram", summary["sources"])
+        self.assertIn("overall_health_rate", summary["sources"])
 
 
 if __name__ == "__main__":

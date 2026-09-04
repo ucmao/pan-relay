@@ -220,7 +220,7 @@ def test_single_api(
             if bool(extracted_data):
                 response_time_ms = int((time.time() - start_time) * 1000)
                 if api_id != "未知ID" and api_id.isdigit():
-                    update_api_status_in_db(api_id, True, response_time_ms)
+                    update_api_status_in_db(api_id, "healthy", response_time_ms)
                 logger.info(
                     "API %s (ID:%s) 使用关键词“%s”测试成功，耗时: %sms",
                     candidate_url,
@@ -252,7 +252,7 @@ def test_single_api(
     if saw_no_data:
         # 接口可访问且明确表示无搜索结果，不应误判为故障或自动禁用。
         if api_id != "未知ID" and api_id.isdigit():
-            update_api_status_in_db(api_id, True, response_time_ms)
+            update_api_status_in_db(api_id, "healthy", response_time_ms)
         logger.info("API %s (ID:%s) 所有测试关键词均无结果，保留为正常状态。", url, api_id)
         return _test_result(
             (url, True, no_data_status_code, True, response_time_ms),
@@ -261,7 +261,7 @@ def test_single_api(
         )
 
     if api_id != "未知ID" and api_id.isdigit():
-        update_api_status_in_db(api_id, False, response_time_ms)
+        update_api_status_in_db(api_id, "unhealthy", response_time_ms)
     logger.error("API %s (ID:%s) 多关键词测试均失败: %s，健康状态已标记为异常。", url, api_id, last_error)
     return _test_result(
         (url, False, last_status_code, False, response_time_ms),
@@ -273,12 +273,57 @@ def test_single_api(
 def test_all_apis_and_update_status():
     """测试所有API配置并更新其状态"""
     api_configs = read_api_configs_from_db()
+    if not api_configs:
+        return True, "暂无可检测的 API 检索源", {
+            "total": 0,
+            "healthy_count": 0,
+            "failed_count": 0,
+            "results": [],
+        }
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        # 提交所有 API 配置进行测试
-        futures = [executor.submit(test_single_api, config.get("id"), config) for config in api_configs]
-        for _ in concurrent.futures.as_completed(futures):
-            pass
+    results = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(api_configs), 5)) as executor:
+        futures = {
+            executor.submit(test_single_api, config.get("id"), config, return_details=True): config
+            for config in api_configs
+        }
+        for future in concurrent.futures.as_completed(futures):
+            config = futures[future]
+            try:
+                res = future.result()
+                url, is_healthy, status_code, rule_ok, latency_ms, test_outcome, count, matched_kw = res[:8]
+                results.append({
+                    "id": config.get("id"),
+                    "name": config.get("name"),
+                    "url": url,
+                    "success": bool(is_healthy),
+                    "status_code": status_code,
+                    "latency_ms": latency_ms,
+                    "count": count,
+                    "matched_keyword": matched_kw,
+                    "test_outcome": test_outcome,
+                })
+            except Exception as e:
+                logger.error("测试 API [%s] 异常: %s", config.get("name"), e)
+                results.append({
+                    "id": config.get("id"),
+                    "name": config.get("name"),
+                    "url": config.get("url"),
+                    "success": False,
+                    "error": str(e),
+                })
 
-    logger.info("所有 API 测试并更新健康状态完毕")
-    return True, "所有 API 测试并更新健康状态成功"
+    total = len(results)
+    healthy_count = sum(1 for r in results if r.get("success"))
+    failed_count = total - healthy_count
+    message = f"API 检测完成：{healthy_count}/{total} 个接口响应正常"
+
+    summary = {
+        "total": total,
+        "healthy_count": healthy_count,
+        "failed_count": failed_count,
+        "results": results,
+    }
+    logger.info("所有 API 测试并更新健康状态完毕: %s", message)
+    return True, message, summary
+

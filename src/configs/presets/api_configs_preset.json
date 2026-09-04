@@ -1,0 +1,92 @@
+[
+  {
+    "name": "悠悠小站 API",
+    "url": "https://uuxiao.cn/api/user/search?name=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "data[*].[name, url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "龙珠南风资源 API",
+    "url": "https://www.hhlqilongzhu.cn/api/ziyuan_nanfeng.php?keysearch=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "data[*].[title, data_url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "PTGer资源 API",
+    "url": "https://files.ptger.cn/api/files/vagueQuery?name=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "data[*].source.[name, url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "6789短剧 API",
+    "url": "https://zy.6789o.com/duanjuapi/search.php?text=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "data[*].[name, viewlink]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "翼彩短剧 API",
+    "url": "https://ai-img.ycubbs.cn/api/duanju/search?name=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "data[*].[name, url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "酷乐短剧 API",
+    "url": "https://api.kuleu.com/api/action?text=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "data[*].[name, viewlink]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "KuoApp短剧 API",
+    "url": "https://kuoapp.com/duanju/api.php?param=1&name=[[keyword]]&page=1",
+    "method": "get",
+    "request": "",
+    "response": "data[*].[name, url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "狗狗盘搜 API",
+    "url": "https://gogopanso.com:3642/search?keyword=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "data[*].[name, downurl]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "252035盘搜 API",
+    "url": "https://so.252035.xyz/api/search?kw=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "data.merged_by_type.* | [].[note, url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  }
+]
