@@ -783,7 +783,20 @@ def sort_search_results(results: List[SearchResultItem], keyword: str = "") -> L
     return [item for _, _, item in scored]
 
 
-def search_public_resources(keyword="", limit=100):
+def _filter_results_by_cloud_name(results, cloud_name=""):
+    """按网盘名称筛选聚合搜索结果；空值表示不过滤。"""
+    cloud_name = (cloud_name or "").strip()
+    if not cloud_name:
+        return results
+
+    return [
+        item
+        for item in results
+        if SearchResultItem.from_item(item).cloud_name == cloud_name
+    ]
+
+
+def search_public_resources(keyword="", limit=100, cloud_name=""):
     keyword = (keyword or "").strip()
     if not keyword:
         return False, "请提供搜索关键词", []
@@ -796,6 +809,7 @@ def search_public_resources(keyword="", limit=100):
     if cached_items is not None:
         logger.info(f"关键词 '{keyword}' 聚合搜索击中内存缓存 ({len(cached_items)} 条)。")
         filtered_cached = filter_results_by_title(filter_search_results(cached_items), keyword)
+        filtered_cached = _filter_results_by_cloud_name(filtered_cached, cloud_name)
         limited_cached = filtered_cached[: max(limit, 1)]
         return True, "聚合搜索成功 (缓存)", [item.to_dict() for item in limited_cached]
 
@@ -815,7 +829,8 @@ def search_public_resources(keyword="", limit=100):
     if sorted_results:
         set_cached_search_items(keyword, sorted_results)
 
-    limited_results = sorted_results[: max(limit, 1)]
+    filtered_results = _filter_results_by_cloud_name(sorted_results, cloud_name)
+    limited_results = filtered_results[: max(limit, 1)]
 
     return True, "聚合搜索成功", [
         item.to_dict()

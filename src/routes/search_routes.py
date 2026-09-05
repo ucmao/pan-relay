@@ -14,6 +14,7 @@ from src.services.link_checker import check_link, check_links_batch
 from src.services.system_config_service import is_public_search_api_enabled
 from src.services.temp_share_service import cleanup_expired_temp_shares, resolve_view_url
 from src.utils.auth_utils import token_required
+from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +49,20 @@ def search_api():
 
     keyword = request.args.get("keyword", "", type=str)
     limit = request.args.get("limit", 100, type=int)
+    cloud_name = request.args.get("cloud_name", "", type=str).strip()
 
-    success, message, results = search_public_resources(keyword=keyword, limit=limit)
+    if cloud_name and cloud_name not in FRONTEND_DISPLAY_NETDISK_OPTIONS:
+        return jsonify({
+            "success": False,
+            "message": f"不支持的网盘类型: {cloud_name}",
+            "supported_cloud_names": FRONTEND_DISPLAY_NETDISK_OPTIONS,
+        }), 400
+
+    success, message, results = search_public_resources(
+        keyword=keyword,
+        limit=limit,
+        cloud_name=cloud_name,
+    )
 
     if not success:
         status_code = 400 if "请提供搜索关键词" in message else 500

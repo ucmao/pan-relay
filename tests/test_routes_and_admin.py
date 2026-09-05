@@ -107,6 +107,30 @@ class RoutesAndAdminTest(unittest.TestCase):
         html = resp.get_data(as_text=True)
         self.assertIn("我的资源管理", html)
 
+    @patch("src.routes.search_routes.search_public_resources")
+    def test_public_search_api_filters_by_cloud_name(self, mock_search):
+        mock_search.return_value = (True, "聚合搜索成功", [])
+
+        response = self.client.get(
+            "/api?keyword=凡人修仙传&cloud_name=夸克网盘&limit=20"
+        )
+
+        self.assertEqual(200, response.status_code)
+        mock_search.assert_called_once_with(
+            keyword="凡人修仙传",
+            limit=20,
+            cloud_name="夸克网盘",
+        )
+
+    @patch("src.routes.search_routes.search_public_resources")
+    def test_public_search_api_rejects_unsupported_cloud_name(self, mock_search):
+        response = self.client.get("/api?keyword=凡人修仙传&cloud_name=不存在的网盘")
+
+        self.assertEqual(400, response.status_code)
+        self.assertFalse(response.get_json()["success"])
+        self.assertIn("夸克网盘", response.get_json()["supported_cloud_names"])
+        mock_search.assert_not_called()
+
     # --- 后台 TG、API 与插件配置控制台测试 ---
 
     def test_admin_sources_workspace_tab_switch(self):

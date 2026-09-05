@@ -79,19 +79,6 @@
             color: #94a3b8;
         }
 
-        .footer-star-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            margin-left: 4px;
-            padding: 1px 7px;
-            border-radius: 9999px;
-            background: rgba(245, 191, 96, 0.18);
-            color: #b7791f;
-            font-size: 0.72rem;
-            font-weight: 600;
-        }
-
         /* 顶部导航栏与 GitHub Star 徽章 */
         .public-top-nav {
             position: relative;
@@ -322,13 +309,6 @@
                 padding: 12px 0 4px;
             }
 
-            .github-repo-text {
-                display: none;
-            }
-
-            .github-pill-left {
-                padding: 6px 9px 6px 11px;
-            }
         }
     </style>
 </head>
@@ -340,10 +320,10 @@
             <!-- 预留左侧区域，保持搜索区干净居中 -->
         </div>
         <div class="public-nav-right d-flex align-items-center gap-2">
-            <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="github-star-pill" title="前往 GitHub 为 Pan-Relay 点亮 Star ⭐">
+            <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="github-star-pill" title="前往 Pan-Relay GitHub 仓库" aria-label="前往 Pan-Relay GitHub 仓库，点亮 Star">
                 <span class="github-pill-left">
-                    <i class="fab fa-github"></i>
-                    <span class="github-repo-text">Pan-Relay</span>
+                    <i class="fab fa-github" aria-hidden="true"></i>
+                    <span>Pan-Relay</span>
                 </span>
                 <span class="github-pill-right">
                     <i class="fas fa-star star-icon"></i>
@@ -370,7 +350,6 @@
             <span class="footer-divider">|</span>
             <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-github me-1"></i>GitHub
-                <span class="footer-star-tag"><i class="fas fa-star"></i> Star</span>
             </a>
         </div>
     </div>

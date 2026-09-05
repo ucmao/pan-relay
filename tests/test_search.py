@@ -20,10 +20,13 @@ from src.services.search_service import (
     calculate_rank_score,
     calculate_relevance_score,
     calculate_time_score,
+    clear_search_cache,
     dedupe_search_results,
     filter_results_by_title,
     get_title_matched_terms,
     merge_or_select_better,
+    search_public_resources,
+    set_cached_search_items,
     sort_search_results,
 )
 from src.utils.netdisk_utils import (
@@ -72,6 +75,9 @@ class SearchDeduplicationTest(unittest.TestCase):
 
 
 class SearchRankingTest(unittest.TestCase):
+    def tearDown(self):
+        clear_search_cache()
+
     def test_single_term_requires_contiguous_title_match(self):
         results = [
             SearchResultItem(source="other", title="先例汇编", share_link="https://pan.quark.cn/s/one", cloud_name="夸克网盘"),
@@ -109,6 +115,21 @@ class SearchRankingTest(unittest.TestCase):
         tg_item = SearchResultItem(source="tg", title="【4K全集完结原盘合集】繁花", share_link="https://pan.quark.cn/s/tg1", cloud_name="夸克网盘")
         sorted_res = sort_search_results([tg_item, hot_item], keyword="繁花")
         self.assertEqual("hot", sorted_res[0].source)
+
+    def test_public_search_filters_cached_results_before_limit(self):
+        set_cached_search_items("繁花", [
+            SearchResultItem(source="hot", title="繁花 夸克一", share_link="https://pan.quark.cn/s/one", cloud_name="夸克网盘"),
+            SearchResultItem(source="other", title="繁花 百度", share_link="https://pan.baidu.com/s/two", cloud_name="百度网盘"),
+            SearchResultItem(source="other", title="繁花 夸克二", share_link="https://pan.quark.cn/s/three", cloud_name="夸克网盘"),
+        ])
+
+        success, _, results = search_public_resources(
+            "繁花", limit=1, cloud_name="夸克网盘"
+        )
+
+        self.assertTrue(success)
+        self.assertEqual(1, len(results))
+        self.assertEqual("夸克网盘", results[0]["cloud_name"])
 
 
 class LinkCheckerTest(unittest.TestCase):
