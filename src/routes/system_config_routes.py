@@ -8,12 +8,14 @@ from src.services.system_config_service import (
     get_allow_excel_download_config,
     get_frontend_display_netdisk_config,
     get_frontend_link_mode,
+    get_transfer_target_dir,
     get_sensitive_words_config,
     get_search_scheduler_config,
     save_public_search_api_config,
     save_allow_excel_download_config,
     save_frontend_display_netdisk_config,
     save_frontend_link_mode,
+    save_transfer_target_dir,
     save_sensitive_words_config,
     save_search_scheduler_config,
 )
@@ -518,3 +520,29 @@ def update_sensitive_words_config_api():
         "message": "敏感词配置保存成功",
         "config": get_sensitive_words_config(),
     })
+
+
+@system_config_bp.route("/admin/api/transfer-target-dir", methods=["GET"])
+@token_required
+def get_transfer_target_dir_api():
+    """获取转存目标目录配置"""
+    target_dir = get_transfer_target_dir()
+    return jsonify({"success": True, "target_dir": target_dir})
+
+
+@system_config_bp.route("/admin/api/transfer-target-dir", methods=["POST", "PUT"])
+@token_required
+def update_transfer_target_dir_api():
+    """更新转存目标目录配置"""
+    data = request.get_json() or {}
+    target_dir = data.get("target_dir", "")
+    success = save_transfer_target_dir(target_dir)
+    if not success:
+        return jsonify({"success": False, "message": "转存目标目录配置保存失败"}), 500
+
+    return jsonify({
+        "success": True,
+        "message": "转存目标目录配置保存成功",
+        "target_dir": get_transfer_target_dir(),
+    })
+

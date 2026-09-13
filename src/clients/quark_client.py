@@ -277,6 +277,28 @@ class QuarkPanClient(BasePanClient):
             params={"pr": "ucpro", "fr": "pc", "uc_param_str": ""},
         )
 
+    def get_or_create_dir(self, dir_name: str, parent_dir_id: str = "0") -> str:
+        """获取指定名称的文件夹 fid，若不存在则自动新建"""
+        if not dir_name or dir_name.strip() in ("", "/"):
+            return parent_dir_id
+        clean_name = dir_name.strip().strip("/")
+        try:
+            files = self.get_dir_file(parent_dir_id) if parent_dir_id != "0" else self.get_all_file()
+            for item in files:
+                if item.get("file_name") == clean_name and item.get("file_type") == 0:
+                    fid = str(item.get("fid") or "")
+                    if fid:
+                        logger.info("夸克网盘找到现有目录 [%s]: fid=%s", clean_name, fid)
+                        return fid
+            res = self.create_dir(clean_name, parent_dir_id)
+            new_fid = ((res or {}).get("data") or {}).get("fid")
+            if new_fid:
+                logger.info("夸克网盘成功新建目录 [%s]: fid=%s", clean_name, new_fid)
+                return str(new_fid)
+        except Exception as exc:
+            logger.error("夸克网盘获取或创建目录异常: %s", exc)
+        return parent_dir_id
+
     def rename_dir(self, dir_id: str, new_name: str) -> Dict[str, Any]:
         logger.info("夸克网盘重命名目录: %s -> %s", dir_id, new_name)
         return self._request(

@@ -61,6 +61,9 @@ class BaiduPanClient(BasePanClient):
             target_fs_id = fs_id_list[0]
             file_name = file_names[0]
 
+            if to_dir and to_dir != "/":
+                self.ensure_dir(to_dir)
+
             trans_res = self._transfer_file(share_id, from_uk, [target_fs_id], to_dir, surl=surl)
             if not trans_res:
                 logger.error("百度网盘转存失败: %s", file_name)
@@ -116,6 +119,37 @@ class BaiduPanClient(BasePanClient):
             return False
         except Exception as exc:
             logger.error("百度网盘删除请求异常: %s", exc)
+            return False
+
+    def ensure_dir(self, dir_path: str) -> bool:
+        """检查并确保百度网盘目录存在，若不存在则自动创建"""
+        if not dir_path or dir_path.strip() in ("", "/"):
+            return True
+        clean_path = "/" + dir_path.strip("/")
+        try:
+            params = {
+                "a": "commit",
+                "channel": "chunlei",
+                "clienttype": 8,
+                "app_id": 250528,
+            }
+            payload = {
+                "path": clean_path,
+                "isdir": 1,
+                "size": 0,
+                "block_list": "[]",
+                "rtype": 0,
+            }
+            data = self._request("POST", "https://pan.baidu.com/api/create", params=params, data=payload)
+            errno = data.get("errno")
+            # 0: 成功创建; -8: 目录已存在
+            if errno in (0, -8):
+                logger.info("百度网盘目标目录确认正常: %s", clean_path)
+                return True
+            logger.warning("百度网盘创建目录响应: %s", data)
+            return False
+        except Exception as exc:
+            logger.error("百度网盘检查/创建目录异常: %s", exc)
             return False
 
     def _get_bdstoken(self) -> str:

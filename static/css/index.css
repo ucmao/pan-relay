@@ -205,86 +205,166 @@
     color: #ffffff;
 }
 
-/* --- 结果区网盘徽章颜色（弱化显示，不与主按钮竞争） --- */
-.result-actions .bg-purple {
-    background-color: #f1eaff !important;
-    color: #7a56d6 !important;
+/* --- 结果区网盘徽章专属品牌配色（低饱和底色 + 品牌主色字，精致高辨识度） --- */
+/* 1. 国内主流网盘 */
+.result-actions .bg-baidu {
+    background-color: #eaf2fe !important;
+    color: #1e60d5 !important;
+    border-color: rgba(30, 96, 213, 0.15) !important;
 }
-
-.result-actions .bg-orange {
-    background-color: #fff2e2 !important;
-    color: #c97f12 !important;
-}
-
-.result-actions .bg-teal {
-    background-color: #e8f8f6 !important;
-    color: #24897f !important;
-}
-
-.result-actions .bg-mid-blue {
-    background-color: #eaf0ff !important;
-    color: #4768c7 !important;
-}
-
-.result-actions .bg-light-green {
-    background-color: #edf8e2 !important;
-    color: #6f9f1e !important;
-}
-
-.result-actions .bg-salmon {
-    background-color: #fff0eb !important;
-    color: #d06f4c !important;
-}
-
-.result-actions .bg-slate-blue {
-    background-color: #edf2f7 !important;
-    color: #51687f !important;
-}
-
-.result-actions .bg-deep-violet {
-    background-color: #efe8ff !important;
-    color: #6c43d7 !important;
-}
-
-.result-actions .bg-coral {
-    background-color: #ffeded !important;
-    color: #d85e5e !important;
-}
-
-.result-actions .bg-navy-blue {
-    background-color: #edf1f5 !important;
-    color: #3f5265 !important;
-}
-
-.result-actions .bg-rose {
-    background-color: #ffeaf1 !important;
-    color: #ca557d !important;
-}
-
-.result-actions .bg-dark-mint {
-    background-color: #e9f8f2 !important;
-    color: #2a8d71 !important;
-}
-
-.result-actions .bg-warm-gold {
-    background-color: #fff5df !important;
-    color: #be8b1f !important;
-}
-
-.result-actions .bg-olive {
-    background-color: #eff4e6 !important;
-    color: #6b7f38 !important;
-}
-
-.result-actions .bg-grape {
-    background-color: #f2eef5 !important;
-    color: #6e5d7e !important;
-}
-
-.result-actions .bg-terracotta {
+.result-actions .bg-quark {
     background-color: #fdf0ec !important;
-    color: #b86450 !important;
+    color: #d93829 !important;
+    border-color: rgba(217, 56, 41, 0.15) !important;
 }
+.result-actions .bg-aliyun {
+    background-color: #e6f8f3 !important;
+    color: #059669 !important;
+    border-color: rgba(5, 150, 105, 0.15) !important;
+}
+.result-actions .bg-xunlei {
+    background-color: #e6f6f9 !important;
+    color: #0284c7 !important;
+    border-color: rgba(2, 132, 199, 0.15) !important;
+}
+.result-actions .bg-uc {
+    background-color: #fef6e8 !important;
+    color: #d97706 !important;
+    border-color: rgba(217, 119, 6, 0.15) !important;
+}
+.result-actions .bg-123pan {
+    background-color: #f5effe !important;
+    color: #8b5cf6 !important;
+    border-color: rgba(139, 92, 246, 0.15) !important;
+}
+.result-actions .bg-115 {
+    background-color: #fff3ea !important;
+    color: #ea580c !important;
+    border-color: rgba(234, 88, 12, 0.15) !important;
+}
+
+/* 2. 运营商云盘 */
+.result-actions .bg-tianyi {
+    background-color: #edf3ff !important;
+    color: #2563eb !important;
+    border-color: rgba(37, 99, 235, 0.15) !important;
+}
+.result-actions .bg-mobile {
+    background-color: #ecfdf5 !important;
+    color: #16a34a !important;
+    border-color: rgba(22, 163, 74, 0.15) !important;
+}
+.result-actions .bg-unicom {
+    background-color: #fff1f2 !important;
+    color: #e11d48 !important;
+    border-color: rgba(225, 29, 72, 0.15) !important;
+}
+
+/* 3. 国内特色 / 小众网盘 */
+.result-actions .bg-lanzou {
+    background-color: #e0f2fe !important;
+    color: #0369a1 !important;
+    border-color: rgba(3, 105, 161, 0.15) !important;
+}
+.result-actions .bg-ctfile {
+    background-color: #ecfdf5 !important;
+    color: #047857 !important;
+    border-color: rgba(4, 120, 87, 0.15) !important;
+}
+.result-actions .bg-weiyun {
+    background-color: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border-color: rgba(29, 78, 216, 0.15) !important;
+}
+.result-actions .bg-jianguo {
+    background-color: #fcf4ea !important;
+    color: #92400e !important;
+    border-color: rgba(146, 64, 14, 0.15) !important;
+}
+.result-actions .bg-wukong {
+    background-color: #edf2f7 !important;
+    color: #334155 !important;
+    border-color: rgba(51, 65, 85, 0.15) !important;
+}
+.result-actions .bg-kuaitu {
+    background-color: #fdf2f8 !important;
+    color: #db2777 !important;
+    border-color: rgba(219, 39, 119, 0.15) !important;
+}
+.result-actions .bg-guangya {
+    background-color: #fefce8 !important;
+    color: #ca8a04 !important;
+    border-color: rgba(202, 138, 4, 0.18) !important;
+}
+
+/* 4. 海外及跨境网盘 */
+.result-actions .bg-terabox {
+    background-color: #eef2ff !important;
+    color: #4f46e5 !important;
+    border-color: rgba(79, 70, 229, 0.15) !important;
+}
+.result-actions .bg-gdrive {
+    background-color: #e6f4ea !important;
+    color: #137333 !important;
+    border-color: rgba(19, 115, 51, 0.15) !important;
+}
+.result-actions .bg-mega {
+    background-color: #fee2e2 !important;
+    color: #dc2626 !important;
+    border-color: rgba(220, 38, 38, 0.15) !important;
+}
+.result-actions .bg-gofile {
+    background-color: #f3e8ff !important;
+    color: #7c3aed !important;
+    border-color: rgba(124, 58, 237, 0.15) !important;
+}
+.result-actions .bg-onedrive {
+    background-color: #e0f2fe !important;
+    color: #0078d4 !important;
+    border-color: rgba(0, 120, 212, 0.15) !important;
+}
+.result-actions .bg-pikpak {
+    background-color: #fff1eb !important;
+    color: #c2410c !important;
+    border-color: rgba(194, 65, 12, 0.15) !important;
+}
+
+/* 5. P2P 协议链接 & 兜底 */
+.result-actions .bg-magnet {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    border-color: rgba(30, 41, 59, 0.18) !important;
+}
+.result-actions .bg-thunder {
+    background-color: #e0f2fe !important;
+    color: #0369a1 !important;
+    border-color: rgba(3, 105, 161, 0.15) !important;
+}
+.result-actions .bg-ed2k {
+    background-color: #f3f4f6 !important;
+    color: #475569 !important;
+    border-color: rgba(71, 85, 105, 0.15) !important;
+}
+.result-actions .bg-other {
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    border-color: rgba(100, 116, 139, 0.15) !important;
+}
+
+/* 兼容旧版本通用 class */
+.result-actions .bg-purple { background-color: #f5effe !important; color: #8b5cf6 !important; }
+.result-actions .bg-orange { background-color: #fff3ea !important; color: #ea580c !important; }
+.result-actions .bg-teal { background-color: #e6f6f9 !important; color: #0284c7 !important; }
+.result-actions .bg-mid-blue { background-color: #eaf2fe !important; color: #1e60d5 !important; }
+.result-actions .bg-light-green { background-color: #ecfdf5 !important; color: #16a34a !important; }
+.result-actions .bg-salmon { background-color: #fff1eb !important; color: #c2410c !important; }
+.result-actions .bg-deep-violet { background-color: #edf3ff !important; color: #2563eb !important; }
+.result-actions .bg-coral { background-color: #fdf2f8 !important; color: #db2777 !important; }
+.result-actions .bg-navy-blue { background-color: #edf2f7 !important; color: #334155 !important; }
+.result-actions .bg-dark-mint { background-color: #e6f8f3 !important; color: #059669 !important; }
+.result-actions .bg-warm-gold { background-color: #fef6e8 !important; color: #d97706 !important; }
+.result-actions .bg-olive { background-color: #eff4e6 !important; color: #6b7f38 !important; }
+.result-actions .bg-terracotta { background-color: #fdf0ec !important; color: #d93829 !important; }
 
 /* --- 初始提示区域 --- */
 .initial-prompt-area {
@@ -339,13 +419,13 @@
 .filter-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     background: rgba(255, 255, 255, 0.88);
     color: #475569;
     border: 1px solid rgba(148, 163, 184, 0.22);
-    padding: 0 16px;
-    height: 38px;
-    border-radius: 999px;
+    padding: 0 12px;
+    height: 34px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 0.84rem;
     line-height: 1;
@@ -353,7 +433,7 @@
     font-weight: 500;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
 }
@@ -382,12 +462,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    padding: 2px 7px;
-    min-width: 20px;
-    height: 20px;
-    border-radius: 999px;
+    padding: 1px 6px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 5px;
     background: rgba(148, 163, 184, 0.14);
     color: #64748b;
     line-height: 1;
@@ -432,8 +512,8 @@
 
 .filter-toggle-button {
     flex: 0 0 auto;
-    border-radius: 999px;
-    padding: 6px 14px;
+    border-radius: 9999px;
+    padding: 7px 16px;
     font-size: 0.82rem;
     font-weight: 500;
     color: #475569;
@@ -442,13 +522,6 @@
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
     backdrop-filter: blur(8px);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.export-excel-btn:hover,
-.export-excel-btn:focus {
-    color: #047857;
-    border-color: rgba(16, 185, 129, 0.45);
-    background-color: rgba(240, 253, 244, 0.9);
 }
 
 .filter-toggle-button:hover,
@@ -588,6 +661,33 @@
     border-color: rgba(148, 163, 184, 0.4);
 }
 
+.filter-excel-btn {
+    height: 40px;
+    padding: 0 14px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    border-radius: 12px;
+    background: rgba(240, 253, 244, 0.9);
+    color: #047857;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.filter-excel-btn:hover {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: rgba(16, 185, 129, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15);
+}
+
+.filter-excel-btn:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
 .active-filter-tags {
     margin-top: 12px;
     padding-top: 10px;
@@ -602,8 +702,8 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 3px 10px;
-    border-radius: 999px;
+    padding: 3px 8px;
+    border-radius: 6px;
     font-size: 0.76rem;
     font-weight: 600;
 }
@@ -726,10 +826,10 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 5px 13px;
+    padding: 5px 12px;
     font-size: 0.8rem;
     font-weight: 600;
-    border-radius: 999px;
+    border-radius: 8px;
     border: 1px solid rgba(222, 159, 45, 0.45);
     background: rgba(255, 255, 255, 0.92);
     color: #b7791f;
@@ -829,18 +929,22 @@
     align-items: center;
     flex-shrink: 0;
     margin-left: 10px;
-    gap: 10px;
+    gap: 8px;
 }
 
 .netdisk-badge {
-    font-size: 0.75rem;
-    padding: 6px 10px;
-    border-radius: 999px;
+    font-size: 0.74rem;
+    padding: 2px 7px;
+    border-radius: 5px;
     flex-shrink: 0;
-    font-weight: 600;
+    font-weight: 500;
     border: 1px solid rgba(0, 0, 0, 0.04);
     box-shadow: none;
     letter-spacing: 0.01em;
+    line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
 }
 
 .result-divider {
@@ -850,20 +954,30 @@
 
 .copy-button,
 .view-button {
-    min-width: 84px;
-    min-height: 38px;
-    border-radius: 999px !important;
-    border-color: rgba(148, 163, 184, 0.2) !important;
-    background: rgba(255, 255, 255, 0.9) !important;
+    min-width: 78px;
+    height: 34px;
+    padding: 0 15px !important;
+    font-size: 0.84rem !important;
+    border-radius: 9999px !important;
+    border: 1px solid rgba(148, 163, 184, 0.28) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
     color: #334155 !important;
     font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .copy-button:hover,
 .view-button:hover {
-    border-color: rgba(245, 191, 96, 0.3) !important;
+    border-color: rgba(245, 191, 96, 0.55) !important;
     color: #b7791f !important;
-    background: rgba(245, 191, 96, 0.12) !important;
+    background: rgba(255, 248, 235, 0.95) !important;
+    box-shadow: 0 3px 8px rgba(245, 191, 96, 0.18) !important;
+    transform: translateY(-1px);
 }
 
 .login-shell {
@@ -1039,10 +1153,6 @@
     .filter-toggle-button {
         padding: 0.42rem 0.78rem;
         font-size: 0.88rem;
-    }
-
-    .export-excel-btn {
-        display: none !important;
     }
 
     #advanced-filter-bar {

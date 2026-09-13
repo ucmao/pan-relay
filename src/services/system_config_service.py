@@ -11,7 +11,32 @@ FRONTEND_DISPLAY_NETDISKS_KEY = "frontend_display_netdisks"
 FRONTEND_LINK_MODE_KEY = "frontend_link_mode"
 PUBLIC_SEARCH_API_KEY = "public_search_api"
 ALLOW_EXCEL_DOWNLOAD_KEY = "allow_excel_download"
+TRANSFER_TARGET_DIR_KEY = "transfer_target_dir"
+DEFAULT_TRANSFER_TARGET_DIR = "Pan-Relay分享"
 FRONTEND_LINK_MODE_OPTIONS = {"copy", "view"}
+
+
+def get_transfer_target_dir() -> str:
+    raw_value = get_config_value(TRANSFER_TARGET_DIR_KEY)
+    if not raw_value:
+        return DEFAULT_TRANSFER_TARGET_DIR
+
+    try:
+        parsed = json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("转存目标目录配置格式无效，已回退到默认值")
+        return DEFAULT_TRANSFER_TARGET_DIR
+
+    target_dir = str(parsed.get("target_dir", DEFAULT_TRANSFER_TARGET_DIR)).strip()
+    return target_dir
+
+
+def save_transfer_target_dir(target_dir: str) -> bool:
+    clean_dir = (target_dir or "").strip()
+    return set_config_value(
+        TRANSFER_TARGET_DIR_KEY,
+        {"target_dir": clean_dir},
+    )
 
 
 def _default_frontend_display_config() -> Dict[str, List[str]]:

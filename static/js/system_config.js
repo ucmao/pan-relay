@@ -266,6 +266,55 @@ async function saveAllowExcelDownloadConfig() {
     }
 }
 
+async function loadTransferTargetDirConfig() {
+    try {
+        const response = await fetch('/admin/api/transfer-target-dir');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const input = document.getElementById('transferTargetDirInput');
+        const badge = document.getElementById('transferTargetDirBadge');
+        const dir = (data.target_dir !== undefined && data.target_dir !== null) ? data.target_dir : 'Pan-Relay分享';
+
+        if (input) {
+            input.value = dir;
+        }
+        if (badge) {
+            badge.textContent = dir ? dir : '根目录 (/)';
+            badge.className = dir ? 'badge badge-info text-[10px]' : 'badge badge-secondary text-[10px]';
+        }
+    } catch (error) {
+        console.error('加载转存目标目录配置失败:', error);
+    }
+}
+
+async function saveTransferTargetDirConfig() {
+    const input = document.getElementById('transferTargetDirInput');
+    const target_dir = input ? input.value.trim() : 'Pan-Relay分享';
+
+    try {
+        const response = await fetch('/admin/api/transfer-target-dir', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target_dir })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '转存目标目录配置保存成功', 'success');
+        await loadTransferTargetDirConfig();
+    } catch (error) {
+        console.error('保存转存目标目录配置失败:', error);
+        showToast(`保存转存目标目录配置失败: ${error.message}`, 'danger');
+        await loadTransferTargetDirConfig();
+    }
+}
+
 async function toggleAllFrontendDisplayNetdisks() {
     const checkboxes = getFrontendDisplayNetdiskCheckboxes();
     const allChecked = checkboxes.length > 0 && checkboxes.every((checkbox) => checkbox.checked);
@@ -519,11 +568,22 @@ document.addEventListener('DOMContentLoaded', () => {
     bindSensitiveWordsTextareaEvents();
     loadPublicSearchApiConfig();
     loadAllowExcelDownloadConfig();
+    loadTransferTargetDirConfig();
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();
     loadSensitiveWordsConfig();
     loadCookieConfig();
     updateDynamicTransferStatusVisibility();
+
+    const transferTargetDirInput = document.getElementById('transferTargetDirInput');
+    if (transferTargetDirInput) {
+        transferTargetDirInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveTransferTargetDirConfig();
+            }
+        });
+    }
 
     const saveCookieConfigBtn = document.getElementById('saveCookieConfigBtn');
     if (saveCookieConfigBtn) {

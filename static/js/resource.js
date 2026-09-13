@@ -8,8 +8,16 @@ let pageSize = 50;
 let totalPages = 1;
 let totalCount = 0;
 let resourcesData = [];
-let batchResourceMode = 'import';
 const selectedResourceMap = new Map();
+
+// 网盘凭证配置就绪状态
+let netdiskCredentialsMap = {
+    "夸克网盘": { status: 'missing', title: '未配置凭证', key: 'quark' },
+    "百度网盘": { status: 'missing', title: '未配置凭证', key: 'baidu' },
+    "阿里云盘": { status: 'missing', title: '未配置凭证', key: 'aliyun' },
+    "迅雷网盘": { status: 'missing', title: '未配置凭证', key: 'xunlei' },
+    "UC网盘": { status: 'missing', title: '未配置凭证', key: 'uc' }
+};
 
 // ==========================================
 // 2. DOM 元素获取
@@ -95,8 +103,100 @@ function matchNetdiskLink(link) {
     return "其他";
 }
 
-// 显示 Toast 消息
+// 网盘凭证检测与状态渲染
+async function loadNetdiskCredentials() {
+    try {
+        const response = await fetch('/admin/api/credential-config');
+        const data = await response.json();
+        if (data && data.dynamic_transfer_statuses) {
+            data.dynamic_transfer_statuses.forEach(item => {
+                if (netdiskCredentialsMap[item.cloud_name]) {
+                    netdiskCredentialsMap[item.cloud_name].status = item.status || 'missing';
+                    netdiskCredentialsMap[item.cloud_name].title = item.title || '未配置凭证';
+                }
+            });
+        }
+    } catch (err) {
+        console.warn('获取网盘凭证状态失败:', err);
+    } finally {
+        renderBatchReadySummary();
+        updateSingleLinkTransferHint();
+    }
+}
 
+function renderBatchReadySummary() {
+    const summaryEl = document.getElementById('batchReadyCloudsSummary');
+    if (!summaryEl) return;
+
+    const clouds = [
+        { name: "夸克网盘", key: "quark", short: "夸克" },
+        { name: "百度网盘", key: "baidu", short: "百度" },
+        { name: "阿里云盘", key: "aliyun", short: "阿里" },
+        { name: "迅雷网盘", key: "xunlei", short: "迅雷" },
+        { name: "UC网盘", key: "uc", short: "UC" }
+    ];
+
+    const readyClouds = clouds.filter(c => netdiskCredentialsMap[c.name]?.status === 'enabled');
+    const invalidClouds = clouds.filter(c => netdiskCredentialsMap[c.name]?.status === 'invalid');
+
+    if (readyClouds.length === 0) {
+        summaryEl.innerHTML = `
+            <span class="text-slate-500 font-medium">就绪转存平台：</span>
+            <span class="text-amber-600 font-normal">暂无网盘就绪（未配置有效凭证）</span>
+        `;
+        return;
+    }
+
+    const readyBadges = readyClouds.map(c => `<span class="px-1.5 py-0.5 rounded-md bg-emerald-100/80 text-emerald-700 font-medium text-[11px]">${c.name}</span>`).join(' ');
+    const extraHint = invalidClouds.length > 0 ? `<span class="text-amber-600 text-[10px] ml-1">(${invalidClouds.map(c => c.short).join('、')}凭证失效)</span>` : '';
+
+    summaryEl.innerHTML = `
+        <span class="text-slate-600 font-medium whitespace-nowrap">就绪转存平台 (${readyClouds.length}/5)：</span>
+        <div class="flex items-center gap-1 flex-wrap">${readyBadges}${extraHint}</div>
+    `;
+}
+
+// 单条分享链接自动转存匹配实时提示 (方案A：未输入静默隐藏，输入后即显)
+function updateSingleLinkTransferHint() {
+    const opts = document.getElementById('singleTransferOptions');
+    const hintEl = document.getElementById('singleLinkTransferHint');
+    if (!opts || !hintEl) return;
+
+    const linkInput = document.getElementById('resourceShareLink');
+    const link = linkInput ? linkInput.value.trim() : '';
+    const toggle = document.getElementById('singleResourceTransferToggle');
+    const isTransferEnabled = toggle ? toggle.checked : false;
+
+    // 未开启转存 或 尚未输入有效链接：静默隐藏，保持卡片极致精简
+    if (!isTransferEnabled || !link) {
+        opts.classList.add('d-none');
+        hintEl.innerHTML = '';
+        return;
+    }
+
+    const cloudName = matchNetdiskLink(link);
+    const cred = netdiskCredentialsMap[cloudName];
+
+    if (!cred || cloudName === '其他') {
+        hintEl.className = 'text-xs p-2.5 rounded-lg bg-amber-50/90 text-amber-800 border border-amber-200/80 flex items-center gap-1.5';
+        hintEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-500 flex-shrink-0"></i> <span>当前识别为「${cloudName}」，暂不支持自动转存，将按原始链接直接入库。</span>`;
+        opts.classList.remove('d-none');
+    } else if (cred.status === 'enabled') {
+        hintEl.className = 'text-xs p-2.5 rounded-lg bg-emerald-50/90 text-emerald-800 border border-emerald-200/80 flex items-center gap-1.5';
+        hintEl.innerHTML = `<i class="fas fa-check-circle text-emerald-500 flex-shrink-0"></i> <span>已识别到 <strong>${cloudName}</strong> 链接，且凭证已就绪。提交后将自动转存生成专属链接。</span>`;
+        opts.classList.remove('d-none');
+    } else {
+        hintEl.className = 'text-xs p-2.5 rounded-lg bg-rose-50/90 text-rose-800 border border-rose-200/80 flex items-center justify-between gap-1.5';
+        hintEl.innerHTML = `
+            <div class="flex items-center gap-1.5 truncate">
+                <i class="fas fa-info-circle text-rose-500 flex-shrink-0"></i>
+                <span class="truncate">已识别到 <strong>${cloudName}</strong> 链接，但未配置可用凭证，将按原始链接入库。</span>
+            </div>
+            <a href="/admin/system-config" target="_blank" class="text-rose-700 underline font-medium text-xs whitespace-nowrap ml-2 flex-shrink-0">去配置凭证 &rarr;</a>
+        `;
+        opts.classList.remove('d-none');
+    }
+}
 
 // ==========================================
 // 4. 数据加载与渲染
@@ -440,9 +540,34 @@ async function editResource(id) {
     }
 }
 
-// ==========================================
-// 6. 核心业务逻辑 (新增/更新/批量)
-// ==========================================
+// 单条添加转存切换
+function toggleSingleTransferOptions(enabled) {
+    const saveBtn = document.getElementById('saveResourceBtn');
+    if (saveBtn) {
+        saveBtn.innerHTML = enabled
+            ? '<i class="fas fa-cloud-upload-alt me-1"></i> 转存并入库'
+            : '<i class="fas fa-save me-1"></i> 直接入库';
+    }
+    updateSingleLinkTransferHint();
+}
+
+function getActiveTransferNetdiskConfig() {
+    return {
+        quark: netdiskCredentialsMap["夸克网盘"]?.status === 'enabled',
+        baidu: netdiskCredentialsMap["百度网盘"]?.status === 'enabled',
+        aliyun: netdiskCredentialsMap["阿里云盘"]?.status === 'enabled',
+        xunlei: netdiskCredentialsMap["迅雷网盘"]?.status === 'enabled',
+        uc: netdiskCredentialsMap["UC网盘"]?.status === 'enabled',
+    };
+}
+
+function getSingleTransferNetdiskConfig() {
+    const toggle = document.getElementById('singleResourceTransferToggle');
+    if (!toggle || !toggle.checked) {
+        return {};
+    }
+    return getActiveTransferNetdiskConfig();
+}
 
 // 保存单个资源
 async function saveResource() {
@@ -453,6 +578,8 @@ async function saveResource() {
 
     const shareLink = document.getElementById('resourceShareLink').value.trim();
     const cloudName = matchNetdiskLink(shareLink);
+    const saveToNetdisk = getSingleTransferNetdiskConfig();
+    const isTransfer = Object.values(saveToNetdisk).some(Boolean);
 
     const payload = {
         name: document.getElementById('resourceName').value.trim(),
@@ -460,12 +587,14 @@ async function saveResource() {
         cloud_name: cloudName,
         type: document.getElementById('resourceType').value,
         remarks: document.getElementById('resourceRemarks').value.trim(),
-        save_to_netdisk: {}
+        save_to_netdisk: saveToNetdisk
     };
 
     // 状态切换
     saveResourceBtn.disabled = true;
-    saveResourceBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 保存中...';
+    saveResourceBtn.innerHTML = isTransfer 
+        ? '<span class="spinner-border spinner-border-sm"></span> 正在转存并入库...' 
+        : '<span class="spinner-border spinner-border-sm"></span> 保存中...';
 
     try {
         const response = await fetch('/admin/api/resources', {
@@ -476,9 +605,12 @@ async function saveResource() {
         const data = await response.json();
 
         if (data.success) {
-            showToast(data.message || '资源已直接入库');
+            showToast(data.message || (isTransfer ? '资源转存并入库成功' : '资源已直接入库'));
             window.AppUI.closeModal('addResourceModal');
             addResourceForm.reset();
+            const singleToggle = document.getElementById('singleResourceTransferToggle');
+            if (singleToggle) singleToggle.checked = false;
+            toggleSingleTransferOptions(false);
             loadResources();
         } else {
             showToast(data.message || '添加失败', 'danger');
@@ -487,9 +619,12 @@ async function saveResource() {
         console.error(error);
         showToast('请求失败，请检查网络', 'danger');
     } finally {
-        // 关键：无论成功失败都恢复按钮
         saveResourceBtn.disabled = false;
-        saveResourceBtn.innerHTML = '<i class="fas fa-save"></i> 直接入库';
+        const currentToggle = document.getElementById('singleResourceTransferToggle');
+        const isCurrentTransfer = currentToggle ? currentToggle.checked : false;
+        saveResourceBtn.innerHTML = isCurrentTransfer 
+            ? '<i class="fas fa-cloud-upload-alt me-1"></i> 转存并入库' 
+            : '<i class="fas fa-save me-1"></i> 直接入库';
     }
 }
 
@@ -621,60 +756,38 @@ function parseBatchResources(content) {
         }));
 }
 
-function setBatchResourceMode(mode) {
-    batchResourceMode = mode === 'transfer' ? 'transfer' : 'import';
-    const isTransferMode = batchResourceMode === 'transfer';
-
-    if (batchAddResourceModal) {
-        batchAddResourceModal.classList.toggle('mode-import', !isTransferMode);
-        batchAddResourceModal.classList.toggle('mode-transfer', isTransferMode);
+function toggleBatchTransferOptions(enabled) {
+    const opts = document.getElementById('batchTransferOptions');
+    const saveBtn = document.getElementById('batchSaveResourceBtn');
+    if (opts) {
+        opts.classList.toggle('d-none', !enabled);
     }
-
-    if (batchAddResourceModalLabel) {
-        batchAddResourceModalLabel.innerHTML = isTransferMode
-            ? '<i class="fas fa-cloud-upload-alt text-blue-600 me-1"></i> 批量转存入库'
-            : '<i class="fas fa-file-import text-blue-600 me-1"></i> 批量导入资源';
+    if (saveBtn) {
+        saveBtn.innerHTML = enabled
+            ? '<i class="fas fa-cloud-upload-alt me-1"></i> 开始转存并入库'
+            : '<i class="fas fa-save me-1"></i> 开始导入';
     }
-
-    if (batchTransferOptions) {
-        batchTransferOptions.classList.toggle('d-none', !isTransferMode);
-    }
-
-    if (batchSaveResourceBtn) {
-        batchSaveResourceBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer';
-        batchSaveResourceBtn.innerHTML = isTransferMode
-            ? '<i class="fas fa-cloud-upload-alt text-[10px]"></i> 批量转存入库'
-            : '<i class="fas fa-save text-[10px]"></i> 开始导入';
+    if (enabled) {
+        renderBatchReadySummary();
     }
 }
 
 function getBatchTransferNetdiskConfig() {
-    if (batchResourceMode !== 'transfer') {
+    const toggle = document.getElementById('batchResourceTransferToggle');
+    if (!toggle || !toggle.checked) {
         return {};
     }
-
-    const isChecked = (id) => {
-        const el = document.getElementById(id);
-        return el ? Boolean(el.checked) : false;
-    };
-
-    return {
-        quark: isChecked('resourceSaveToQuark'),
-        baidu: isChecked('resourceSaveToBaidu'),
-        aliyun: isChecked('resourceSaveToAli'),
-        xunlei: isChecked('resourceSaveToXunlei'),
-        uc: isChecked('resourceSaveToUc'),
-        wukong: isChecked('resourceSaveToWukong'),
-    };
+    return getActiveTransferNetdiskConfig();
 }
 
 let isBatchSavingInProgress = false;
 
 // 批量保存
 async function batchSaveResources() {
+    const saveBtn = document.getElementById('batchSaveResourceBtn');
     if (isBatchSavingInProgress) return;
 
-    const content = document.getElementById('batchResourceContent').value.trim();
+    const content = document.getElementById('batchResourceContent')?.value?.trim() || '';
     if (!content) {
         showToast('请输入内容', 'warning');
         return;
@@ -686,32 +799,38 @@ async function batchSaveResources() {
         return;
     }
 
-    if (batchResourceMode === 'transfer' && resources.length > 10) {
+    const transferToggle = document.getElementById('batchResourceTransferToggle');
+    const isTransferMode = transferToggle ? transferToggle.checked : false;
+
+    if (isTransferMode && resources.length > 10) {
         showToast('批量转存建议单次不超过10条', 'warning');
         return;
     }
 
-    if (batchResourceMode === 'import' && resources.length > 500) {
+    if (!isTransferMode && resources.length > 500) {
         showToast('批量导入建议单次不超过500条', 'warning');
         return;
     }
 
-    const commonType = document.getElementById('batchResourceType').value;
-    const commonRemarks = document.getElementById('batchResourceRemarks').value.trim();
+    const commonType = document.getElementById('batchResourceType')?.value || '';
+    const commonRemarks = document.getElementById('batchResourceRemarks')?.value?.trim() || '';
 
     const saveToNetdisk = getBatchTransferNetdiskConfig();
-    const actionText = batchResourceMode === 'transfer' ? '转存入库' : '导入';
+    const actionText = isTransferMode ? '转存入库' : '导入';
 
     isBatchSavingInProgress = true;
-    // 锁定按钮
-    batchSaveResourceBtn.disabled = true;
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> 正在${actionText}...`;
+    }
     let successCount = 0;
 
     try {
         for (let i = 0; i < resources.length; i++) {
             const res = resources[i];
-            // 更新按钮文字显示进度
-            batchSaveResourceBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> 正在${actionText} ${i + 1}/${resources.length}`;
+            if (saveBtn) {
+                saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> 正在${actionText} ${i + 1}/${resources.length}`;
+            }
 
             const payload = {
                 name: res.name,
@@ -731,20 +850,25 @@ async function batchSaveResources() {
             if (data.success) successCount++;
         }
 
-        showToast(`批量${actionText}完成：成功 ${successCount}，失败 ${resources.length - successCount}`, 'success');
+        showToast(`批量${actionText}完成：成功 ${successCount}，失败 ${resources.length - successCount}`, successCount > 0 ? 'success' : 'warning');
         
         window.AppUI.closeModal('batchAddResourceModal');
-        batchAddResourceForm.reset();
+        const batchForm = document.getElementById('batchAddResourceForm');
+        if (batchForm) batchForm.reset();
+        if (transferToggle) transferToggle.checked = false;
+        toggleBatchTransferOptions(false);
         loadResources();
 
     } catch (error) {
-        console.error(error);
+        console.error('批量处理异常:', error);
         showToast('批量处理过程中断', 'danger');
     } finally {
         isBatchSavingInProgress = false;
-        // 恢复按钮
-        batchSaveResourceBtn.disabled = false;
-        setBatchResourceMode(batchResourceMode);
+        if (saveBtn) {
+            saveBtn.disabled = false;
+        }
+        const currentToggle = document.getElementById('batchResourceTransferToggle');
+        toggleBatchTransferOptions(currentToggle ? currentToggle.checked : false);
     }
 }
 
@@ -897,7 +1021,18 @@ async function deleteSelectedResources() {
 function initResourcePage() {
     // 初始加载
     loadResources();
+    loadNetdiskCredentials();
     setBatchResourceMode('import');
+
+    // 监听分享链接输入以实时刷新转存识别提示
+    const shareLinkEl = document.getElementById('resourceShareLink');
+    if (shareLinkEl) {
+        ['input', 'change', 'paste', 'blur'].forEach(evt => {
+            shareLinkEl.addEventListener(evt, () => {
+                setTimeout(updateSingleLinkTransferHint, 50);
+            });
+        });
+    }
 
     // 绑定分页点击事件 (委托)
     if (pagination) {
@@ -935,17 +1070,29 @@ function initResourcePage() {
     if (deleteSelectedBtn) deleteSelectedBtn.addEventListener('click', deleteSelectedResources);
 
     if (batchImportResourceBtn) {
-        batchImportResourceBtn.addEventListener('click', () => setBatchResourceMode('import'));
+        batchImportResourceBtn.addEventListener('click', () => {
+            const batchToggle = document.getElementById('batchResourceTransferToggle');
+            if (batchToggle) batchToggle.checked = false;
+            toggleBatchTransferOptions(false);
+        });
     }
 
-    if (batchTransferResourceBtn) {
-        batchTransferResourceBtn.addEventListener('click', () => setBatchResourceMode('transfer'));
+    const addResourceModal = document.getElementById('addResourceModal');
+    if (addResourceModal) {
+        addResourceModal.addEventListener('hidden.bs.modal', () => {
+            if (addResourceForm) addResourceForm.reset();
+            const singleToggle = document.getElementById('singleResourceTransferToggle');
+            if (singleToggle) singleToggle.checked = false;
+            toggleSingleTransferOptions(false);
+        });
     }
 
     if (batchAddResourceModal) {
         batchAddResourceModal.addEventListener('hidden.bs.modal', () => {
-            batchAddResourceForm.reset();
-            setBatchResourceMode('import');
+            if (batchAddResourceForm) batchAddResourceForm.reset();
+            const batchToggle = document.getElementById('batchResourceTransferToggle');
+            if (batchToggle) batchToggle.checked = false;
+            toggleBatchTransferOptions(false);
         });
     }
 
@@ -994,7 +1141,8 @@ function initResourcePage() {
 window.batchSaveResources = batchSaveResources;
 window.saveResource = saveResource;
 window.updateResource = updateResource;
-window.setBatchResourceMode = setBatchResourceMode;
+window.toggleSingleTransferOptions = toggleSingleTransferOptions;
+window.toggleBatchTransferOptions = toggleBatchTransferOptions;
 window.initResourcePage = initResourcePage;
 
 if (document.readyState === 'loading') {

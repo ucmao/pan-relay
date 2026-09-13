@@ -286,7 +286,7 @@ async function toggleEnabled(apiId, isEnabled) {
 // 全部测试 API
 async function testAllApis() {
     const btn = document.getElementById('testAllApiButton');
-    if (!(await showConfirm('确定要测试所有 API 检索源吗？', 'primary', '批量测试确认'))) return;
+    if (!(await showConfirm('确定要测试所有 API 搜索源吗？', 'primary', '批量测试确认'))) return;
 
     let originalHtml = '';
     if (btn) {
@@ -294,7 +294,7 @@ async function testAllApis() {
         originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> 检测中...';
     }
-    showToast('正在并发检测所有 API 检索源连通性...', 'info');
+    showToast('正在并发检测所有 API 搜索源连通性...', 'info');
 
     try {
         const response = await fetch('/admin/api/test-all', { method: 'POST' });

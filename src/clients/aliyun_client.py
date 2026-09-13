@@ -120,6 +120,49 @@ class AliyunPanClient(BasePanClient):
 
         return json.dumps(new_file_ids, ensure_ascii=False), title, share_url_new
 
+    def get_or_create_dir(self, dir_name: str, parent_file_id: str = "root") -> str:
+        """获取指定名称的文件夹 file_id，若不存在则自动新建"""
+        if not dir_name or dir_name.strip() in ("", "/"):
+            return parent_file_id
+        clean_name = dir_name.strip().strip("/")
+        try:
+            res = self._request(
+                "POST",
+                "https://api.aliyundrive.com/adrive/v2/file/create",
+                {
+                    "drive_id": self.drive_id,
+                    "parent_file_id": parent_file_id,
+                    "name": clean_name,
+                    "type": "folder",
+                    "check_name_mode": "refuse",
+                },
+            )
+            file_id = (res or {}).get("file_id")
+            if file_id:
+                logger.info("阿里云盘新建/确认目录 [%s]: file_id=%s", clean_name, file_id)
+                return str(file_id)
+
+            # 查询目录列表兜底
+            list_res = self._request(
+                "POST",
+                "https://api.aliyundrive.com/adrive/v3/file/list",
+                {
+                    "drive_id": self.drive_id,
+                    "parent_file_id": parent_file_id,
+                    "limit": 100,
+                    "type": "folder",
+                },
+            )
+            for item in (list_res or {}).get("items", []):
+                if item.get("name") == clean_name:
+                    found_id = str(item.get("file_id") or "")
+                    if found_id:
+                        logger.info("阿里云盘找到现有目录 [%s]: file_id=%s", clean_name, found_id)
+                        return found_id
+        except Exception as exc:
+            logger.error("阿里云盘获取或创建目录异常: %s", exc)
+        return parent_file_id
+
     def del_file(self, file_ids: List[str]) -> bool:
         if not file_ids:
             return False

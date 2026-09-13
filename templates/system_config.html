@@ -105,6 +105,26 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- 配置 4: 默认转存目标文件夹 -->
+                    <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900 text-sm">默认转存目标文件夹</span>
+                                <span class="badge badge-info text-[10px]" id="transferTargetDirBadge">Pan-Relay分享</span>
+                            </div>
+                            <p class="text-xs text-slate-500">所有网盘自动转存时将自动识别并存入该文件夹（不存在时自动新建，留空或 / 则存入根目录）</p>
+                        </div>
+                        <div class="flex items-center space-x-2 flex-shrink-0">
+                            <div class="relative flex items-center">
+                                <span class="absolute left-3 text-slate-400 text-xs"><i class="fas fa-folder"></i></span>
+                                <input type="text" id="transferTargetDirInput" class="form-control form-control-sm pl-8 text-xs font-medium" style="min-width: 170px;" placeholder="例如: Pan-Relay分享" value="Pan-Relay分享">
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm px-3" onclick="saveTransferTargetDirConfig()">
+                                <i class="fas fa-check text-[10px]"></i> 保存
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="dynamic-transfer-status-panel d-none mt-4 p-4.5 rounded-2xl bg-slate-50/70 border border-slate-200/80 space-y-3.5" id="dynamicTransferStatusPanel">
@@ -398,6 +418,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-<script src="{{ url_for('static', filename='js/system_config.js') }}"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.3"></script>
+<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.3"></script>
 {% endblock %}

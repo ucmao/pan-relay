@@ -1,13 +1,13 @@
 {% extends "admin_layout.html" %}
 {% set active_page = 'sources' %}
 
-{% block title %}检索源治理 - Pan-Relay Console{% endblock %}
+{% block title %}搜索源管理 - Pan-Relay Console{% endblock %}
 
 {% block content %}
 <!-- Page Header (ucmao admin_modern style) -->
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
-        <h1 class="text-xl font-bold tracking-tight text-slate-900">检索源治理</h1>
+        <h1 class="text-xl font-bold tracking-tight text-slate-900">搜索源管理</h1>
         <p class="text-xs text-slate-500 mt-0.5">配置第三方 API 接口、Python 采集插件及 Telegram 频道抓取网络</p>
     </div>
     <div class="flex items-center space-x-2.5 flex-wrap">
@@ -42,7 +42,7 @@
 <div class="source-tabs-header flex items-center justify-between gap-3">
     <div class="flex items-center space-x-1">
         <button class="source-tab-btn {{ 'is-active' if active_tab == 'api' else '' }}" data-tab-target="api" type="button">
-            <i class="fas fa-code"></i> API 检索源
+            <i class="fas fa-code"></i> API 搜索源
         </button>
         <button class="source-tab-btn {{ 'is-active' if active_tab == 'plugins' else '' }}" data-tab-target="plugins" type="button">
             <i class="fas fa-puzzle-piece"></i> 插件扩展

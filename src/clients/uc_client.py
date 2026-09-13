@@ -159,6 +159,52 @@ class UcPanClient(BasePanClient):
         final_url = f"{share_url_new}?pwd={pass_code}" if pass_code else share_url_new
         return json.dumps(save_as_top_fids, ensure_ascii=False), title, final_url
 
+    def get_or_create_dir(self, dir_name: str, parent_dir_id: str = "0") -> str:
+        """获取指定名称的文件夹 fid，若不存在则自动新建"""
+        if not dir_name or dir_name.strip() in ("", "/"):
+            return parent_dir_id
+        clean_name = dir_name.strip().strip("/")
+        try:
+            list_data = self._request(
+                "GET",
+                "https://pc-api.uc.cn/1/clouddrive/file/sort",
+                params={
+                    "pr": "UCBrowser",
+                    "fr": "pc",
+                    "pdir_fid": parent_dir_id,
+                    "_page": 1,
+                    "_size": 50,
+                    "_fetch_total": 1,
+                    "_sort": "file_type:asc,updated_at:desc",
+                },
+            )
+            file_list = ((list_data or {}).get("data") or {}).get("list") or []
+            for item in file_list:
+                if item.get("file_name") == clean_name and item.get("file_type") == 0:
+                    fid = str(item.get("fid") or "")
+                    if fid:
+                        logger.info("UC 网盘找到现有目录 [%s]: fid=%s", clean_name, fid)
+                        return fid
+
+            create_data = self._request(
+                "POST",
+                "https://pc-api.uc.cn/1/clouddrive/file",
+                {
+                    "pdir_fid": parent_dir_id,
+                    "file_name": clean_name,
+                    "dir_path": "",
+                    "dir_init_lock": False,
+                },
+                params={"pr": "UCBrowser", "fr": "pc"},
+            )
+            new_fid = ((create_data or {}).get("data") or {}).get("fid")
+            if new_fid:
+                logger.info("UC 网盘成功新建目录 [%s]: fid=%s", clean_name, new_fid)
+                return str(new_fid)
+        except Exception as exc:
+            logger.error("UC 网盘获取或创建目录异常: %s", exc)
+        return parent_dir_id
+
     def del_file(self, file_ids: List[str]) -> bool:
         if not file_ids:
             return False

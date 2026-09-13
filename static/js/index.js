@@ -12,6 +12,7 @@ let excludeKeywords = [];
 const isViewModeEnabled = window.SEARCH_LINK_MODE === 'view';
 
 const filterBar = document.getElementById('netdisk-filter-bar');
+const filterAndCountContainer = document.querySelector('.filter-and-count-container');
 const includeFilterInput = document.getElementById('includeFilter');
 const excludeFilterInput = document.getElementById('excludeFilter');
 const applyFilterButton = document.getElementById('applyFilter');
@@ -66,32 +67,50 @@ advancedFilterToggle?.addEventListener('click', function () {
 });
 
 
-// --- 辅助函数：网盘颜色区分 (保持不变) ---
+// --- 辅助函数：全量网盘与协议链接品牌配色 ---
 function getNetdiskColorClass(netdiskName) {
-    let badgeClass = 'bg-secondary';
+    let badgeClass = 'bg-other';
     let badgeTextClass = 'text-white';
+    const name = String(netdiskName || '').trim();
 
-    // 映射规则：
-    if (netdiskName.includes('百度网盘')) badgeClass = 'bg-mid-blue';
-    else if (netdiskName.includes('夸克网盘')) badgeClass = 'bg-terracotta';
-    else if (netdiskName.includes('悟空网盘')) badgeClass = 'bg-navy-blue';
-    else if (netdiskName.includes('快兔网盘')) badgeClass = 'bg-coral';
-    else if (netdiskName.includes('115网盘')) badgeClass = 'bg-orange';
-    else if (netdiskName.includes('迅雷网盘')) badgeClass = 'bg-teal';
-    else if (netdiskName.includes('UC网盘')) badgeClass = 'bg-warm-gold';
-    else if (netdiskName.includes('移动云盘')) badgeClass = 'bg-light-green';
-    else if (netdiskName.includes('天翼云盘')) badgeClass = 'bg-deep-violet';
-    else if (netdiskName.includes('123云盘')) badgeClass = 'bg-purple';
-    else if (netdiskName.includes('阿里云盘')) badgeClass = 'bg-dark-mint';
-    else if (netdiskName.includes('联通云盘')) badgeClass = 'bg-olive';
-    else if (netdiskName.includes('PikPak')) badgeClass = 'bg-salmon';
-    // 链接类型
-    else if (netdiskName.includes('磁力链接') || netdiskName.includes('迅雷链接') || netdiskName.includes('电驴链接')) badgeClass = 'bg-dark';
+    // 1. 国内主流网盘
+    if (name.includes('百度网盘')) badgeClass = 'bg-baidu';
+    else if (name.includes('夸克网盘')) badgeClass = 'bg-quark';
+    else if (name.includes('阿里云盘')) badgeClass = 'bg-aliyun';
+    else if (name.includes('迅雷网盘')) badgeClass = 'bg-xunlei';
+    else if (name.includes('UC网盘')) badgeClass = 'bg-uc';
+    else if (name.includes('123云盘')) badgeClass = 'bg-123pan';
+    else if (name.includes('115网盘')) badgeClass = 'bg-115';
 
-    // Fallback to text-white if not explicitly set for warning (yellow)
-    if (badgeClass !== 'bg-warning') {
-        badgeTextClass = 'text-white';
-    }
+    // 2. 运营商云盘
+    else if (name.includes('天翼云盘')) badgeClass = 'bg-tianyi';
+    else if (name.includes('移动云盘')) badgeClass = 'bg-mobile';
+    else if (name.includes('联通云盘')) badgeClass = 'bg-unicom';
+
+    // 3. 国内特色 / 小众网盘
+    else if (name.includes('蓝奏云')) badgeClass = 'bg-lanzou';
+    else if (name.includes('城通网盘')) badgeClass = 'bg-ctfile';
+    else if (name.includes('腾讯微云') || name.includes('微云')) badgeClass = 'bg-weiyun';
+    else if (name.includes('坚果云')) badgeClass = 'bg-jianguo';
+    else if (name.includes('悟空网盘')) badgeClass = 'bg-wukong';
+    else if (name.includes('快兔网盘')) badgeClass = 'bg-kuaitu';
+    else if (name.includes('光鸭云盘')) badgeClass = 'bg-guangya';
+
+    // 4. 海外及跨境网盘
+    else if (name.includes('TeraBox')) badgeClass = 'bg-terabox';
+    else if (name.includes('Google Drive') || name.includes('谷歌云盘')) badgeClass = 'bg-gdrive';
+    else if (name.includes('MEGA')) badgeClass = 'bg-mega';
+    else if (name.includes('GoFile')) badgeClass = 'bg-gofile';
+    else if (name.includes('OneDrive')) badgeClass = 'bg-onedrive';
+    else if (name.includes('PikPak')) badgeClass = 'bg-pikpak';
+
+    // 5. P2P 协议与下载链接
+    else if (name.includes('磁力链接')) badgeClass = 'bg-magnet';
+    else if (name.includes('迅雷链接')) badgeClass = 'bg-thunder';
+    else if (name.includes('电驴链接')) badgeClass = 'bg-ed2k';
+
+    // 兜底分类
+    else badgeClass = 'bg-other';
 
     return { badgeClass, badgeTextClass };
 }
@@ -360,15 +379,21 @@ function performSearch() {
     currentPage = 1;
     currentFilter = '全部';
     filterBar.classList.add('d-none');
+    if (filterAndCountContainer) {
+        filterAndCountContainer.classList.add('d-none');
+    }
 
     // 重置筛选框
-    includeFilterInput.value = '';
-    excludeFilterInput.value = '';
+    if (includeFilterInput) includeFilterInput.value = '';
+    if (excludeFilterInput) excludeFilterInput.value = '';
     includeKeywords = [];
     excludeKeywords = [];
+    setAdvancedFilterOpen(false);
+    updateActiveFilterTagsUI();
 
     resultContainer.innerHTML = '';
     scrollableResultsDiv.removeEventListener('scroll', infiniteScrollHandler);
+    scrollableResultsDiv.addEventListener('scroll', infiniteScrollHandler);
 
     // 2. 创建 EventSource 连接
     const eventSource = new EventSource(`/api/search_stream?keyword=${encodeURIComponent(keyword)}`);
@@ -386,11 +411,17 @@ function performSearch() {
                 allResults.push(...data.results);
                 allResults = filterUnique2ndDomainFront(allResults);
 
+                if (allResults.length > 0) {
+                    if (filterAndCountContainer) {
+                        filterAndCountContainer.classList.remove('d-none');
+                    }
+                }
+
                 if (allResults.length > currentLength) {
                     updateFilterButtons();
-                    if (allResults.length <= itemsPerPage) {
+                    // 在第一页或初次加载时实时渲染新到达的结果
+                    if (allResults.length <= itemsPerPage || currentPage === 1) {
                         renderResults(true);
-                        // 有结果时，根据内容高度决定是否显示滚动条
                         toggleScrollbarBasedOnContent();
                     }
                 }
@@ -439,7 +470,9 @@ function finalizeSearch(hasError = false) {
             </div>`;
         loadingMore.classList.add('d-none');
         // 即使没有结果也显示计数
-        document.querySelector('.filter-and-count-container').classList.remove('d-none');
+        if (filterAndCountContainer) {
+            filterAndCountContainer.classList.remove('d-none');
+        }
         resultCountText.textContent = `共找到 0 个结果 (${currentFilter})`;
 
         // 没有结果时，保持隐藏滚动条
@@ -447,13 +480,13 @@ function finalizeSearch(hasError = false) {
     } else if (!hasError) {
         updateFilterButtons();
         // 显示筛选和计数容器
-        document.querySelector('.filter-and-count-container').classList.remove('d-none');
+        if (filterAndCountContainer) {
+            filterAndCountContainer.classList.remove('d-none');
+        }
         renderResults(true);
 
         // 搜索完成时，根据内容高度决定是否显示滚动条
         toggleScrollbarBasedOnContent();
-
-        scrollableResultsDiv.addEventListener('scroll', infiniteScrollHandler);
     }
 }
 
@@ -606,6 +639,16 @@ function exportFilteredResultsToExcel() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    if (exportExcelBtn) {
+        const originalHtml = exportExcelBtn.innerHTML;
+        exportExcelBtn.disabled = true;
+        exportExcelBtn.innerHTML = `<i class="fas fa-check me-1 text-emerald"></i> 已导出 (${filteredResults.length}条)`;
+        setTimeout(() => {
+            exportExcelBtn.disabled = false;
+            exportExcelBtn.innerHTML = originalHtml;
+        }, 1800);
+    }
 }
 
 exportExcelBtn?.addEventListener('click', exportFilteredResultsToExcel);
@@ -633,6 +676,8 @@ function renderResults(reset = false) {
         resultContainer.querySelector('p.text-center.text-muted')?.remove();
     } else if (!isSearchRunning && reset) {
         resultContainer.innerHTML = `<div class="text-center p-5"><p class="text-muted">在 ${currentFilter} 中未找到相关结果</p></div>`;
+    } else if (isSearchRunning && reset) {
+        resultContainer.innerHTML = `<div class="text-center p-5"><div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div><p class="text-muted">正在持续检索，暂未发现匹配项...</p></div>`;
     }
 
     // 渲染当前批次
@@ -709,9 +754,14 @@ function renderResults(reset = false) {
 
     // 更新分页状态和加载提示
     if (endIndex >= filteredResults.length) {
-        isFullyLoaded = true;
-        loadingMore.classList.add('d-none');
-        loadingMore.textContent = '已加载全部结果。';
+        if (isSearchRunning) {
+            isFullyLoaded = false;
+            loadingMore.classList.add('d-none');
+        } else {
+            isFullyLoaded = true;
+            loadingMore.classList.add('d-none');
+            loadingMore.textContent = '已加载全部结果。';
+        }
     } else {
         isFullyLoaded = false;
         loadingMore.classList.remove('d-none');
@@ -727,7 +777,7 @@ function renderResults(reset = false) {
 // --- 无限滚动逻辑 (保持不变) ---
 const infiniteScrollHandler = () => {
     const container = scrollableResultsDiv;
-    if ((container.scrollTop + container.clientHeight) >= (container.scrollHeight - 50) && !isSearchRunning && !isFullyLoaded && !isLoadingNextBatch) {
+    if ((container.scrollTop + container.clientHeight) >= (container.scrollHeight - 50) && !isFullyLoaded && !isLoadingNextBatch) {
         loadNextPage();
     }
 };
