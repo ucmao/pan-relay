@@ -60,6 +60,24 @@ def query_file_id_by_share_link(share_link: str) -> Optional[str]:
         return None
 
 
+def get_resource_by_share_link(share_link: str) -> Optional[Dict[str, Any]]:
+    """根据分享链接查询完整资源记录。"""
+    conn = get_db_connection()
+    if not conn:
+        return None
+    try:
+        cursor = conn.cursor(as_dict=True)
+        sql = "SELECT id, file_id, name, share_link, cloud_name, type, remarks, is_replaced FROM resources WHERE share_link = ?"
+        cursor.execute(sql, (share_link,))
+        return cursor.fetchone()
+    except Error as err:
+        logger.error(f"根据分享链接查询资源失败: {err}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def delete_by_share_link(share_link: str) -> int:
     """根据分享链接删除资源记录，返回受影响行数。"""
     sql = "DELETE FROM resources WHERE share_link = ?"
@@ -253,6 +271,17 @@ def insert_resource_simple(resource_data: Dict[str, Any]) -> Tuple[bool, str, Op
     except Error as err:
         logger.error(f"添加资源到数据库时出错: {err}")
         conn.rollback()
+        if "UNIQUE constraint failed" in str(err):
+            try:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM resources WHERE share_link = ?", (resource_data["share_link"],))
+                row = cur.fetchone()
+                cur.close()
+                if row:
+                    logger.info(f"资源链接已存在，复用现有记录 ID: {row[0]}")
+                    return True, "资源链接已存在", row[0]
+            except Exception as query_err:
+                logger.error(f"查询重复记录 ID 失败: {query_err}")
         return False, f"资源添加失败: {err}", None
     finally:
         cursor.close()

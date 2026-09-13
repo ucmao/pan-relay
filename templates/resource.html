@@ -89,10 +89,10 @@
                         <button class="btn btn-primary btn-sm" id="addResourceBtn" data-ui-modal-target="#addResourceModal">
                             <i class="fas fa-plus text-[10px]"></i> 新增入库
                         </button>
-                        <button type="button" class="btn btn-secondary btn-sm" id="batchImportResourceBtn" data-ui-modal-target="#batchAddResourceModal">
+                        <button type="button" class="btn btn-secondary btn-sm" id="batchImportResourceBtn" data-ui-modal-target="#batchAddResourceModal" onclick="setBatchResourceMode('import')">
                             <i class="fas fa-file-import text-[10px]"></i> 批量导入
                         </button>
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="batchTransferResourceBtn" data-ui-modal-target="#batchAddResourceModal">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="batchTransferResourceBtn" data-ui-modal-target="#batchAddResourceModal" onclick="setBatchResourceMode('transfer')">
                             <i class="fas fa-cloud-upload-alt text-[10px]"></i> 批量转存
                         </button>
                     </div>
@@ -344,6 +344,6 @@
 
 {% block scripts %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/resource.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.3"></script>
+    <script src="{{ url_for('static', filename='js/resource.js') }}?v=2.0.3"></script>
 {% endblock %}

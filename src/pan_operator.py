@@ -120,9 +120,9 @@ def _handle_netdisk_operation(client_class, client_credential, share_url, to_pdi
 
             parsed_file_id = _parse_file_id(file_id)
             # 百度删除通常需要路径列表，阿里/UC 需要列表，夸克通常是单个 ID
-            if client_class == Baidu:
+            if client_class == BaiduPanClient:
                 target = [parsed_file_id] if isinstance(parsed_file_id, str) else parsed_file_id
-            elif client_class in (AliyunDrive, UcDrive, XunleiDrive):
+            elif client_class in (AliyunPanClient, UcPanClient, XunleiPanClient):
                 target = parsed_file_id if isinstance(parsed_file_id, list) else [parsed_file_id]
             else:
                 target = parsed_file_id

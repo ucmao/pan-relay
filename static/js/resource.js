@@ -572,6 +572,14 @@ function parseBatchResources(content) {
             return;
         }
 
+        // 匹配云盘名称
+        const cloudMatch = line.match(/^(?:云盘|网盘|云盘名称|网盘名称|cloud|cloud_name)[:：]\s*(.+)$/i);
+        if (cloudMatch) {
+            hasStructuredField = true;
+            currentResource.cloud_name = cloudMatch[1].trim();
+            return;
+        }
+
         // 匹配类型
         const typeMatch = line.match(/^(?:类型|type)[:：]\s*(.+)$/i);
         if (typeMatch) {
@@ -624,8 +632,8 @@ function setBatchResourceMode(mode) {
 
     if (batchAddResourceModalLabel) {
         batchAddResourceModalLabel.innerHTML = isTransferMode
-            ? '<i class="fas fa-cloud-upload-alt text-primary me-1"></i> 批量转存入库'
-            : '<i class="fas fa-file-import text-primary me-1"></i> 批量导入资源';
+            ? '<i class="fas fa-cloud-upload-alt text-blue-600 me-1"></i> 批量转存入库'
+            : '<i class="fas fa-file-import text-blue-600 me-1"></i> 批量导入资源';
     }
 
     if (batchTransferOptions) {
@@ -633,10 +641,10 @@ function setBatchResourceMode(mode) {
     }
 
     if (batchSaveResourceBtn) {
-        batchSaveResourceBtn.className = isTransferMode ? 'btn btn-warning btn-sm' : 'btn btn-success btn-sm';
+        batchSaveResourceBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer';
         batchSaveResourceBtn.innerHTML = isTransferMode
-            ? '<i class="fas fa-cloud-upload-alt"></i> 批量转存入库'
-            : '<i class="fas fa-save"></i> 批量导入';
+            ? '<i class="fas fa-cloud-upload-alt text-[10px]"></i> 批量转存入库'
+            : '<i class="fas fa-save text-[10px]"></i> 开始导入';
     }
 }
 
@@ -645,18 +653,27 @@ function getBatchTransferNetdiskConfig() {
         return {};
     }
 
+    const isChecked = (id) => {
+        const el = document.getElementById(id);
+        return el ? Boolean(el.checked) : false;
+    };
+
     return {
-        quark: document.getElementById('resourceSaveToQuark').checked,
-        baidu: document.getElementById('resourceSaveToBaidu').checked,
-        aliyun: document.getElementById('resourceSaveToAli').checked,
-        xunlei: document.getElementById('resourceSaveToXunlei').checked,
-        uc: document.getElementById('resourceSaveToUc').checked,
-        wukong: document.getElementById('resourceSaveToWukong').checked,
+        quark: isChecked('resourceSaveToQuark'),
+        baidu: isChecked('resourceSaveToBaidu'),
+        aliyun: isChecked('resourceSaveToAli'),
+        xunlei: isChecked('resourceSaveToXunlei'),
+        uc: isChecked('resourceSaveToUc'),
+        wukong: isChecked('resourceSaveToWukong'),
     };
 }
 
+let isBatchSavingInProgress = false;
+
 // 批量保存
 async function batchSaveResources() {
+    if (isBatchSavingInProgress) return;
+
     const content = document.getElementById('batchResourceContent').value.trim();
     if (!content) {
         showToast('请输入内容', 'warning');
@@ -685,6 +702,7 @@ async function batchSaveResources() {
     const saveToNetdisk = getBatchTransferNetdiskConfig();
     const actionText = batchResourceMode === 'transfer' ? '转存入库' : '导入';
 
+    isBatchSavingInProgress = true;
     // 锁定按钮
     batchSaveResourceBtn.disabled = true;
     let successCount = 0;
@@ -723,6 +741,7 @@ async function batchSaveResources() {
         console.error(error);
         showToast('批量处理过程中断', 'danger');
     } finally {
+        isBatchSavingInProgress = false;
         // 恢复按钮
         batchSaveResourceBtn.disabled = false;
         setBatchResourceMode(batchResourceMode);
@@ -875,7 +894,7 @@ async function deleteSelectedResources() {
 // 8. 初始化入口 (统一)
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', () => {
+function initResourcePage() {
     // 初始加载
     loadResources();
     setBatchResourceMode('import');
@@ -969,4 +988,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (saveResourceBtn) saveResourceBtn.addEventListener('click', saveResource);
     if (updateResourceBtn) updateResourceBtn.addEventListener('click', updateResource);
     if (batchSaveResourceBtn) batchSaveResourceBtn.addEventListener('click', batchSaveResources);
-});
+}
+
+// 暴露全局方法确保模态框与内联事件始终可用
+window.batchSaveResources = batchSaveResources;
+window.saveResource = saveResource;
+window.updateResource = updateResource;
+window.setBatchResourceMode = setBatchResourceMode;
+window.initResourcePage = initResourcePage;
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initResourcePage);
+} else {
+    initResourcePage();
+}

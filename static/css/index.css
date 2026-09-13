@@ -1041,6 +1041,10 @@
         font-size: 0.88rem;
     }
 
+    .export-excel-btn {
+        display: none !important;
+    }
+
     #advanced-filter-bar {
         width: 100%;
         justify-content: stretch;

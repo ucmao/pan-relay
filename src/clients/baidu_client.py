@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 from src.clients.base_client import BasePanClient
+from src.utils.netdisk_utils import extract_password_from_url
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +25,19 @@ class BaiduPanClient(BasePanClient):
                     "Chrome/114.0.0.0 Safari/537.36"
                 ),
                 "Referer": "https://pan.baidu.com/disk/home",
-                "Cookie": credential,
             }
         )
+        self._set_cookie(credential)
+        self.randsk = ""
         self.bdstoken = self._get_bdstoken()
+
+    def _set_cookie(self, credential: str) -> None:
+        for item in credential.split(";"):
+            item = item.strip()
+            if not item or "=" not in item:
+                continue
+            k, v = item.split("=", 1)
+            self.session.cookies.set(k.strip(), v.strip(), domain=".baidu.com")
 
     def store(
         self, share_url: str, to_dir: str = "/"
@@ -51,12 +61,15 @@ class BaiduPanClient(BasePanClient):
             target_fs_id = fs_id_list[0]
             file_name = file_names[0]
 
-            if not self._transfer_file(share_id, from_uk, [target_fs_id], to_dir):
+            trans_res = self._transfer_file(share_id, from_uk, [target_fs_id], to_dir, surl=surl)
+            if not trans_res:
                 logger.error("百度网盘转存失败: %s", file_name)
                 return None, None, None
 
+            new_fs_id = trans_res if isinstance(trans_res, int) and trans_res > 1 else None
             full_path = f"{to_dir.rstrip('/')}/{file_name}" if to_dir != "/" else f"/{file_name}"
-            new_fs_id = self._get_file_id_by_path(full_path)
+            if not new_fs_id:
+                new_fs_id = self._get_file_id_by_path(full_path)
             if not new_fs_id:
                 logger.error("百度网盘未找到转存后的文件 ID: %s", full_path)
                 return full_path, file_name, ""
@@ -121,20 +134,15 @@ class BaiduPanClient(BasePanClient):
         )
         surl = surl_match.group(1) if surl_match else ""
         if not surl and "baidu.com/s/" in url:
-            candidate = url.split("baidu.com/s/")[-1].split(" ")[0]
+            candidate = url.split("baidu.com/s/")[-1].split(" ")[0].split("?")[0]
             surl = candidate[1:] if candidate.startswith("1") else candidate
 
-        pwd_match = re.search(r"[?&]pwd=([a-zA-Z0-9]{4})", url)
-        if pwd_match:
-            return surl, pwd_match.group(1)
-
-        code_match = re.search(r"提取码[:： ]*([a-zA-Z0-9]{4})", url)
-        if code_match:
-            return surl, code_match.group(1)
-
-        return surl, ""
+        pwd = extract_password_from_url(url) or ""
+        return surl, pwd
 
     def _verify_pwd(self, surl: str, pwd: str) -> bool:
+        import urllib.parse
+
         params = {
             "surl": surl,
             "t": int(time.time() * 1000),
@@ -142,6 +150,7 @@ class BaiduPanClient(BasePanClient):
             "channel": "chunlei",
             "clienttype": 0,
             "web": 1,
+            "app_id": 250528,
         }
         payload = {"pwd": pwd, "vcode": "", "vcode_str": ""}
         try:
@@ -150,8 +159,12 @@ class BaiduPanClient(BasePanClient):
                 "https://pan.baidu.com/share/verify",
                 params=params,
                 data=payload,
+                headers={"Referer": f"https://pan.baidu.com/s/1{surl}"},
             )
             if data.get("errno") == 0:
+                raw_randsk = data.get("randsk", "")
+                if raw_randsk:
+                    self.randsk = urllib.parse.unquote(raw_randsk)
                 return True
             logger.warning("百度网盘提取码校验失败: %s", data)
             return False
@@ -162,13 +175,48 @@ class BaiduPanClient(BasePanClient):
     def _get_share_page_info(
         self, surl: str
     ) -> Optional[Tuple[str, str, List[str], List[str]]]:
+        # 1. 优先调用官方 JSON 接口 share/list 获取结构化分享详情
+        list_url = "https://pan.baidu.com/share/list"
+        params = {
+            "web": "1",
+            "page": "1",
+            "num": "100",
+            "order": "time",
+            "desc": "1",
+            "showempty": "0",
+            "shorturl": surl,
+            "root": "1",
+            "clienttype": "0",
+            "app_id": "250528",
+        }
+        if self.randsk:
+            params["sekey"] = self.randsk
+
         try:
-            response = self.session.get(f"https://pan.baidu.com/s/1{surl}", timeout=20)
+            headers = {"Referer": f"https://pan.baidu.com/s/1{surl}", "Accept-Encoding": "identity"}
+            data = self._request("GET", list_url, params=params, headers=headers)
+            if data.get("errno") == 0:
+                share_id = str(data.get("share_id") or "")
+                share_uk = str(data.get("uk") or data.get("share_uk") or "")
+                file_list = data.get("list") or []
+                fs_ids = [str(item["fs_id"]) for item in file_list if "fs_id" in item]
+                file_names = [item["server_filename"] for item in file_list if "server_filename" in item]
+
+                if share_id and share_uk and fs_ids and file_names:
+                    logger.info("通过 share/list 接口成功获取分享详情: share_id=%s, files=%s", share_id, file_names)
+                    return share_id, share_uk, fs_ids, file_names
+        except Exception as exc:
+            logger.warning("通过 share/list 接口获取详情异常，尝试 HTML 页面解析兜底: %s", exc)
+
+        # 2. 兜底方案：请求页面 HTML 正则解析
+        try:
+            headers = {"Referer": f"https://pan.baidu.com/s/1{surl}", "Accept-Encoding": "identity"}
+            response = self.session.get(f"https://pan.baidu.com/s/1{surl}", headers=headers, timeout=20)
             response.raise_for_status()
             html = response.text
 
-            share_id = re.search(r'"shareid":(\d+),', html)
-            share_uk = re.search(r'"share_uk":"?(\d+)"?,', html)
+            share_id = re.search(r'"shareid":(\d+),', html) or re.search(r'"share_id":(\d+),', html)
+            share_uk = re.search(r'"share_uk":"?(\d+)"?,', html) or re.search(r'"uk":"?(\d+)"?,', html)
             fs_ids = list(dict.fromkeys(re.findall(r'"fs_id":(\d+),', html)))
             file_names = list(dict.fromkeys(re.findall(r'"server_filename":"(.+?)",', html)))
 
@@ -179,7 +227,9 @@ class BaiduPanClient(BasePanClient):
             logger.error("百度网盘解析分享页面异常: %s", exc)
             return None
 
-    def _transfer_file(self, share_id: str, from_uk: str, fs_id_list: List[str], to_path: str) -> bool:
+    def _transfer_file(
+        self, share_id: str, from_uk: str, fs_id_list: List[str], to_path: str, surl: str = ""
+    ) -> Optional[int]:
         params = {
             "shareid": share_id,
             "from": from_uk,
@@ -191,9 +241,14 @@ class BaiduPanClient(BasePanClient):
             "web": 1,
             "app_id": 250528,
         }
+        if self.randsk:
+            params["sekey"] = self.randsk
         payload = {
             "fsidlist": f"[{','.join(str(item) for item in fs_id_list)}]",
             "path": to_path,
+        }
+        headers = {
+            "Referer": f"https://pan.baidu.com/s/1{surl}" if surl else "https://pan.baidu.com/disk/home"
         }
         try:
             data = self._request(
@@ -201,14 +256,21 @@ class BaiduPanClient(BasePanClient):
                 "https://pan.baidu.com/share/transfer",
                 params=params,
                 data=payload,
+                headers=headers,
             )
             if data.get("errno") == 0:
-                return True
+                try:
+                    to_fs_id = data.get("extra", {}).get("list", [{}])[0].get("to_fs_id")
+                    if to_fs_id:
+                        return int(to_fs_id)
+                except Exception:
+                    pass
+                return 1
             logger.error("百度网盘转存接口返回错误: %s", data)
-            return False
+            return None
         except Exception as exc:
             logger.error("百度网盘转存请求异常: %s", exc)
-            return False
+            return None
 
     def _get_file_id_by_path(self, path: str) -> Optional[int]:
         if path == "/":
@@ -264,8 +326,11 @@ class BaiduPanClient(BasePanClient):
                 params=params,
                 data=payload,
             )
-            if data.get("errno") == 0 and data.get("shorturl"):
-                return f"{data['shorturl']}?pwd={pwd}"
+            if data.get("errno") == 0 and (data.get("shorturl") or data.get("link")):
+                link = data.get("shorturl") or data.get("link")
+                if not link.startswith("http"):
+                    link = f"https://pan.baidu.com/s/{link}"
+                return f"{link}?pwd={pwd}" if "?pwd=" not in link else link
             logger.error("百度网盘创建分享失败: %s", data)
             return None
         except Exception as exc:
@@ -278,8 +343,12 @@ class BaiduPanClient(BasePanClient):
         url: str,
         params: Optional[Dict[str, Any]] = None,
         data: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        response = self.session.request(method, url, params=params, data=data, timeout=20)
+        req_headers = {"Accept-Encoding": "identity"}
+        if headers:
+            req_headers.update(headers)
+        response = self.session.request(method, url, params=params, data=data, headers=req_headers, timeout=20)
         response.raise_for_status()
         return response.json()
 
