@@ -973,168 +973,78 @@ textarea.form-control.font-mono {
     background: #ffffff;
 }
 
-/* --------------------------------------------------------------------------
-   Dynamic Transfer Status Grid & Cards (Modern Slate Theme)
-   -------------------------------------------------------------------------- */
-.dynamic-transfer-status-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 12px;
+.dynamic-transfer-status-bar {
+    transition: all 0.2s ease;
 }
 
-.dynamic-transfer-status-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 0.875rem;
-    background: #ffffff;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 10px;
-    transition: all 0.15s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-
-.dynamic-transfer-status-card:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.dynamic-transfer-status-card-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.dynamic-transfer-status-card-title {
-    margin: 0;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--admin-slate-900);
-}
-
-.dynamic-transfer-status-card-meta {
-    margin: 2px 0 0;
-    color: var(--admin-slate-400);
-    font-size: 0.6875rem;
-    font-weight: 500;
-}
-
-.dynamic-transfer-status-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2px 8px;
-    border-radius: 9999px;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    flex-shrink: 0;
-    border: 1px solid transparent;
-}
-
-.dynamic-transfer-status-card-body {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.dynamic-transfer-status-card-body strong {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--admin-slate-800);
-}
-
-.dynamic-transfer-status-card-body p {
-    margin: 0;
-    color: var(--admin-slate-500);
-    line-height: 1.45;
-    font-size: 0.6875rem;
-}
-
-/* Status variants */
-.dynamic-transfer-status-card.status-enabled {
-    border-color: #bbf7d0;
-    background: #f0fdf4;
-}
-
-.dynamic-transfer-status-card.status-enabled .dynamic-transfer-status-badge {
-    background: #dcfce7;
-    color: #15803d;
-    border-color: #86efac;
-}
-
-.dynamic-transfer-status-card.status-invalid {
-    border-color: #fed7aa;
-    background: #fffbeb;
-}
-
-.dynamic-transfer-status-card.status-invalid .dynamic-transfer-status-badge {
-    background: #fef3c7;
-    color: #b45309;
-    border-color: #fde68a;
-}
-
-.dynamic-transfer-status-card.status-missing {
-    border-color: #e2e8f0;
-    background: #ffffff;
-}
-
-.dynamic-transfer-status-card.status-missing .dynamic-transfer-status-badge {
-    background: #f1f5f9;
-    color: #64748b;
-    border-color: #e2e8f0;
+.dynamic-transfer-status-bar button {
+    outline: none;
 }
 
 /* --------------------------------------------------------------------------
-   Netdisk Selection Chips
+   Netdisk Selection Tag Grid (Modern Tag Grid)
    -------------------------------------------------------------------------- */
 .frontend-netdisk-grid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 8px;
 }
 
 .frontend-netdisk-card {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 7px 14px;
-    background: #f8fafc;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 7px 11px;
+    background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
+    border-radius: 0.625rem;
     cursor: pointer;
-    font-size: 0.78rem;
+    font-size: 0.78125rem;
     font-weight: 500;
     color: var(--admin-slate-700);
-    transition: all 0.15s ease;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
 }
 
 .frontend-netdisk-card:hover {
-    border-color: #cbd5e1;
-    background: #ffffff;
+    border-color: #93c5fd;
+    background: #f8fafc;
+    transform: translateY(-1px);
 }
 
 .frontend-netdisk-card:has(input:checked) {
     background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #2563eb;
+    border-color: #3b82f6;
+    color: #1d4ed8;
     font-weight: 600;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
 }
 
 .frontend-display-netdisk-checkbox {
     display: none;
 }
 
-.frontend-netdisk-card-check {
-    font-size: 0.7rem;
-    opacity: 0;
-    transition: opacity 0.15s ease;
+.frontend-netdisk-card-check-box {
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.625rem;
+    background: #ffffff;
+    color: transparent;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 
-.frontend-netdisk-card:has(input:checked) .frontend-netdisk-card-check {
-    opacity: 1;
+.frontend-netdisk-card:has(input:checked) .frontend-netdisk-card-check-box {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
 }
 
 /* --------------------------------------------------------------------------

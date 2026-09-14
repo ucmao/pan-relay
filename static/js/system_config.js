@@ -65,6 +65,7 @@ function bindCredentialTabEvents() {
 function renderDynamicTransferStatuses(statuses, summary) {
     const summaryEl = document.getElementById('dynamicTransferStatusSummary');
     const gridEl = document.getElementById('dynamicTransferStatusGrid');
+    const manageLink = document.getElementById('dynamicTransferManageLink');
 
     const safeStatuses = Array.isArray(statuses) ? statuses : [];
     const enabledCount = Number(summary?.enabled_count || 0);
@@ -76,35 +77,82 @@ function renderDynamicTransferStatuses(statuses, summary) {
     }
 
     if (summaryEl) {
-        summaryEl.textContent = `当前有 ${enabledCount} / ${totalCount} 个云盘具备自动转存替换条件。未配置或基础校验未通过的平台，查看时会自动回退原始链接。`;
+        summaryEl.textContent = `(${enabledCount}/${totalCount} 已就绪)`;
+    }
+
+    if (manageLink) {
+        manageLink.onclick = () => {
+            document.querySelector('[data-system-tab-target="credentials"]')?.click();
+        };
     }
 
     if (gridEl) {
+        const cloudTargetMap = {
+            '百度网盘': 'baidu',
+            '夸克网盘': 'quark',
+            '阿里云盘': 'aliyun',
+            'UC网盘': 'uc',
+            '迅雷网盘': 'xunlei',
+        };
+
         gridEl.innerHTML = safeStatuses.map((item) => {
             const statusClass = item.status || 'missing';
             const badgeTextMap = {
                 enabled: '已启用',
-                invalid: '待处理',
+                invalid: '异常',
                 missing: '未配置',
             };
             const badgeText = badgeTextMap[statusClass] || '未配置';
+            const targetKey = cloudTargetMap[item.cloud_name] || '';
+            const isEnabled = statusClass === 'enabled';
+            const isInvalid = statusClass === 'invalid';
+
+            let pillClass = 'bg-slate-100/90 text-slate-500 border-slate-200/70 hover:bg-slate-200/70';
+            let dotClass = 'bg-slate-400';
+            if (isEnabled) {
+                pillClass = 'bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100/80';
+                dotClass = 'bg-emerald-500';
+            } else if (isInvalid) {
+                pillClass = 'bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100/80';
+                dotClass = 'bg-amber-500';
+            }
 
             return `
-                <article class="dynamic-transfer-status-card status-${statusClass}">
-                    <div class="dynamic-transfer-status-card-top">
-                        <div>
-                            <h4 class="dynamic-transfer-status-card-title">${item.cloud_name || ''}</h4>
-                            <p class="dynamic-transfer-status-card-meta">${item.credential_type || ''}</p>
-                        </div>
-                        <span class="dynamic-transfer-status-badge">${badgeText}</span>
-                    </div>
-                    <div class="dynamic-transfer-status-card-body">
-                        <strong>${item.title || ''}</strong>
-                        <p>${item.description || ''}</p>
-                    </div>
-                </article>
+                <button type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer shadow-2xs ${pillClass}" data-cred-nav="${targetKey}" title="${item.cloud_name}: ${badgeText} (${item.credential_type || ''})，点击前往配置">
+                    <span class="w-1.5 h-1.5 rounded-full ${dotClass} flex-shrink-0"></span>
+                    <span>${item.cloud_name}</span>
+                    <span class="text-[10px] opacity-75 font-normal">${badgeText}</span>
+                </button>
             `;
         }).join('');
+
+        gridEl.querySelectorAll('[data-cred-nav]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const targetKey = btn.getAttribute('data-cred-nav');
+                if (!targetKey) return;
+
+                const credMainTabBtn = document.querySelector('[data-system-tab-target="credentials"]');
+                if (credMainTabBtn) {
+                    credMainTabBtn.click();
+                }
+
+                const credSubTabBtn = document.querySelector(`[data-cred-target="${targetKey}"]`);
+                if (credSubTabBtn) {
+                    credSubTabBtn.click();
+                }
+
+                setTimeout(() => {
+                    const pane = document.getElementById(`cred-pane-${targetKey}`);
+                    if (pane) {
+                        pane.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const textarea = pane.querySelector('textarea, input');
+                        if (textarea) {
+                            textarea.focus();
+                        }
+                    }
+                }, 120);
+            });
+        });
     }
 
     // 更新网盘 Sub-Tab 的健康状态点与状态文本
@@ -313,6 +361,17 @@ async function saveTransferTargetDirConfig() {
         showToast(`保存转存目标目录配置失败: ${error.message}`, 'danger');
         await loadTransferTargetDirConfig();
     }
+}
+
+async function selectMainstreamFrontendNetdisks() {
+    const mainstreamList = ['百度网盘', '夸克网盘', '阿里云盘', '迅雷网盘', 'UC网盘', '115网盘', '123云盘', '天翼云盘', '移动云盘'];
+    const mainstreamSet = new Set(mainstreamList);
+    const checkboxes = getFrontendDisplayNetdiskCheckboxes();
+    checkboxes.forEach((checkbox) => {
+        checkbox.checked = mainstreamSet.has(checkbox.value);
+    });
+    updateFrontendNetdiskSelectionUI();
+    await saveFrontendDisplayNetdisks();
 }
 
 async function toggleAllFrontendDisplayNetdisks() {

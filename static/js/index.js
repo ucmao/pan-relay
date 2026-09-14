@@ -36,7 +36,6 @@ const viewResultContentState = document.getElementById('viewResultContentState')
 const viewResultTitle = document.getElementById('viewResultTitle');
 const viewResultLink = document.getElementById('viewResultLink');
 const copyViewResultButton = document.getElementById('copyViewResultButton');
-const openViewResultButton = document.getElementById('openViewResultButton');
 const viewResultModal = viewResultModalElement ? {
     show: () => window.AppUI.openModal(viewResultModalElement),
     hide: () => window.AppUI.closeModal(viewResultModalElement),
@@ -730,10 +729,8 @@ function renderResults(reset = false) {
         button.addEventListener('click', function () {
             const title = this.getAttribute('data-title');
             const url = this.getAttribute('data-url');
-            const netdisk = this.getAttribute('data-netdisk');
             const textToCopy = `标题: ${title}
-分享链接: ${url}
-云盘名称: ${netdisk}`;
+分享链接: ${url}`;
 
             copyTextToClipboard(textToCopy).then(success => {
                 if (success) {
@@ -843,7 +840,6 @@ function showViewResultLoading(title) {
     viewResultLoadingState?.classList.remove('d-none');
     viewResultContentState?.classList.add('d-none');
     copyViewResultButton?.setAttribute('disabled', 'disabled');
-    openViewResultButton?.setAttribute('disabled', 'disabled');
 }
 
 function showViewResultContent(title, url, netdiskName) {
@@ -859,7 +855,6 @@ function showViewResultContent(title, url, netdiskName) {
     viewResultLoadingState?.classList.add('d-none');
     viewResultContentState?.classList.remove('d-none');
     copyViewResultButton?.removeAttribute('disabled');
-    openViewResultButton?.removeAttribute('disabled');
 }
 
 copyViewResultButton?.addEventListener('click', async function () {
@@ -868,21 +863,16 @@ copyViewResultButton?.addEventListener('click', async function () {
     const textToCopy = `标题: ${currentResolvedViewResult.title}
 分享链接: ${currentResolvedViewResult.url}`;
 
-    try {
-        await navigator.clipboard.writeText(textToCopy);
+    const success = await copyTextToClipboard(textToCopy);
+    if (success) {
         const originalHtml = this.innerHTML;
         this.innerHTML = '<i class="fas fa-check me-1"></i> 已复制';
         setTimeout(() => {
             this.innerHTML = originalHtml;
         }, 1500);
-    } catch (error) {
+    } else {
         showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
     }
-});
-
-openViewResultButton?.addEventListener('click', function () {
-    if (!currentResolvedViewResult) return;
-    window.open(currentResolvedViewResult.url, '_blank', 'noopener');
 });
 
 
