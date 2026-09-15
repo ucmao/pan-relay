@@ -812,6 +812,7 @@ textarea.form-control {
 
 .modal-content {
     position: relative;
+    width: 100%;
     pointer-events: auto;
     border: 1px solid rgba(148, 163, 184, 0.16);
     border-radius: 24px;
@@ -821,70 +822,39 @@ textarea.form-control {
 }
 
 .disclaimer-modal-content {
-    border-radius: 26px;
-    max-width: 680px;
+    border-radius: 20px;
+    max-width: 540px;
     margin: 0 auto;
 }
 
 .disclaimer-modal-body {
     color: #334155;
-    line-height: 1.72;
+    line-height: 1.6;
     padding: 1.15rem 1.35rem 0.95rem;
+    max-height: 65vh;
+    overflow-y: auto;
 }
 
 .disclaimer-modal-body p {
     margin: 0 0 10px;
 }
 
-.disclaimer-link-chip {
-    display: inline-flex;
-    align-items: center;
-    margin: 2px 0 12px;
-    padding: 9px 13px;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 14px;
-    background: rgba(248, 250, 252, 0.96);
-}
-
-.disclaimer-link-chip a {
-    color: #475569;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.disclaimer-link-chip a:hover {
-    color: #b7791f;
-}
-
-.disclaimer-note-block {
-    margin: 12px 0 14px;
-    padding: 15px 18px;
-    border: 1px solid rgba(245, 191, 96, 0.24);
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255, 248, 232, 0.96), rgba(255, 255, 255, 0.96));
-}
-
-.disclaimer-note-block p {
-    margin-bottom: 10px;
-    line-height: 1.72;
-}
-
-.disclaimer-note-block p:last-child {
-    margin-bottom: 0;
-}
-
-.disclaimer-thanks {
-    color: #0f172a;
-    font-weight: 700;
-    margin-bottom: 0;
-}
-
 .disclaimer-confirm-btn {
-    min-width: 128px;
-    min-height: 42px;
-    padding-left: 1.15rem;
-    padding-right: 1.15rem;
-    border-radius: 999px;
+    min-width: 130px;
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 6px 20px;
+    font-size: 0.84rem;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    transition: all 0.2s ease;
+}
+
+.disclaimer-confirm-btn:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #0f172a;
 }
 
 .modal-header,
@@ -971,6 +941,89 @@ textarea.form-control {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Toast Container & Notification */
+#toastContainer {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.admin-toast {
+    pointer-events: auto;
+    min-width: 260px;
+    max-width: 420px;
+    padding: 12px 16px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.16), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e2e8f0;
+    font-size: 0.8125rem;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+    animation: toastSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.admin-toast.admin-toast-hiding {
+    opacity: 0;
+    transform: translateX(24px) scale(0.95);
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.admin-toast-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.admin-toast-success .admin-toast-icon { color: #10b981; }
+.admin-toast-danger .admin-toast-icon { color: #ef4444; }
+.admin-toast-warning .admin-toast-icon { color: #f59e0b; }
+.admin-toast-info .admin-toast-icon { color: #3b82f6; }
+
+.admin-toast-message {
+    flex: 1;
+    font-weight: 500;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.admin-toast-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    transition: all 0.15s ease;
+}
+
+.admin-toast-close:hover {
+    color: #475569;
+    background: #f1f5f9;
 }
 
 @media (max-width: 768px) {

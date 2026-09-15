@@ -117,6 +117,14 @@
             return;
         }
 
+        if (event.target.classList?.contains('modal-backdrop')) {
+            const topModal = Array.from(document.querySelectorAll('.modal.show')).pop();
+            if (topModal) {
+                closeModal(topModal);
+                return;
+            }
+        }
+
         if (!event.target.closest('.dropdown')) {
             closeAllDropdowns();
         }

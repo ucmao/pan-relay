@@ -175,9 +175,9 @@
             transform: translateY(-1px);
         }
 
-        /* 免责声明弹窗重构 */
+        /* 免责声明弹窗优化 */
         .disclaimer-modal-dialog {
-            max-width: 560px;
+            max-width: 540px;
             width: calc(100% - 32px);
             margin: 1.5rem auto;
         }
@@ -201,32 +201,57 @@
         }
 
         .disclaimer-modal-body {
-            padding: 16px 20px 14px;
+            padding: 18px 20px 14px;
             font-size: 0.84rem;
             color: #334155;
             line-height: 1.6;
+            max-height: 65vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(203, 213, 225, 0.8) transparent;
+        }
+
+        .disclaimer-modal-body::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .disclaimer-modal-body::-webkit-scrollbar-thumb {
+            background: rgba(203, 213, 225, 0.8);
+            border-radius: 4px;
         }
 
         .disclaimer-intro {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             color: #475569;
             font-size: 0.84rem;
         }
 
         .disclaimer-star-box {
-            margin: 8px 0 12px;
-            padding: 9px 14px;
+            margin: 10px 0 14px;
+            padding: 8px 12px 8px 14px;
             border: 1px solid rgba(226, 232, 240, 0.9);
             border-radius: 12px;
             background: rgba(248, 250, 252, 0.95);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .disclaimer-star-box:hover {
-            border-color: rgba(245, 191, 96, 0.4);
+        .disclaimer-repo-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 0.88rem;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .disclaimer-repo-link:hover {
+            color: #0f172a;
+            text-decoration: underline;
         }
 
         .disclaimer-star-btn {
@@ -237,11 +262,15 @@
             font-size: 0.78rem;
             font-weight: 600;
             border-radius: 8px;
-            border: 1px solid rgba(222, 159, 45, 0.4);
-            background: rgba(255, 248, 235, 0.9);
+            border: 1px solid rgba(222, 159, 45, 0.35);
+            background: rgba(255, 248, 235, 0.95);
             color: #b7791f;
             text-decoration: none;
             transition: all 0.2s ease;
+        }
+
+        .disclaimer-star-btn i {
+            color: #f59e0b;
         }
 
         .disclaimer-star-btn:hover {
@@ -252,11 +281,11 @@
         }
 
         .disclaimer-note-block {
-            margin: 10px 0;
+            margin: 10px 0 4px;
             padding: 12px 14px 12px 28px;
             border: 1px solid rgba(245, 191, 96, 0.28);
             border-radius: 14px;
-            background: linear-gradient(180deg, rgba(255, 251, 235, 0.9), rgba(255, 255, 255, 0.9));
+            background: linear-gradient(180deg, rgba(255, 251, 235, 0.75), rgba(255, 255, 255, 0.85));
         }
 
         .disclaimer-list {
@@ -265,7 +294,7 @@
             list-style: decimal;
             font-size: 0.8rem;
             color: #475569;
-            line-height: 1.6;
+            line-height: 1.65;
         }
 
         .disclaimer-list li {
@@ -273,15 +302,13 @@
             padding-left: 2px;
         }
 
-        .disclaimer-list li:last-child {
-            margin-bottom: 0;
+        .disclaimer-list li strong {
+            color: #1e293b;
+            font-weight: 600;
         }
 
-        .disclaimer-thanks {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin: 12px 0 0;
-            text-align: center;
+        .disclaimer-list li:last-child {
+            margin-bottom: 0;
         }
 
         .disclaimer-modal-content .modal-footer {
@@ -293,11 +320,21 @@
         }
 
         .disclaimer-confirm-btn {
-            min-width: 140px;
+            min-width: 130px;
             border-radius: 8px;
-            font-weight: 600;
-            padding-top: 7px;
-            padding-bottom: 7px;
+            font-weight: 500;
+            padding: 6px 20px;
+            font-size: 0.84rem;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            transition: all 0.2s ease;
+        }
+
+        .disclaimer-confirm-btn:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+            color: #0f172a;
         }
 
         @media (max-width: 540px) {
@@ -361,28 +398,28 @@
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body disclaimer-modal-body">
-                <p class="disclaimer-intro">Pan-Relay 是一款基于多源 API 的自动化检索与网盘中继工具，本项目已在 GitHub 完全开源：</p>
+                <p class="disclaimer-intro">Pan-Relay 是一款基于多源 API 的自动化检索与网盘中继工具，本项目已在 GitHub 完全开源。</p>
                 <div class="disclaimer-star-box">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fab fa-github fa-lg text-dark"></i>
-                        <span class="font-semibold text-slate-800" style="font-size: 0.88rem;">ucmao / pan-relay</span>
-                    </div>
-                    <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="disclaimer-star-btn">
-                        <i class="fas fa-star text-amber-500"></i> Star 支持
+                    <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="disclaimer-repo-link" title="前往 GitHub 查看源码">
+                        <i class="fab fa-github fa-lg"></i>
+                        <span>ucmao / pan-relay</span>
+                    </a>
+                    <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="disclaimer-star-btn" title="在 GitHub 上点亮 Star">
+                        <i class="fas fa-star"></i>
+                        <span>Star 支持</span>
                     </a>
                 </div>
                 <div class="disclaimer-note-block">
                     <ol class="disclaimer-list">
-                        <li>本工具仅作为资源检索的辅助工具，所有搜索结果均实时调用第三方公开 API 自动生成，本站不存储、不上传、不分发任何实质资源内容。</li>
+                        <li>本工具仅作为资源检索辅助工具，所有搜索结果均实时调用第三方公开 API 自动生成，本站<strong>不存储、不上传、不分发</strong>任何实质资源内容。</li>
                         <li>搜索结果指向的第三方链接内容由原平台负责，Pan-Relay 无法控制其内容，不对其合法性、准确性或安全性负责。</li>
-                        <li>本工具仅供技术研究、学习与交流使用，严禁用于任何形式的商业牟利行为。</li>
+                        <li>本工具<strong>仅供技术研究、学习与交流使用</strong>，严禁用于任何形式的商业牟利行为。</li>
                         <li>请在法律允许的范围内合理使用，因违规使用所产生的法律后果由用户自行承担。</li>
                     </ol>
                 </div>
-                <p class="disclaimer-thanks">感谢您的支持与关注！欢迎在 GitHub 为我们点亮 Star ⭐</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary btn-sm px-4 disclaimer-confirm-btn" data-ui-dismiss="modal">我知道了</button>
+                <button type="button" class="btn btn-secondary btn-sm disclaimer-confirm-btn" data-ui-dismiss="modal">我知道了</button>
             </div>
         </div>
     </div>

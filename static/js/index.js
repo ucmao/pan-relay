@@ -867,8 +867,11 @@ copyViewResultButton?.addEventListener('click', async function () {
     if (success) {
         const originalHtml = this.innerHTML;
         this.innerHTML = '<i class="fas fa-check me-1"></i> 已复制';
+        this.classList.add('btn-copied');
+
         setTimeout(() => {
             this.innerHTML = originalHtml;
+            this.classList.remove('btn-copied');
         }, 1500);
     } else {
         showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');

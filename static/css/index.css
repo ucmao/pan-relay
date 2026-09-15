@@ -731,6 +731,7 @@
 }
 
 .view-result-modal {
+    width: 100%;
     border: none;
     border-radius: 24px;
     overflow: hidden;
@@ -741,13 +742,13 @@
     display: grid;
     align-content: start;
     justify-items: center;
-    padding-top: 20vh;
+    padding-top: 18vh;
 }
 
 #viewResultModal .modal-dialog,
 #viewResultModal .modal-dialog.modal-dialog-centered {
-    width: min(calc(100vw - 3rem), 520px);
-    max-width: 520px;
+    width: min(calc(100vw - 32px), 480px);
+    max-width: 480px;
     min-height: auto;
     margin: 0 auto;
     transform: none;
@@ -759,9 +760,21 @@
     }
 }
 
-.view-result-modal .modal-header,
+.view-result-modal .modal-header {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    padding: 1rem 1.4rem;
+}
+
+.view-result-modal .modal-body {
+    padding: 1.25rem 1.4rem 0.5rem;
+}
+
 .view-result-modal .modal-footer {
-    border-color: rgba(148, 163, 184, 0.14);
+    border-top: none;
+    padding: 0.8rem 1.4rem 1.4rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .view-result-loading p {
@@ -769,32 +782,64 @@
 }
 
 .view-result-field {
-    padding: 16px 18px;
+    padding: 14px 16px;
     border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.9) 100%);
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.92) 100%);
 }
 
 .view-result-label {
-    font-size: 0.82rem;
-    color: #6c757d;
+    font-size: 0.8rem;
+    color: #64748b;
     margin-bottom: 6px;
     font-weight: 600;
 }
 
 .view-result-title {
-    font-size: 1rem;
-    color: #212529;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1e293b;
     word-break: break-word;
-    line-height: 1.5;
+    line-height: 1.55;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .view-result-link {
     display: block;
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 0.92rem;
+    line-height: 1.55;
     word-break: break-all;
     text-decoration: underline;
+    color: #0284c7;
+}
+
+#copyViewResultButton {
+    min-width: 140px;
+    padding: 8px 22px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#copyViewResultButton:active {
+    transform: scale(0.96);
+}
+
+#copyViewResultButton.btn-copied {
+    background: linear-gradient(135deg, #f3be56, #e6a032) !important;
+    border-color: rgba(222, 159, 45, 0.5) !important;
+    color: #1f2937 !important;
+    box-shadow: 0 8px 20px rgba(238, 175, 70, 0.32) !important;
+    transform: none;
 }
 
 /* --- 搜索结果容器 --- */
