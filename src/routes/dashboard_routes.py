@@ -28,3 +28,13 @@ def get_dashboard_stats_api():
     """
     summary = get_dashboard_summary()
     return jsonify({"success": True, "data": summary})
+
+
+@dashboard_bp.route("/admin/docs", methods=["GET"])
+@token_required
+def admin_docs_page():
+    """
+    渲染后台内置开发者 API 接入指南页面
+    """
+    return render_template("admin_docs.html", active_page="docs")
+

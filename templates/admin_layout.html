@@ -86,6 +86,11 @@
                 <span>系统配置</span>
             </a>
 
+            <a href="{{ url_for('dashboard.admin_docs_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'docs' else '' }}">
+                <i class="fas fa-book-bookmark w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'docs' else '' }}"></i>
+                <span>开放 API</span>
+            </a>
+
             <div class="pt-5 px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">快捷通道</div>
 
             <a href="{{ url_for('search_index') }}" target="_blank" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors group">
@@ -93,6 +98,8 @@
                 <span>前台搜索</span>
                 <i class="fas fa-chevron-right ml-auto text-[10px] text-slate-300 group-hover:text-slate-400"></i>
             </a>
+
+
         </nav>
 
         <!-- Admin Profile Footer -->

@@ -14,6 +14,8 @@ from src.services.system_config_service import (
     get_custom_ad_injection_config,
     get_storage_cleanup_config,
     get_search_scheduler_config,
+    get_api_mode_config,
+    save_api_mode_config,
     save_public_search_api_config,
     save_allow_excel_download_config,
     save_frontend_display_netdisk_config,
@@ -636,6 +638,44 @@ def run_storage_cleanup_now_api():
     from src.services.storage_cleanup_service import cleanup_all_storage
     result = cleanup_all_storage()
     return jsonify({"success": True, "message": "存储优化与清理任务执行完毕", "result": result})
+
+
+@system_config_bp.route("/admin/api/api-mode-config", methods=["GET"])
+@token_required
+def get_api_mode_config_api():
+    """获取 API_ONLY 模式及 UI 开关配置"""
+    config = get_api_mode_config()
+    return jsonify({"success": True, "config": config})
+
+
+@system_config_bp.route("/admin/api/api-mode-config", methods=["PUT", "POST"])
+@token_required
+def update_api_mode_config_api():
+    """更新 API_ONLY 模式及 UI 开关与安全转存 Key 配置"""
+    data = request.get_json() or {}
+    api_only = data.get("api_only", False)
+    enable_frontend = data.get("enable_frontend", True)
+    enable_admin_ui = data.get("enable_admin_ui", True)
+    search_scope = data.get("search_scope") or data.get("scope") or "own"
+    transfer_api_key = data.get("transfer_api_key") or data.get("api_key") or ""
+
+    success = save_api_mode_config(
+        api_only=api_only,
+        enable_frontend=enable_frontend,
+        enable_admin_ui=enable_admin_ui,
+        search_scope=search_scope,
+        transfer_api_key=transfer_api_key,
+    )
+    if not success:
+        return jsonify({"success": False, "message": "API 模式配置保存失败"}), 400
+
+    return jsonify({
+        "success": True,
+        "message": "API 模式配置保存成功",
+        "config": get_api_mode_config(),
+    })
+
+
 
 
 

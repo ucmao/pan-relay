@@ -4,14 +4,14 @@
 
 **基于 Python 的多网盘聚合中继与自动化变现管理系统**
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![Framework](https://img.shields.io/badge/Framework-Flask-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#-部署指南) [![Telegram](https://img.shields.io/badge/Telegram-Ready-26A5E4?logo=telegram&logoColor=white)](#-部署指南) [![Support](https://img.shields.io/badge/Support-5%20Major%20Clouds-brightgreen.svg)](#-支持的网盘矩阵)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![Framework](https://img.shields.io/badge/Framework-Flask-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#-部署指南) [![API Mode](https://img.shields.io/badge/API__ONLY-Supported-purple.svg)](#-API_ONLY-无头模式) [![Telegram](https://img.shields.io/badge/Telegram-Ready-26A5E4?logo=telegram&logoColor=white)](#-部署指南) [![Support](https://img.shields.io/badge/Support-5%20Major%20Clouds-brightgreen.svg)](#-支持的网盘矩阵)
 
 <p align="center">
   <a href="#-核心业务逻辑">业务逻辑</a> •
   <a href="#-支持的网盘矩阵">支持网盘</a> •
   <a href="#-部署指南">部署指南</a> •
+  <a href="#-API_ONLY-无头模式与开发者-API">API/无头模式</a> •
   <a href="#-网盘凭证说明">凭证配置</a> •
-  <a href="#-开放接口可选">开放接口</a> •
   <a href="#-联系作者">联系作者</a>
 </p>
 
@@ -19,7 +19,7 @@ Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化�
 
 通过“资源聚合 -> 自动转存 -> 收益链接替换 -> 优先分发”的闭环，将外部资源转化为自己的分享链接，提升拉新与转存收益。
 
-**内置 SQLite 数据库，支持本地资源、第三方 API、Telegram 公开频道与可扩展插件聚合搜索。**
+**内置 SQLite 数据库，支持本地资源、第三方 API、Telegram 公开频道与可扩展插件聚合搜索。支持完全解耦的 API_ONLY 无头模式与小程序/APP 快速接入。**
 
 </div>
 
@@ -32,11 +32,12 @@ Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化�
 * **多渠道聚合搜索**：
   * **前台搜索**：优先展示私有资源库中的收益链接，再并发聚合第三方 API、Telegram 公开频道和搜索插件的结果。
   * **动态收益出链**：外部搜索结果可在用户访问时按需转存，生成临时个人分享链；转存失败时自动回退原链接，过期分享由系统定时清理。
-  * **公开接口**：提供可开关的 JSON 聚合搜索 API，支持按关键词和网盘筛选，便于接入公众号、小程序、机器人或资源导航站，扩大资源分发入口。
+  * **两步走 REST API**：提供规范的 `/api/v1` REST 接口（步骤 1 聚合查询 -> 步骤 2 自动转存替换），便于无缝对接微信小程序、Flutter/React Native APP、Telegram 机器人或资源导航站。
 
 ## ✨ 项目特点
 
 * **无需外部数据库**：内置 SQLite 与 WAL 模式，无需安装配置 MySQL 等数据库服务。
+* **支持API_ONLY无头模式**：支持一键关闭 Web 前前端界面，充当无头（Headless）中转服务，由环境变量或后台自由控制。
 * **开箱即用**：启动时自动初始化表结构及预置 API、TG 频道和插件搜索源，支持源码与 Docker 部署。
 * **免凭证TG搜索**：直接抓取 Telegram 公开频道，无需 Bot Token，并自动提取网盘链接与提取码。
 * **搜索源可扩展**：后台统一管理 API、TG 频道和 Python 搜索插件，支持启停、测试与调度配置。
@@ -104,6 +105,58 @@ python app.py
 
 ---
 
+## 🔌 API_ONLY 无头模式与开发者 API
+
+针对需要接入自定义微信小程序、Mobile APP 或使用无头 (Headless) 模式的开发者，`pan-relay` 提供了完善的环境变量开关与标准化 `/api/v1` REST API。
+
+### 1. 模式环境变量配置
+
+可以通过环境变量控制前后台 UI 开关（可写在 `.env` 或 Docker 环境中）：
+
+| 环境变量 | 示例 | 说明 |
+| :--- | :--- | :--- |
+| `API_ONLY` | `true` / `1` | 开启无头 API 模式，屏蔽前台 UI，仅作为后端中转 API 运行 |
+| `ENABLE_FRONTEND` | `false` / `0` | 独立禁用前台 Web 搜索界面 (`GET /` 返回 API Status JSON) |
+| `ENABLE_ADMIN_UI` | `false` / `0` | 独立禁用后台 Web 管理界面 (`/admin/*`) |
+
+*注：即使 UI 完全关闭，系统后台的定时清理 Worker（`storage_cleanup_service`）依然会独立正常调度运行。*
+
+---
+
+### 2. 标准两步走 API 交互流程
+
+```http
+# 步骤 1：查询全网与库内聚合资源
+GET /api/v1/search?keyword={关键词}&cloud_name={可选网盘}
+
+# 步骤 2：转存并替换为专属网盘链接
+POST /api/v1/transfer
+Content-Type: application/json
+
+{
+  "url": "https://pan.quark.cn/s/raw_public_link",
+  "title": "电影标题",
+  "netdisk_name": "夸克网盘"
+}
+```
+
+响应示例：
+```json
+{
+  "success": true,
+  "message": "资源转换与链接生成成功",
+  "data": {
+    "url": "https://pan.quark.cn/s/my_relay_link",
+    "mode": "temp_share",
+    "netdisk_name": "夸克网盘"
+  }
+}
+```
+
+📖 完整的开发者 API 接口参数、流式 SSE 搜索及响应 Payload 说明，请参阅 [docs/api_v1_docs.md](docs/api_v1_docs.md)。
+
+---
+
 ## ⚙️ 网盘凭证说明
 
 登录管理后台（`/admin`）进入 **配置中心 -> 云盘凭证** 即可配置各平台登录态：
@@ -113,33 +166,6 @@ python app.py
 * **迅雷网盘**：需同时填入 `Refresh Token`、`Captcha Sign` 与 `User ID` 三项参数（缺一不可）。
 
 > 💡 **安全提示**：所有凭证仅在服务端本地存储，用于自动化转存与动态出链，绝不上传至任何第三方。
-
----
-
-## 🔌 开放接口（可选）
-
-系统提供 JSON 聚合搜索接口，便于接入微信公众号、机器人或外部导航站。接口默认开启，可在后台配置中心关闭，关闭后返回 HTTP 403。支持 `keyword`（必填）、`cloud_name`（可选，按网盘名称筛选）与 `limit`（默认 100）参数：
-
-```http
-GET /api?keyword={关键词}&cloud_name={可选网盘平台}&limit=20
-```
-
-响应示例：
-```json
-{
-  "success": true,
-  "total": 1,
-  "results": [
-    {
-      "source": "hot",
-      "name": "凡人修仙传.4K",
-      "share_link": "https://pan.quark.cn/s/xxxx",
-      "cloud_name": "夸克网盘"
-    }
-  ]
-}
-```
-
 
 ---
 
