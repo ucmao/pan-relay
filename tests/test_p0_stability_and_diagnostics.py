@@ -13,6 +13,7 @@ from src.clients.xunlei_client import (
     _XUNLEI_CAPTCHA_TOKEN_CACHE,
 )
 from src.db.credentials import (
+    delete_cookie,
     get_cookie_by_cloud_name,
     save_cookie,
     update_xunlei_refresh_token,
@@ -21,10 +22,15 @@ from src.db.credentials import (
 
 class TestP0StabilityAndDiagnostics(unittest.TestCase):
     def setUp(self):
-        # 清空全局缓存，防止测试间干扰
+        # 清空全局缓存与测试残留，防止测试间干扰
         _XUNLEI_ACCESS_TOKEN_CACHE.clear()
         _XUNLEI_CAPTCHA_TOKEN_CACHE.clear()
         _ALIYUN_ACCESS_TOKEN_CACHE.clear()
+        delete_cookie("迅雷网盘")
+
+    def tearDown(self):
+        # 清理测试写入的凭证，防止污染实际生产数据库
+        delete_cookie("迅雷网盘")
 
     def test_update_xunlei_refresh_token_db(self):
         """测试迅雷 refresh_token 在数据库层面的轮换持久化"""

@@ -252,5 +252,27 @@ class ExcelDownloadConfigTest(unittest.TestCase):
         mock_save_config.assert_called_once_with(False)
 
 
+class SystemConfigPagesTest(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client()
+        self.token = create_jwt_token()
+        self.client.set_cookie('token', self.token)
+
+    def test_api_config_page_renders(self):
+        response = self.client.get("/admin/api-config")
+        self.assertEqual(200, response.status_code)
+        self.assertIn("开放 API 服务配置", response.text)
+
+    def test_frontend_config_page_renders(self):
+        response = self.client.get("/admin/frontend-config")
+        self.assertEqual(200, response.status_code)
+        self.assertIn("前台 Web 界面配置", response.text)
+
+    def test_system_config_page_renders(self):
+        response = self.client.get("/admin/system-config")
+        self.assertEqual(200, response.status_code)
+        self.assertIn("后端通用配置", response.text)
+
+
 if __name__ == "__main__":
     unittest.main()

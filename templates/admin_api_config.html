@@ -1,0 +1,132 @@
+{% extends "admin_layout.html" %}
+{% set active_page = 'config_api' %}
+
+{% block title %}开放 API 配置 - Pan-Relay Console{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div>
+        <h1 class="text-xl font-bold tracking-tight text-slate-900">开放 API 服务配置</h1>
+        <p class="text-xs text-slate-500 mt-0.5">独立管理开放 REST API 端点、无头运行控制及 API 访问安全策略</p>
+    </div>
+    <div class="flex items-center space-x-2.5">
+        <a href="{{ url_for('dashboard.admin_docs_page') }}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-book-bookmark text-[10px] mr-1"></i> 查看 API 文档
+        </a>
+    </div>
+</div>
+
+<div class="space-y-6">
+
+    <!-- 1. API 模式与无头控制 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-plug text-purple-600"></i> REST API 模式与无头运行控制
+                </h2>
+                <p class="admin-panel-desc">集中管理后端中转 API 服务模式及对外公开的聚合搜索端点</p>
+            </div>
+        </div>
+        <div class="admin-panel-body">
+            <div class="divide-y divide-slate-100">
+                <!-- 配置 1: 无头 API 运行模式 (API_ONLY) -->
+                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-900 text-sm">仅 API 运行模式 (API_ONLY)</span>
+                            <span class="badge badge-warning text-[10px]" id="apiOnlyBadge">未开启</span>
+                        </div>
+                        <p class="text-xs text-slate-500">开启后系统仅作为无头中转 API 运行，自动屏蔽前台 Web 搜索界面；适合独立小程序、APP 接入</p>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-shrink-0">
+                        <label class="plugin-switch" title="切换 API_ONLY 模式">
+                            <input type="checkbox" id="apiOnlyToggle" onchange="saveApiModeConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 配置 2: 公开聚合搜索接口 -->
+                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-900 text-sm">公开聚合搜索接口 (`GET /api/v1/search`)</span>
+                            <span class="badge badge-success text-[10px]" id="publicSearchApiBadge">已开启</span>
+                        </div>
+                        <p class="text-xs text-slate-500">对外提供 JSON 聚合搜索端点；可随时全局开启或全局关闭</p>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-shrink-0">
+                        <label class="plugin-switch" title="切换公开 API 状态">
+                            <input type="checkbox" id="publicSearchApiToggle" onchange="savePublicSearchApiConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. API 检索与转存安全策略 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-shield-halved text-indigo-600"></i> API 检索与转存安全策略
+                </h2>
+                <p class="admin-panel-desc">配置 API 搜索默认检索作用域及转存鉴权 Key (X-API-Key)</p>
+            </div>
+        </div>
+        <div class="admin-panel-body">
+            <div class="divide-y divide-slate-100">
+                <!-- 配置 1: API 默认检索作用域 -->
+                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-900 text-sm">API 搜索默认作用域 (Scope)</span>
+                            <span class="badge badge-info text-[10px]" id="searchScopeBadge">仅站长收益库</span>
+                        </div>
+                        <p class="text-xs text-slate-500"><code>own</code>: 仅检索站长收益库 (0 服务器开销、毫秒级响应)；<code>all</code>: 全网并发聚合检索</p>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-shrink-0">
+                        <select id="searchScopeSelect" class="form-select form-select-sm" onchange="saveApiModeConfig()" style="min-width: 170px;">
+                            <option value="own">仅站长收益库 (own)</option>
+                            <option value="all">全网并发聚合 (all)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 配置 2: 转存 API 校验 Key -->
+                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-900 text-sm">转存 API 校验 Key (`X-API-Key`)</span>
+                            <span class="badge badge-secondary text-[10px]" id="transferApiKeyBadge">公开调用</span>
+                        </div>
+                        <p class="text-xs text-slate-500">留空表示 <code>POST /api/v1/transfer</code> 公开允许调用；配置密钥后请求需在 Header 中携带 <code>X-API-Key</code> 或 Bearer 凭证</p>
+                    </div>
+                    <div class="flex items-center space-x-2 flex-shrink-0">
+                        <div class="relative flex items-center">
+                            <span class="absolute left-3 text-slate-400 text-xs"><i class="fas fa-key"></i></span>
+                            <input type="text" id="transferApiKeyInput" class="form-control form-control-sm pl-8 text-xs font-mono" style="min-width: 170px;" placeholder="留空则不校验" value="">
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm px-3" onclick="saveApiModeConfig()">
+                            <i class="fas fa-check text-[10px]"></i> 保存
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.4"></script>
+<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.4"></script>
+{% endblock %}

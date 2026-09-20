@@ -33,10 +33,13 @@ function bindFrontendLinkModeEvents() {
 }
 
 function switchSystemTab(target, updateHash = true) {
-    const validTabs = ['strategy', 'security', 'storage', 'credentials'];
-    const normalized = validTabs.includes(target) ? target : 'strategy';
+    const validTabs = ['storage', 'security', 'credentials', 'strategy', 'api', 'frontend'];
+    const normalized = validTabs.includes(target) ? target : 'storage';
 
-    document.querySelectorAll('[data-system-tab-target]').forEach((b) => {
+    const tabBtns = document.querySelectorAll('[data-system-tab-target]');
+    if (tabBtns.length === 0) return;
+
+    tabBtns.forEach((b) => {
         b.classList.toggle('is-active', b.getAttribute('data-system-tab-target') === normalized);
     });
     document.querySelectorAll('.system-tab-pane').forEach((pane) => {
@@ -97,8 +100,12 @@ function renderDynamicTransferStatuses(statuses, summary) {
     }
 
     if (manageLink) {
-        manageLink.onclick = () => {
-            document.querySelector('[data-system-tab-target="credentials"]')?.click();
+        manageLink.onclick = (e) => {
+            const credMainTabBtn = document.querySelector('[data-system-tab-target="credentials"]');
+            if (credMainTabBtn) {
+                e.preventDefault();
+                credMainTabBtn.click();
+            }
         };
     }
 
@@ -150,23 +157,24 @@ function renderDynamicTransferStatuses(statuses, summary) {
                 const credMainTabBtn = document.querySelector('[data-system-tab-target="credentials"]');
                 if (credMainTabBtn) {
                     credMainTabBtn.click();
-                }
-
-                const credSubTabBtn = document.querySelector(`[data-cred-target="${targetKey}"]`);
-                if (credSubTabBtn) {
-                    credSubTabBtn.click();
-                }
-
-                setTimeout(() => {
-                    const pane = document.getElementById(`cred-pane-${targetKey}`);
-                    if (pane) {
-                        pane.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        const textarea = pane.querySelector('textarea, input');
-                        if (textarea) {
-                            textarea.focus();
-                        }
+                    const credSubTabBtn = document.querySelector(`[data-cred-target="${targetKey}"]`);
+                    if (credSubTabBtn) {
+                        credSubTabBtn.click();
                     }
-                }, 120);
+
+                    setTimeout(() => {
+                        const pane = document.getElementById(`cred-pane-${targetKey}`);
+                        if (pane) {
+                            pane.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const textarea = pane.querySelector('textarea, input');
+                            if (textarea) {
+                                textarea.focus();
+                            }
+                        }
+                    }, 120);
+                } else {
+                    window.location.href = `/admin/system-config?tab=credentials`;
+                }
             });
         });
     }
@@ -497,20 +505,27 @@ async function saveFrontendLinkMode() {
 }
 
 async function loadCookieConfig() {
+    const baidu = document.getElementById('baiduCookie');
+    if (!baidu) return;
     try {
         const response = await fetch('/admin/api/credential-config');
         const data = await response.json();
-        document.getElementById('baiduCookie').value = data.baidu_cookie || '';
-        document.getElementById('quarkCookie').value = data.quark_cookie || '';
-        document.getElementById('aliyunToken').value = data.aliyun_token || '';
-        document.getElementById('ucCookie').value = data.uc_cookie || '';
-        document.getElementById('xunleiRefreshToken').value = data.xunlei_refresh_token || '';
-        document.getElementById('xunleiCaptchaSign').value = data.xunlei_captcha_sign || '';
-        document.getElementById('xunleiUserId').value = data.xunlei_user_id || '';
+        baidu.value = data.baidu_cookie || '';
+        const quark = document.getElementById('quarkCookie');
+        if (quark) quark.value = data.quark_cookie || '';
+        const aliyun = document.getElementById('aliyunToken');
+        if (aliyun) aliyun.value = data.aliyun_token || '';
+        const uc = document.getElementById('ucCookie');
+        if (uc) uc.value = data.uc_cookie || '';
+        const xunleiRefreshToken = document.getElementById('xunleiRefreshToken');
+        if (xunleiRefreshToken) xunleiRefreshToken.value = data.xunlei_refresh_token || '';
+        const xunleiCaptchaSign = document.getElementById('xunleiCaptchaSign');
+        if (xunleiCaptchaSign) xunleiCaptchaSign.value = data.xunlei_captcha_sign || '';
+        const xunleiUserId = document.getElementById('xunleiUserId');
+        if (xunleiUserId) xunleiUserId.value = data.xunlei_user_id || '';
         renderDynamicTransferStatuses(data.dynamic_transfer_statuses, data.dynamic_transfer_summary);
     } catch (error) {
         console.error('加载云盘凭证失败:', error);
-        showToast('加载云盘凭证失败，请检查后端日志。', 'danger');
     }
 }
 
@@ -875,6 +890,104 @@ async function runStorageCleanupNow() {
     }
 }
 
+async function loadApiModeConfig() {
+    try {
+        const response = await fetch('/admin/api/api-mode-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const cfg = data.config || {};
+
+        const apiOnlyToggle = document.getElementById('apiOnlyToggle');
+        const apiOnlyBadge = document.getElementById('apiOnlyBadge');
+        const enableFrontendToggle = document.getElementById('enableFrontendToggle');
+        const enableFrontendBadge = document.getElementById('enableFrontendBadge');
+        const enableAdminUiToggle = document.getElementById('enableAdminUiToggle');
+        const enableAdminUiBadge = document.getElementById('enableAdminUiBadge');
+        const searchScopeSelect = document.getElementById('searchScopeSelect');
+        const searchScopeBadge = document.getElementById('searchScopeBadge');
+        const transferApiKeyInput = document.getElementById('transferApiKeyInput');
+        const transferApiKeyBadge = document.getElementById('transferApiKeyBadge');
+        const kpiApiMode = document.getElementById('kpiApiMode');
+
+        if (apiOnlyToggle) apiOnlyToggle.checked = Boolean(cfg.api_only);
+        if (apiOnlyBadge) {
+            apiOnlyBadge.textContent = cfg.api_only ? '已开启' : '未开启';
+            apiOnlyBadge.className = cfg.api_only ? 'badge badge-warning text-[10px]' : 'badge badge-secondary text-[10px]';
+        }
+
+        if (enableFrontendToggle) enableFrontendToggle.checked = Boolean(cfg.enable_frontend);
+        if (enableFrontendBadge) {
+            enableFrontendBadge.textContent = cfg.enable_frontend ? '已开启' : '已禁用';
+            enableFrontendBadge.className = cfg.enable_frontend ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
+        }
+
+        if (enableAdminUiToggle) enableAdminUiToggle.checked = Boolean(cfg.enable_admin_ui);
+        if (enableAdminUiBadge) {
+            enableAdminUiBadge.textContent = cfg.enable_admin_ui ? '已开启' : '已禁用';
+            enableAdminUiBadge.className = cfg.enable_admin_ui ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
+        }
+
+        if (searchScopeSelect) searchScopeSelect.value = cfg.search_scope || 'own';
+        if (searchScopeBadge) {
+            searchScopeBadge.textContent = (cfg.search_scope === 'all') ? '全网并发聚合' : '仅站长收益库';
+            searchScopeBadge.className = (cfg.search_scope === 'all') ? 'badge badge-warning text-[10px]' : 'badge badge-info text-[10px]';
+        }
+
+        if (transferApiKeyInput) transferApiKeyInput.value = cfg.transfer_api_key || '';
+        if (transferApiKeyBadge) {
+            const hasKey = Boolean((cfg.transfer_api_key || '').trim());
+            transferApiKeyBadge.textContent = hasKey ? '受密钥保护' : '公开调用';
+            transferApiKeyBadge.className = hasKey ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
+        }
+
+        if (kpiApiMode) {
+            kpiApiMode.textContent = cfg.api_only ? 'API 无头' : '标准 Web';
+            kpiApiMode.style.color = cfg.api_only ? 'var(--admin-warning-text)' : 'var(--admin-success-text)';
+        }
+    } catch (error) {
+        console.error('加载 API 模式配置失败:', error);
+    }
+}
+
+async function saveApiModeConfig() {
+    const apiOnlyToggle = document.getElementById('apiOnlyToggle');
+    const enableFrontendToggle = document.getElementById('enableFrontendToggle');
+    const enableAdminUiToggle = document.getElementById('enableAdminUiToggle');
+    const searchScopeSelect = document.getElementById('searchScopeSelect');
+    const transferApiKeyInput = document.getElementById('transferApiKeyInput');
+
+    const payload = {
+        api_only: apiOnlyToggle ? apiOnlyToggle.checked : false,
+        enable_frontend: enableFrontendToggle ? enableFrontendToggle.checked : true,
+        enable_admin_ui: enableAdminUiToggle ? enableAdminUiToggle.checked : true,
+        search_scope: searchScopeSelect ? searchScopeSelect.value : 'own',
+        transfer_api_key: transferApiKeyInput ? transferApiKeyInput.value.trim() : '',
+    };
+
+    try {
+        const response = await fetch('/admin/api/api-mode-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || 'API 模式配置保存成功', 'success');
+        await loadApiModeConfig();
+    } catch (error) {
+        console.error('保存 API 模式配置失败:', error);
+        showToast(`保存 API 模式配置失败: ${error.message}`, 'danger');
+        await loadApiModeConfig();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     bindSystemTabEvents();
     bindCredentialTabEvents();
@@ -882,6 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindFrontendLinkModeEvents();
     bindSensitiveWordsTextareaEvents();
     bindAdFilterTextareaEvents();
+    loadApiModeConfig();
     loadPublicSearchApiConfig();
     loadAllowExcelDownloadConfig();
     loadTransferTargetDirConfig();
@@ -893,6 +1007,16 @@ document.addEventListener('DOMContentLoaded', () => {
     loadStorageCleanupConfig();
     loadCookieConfig();
     updateDynamicTransferStatusVisibility();
+
+    const transferApiKeyInput = document.getElementById('transferApiKeyInput');
+    if (transferApiKeyInput) {
+        transferApiKeyInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveApiModeConfig();
+            }
+        });
+    }
 
     const transferTargetDirInput = document.getElementById('transferTargetDirInput');
     if (transferTargetDirInput) {

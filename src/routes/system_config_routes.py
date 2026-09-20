@@ -162,12 +162,35 @@ def _build_dynamic_transfer_statuses():
     }
 
 
+@system_config_bp.route("/admin/api-config", methods=["GET"])
+@token_required
+def api_config_page():
+    return render_template(
+        "admin_api_config.html",
+        active_page="config_api",
+    )
+
+
+@system_config_bp.route("/admin/frontend-config", methods=["GET"])
+@token_required
+def frontend_config_page():
+    return render_template(
+        "admin_frontend_config.html",
+        frontend_netdisk_options=FRONTEND_DISPLAY_NETDISK_OPTIONS,
+        active_page="config_frontend",
+    )
+
+
 @system_config_bp.route("/admin/system-config", methods=["GET"])
 @token_required
 def system_config_page():
+    tab = request.args.get("tab", "storage")
+    active_page = "config_credentials" if tab == "credentials" else "config_system"
     return render_template(
         "system_config.html",
         frontend_netdisk_options=FRONTEND_DISPLAY_NETDISK_OPTIONS,
+        active_page=active_page,
+        current_tab=tab,
     )
 
 

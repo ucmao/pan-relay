@@ -118,6 +118,8 @@ python app.py
 | `API_ONLY` | `true` / `1` | 开启无头 API 模式，屏蔽前台 UI，仅作为后端中转 API 运行 |
 | `ENABLE_FRONTEND` | `false` / `0` | 独立禁用前台 Web 搜索界面 (`GET /` 返回 API Status JSON) |
 | `ENABLE_ADMIN_UI` | `false` / `0` | 独立禁用后台 Web 管理界面 (`/admin/*`) |
+| `SEARCH_API_SCOPE` | `own` / `all` | API 搜索默认检索作用域 (`own`: 仅站长收益库 / `all`: 全网并发) |
+| `TRANSFER_API_KEY` | `your_key` | API 转存鉴权密钥 (留空表示公开允许转存，设置后客户端请求需携带 `X-API-Key`) |
 
 *注：即使 UI 完全关闭，系统后台的定时清理 Worker（`storage_cleanup_service`）依然会独立正常调度运行。*
 
@@ -125,7 +127,7 @@ python app.py
 
 ### 2. 标准两步走 API 交互流程
 
-```http
+```bash
 # 步骤 1：查询全网与库内聚合资源
 GET /api/v1/search?keyword={关键词}&cloud_name={可选网盘}
 
