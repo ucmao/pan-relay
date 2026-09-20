@@ -452,3 +452,52 @@ def search_resources_advanced(
     finally:
         cursor.close()
         conn.close()
+
+
+def list_expired_resources(days: int = 15, limit: int = 100) -> List[Dict[str, Any]]:
+    """查询创建时间超过指定天数的资源记录（用于存储自动优化与旧资源清理）。"""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        cursor = conn.cursor(as_dict=True)
+        sql = """
+        SELECT id, file_id, name, share_link, cloud_name, type, remarks, created_at
+        FROM resources
+        WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
+        ORDER BY created_at ASC
+        LIMIT ?
+        """
+        cursor.execute(sql, (int(days), int(limit)))
+        rows = cursor.fetchall()
+        return rows or []
+    except Error as err:
+        logger.error(f"查询过期资源记录失败: {err}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def count_expired_resources(days: int = 15) -> int:
+    """统计创建时间超过指定天数的资源记录数量。"""
+    conn = get_db_connection()
+    if not conn:
+        return 0
+    try:
+        cursor = conn.cursor(as_dict=True)
+        sql = """
+        SELECT COUNT(*) AS total
+        FROM resources
+        WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
+        """
+        cursor.execute(sql, (int(days),))
+        row = cursor.fetchone()
+        return int(row["total"]) if row else 0
+    except Error as err:
+        logger.error(f"统计过期资源数量失败: {err}")
+        return 0
+    finally:
+        cursor.close()
+        conn.close()
+

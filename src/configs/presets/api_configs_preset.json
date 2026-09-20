@@ -88,5 +88,35 @@
     "status": "unknown",
     "response_time_ms": 0,
     "is_enabled": 1
+  },
+  {
+    "name": "天天短剧 API",
+    "url": "https://ttkj.cyou/api.php/provide/vod/?wd=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "list[*].[vod_name, vod_play_url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "非凡影视资源 API",
+    "url": "https://cj.ffzyapi.com/api.php/provide/vod/?wd=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "list[*].[vod_name, vod_play_url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
+  },
+  {
+    "name": "量子影视资源 API",
+    "url": "https://cj.lziapi.com/api.php/provide/vod/?wd=[[keyword]]",
+    "method": "get",
+    "request": "",
+    "response": "list[*].[vod_name, vod_play_url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
   }
 ]

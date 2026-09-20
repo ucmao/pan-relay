@@ -10,6 +10,8 @@ from src.services.system_config_service import (
     get_frontend_link_mode,
     get_transfer_target_dir,
     get_sensitive_words_config,
+    get_ad_filter_config,
+    get_storage_cleanup_config,
     get_search_scheduler_config,
     save_public_search_api_config,
     save_allow_excel_download_config,
@@ -17,6 +19,8 @@ from src.services.system_config_service import (
     save_frontend_link_mode,
     save_transfer_target_dir,
     save_sensitive_words_config,
+    save_ad_filter_config,
+    save_storage_cleanup_config,
     save_search_scheduler_config,
 )
 from src.services.telegram_channel_service import (
@@ -545,4 +549,66 @@ def update_transfer_target_dir_api():
         "message": "转存目标目录配置保存成功",
         "target_dir": get_transfer_target_dir(),
     })
+
+
+@system_config_bp.route("/admin/api/ad-filter-config", methods=["GET"])
+@token_required
+def get_ad_filter_config_api():
+    """获取广告过滤配置与关键词库"""
+    config = get_ad_filter_config()
+    return jsonify({"success": True, "config": config})
+
+
+@system_config_bp.route("/admin/api/ad-filter-config", methods=["PUT", "POST"])
+@token_required
+def update_ad_filter_config_api():
+    """更新广告过滤配置与关键词库"""
+    data = request.get_json() or {}
+    success = save_ad_filter_config(data)
+    if not success:
+        return jsonify({"success": False, "message": "广告过滤配置保存失败"}), 400
+
+    return jsonify({
+        "success": True,
+        "message": "广告过滤配置保存成功",
+        "config": get_ad_filter_config(),
+    })
+
+
+@system_config_bp.route("/admin/api/storage-cleanup-config", methods=["GET"])
+@token_required
+def get_storage_cleanup_config_api():
+    """获取存储优化与自动清理策略配置及统计信息"""
+    from src.services.storage_cleanup_service import get_storage_stats
+    stats = get_storage_stats()
+    return jsonify({"success": True, "data": stats})
+
+
+@system_config_bp.route("/admin/api/storage-cleanup-config", methods=["PUT", "POST"])
+@token_required
+def update_storage_cleanup_config_api():
+    """更新存储优化与自动清理策略配置"""
+    data = request.get_json() or {}
+    success = save_storage_cleanup_config(data)
+    if not success:
+        return jsonify({"success": False, "message": "存储自动清理配置保存失败"}), 400
+
+    from src.services.scheduler_service import reload_storage_cleanup_job
+    reload_storage_cleanup_job()
+
+    return jsonify({
+        "success": True,
+        "message": "存储自动清理配置保存成功",
+        "config": get_storage_cleanup_config(),
+    })
+
+
+@system_config_bp.route("/admin/api/storage-cleanup/run", methods=["POST"])
+@token_required
+def run_storage_cleanup_now_api():
+    """立即手动触发一次完整存储优化与过期资源清理"""
+    from src.services.storage_cleanup_service import cleanup_all_storage
+    result = cleanup_all_storage()
+    return jsonify({"success": True, "message": "存储优化与清理任务执行完毕", "result": result})
+
 

@@ -294,6 +294,71 @@ def save_ad_filter_config(config_data: Dict[str, Any]) -> bool:
     return set_config_value(AD_FILTER_CONFIG_KEY, payload)
 
 
+STORAGE_CLEANUP_CONFIG_KEY = "storage_cleanup_config"
+DEFAULT_STORAGE_CLEANUP_CONFIG = {
+    "enabled": True,
+    "retention_days": 15,
+    "auto_cleanup_interval_hours": 12,
+    "clean_temp_shares": True,
+    "clean_old_resources": True,
+    "limit_per_run": 100,
+}
+
+
+def get_storage_cleanup_config() -> Dict[str, Any]:
+    """获取存储优化与自动清理配置"""
+    default_config = DEFAULT_STORAGE_CLEANUP_CONFIG.copy()
+    raw_value = get_config_value(STORAGE_CLEANUP_CONFIG_KEY)
+    if not raw_value:
+        return default_config
+    try:
+        parsed = json.loads(raw_value)
+        if not isinstance(parsed, dict):
+            return default_config
+        return {
+            "enabled": bool(parsed.get("enabled", default_config["enabled"])),
+            "retention_days": int(parsed.get("retention_days", default_config["retention_days"])),
+            "auto_cleanup_interval_hours": int(
+                parsed.get("auto_cleanup_interval_hours", default_config["auto_cleanup_interval_hours"])
+            ),
+            "clean_temp_shares": bool(parsed.get("clean_temp_shares", default_config["clean_temp_shares"])),
+            "clean_old_resources": bool(
+                parsed.get("clean_old_resources", default_config["clean_old_resources"])
+            ),
+            "limit_per_run": int(parsed.get("limit_per_run", default_config["limit_per_run"])),
+        }
+    except Exception as e:
+        logger.warning(f"读取存储清理配置失败，回退默认配置: {e}")
+        return default_config
+
+
+def save_storage_cleanup_config(config_data: Dict[str, Any]) -> bool:
+    """保存存储优化与自动清理配置"""
+    if not isinstance(config_data, dict):
+        return False
+    current = get_storage_cleanup_config()
+    payload = {
+        "enabled": bool(config_data.get("enabled", current["enabled"])),
+        "retention_days": max(1, int(config_data.get("retention_days", current["retention_days"]))),
+        "auto_cleanup_interval_hours": max(
+            1,
+            int(
+                config_data.get(
+                    "auto_cleanup_interval_hours", current["auto_cleanup_interval_hours"]
+                )
+            ),
+        ),
+        "clean_temp_shares": bool(
+            config_data.get("clean_temp_shares", current["clean_temp_shares"])
+        ),
+        "clean_old_resources": bool(
+            config_data.get("clean_old_resources", current["clean_old_resources"])
+        ),
+        "limit_per_run": max(10, int(config_data.get("limit_per_run", current["limit_per_run"]))),
+    }
+    return set_config_value(STORAGE_CLEANUP_CONFIG_KEY, payload)
+
+
 SEARCH_SCHEDULER_CONFIG_KEY = "search_scheduler_settings"
 PLUGIN_SETTINGS_KEY = "plugin_settings"
 
