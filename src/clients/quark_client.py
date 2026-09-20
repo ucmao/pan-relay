@@ -117,6 +117,15 @@ class QuarkPanClient(BasePanClient):
             payload={"pwd_id": pwd_id, "passcode": ""},
             params={"pr": "ucpro", "fr": "pc", "uc_param_str": "", "__dt": 405, "__t": generate_timestamp(13)},
         )
+        if not data:
+            return ""
+        if data.get("status") != 200:
+            msg = data.get("message") or "未知错误"
+            if msg == "require login [guest]":
+                logger.error("夸克网盘未登录或Cookie已失效，请更新凭证 (pwd_id=%s)", pwd_id)
+            else:
+                logger.error("夸克网盘获取 stoken 失败: %s (pwd_id=%s)", msg, pwd_id)
+            return ""
         return ((data or {}).get("data") or {}).get("stoken", "")
 
     def detail(self, pwd_id: str, stoken: str) -> Dict[str, Any]:
@@ -131,6 +140,16 @@ class QuarkPanClient(BasePanClient):
                 "_size": "50",
             },
         )
+        if not data:
+            return {}
+        if data.get("status") != 200:
+            msg = data.get("message") or "未知错误"
+            if msg == "require login [guest]":
+                logger.error("夸克网盘未登录或Cookie已失效")
+            else:
+                logger.error("夸克网盘获取分享详情接口失败: %s (pwd_id=%s)", msg, pwd_id)
+            return {}
+
         response_data = (data or {}).get("data") or {}
         file_list = response_data.get("list") or []
         if not file_list:
@@ -175,6 +194,15 @@ class QuarkPanClient(BasePanClient):
                 "__t": generate_timestamp(13),
             },
         )
+        if not data or data.get("status") != 200:
+            msg = (data or {}).get("message") or "未知错误"
+            if msg == "require login [guest]":
+                logger.error("夸克网盘未登录或Cookie已失效，保存任务创建失败")
+            elif "capacity limit" in str(msg).lower():
+                logger.error("夸克网盘容量不足，无法保存新文件")
+            else:
+                logger.error("夸克网盘创建保存任务失败: %s", msg)
+            return ""
         return ((data or {}).get("data") or {}).get("task_id", "")
 
     def task(self, task_id: str, retries: int = 10) -> Optional[Dict[str, Any]]:
@@ -194,8 +222,28 @@ class QuarkPanClient(BasePanClient):
                         "__t": generate_timestamp(13),
                     },
                 )
-                if ((data or {}).get("data") or {}).get("status"):
+                if not data:
+                    continue
+                if data.get("status") != 200:
+                    msg = data.get("message") or ""
+                    if msg == "require login [guest]":
+                        logger.error("夸克网盘未登录或Cookie已失效")
+                        return None
+                    elif "capacity limit" in str(msg).lower():
+                        logger.error("夸克网盘容量不足，任务失败")
+                        return None
+                    time.sleep(0.2)
+                    continue
+
+                task_data = data.get("data") or {}
+                # 状态 2 表示任务成功完成
+                if task_data.get("status") == 2 or task_data.get("save_as") or task_data.get("share_id"):
                     return data
+                # 状态 3 表示任务明确失败
+                if task_data.get("status") == 3:
+                    task_err = task_data.get("message") or "夸克网盘异步任务处理失败"
+                    logger.error("夸克网盘任务执行失败: %s", task_err)
+                    return None
             except Exception as exc:
                 logger.error("夸克网盘任务轮询异常: %s", exc)
             time.sleep(0.2)

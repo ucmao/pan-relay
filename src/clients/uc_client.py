@@ -43,7 +43,11 @@ class UcPanClient(BasePanClient):
             params={"pr": "UCBrowser", "fr": "pc"},
         )
         if not stoken_data or stoken_data.get("status") != 200:
-            logger.error("UC 网盘获取 stoken 失败: %s", stoken_data)
+            msg = (stoken_data or {}).get("message") or "未知错误"
+            if msg == "require login [guest]":
+                logger.error("UC 网盘未登录或Cookie已失效，请更新凭证 (pwd_id=%s)", pwd_id)
+            else:
+                logger.error("UC 网盘获取 stoken 失败: %s", msg)
             return None, None, None
 
         stoken = ((stoken_data.get("data") or {}).get("token_info") or {}).get("stoken", "")
@@ -71,7 +75,8 @@ class UcPanClient(BasePanClient):
             },
         )
         if not detail_data or detail_data.get("status") != 200:
-            logger.error("UC 网盘获取分享详情失败: %s", detail_data)
+            msg = (detail_data or {}).get("message") or "获取分享详情失败"
+            logger.error("UC 网盘获取分享详情失败: %s", msg)
             return None, None, None
 
         detail = detail_data.get("data") or {}
@@ -102,7 +107,13 @@ class UcPanClient(BasePanClient):
             params={"entry": "update_share", "pr": "UCBrowser", "fr": "pc"},
         )
         if not save_result or save_result.get("status") != 200:
-            logger.error("UC 网盘转存请求失败: %s", save_result)
+            msg = (save_result or {}).get("message") or "转存请求失败"
+            if msg == "require login [guest]":
+                logger.error("UC 网盘未登录或Cookie已失效，保存失败")
+            elif "capacity limit" in str(msg).lower():
+                logger.error("UC 网盘容量不足，保存失败")
+            else:
+                logger.error("UC 网盘转存请求失败: %s", msg)
             return None, None, None
 
         task_id = (save_result.get("data") or {}).get("task_id")
@@ -234,15 +245,22 @@ class UcPanClient(BasePanClient):
             )
             if not result:
                 continue
-            if result.get("message") == "capacity limit[{0}]":
-                logger.error("UC 网盘容量不足")
+            msg = result.get("message") or ""
+            if msg == "capacity limit[{0}]" or "capacity limit" in str(msg).lower():
+                logger.error("UC 网盘容量不足，转存任务失败")
+                return None
+            if msg == "require login [guest]":
+                logger.error("UC 网盘未登录或Cookie已失效")
                 return None
             if result.get("status") != 200:
                 time.sleep(0.2)
                 continue
             data = result.get("data") or {}
-            if data.get("status") == 2:
+            if data.get("status") == 2 or data.get("save_as") or data.get("share_id"):
                 return data
+            if data.get("status") == 3:
+                logger.error("UC 网盘异步任务执行失败: %s", data.get("message") or "任务失败")
+                return None
             time.sleep(0.2)
 
         logger.error("UC 网盘任务轮询超时: %s", task_id)

@@ -125,3 +125,39 @@ def delete_cookie(cloud_name: str) -> Tuple[bool, str]:
     finally:
         cursor.close()
         conn.close()
+
+
+def update_xunlei_refresh_token(new_refresh_token: str) -> bool:
+    """
+    当迅雷网盘接口刷新返回新的 refresh_token 时，自动更新数据库中的迅雷凭证配置。
+    """
+    import json
+
+    if not new_refresh_token or not new_refresh_token.strip():
+        return False
+
+    raw_credential = get_cookie_by_cloud_name("迅雷网盘")
+    if not raw_credential:
+        logger.warning("更新迅雷 refresh_token 失败：数据库中未找到迅雷网盘凭证配置")
+        return False
+
+    try:
+        parsed = json.loads(raw_credential)
+        if not isinstance(parsed, dict):
+            parsed = {}
+    except Exception:
+        parsed = {}
+
+    if parsed.get("refresh_token") == new_refresh_token.strip():
+        return True
+
+    parsed["refresh_token"] = new_refresh_token.strip()
+    updated_credential = json.dumps(parsed, ensure_ascii=False)
+
+    success, msg = save_cookie("迅雷网盘", updated_credential)
+    if success:
+        logger.info("已成功持久化更新迅雷网盘的 refresh_token 到数据库")
+    else:
+        logger.error(f"持久化更新迅雷网盘 refresh_token 失败: {msg}")
+    return success
+

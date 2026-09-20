@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
@@ -8,6 +9,10 @@ import requests
 from src.clients.base_client import BasePanClient
 
 logger = logging.getLogger(__name__)
+
+# 全局缓存，避免频繁刷新 Token 触发风控
+# 结构: {refresh_token: {"access_token": str, "drive_id": str, "expires_at": float}}
+_ALIYUN_ACCESS_TOKEN_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 class AliyunPanClient(BasePanClient):
@@ -45,7 +50,8 @@ class AliyunPanClient(BasePanClient):
             {"share_id": share_id},
         )
         if not share_info or not share_info.get("file_infos"):
-            logger.error("阿里云盘获取分享信息失败: %s", share_info)
+            err_msg = (share_info or {}).get("message") or (share_info or {}).get("code") or "分享链接无效或已过期"
+            logger.error("阿里云盘获取分享信息失败: %s (share_id=%s)", err_msg, share_id)
             return None, None, None
 
         share_token_data = self._request(
@@ -55,7 +61,8 @@ class AliyunPanClient(BasePanClient):
         )
         share_token = (share_token_data or {}).get("share_token")
         if not share_token:
-            logger.error("阿里云盘获取 share_token 失败: %s", share_token_data)
+            err_msg = (share_token_data or {}).get("message") or "获取 share_token 失败"
+            logger.error("阿里云盘获取 share_token 失败: %s (share_id=%s)", err_msg, share_id)
             return None, None, None
 
         file_infos = share_info["file_infos"]
@@ -87,14 +94,15 @@ class AliyunPanClient(BasePanClient):
         )
         responses = (batch_result or {}).get("responses") or []
         if not responses:
-            logger.error("阿里云盘批量转存失败: %s", batch_result)
+            err_msg = (batch_result or {}).get("message") or "批量转存无响应"
+            logger.error("阿里云盘批量转存失败: %s", err_msg)
             return None, None, None
 
         new_file_ids: List[str] = []
         for item in responses:
             body = item.get("body") or {}
             if body.get("code"):
-                logger.error("阿里云盘转存返回错误: %s", body)
+                logger.error("阿里云盘单个文件转存返回错误: %s (%s)", body.get("message") or body.get("code"), body)
                 return None, None, None
             if body.get("file_id"):
                 new_file_ids.append(body["file_id"])
@@ -115,7 +123,8 @@ class AliyunPanClient(BasePanClient):
         )
         share_url_new = (share_result or {}).get("share_url")
         if not share_url_new:
-            logger.error("阿里云盘创建分享失败: %s", share_result)
+            err_msg = (share_result or {}).get("message") or (share_result or {}).get("code") or "创建分享失败"
+            logger.error("阿里云盘创建分享失败: %s", err_msg)
             return None, None, None
 
         return json.dumps(new_file_ids, ensure_ascii=False), title, share_url_new
@@ -185,15 +194,36 @@ class AliyunPanClient(BasePanClient):
             {"requests": requests_payload, "resource": "file"},
         )
         responses = (result or {}).get("responses") or []
-        return bool(responses)
+        if not responses:
+            logger.error("阿里云盘删除文件请求失败: %s", (result or {}).get("message") or "无响应")
+            return False
+        return True
 
-    def _refresh_access_token(self) -> None:
-        data = self._post_anonymous(
-            "https://api.aliyundrive.com/token/refresh",
-            {"refresh_token": self.refresh_token},
-        )
+    def _refresh_access_token(self, force: bool = False) -> None:
+        global _ALIYUN_ACCESS_TOKEN_CACHE
+
+        now = time.time()
+        cached = _ALIYUN_ACCESS_TOKEN_CACHE.get(self.refresh_token)
+        if not force and cached and cached.get("access_token") and now < cached.get("expires_at", 0) - 60:
+            self.access_token = cached["access_token"]
+            self.drive_id = cached.get("drive_id", "")
+            self.session.headers["Authorization"] = f"Bearer {self.access_token}"
+            return
+
+        try:
+            data = self._post_anonymous(
+                "https://api.aliyundrive.com/token/refresh",
+                {"refresh_token": self.refresh_token},
+            )
+        except Exception as exc:
+            logger.error("阿里云盘请求 refresh_token 异常: %s", exc)
+            raise ValueError(f"阿里云盘刷新 Token 请求失败: {exc}")
+
         if not data or not data.get("access_token"):
-            raise ValueError("阿里云盘 refresh_token 无效或已过期")
+            err_code = (data or {}).get("code") or "未知原因"
+            err_msg = (data or {}).get("message") or "refresh_token 无效或已过期"
+            logger.error("阿里云盘认证失败: %s (%s)", err_msg, err_code)
+            raise ValueError(f"阿里云盘 refresh_token 无效或已过期: {err_msg}")
 
         self.access_token = data["access_token"]
         self.drive_id = (
@@ -203,7 +233,15 @@ class AliyunPanClient(BasePanClient):
             or ""
         )
         if not self.drive_id:
+            logger.error("阿里云盘未返回有效 drive_id: %s", data)
             raise ValueError("阿里云盘未返回有效 drive_id")
+
+        expires_in = int(data.get("expires_in", 7200))
+        _ALIYUN_ACCESS_TOKEN_CACHE[self.refresh_token] = {
+            "access_token": self.access_token,
+            "drive_id": self.drive_id,
+            "expires_at": now + expires_in,
+        }
 
         self.session.headers["Authorization"] = f"Bearer {self.access_token}"
 
@@ -238,3 +276,4 @@ class AliyunPanClient(BasePanClient):
         if match:
             return match.group(1)
         return ""
+

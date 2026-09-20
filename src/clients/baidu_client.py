@@ -11,6 +11,34 @@ from src.utils.netdisk_utils import extract_password_from_url
 
 logger = logging.getLogger(__name__)
 
+BAIDU_ERRNO_MAP: Dict[int, str] = {
+    -1: "链接失效、缺少提取码或触发访问频繁安全风控",
+    -4: "无效登录，请重新登录账号",
+    -6: "Cookie已失效，请使用浏览器无痕模式重新获取",
+    -7: "转存目录名包含非法字符（不能包含 < > | * ? \\ :）",
+    -8: "转存失败，目录中已有同名文件或文件夹存在",
+    -9: "链接不存在或提取码错误",
+    -10: "百度网盘容量不足",
+    -12: "提取码错误",
+    -62: "链接访问次数过多，请稍后再试",
+    0: "操作成功",
+    2: "目标目录不存在或文件不存在",
+    4: "目录中存在同名文件",
+    12: "转存文件数超过网盘单次限制",
+    20: "百度网盘容量不足",
+    105: "所访问的分享页面不存在",
+    115: "该文件涉及敏感违规，禁止分享",
+}
+
+
+def get_baidu_errno_message(errno: Any) -> str:
+    """获取百度网盘 errno 对应的中文诊断信息"""
+    try:
+        code = int(errno)
+        return BAIDU_ERRNO_MAP.get(code, f"百度网盘未知错误 (errno={errno})")
+    except (ValueError, TypeError):
+        return f"百度网盘未知异常 (errno={errno})"
+
 
 class BaiduPanClient(BasePanClient):
     def __init__(self, credential: str) -> None:
@@ -54,7 +82,7 @@ class BaiduPanClient(BasePanClient):
 
             share_info = self._get_share_page_info(surl)
             if not share_info:
-                logger.error("百度网盘无法获取分享页面详情")
+                logger.error("百度网盘无法获取分享页面详情: surl=%s", surl)
                 return None, None, None
 
             share_id, from_uk, fs_id_list, file_names = share_info
@@ -115,7 +143,7 @@ class BaiduPanClient(BasePanClient):
             if errno == 2:
                 logger.warning("百度网盘文件不存在，按删除成功处理: %s", file_path_list)
                 return True
-            logger.error("百度网盘删除失败: %s", data)
+            logger.error("百度网盘删除失败: %s (%s)", get_baidu_errno_message(errno), data)
             return False
         except Exception as exc:
             logger.error("百度网盘删除请求异常: %s", exc)
@@ -146,7 +174,7 @@ class BaiduPanClient(BasePanClient):
             if errno in (0, -8):
                 logger.info("百度网盘目标目录确认正常: %s", clean_path)
                 return True
-            logger.warning("百度网盘创建目录响应: %s", data)
+            logger.warning("百度网盘创建目录响应: %s (%s)", get_baidu_errno_message(errno), data)
             return False
         except Exception as exc:
             logger.error("百度网盘检查/创建目录异常: %s", exc)
@@ -159,7 +187,8 @@ class BaiduPanClient(BasePanClient):
                 "https://pan.baidu.com/api/gettemplatevariable?fields=[%22bdstoken%22]",
             )
             return (data.get("result") or {}).get("bdstoken", "")
-        except Exception:
+        except Exception as exc:
+            logger.warning("获取百度网盘 bdstoken 异常: %s", exc)
             return ""
 
     def _parse_share_url(self, url: str) -> Tuple[str, str]:
@@ -200,7 +229,8 @@ class BaiduPanClient(BasePanClient):
                 if raw_randsk:
                     self.randsk = urllib.parse.unquote(raw_randsk)
                 return True
-            logger.warning("百度网盘提取码校验失败: %s", data)
+            errno = data.get("errno")
+            logger.warning("百度网盘提取码校验失败: %s (%s)", get_baidu_errno_message(errno), data)
             return False
         except Exception as exc:
             logger.error("百度网盘提取码验证异常: %s", exc)
@@ -239,6 +269,8 @@ class BaiduPanClient(BasePanClient):
                 if share_id and share_uk and fs_ids and file_names:
                     logger.info("通过 share/list 接口成功获取分享详情: share_id=%s, files=%s", share_id, file_names)
                     return share_id, share_uk, fs_ids, file_names
+            else:
+                logger.warning("share/list 接口返回非0状态: %s (%s)", get_baidu_errno_message(data.get("errno")), data)
         except Exception as exc:
             logger.warning("通过 share/list 接口获取详情异常，尝试 HTML 页面解析兜底: %s", exc)
 
@@ -256,6 +288,7 @@ class BaiduPanClient(BasePanClient):
 
             if share_id and share_uk and fs_ids and file_names:
                 return share_id.group(1), share_uk.group(1), fs_ids, file_names
+            logger.error("百度网盘分享页面 HTML 正则未能匹配到必要参数 (surl=%s)", surl)
             return None
         except Exception as exc:
             logger.error("百度网盘解析分享页面异常: %s", exc)
@@ -292,7 +325,8 @@ class BaiduPanClient(BasePanClient):
                 data=payload,
                 headers=headers,
             )
-            if data.get("errno") == 0:
+            errno = data.get("errno")
+            if errno == 0:
                 try:
                     to_fs_id = data.get("extra", {}).get("list", [{}])[0].get("to_fs_id")
                     if to_fs_id:
@@ -300,7 +334,7 @@ class BaiduPanClient(BasePanClient):
                 except Exception:
                     pass
                 return 1
-            logger.error("百度网盘转存接口返回错误: %s", data)
+            logger.error("百度网盘转存失败: %s (%s)", get_baidu_errno_message(errno), data)
             return None
         except Exception as exc:
             logger.error("百度网盘转存请求异常: %s", exc)
@@ -327,6 +361,7 @@ class BaiduPanClient(BasePanClient):
         try:
             data = self._request("GET", "https://pan.baidu.com/api/list", params=params)
             if data.get("errno") != 0:
+                logger.warning("百度网盘列目录失败: %s", get_baidu_errno_message(data.get("errno")))
                 return None
             for item in data.get("list", []):
                 if item.get("server_filename") == filename:
@@ -360,12 +395,13 @@ class BaiduPanClient(BasePanClient):
                 params=params,
                 data=payload,
             )
-            if data.get("errno") == 0 and (data.get("shorturl") or data.get("link")):
+            errno = data.get("errno")
+            if errno == 0 and (data.get("shorturl") or data.get("link")):
                 link = data.get("shorturl") or data.get("link")
                 if not link.startswith("http"):
                     link = f"https://pan.baidu.com/s/{link}"
                 return f"{link}?pwd={pwd}" if "?pwd=" not in link else link
-            logger.error("百度网盘创建分享失败: %s", data)
+            logger.error("百度网盘创建分享失败: %s (%s)", get_baidu_errno_message(errno), data)
             return None
         except Exception as exc:
             logger.error("百度网盘创建分享请求异常: %s", exc)
@@ -391,3 +427,4 @@ class BaiduPanClient(BasePanClient):
         import json
 
         return json.dumps(value, ensure_ascii=False)
+
