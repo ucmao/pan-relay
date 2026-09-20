@@ -15,10 +15,16 @@ from src.services.system_config_service import (
 )
 
 
+from src.db.system_configs import delete_config_value
+
+
 class TestP1QualityAndBatching(unittest.TestCase):
     def setUp(self):
         # 确保广告过滤测试处于开启状态
         save_ad_filter_config({"enabled": True, "keywords": ["公众号", "防失联", "福利群", "免费分享", "扫码进群"]})
+
+    def tearDown(self):
+        delete_config_value("ad_filter_config")
 
     def test_ad_filter_keyword_matching(self):
         """测试广告词匹配逻辑"""

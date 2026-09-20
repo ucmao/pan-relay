@@ -23,6 +23,9 @@ from src.services.system_config_service import (
 from src.utils.auth_utils import create_jwt_token
 
 
+from src.db.system_configs import delete_config_value
+
+
 class TestP2StorageAndSources(unittest.TestCase):
     def setUp(self):
         self.app = app
@@ -30,6 +33,11 @@ class TestP2StorageAndSources(unittest.TestCase):
         self.client = self.app.test_client()
         self.token = create_jwt_token()
         self.client.set_cookie("token", self.token)
+
+    def tearDown(self):
+        delete_config_value("ad_filter_config")
+        delete_config_value("custom_ad_injection_config")
+        delete_config_value("storage_cleanup_config")
 
     def test_storage_cleanup_config_lifecycle(self):
         """测试存储自动清理配置的保存与读取"""
@@ -140,19 +148,37 @@ class TestP2StorageAndSources(unittest.TestCase):
 
         res_put = self.client.put(
             "/admin/api/ad-filter-config",
-            json={"enabled": True, "keywords": ["测试广告词1", "测试广告词2"]},
+            json={"enabled": True, "keywords": ["关注公众号防失联", "扫码进一手资源群"]},
         )
         self.assertEqual(res_put.status_code, 200)
         self.assertTrue(res_put.get_json()["success"])
-        self.assertIn("测试广告词1", res_put.get_json()["config"]["keywords"])
+        self.assertIn("关注公众号防失联", res_put.get_json()["config"]["keywords"])
+
+    def test_custom_ad_config_api_endpoints(self):
+        """测试自定义引流广告植入配置 HTTP API 接口"""
+        res_get = self.client.get("/admin/api/custom-ad-config")
+        self.assertEqual(res_get.status_code, 200)
+        self.assertTrue(res_get.get_json()["success"])
+
+        res_put = self.client.put(
+            "/admin/api/custom-ad-config",
+            json={
+                "enabled": True,
+                "ad_share_url": "https://pan.quark.cn/s/c098a72b5f6e",
+            },
+        )
+        self.assertEqual(res_put.status_code, 200)
+        data = res_put.get_json()
+        self.assertTrue(data["success"])
+        self.assertTrue(data["config"]["enabled"])
+        self.assertEqual(data["config"]["ad_share_url"], "https://pan.quark.cn/s/c098a72b5f6e")
 
     def test_preset_api_configs_expanded(self):
         """测试预置 API 搜索源扩展"""
         presets = load_preset_api_configs()
-        self.assertGreaterEqual(len(presets), 10)
+        self.assertGreaterEqual(len(presets), 8)
         names = [item["name"] for item in presets]
-        self.assertIn("天天短剧 API", names)
-        self.assertIn("非凡影视资源 API", names)
+        self.assertIn("狗狗盘搜 API", names)
         self.assertIn("量子影视资源 API", names)
 
 

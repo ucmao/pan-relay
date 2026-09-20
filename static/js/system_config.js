@@ -32,19 +32,35 @@ function bindFrontendLinkModeEvents() {
     }
 }
 
+function switchSystemTab(target, updateHash = true) {
+    const validTabs = ['strategy', 'security', 'storage', 'credentials'];
+    const normalized = validTabs.includes(target) ? target : 'strategy';
+
+    document.querySelectorAll('[data-system-tab-target]').forEach((b) => {
+        b.classList.toggle('is-active', b.getAttribute('data-system-tab-target') === normalized);
+    });
+    document.querySelectorAll('.system-tab-pane').forEach((pane) => {
+        pane.classList.toggle('is-active', pane.id === `tab-pane-${normalized}`);
+    });
+
+    if (updateHash && window.history?.replaceState) {
+        window.history.replaceState(null, '', `#${normalized}`);
+    }
+}
+
 function bindSystemTabEvents() {
     document.querySelectorAll('[data-system-tab-target]').forEach((btn) => {
         btn.addEventListener('click', () => {
             const target = btn.getAttribute('data-system-tab-target');
-            document.querySelectorAll('[data-system-tab-target]').forEach((b) => b.classList.remove('is-active'));
-            document.querySelectorAll('.system-tab-pane').forEach((pane) => pane.classList.remove('is-active'));
-            btn.classList.add('is-active');
-            const targetPane = document.getElementById(`tab-pane-${target}`);
-            if (targetPane) {
-                targetPane.classList.add('is-active');
-            }
+            switchSystemTab(target, true);
         });
     });
+
+    const hash = (window.location.hash || '').replace('#', '').trim();
+    const queryTab = new URLSearchParams(window.location.search).get('tab');
+    if (hash || queryTab) {
+        switchSystemTab(hash || queryTab, false);
+    }
 }
 
 function bindCredentialTabEvents() {
@@ -619,18 +635,262 @@ function bindSensitiveWordsTextareaEvents() {
     }
 }
 
+async function loadAdFilterConfig() {
+    try {
+        const response = await fetch('/admin/api/ad-filter-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const config = data.config || {};
+
+        const globalToggle = document.getElementById('adFilterGlobalToggle');
+        const textarea = document.getElementById('adFilterTextarea');
+        const countEl = document.getElementById('adFilterWordsCount');
+
+        if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? true);
+
+        const keywords = Array.isArray(config.keywords) ? config.keywords : [];
+        if (textarea) {
+            textarea.value = keywords.join('\n');
+        }
+        if (countEl) {
+            countEl.textContent = String(keywords.length);
+        }
+    } catch (error) {
+        console.error('加载广告过滤配置失败:', error);
+        showToast('加载广告过滤配置失败，请检查后端日志。', 'danger');
+    }
+}
+
+async function saveAdFilterConfig() {
+    const globalToggle = document.getElementById('adFilterGlobalToggle');
+    const textarea = document.getElementById('adFilterTextarea');
+
+    const keywordsRaw = textarea ? textarea.value : '';
+    const keywords = keywordsRaw
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+    const payload = {
+        enabled: globalToggle ? globalToggle.checked : true,
+        keywords: keywords,
+    };
+
+    try {
+        const response = await fetch('/admin/api/ad-filter-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '广告过滤配置保存成功', 'success');
+        await loadAdFilterConfig();
+    } catch (error) {
+        console.error('保存广告过滤配置失败:', error);
+        showToast(`保存广告过滤配置失败: ${error.message}`, 'danger');
+    }
+}
+
+function bindAdFilterTextareaEvents() {
+    const textarea = document.getElementById('adFilterTextarea');
+    const countEl = document.getElementById('adFilterWordsCount');
+    if (textarea && countEl) {
+        textarea.addEventListener('input', () => {
+            const keywords = textarea.value.split('\n').map((s) => s.trim()).filter(Boolean);
+            countEl.textContent = String(keywords.length);
+        });
+    }
+}
+
+async function loadCustomAdConfig() {
+    try {
+        const response = await fetch('/admin/api/custom-ad-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const config = data.config || {};
+
+        const globalToggle = document.getElementById('customAdGlobalToggle');
+        const shareUrlInput = document.getElementById('customAdShareUrlInput');
+        const badge = document.getElementById('customAdShareUrlBadge');
+
+        if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? false);
+        const url = (config.ad_share_url || '').trim();
+        if (shareUrlInput) shareUrlInput.value = url;
+        if (badge) {
+            if (url) {
+                badge.textContent = '已配置';
+                badge.className = 'badge badge-success text-[10px]';
+            } else {
+                badge.textContent = '未配置';
+                badge.className = 'badge badge-secondary text-[10px]';
+            }
+        }
+    } catch (error) {
+        console.error('加载自定义广告配置失败:', error);
+        showToast('加载自定义广告配置失败，请检查后端日志。', 'danger');
+    }
+}
+
+async function saveCustomAdConfig() {
+    const globalToggle = document.getElementById('customAdGlobalToggle');
+    const shareUrlInput = document.getElementById('customAdShareUrlInput');
+
+    const payload = {
+        enabled: globalToggle ? globalToggle.checked : false,
+        ad_share_url: shareUrlInput ? shareUrlInput.value.trim() : '',
+    };
+
+    try {
+        const response = await fetch('/admin/api/custom-ad-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '自定义引流广告配置保存成功', 'success');
+        await loadCustomAdConfig();
+    } catch (error) {
+        console.error('保存自定义广告配置失败:', error);
+        showToast(`保存自定义广告配置失败: ${error.message}`, 'danger');
+    }
+}
+
+async function loadStorageCleanupConfig() {
+    try {
+        const response = await fetch('/admin/api/storage-cleanup-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const resData = data.data || {};
+        const config = resData.config || {};
+
+        const globalToggle = document.getElementById('storageCleanupGlobalToggle');
+        const cleanTempSharesToggle = document.getElementById('storageCleanTempSharesToggle');
+        const cleanOldResourcesToggle = document.getElementById('storageCleanOldResourcesToggle');
+        const retentionDaysInput = document.getElementById('storageRetentionDaysInput');
+        const cleanupIntervalInput = document.getElementById('storageCleanupIntervalInput');
+        const limitPerRunInput = document.getElementById('storageLimitPerRunInput');
+        const expiredCountEl = document.getElementById('expiredResourcesCount');
+
+        if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? true);
+        if (cleanTempSharesToggle) cleanTempSharesToggle.checked = Boolean(config.clean_temp_shares ?? true);
+        if (cleanOldResourcesToggle) cleanOldResourcesToggle.checked = Boolean(config.clean_old_resources ?? true);
+        if (retentionDaysInput) retentionDaysInput.value = config.retention_days || 15;
+        if (cleanupIntervalInput) cleanupIntervalInput.value = config.auto_cleanup_interval_hours || 12;
+        if (limitPerRunInput) limitPerRunInput.value = config.limit_per_run || 100;
+
+        if (expiredCountEl) {
+            expiredCountEl.textContent = String(resData.expired_resources_count ?? 0);
+        }
+    } catch (error) {
+        console.error('加载存储清理配置失败:', error);
+        showToast('加载存储清理配置失败，请检查后端日志。', 'danger');
+    }
+}
+
+async function saveStorageCleanupConfig() {
+    const globalToggle = document.getElementById('storageCleanupGlobalToggle');
+    const cleanTempSharesToggle = document.getElementById('storageCleanTempSharesToggle');
+    const cleanOldResourcesToggle = document.getElementById('storageCleanOldResourcesToggle');
+    const retentionDaysInput = document.getElementById('storageRetentionDaysInput');
+    const cleanupIntervalInput = document.getElementById('storageCleanupIntervalInput');
+    const limitPerRunInput = document.getElementById('storageLimitPerRunInput');
+
+    const payload = {
+        enabled: globalToggle ? globalToggle.checked : true,
+        clean_temp_shares: cleanTempSharesToggle ? cleanTempSharesToggle.checked : true,
+        clean_old_resources: cleanOldResourcesToggle ? cleanOldResourcesToggle.checked : true,
+        retention_days: parseInt(retentionDaysInput?.value || '15', 10),
+        auto_cleanup_interval_hours: parseInt(cleanupIntervalInput?.value || '12', 10),
+        limit_per_run: parseInt(limitPerRunInput?.value || '100', 10),
+    };
+
+    try {
+        const response = await fetch('/admin/api/storage-cleanup-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '存储自动清理配置保存成功', 'success');
+        await loadStorageCleanupConfig();
+    } catch (error) {
+        console.error('保存存储清理配置失败:', error);
+        showToast(`保存存储清理配置失败: ${error.message}`, 'danger');
+    }
+}
+
+async function runStorageCleanupNow() {
+    const runBtn = document.getElementById('runStorageCleanupBtn');
+    if (runBtn) {
+        runBtn.disabled = true;
+        runBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px] mr-1"></i> 清理中...';
+    }
+
+    try {
+        const response = await fetch('/admin/api/storage-cleanup/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        const res = data.result || {};
+        showToast(`清理完成: 临时分享清理 ${res.temp_shares_cleaned || 0} 条，过期转存清理 ${res.resources_cleaned || 0} 条`, 'success');
+        await loadStorageCleanupConfig();
+    } catch (error) {
+        console.error('执行存储清理失败:', error);
+        showToast(`执行存储清理失败: ${error.message}`, 'danger');
+    } finally {
+        if (runBtn) {
+            runBtn.disabled = false;
+            runBtn.innerHTML = '<i class="fas fa-trash-alt text-[10px] mr-1"></i> 立即执行全量清理';
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     bindSystemTabEvents();
     bindCredentialTabEvents();
     bindFrontendNetdiskCheckboxEvents();
     bindFrontendLinkModeEvents();
     bindSensitiveWordsTextareaEvents();
+    bindAdFilterTextareaEvents();
     loadPublicSearchApiConfig();
     loadAllowExcelDownloadConfig();
     loadTransferTargetDirConfig();
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();
     loadSensitiveWordsConfig();
+    loadAdFilterConfig();
+    loadCustomAdConfig();
+    loadStorageCleanupConfig();
     loadCookieConfig();
     updateDynamicTransferStatusVisibility();
 
@@ -640,6 +900,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 saveTransferTargetDirConfig();
+            }
+        });
+    }
+
+    const customAdShareUrlInput = document.getElementById('customAdShareUrlInput');
+    if (customAdShareUrlInput) {
+        customAdShareUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveCustomAdConfig();
             }
         });
     }

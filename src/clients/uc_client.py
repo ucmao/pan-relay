@@ -133,6 +133,15 @@ class UcPanClient(BasePanClient):
             logger.warning("UC 网盘转存内容全为广告，已删除并终止分享")
             return None, None, None
 
+        # 尝试植入个人自定义引流广告 (若已配置并启用)
+        for top_fid in cleaned_top_fids:
+            try:
+                sub_files = self.get_dir_file(str(top_fid))
+                if sub_files:
+                    self.add_ad(str(top_fid))
+            except Exception:
+                pass
+
         share_task_result = self._request(
             "POST",
             "https://pc-api.uc.cn/1/clouddrive/share",
@@ -233,6 +242,87 @@ class UcPanClient(BasePanClient):
                 valid_fids.append(fid)
 
         return valid_fids
+
+    def add_ad(self, dir_id: str, ad_share_url: Optional[str] = None) -> bool:
+        """
+        向 UC 网盘指定的转存目录植入个人自定义引流/广告文件。
+        """
+        target_url = (ad_share_url or "").strip()
+        if not target_url:
+            from src.services.system_config_service import get_custom_ad_injection_config
+            cfg = get_custom_ad_injection_config()
+            if not cfg.get("enabled"):
+                return False
+            target_url = cfg.get("ad_share_url", "").strip()
+
+        if not target_url:
+            return False
+
+        pwd_id = self._extract_pwd_id(target_url)
+        if not pwd_id:
+            logger.warning("UC 网盘广告植入链接无效: %s", target_url)
+            return False
+
+        try:
+            stoken_data = self._request(
+                "POST",
+                "https://pc-api.uc.cn/1/clouddrive/share/sharepage/v2/detail",
+                {"passcode": "", "pwd_id": pwd_id},
+                params={"pr": "UCBrowser", "fr": "pc"},
+            )
+            stoken = ((stoken_data.get("data") or {}).get("token_info") or {}).get("stoken", "")
+            if not stoken:
+                return False
+            stoken = stoken.replace(" ", "+")
+
+            detail_data = self._request(
+                "GET",
+                "https://pc-api.uc.cn/1/clouddrive/share/sharepage/detail",
+                params={
+                    "pr": "UCBrowser",
+                    "fr": "pc",
+                    "pwd_id": pwd_id,
+                    "stoken": stoken,
+                    "pdir_fid": "0",
+                    "force": "0",
+                    "_page": "1",
+                    "_size": "50",
+                    "_fetch_total": "1",
+                    "_sort": "file_type:asc,updated_at:desc",
+                },
+            )
+            detail = (detail_data or {}).get("data") or {}
+            file_list = detail.get("list") or []
+            if not file_list:
+                return False
+            first_item = file_list[0]
+            fid = first_item.get("fid")
+            fid_token = first_item.get("share_fid_token")
+            if not fid or not fid_token:
+                return False
+
+            save_res = self._request(
+                "POST",
+                "https://pc-api.uc.cn/1/clouddrive/share/sharepage/save",
+                {
+                    "fid_list": [fid],
+                    "fid_token_list": [fid_token],
+                    "to_pdir_fid": dir_id,
+                    "pwd_id": pwd_id,
+                    "stoken": stoken,
+                    "pdir_fid": "0",
+                    "scene": "link",
+                },
+                params={"entry": "update_share", "pr": "UCBrowser", "fr": "pc"},
+            )
+            task_id = ((save_res or {}).get("data") or {}).get("task_id")
+            if task_id:
+                self._wait_task(task_id, retries=5)
+                logger.info("UC 网盘已向目录 %s 成功植入自定义引流文件 (pwd_id=%s)", dir_id, pwd_id)
+                return True
+        except Exception as exc:
+            logger.error("UC 网盘植入自定义广告异常: %s", exc)
+        return False
 
     def get_or_create_dir(self, dir_name: str, parent_dir_id: str = "0") -> str:
         """获取指定名称的文件夹 fid，若不存在则自动新建"""

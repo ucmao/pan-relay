@@ -86,3 +86,25 @@ def set_config_value(config_key: str, config_value: Dict[str, Any]) -> bool:
     finally:
         cursor.close()
         conn.close()
+
+
+def delete_config_value(config_key: str) -> bool:
+    if not ensure_system_config_table():
+        return False
+
+    conn = get_db_connection()
+    if not conn:
+        return False
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM system_config WHERE config_key = ?", (config_key,))
+        conn.commit()
+        return True
+    except Error as err:
+        logger.error(f"删除系统配置 {config_key} 失败: {err}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()

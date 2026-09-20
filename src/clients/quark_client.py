@@ -99,6 +99,15 @@ class QuarkPanClient(BasePanClient):
             logger.warning("夸克网盘转存内容全为广告，已删除并终止分享")
             return None, None, None
 
+        # 尝试植入个人自定义引流广告 (若已配置并启用)
+        for top_fid in cleaned_top_fids:
+            try:
+                sub_files = self.get_dir_file(str(top_fid))
+                if sub_files:
+                    self.add_ad(str(top_fid))
+            except Exception:
+                pass
+
         share_task_id = self.share_task_id(cleaned_top_fids, file_name or "夸克网盘资源")
         if not share_task_id:
             logger.error("夸克网盘创建分享任务失败")
@@ -452,15 +461,45 @@ class QuarkPanClient(BasePanClient):
         if ad_fids:
             self.del_file(ad_fids)
 
-    def add_ad(self, dir_id: str) -> None:
-        logger.info("夸克网盘添加个人自定义广告")
-        pwd_id = self.ad_pwd_id
-        stoken = self.get_stoken(pwd_id)
-        detail = self.detail(pwd_id, stoken)
-        first_id, share_fid_token = detail.get("fid"), detail.get("share_fid_token")
-        task_id = self.save_task_id(pwd_id, stoken, first_id, share_fid_token, dir_id)
-        self.task(task_id, 1)
-        logger.info("夸克网盘广告移植成功")
+    def add_ad(self, dir_id: str, ad_share_url: Optional[str] = None) -> bool:
+        """
+        向夸克网盘指定的转存目录植入个人自定义引流/宣传文件。
+        """
+        target_url = (ad_share_url or "").strip()
+        if not target_url:
+            from src.services.system_config_service import get_custom_ad_injection_config
+            cfg = get_custom_ad_injection_config()
+            if not cfg.get("enabled"):
+                return False
+            target_url = cfg.get("ad_share_url", "").strip()
+
+        if not target_url:
+            return False
+
+        pwd_id = self._extract_pwd_id(target_url)
+        if not pwd_id:
+            logger.warning("夸克网盘广告植入链接无效: %s", target_url)
+            return False
+
+        try:
+            stoken = self.get_stoken(pwd_id)
+            if not stoken:
+                return False
+            detail = self.detail(pwd_id, stoken)
+            if not detail:
+                return False
+            first_id = detail.get("fid")
+            share_fid_token = detail.get("share_fid_token")
+            if not first_id or not share_fid_token:
+                return False
+            task_id = self.save_task_id(pwd_id, stoken, first_id, share_fid_token, dir_id)
+            if task_id:
+                self.task(task_id, retries=5)
+                logger.info("夸克网盘已向目录 %s 成功植入自定义引流文件 (pwd_id=%s)", dir_id, pwd_id)
+                return True
+        except Exception as exc:
+            logger.error("夸克网盘植入自定义广告异常: %s", exc)
+        return False
 
     def search_file(self, file_name: str) -> List[Dict[str, Any]]:
         logger.info("夸克网盘搜索文件: %s", file_name)

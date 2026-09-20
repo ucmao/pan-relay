@@ -127,14 +127,6 @@ def init_sqlite_db():
             else:
                 logger.error(f"未找到数据库初始化脚本: {schema_file}")
         else:
-            try:
-                raw_conn.execute("ALTER TABLE telegram_channel ADD COLUMN title TEXT DEFAULT NULL;")
-            except Exception:
-                pass
-            try:
-                raw_conn.execute("ALTER TABLE api_config ADD COLUMN checked_at DATETIME DEFAULT NULL;")
-            except Exception:
-                pass
             logger.info("SQLite 数据库表结构校验正常。")
 
         raw_conn.close()
@@ -156,8 +148,18 @@ def get_db_connection() -> Optional[SQLiteConnectionWrapper]:
     返回封装后的 SQLiteConnectionWrapper。
     """
     global _db_initialized
-    if not _db_initialized:
+    if not _db_initialized or not os.path.exists(SQLITE_DB_PATH):
         init_sqlite_db()
+    else:
+        try:
+            with sqlite3.connect(SQLITE_DB_PATH, timeout=5.0) as check_conn:
+                row = check_conn.execute(
+                    "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='resources';"
+                ).fetchone()
+                if not row or row[0] == 0:
+                    init_sqlite_db()
+        except Exception:
+            init_sqlite_db()
 
     try:
         raw_conn = sqlite3.connect(SQLITE_DB_PATH, timeout=30.0)

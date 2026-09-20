@@ -239,9 +239,9 @@ def save_sensitive_words_config(config_data: Dict[str, Any]) -> bool:
 
 AD_FILTER_CONFIG_KEY = "ad_filter_config"
 DEFAULT_AD_KEYWORDS = [
-    "公众号", "备用", "防失联", "防封", "更新", "关注", "发布页",
-    "微信", "福利群", "免费分享", "扫码进群", "禁止倒卖", "群",
-    "最新地址", "解压密码", "一手资源", "永久地址", "防走丢", "低价出售",
+    "关注公众号", "防失联", "防走丢", "防封地址", "发布页",
+    "福利群", "扫码进群", "交流群", "通知群", "一手资源群", "禁止倒卖", "严禁倒卖", "低价出售",
+    "最新地址", "永久地址", "官方网站", "永久发布页", "解压密码", "更多资源请关注",
 ]
 
 
@@ -292,6 +292,44 @@ def save_ad_filter_config(config_data: Dict[str, Any]) -> bool:
         "keywords": unique_keywords,
     }
     return set_config_value(AD_FILTER_CONFIG_KEY, payload)
+
+
+CUSTOM_AD_INJECTION_CONFIG_KEY = "custom_ad_injection_config"
+DEFAULT_CUSTOM_AD_INJECTION_CONFIG = {
+    "enabled": False,
+    "ad_share_url": "",
+}
+
+
+def get_custom_ad_injection_config() -> Dict[str, Any]:
+    """获取自定义引流广告植入配置"""
+    default_config = DEFAULT_CUSTOM_AD_INJECTION_CONFIG.copy()
+    raw_value = get_config_value(CUSTOM_AD_INJECTION_CONFIG_KEY)
+    if not raw_value:
+        return default_config
+    try:
+        parsed = json.loads(raw_value)
+        if not isinstance(parsed, dict):
+            return default_config
+        return {
+            "enabled": bool(parsed.get("enabled", False)),
+            "ad_share_url": str(parsed.get("ad_share_url", "")).strip(),
+        }
+    except Exception as e:
+        logger.warning(f"读取自定义广告植入配置失败，回退默认配置: {e}")
+        return default_config
+
+
+def save_custom_ad_injection_config(config_data: Dict[str, Any]) -> bool:
+    """保存自定义引流广告植入配置"""
+    if not isinstance(config_data, dict):
+        return False
+    current = get_custom_ad_injection_config()
+    payload = {
+        "enabled": bool(config_data.get("enabled", current["enabled"])),
+        "ad_share_url": str(config_data.get("ad_share_url", current["ad_share_url"])).strip(),
+    }
+    return set_config_value(CUSTOM_AD_INJECTION_CONFIG_KEY, payload)
 
 
 STORAGE_CLEANUP_CONFIG_KEY = "storage_cleanup_config"

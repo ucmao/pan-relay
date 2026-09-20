@@ -11,6 +11,7 @@ from src.services.system_config_service import (
     get_transfer_target_dir,
     get_sensitive_words_config,
     get_ad_filter_config,
+    get_custom_ad_injection_config,
     get_storage_cleanup_config,
     get_search_scheduler_config,
     save_public_search_api_config,
@@ -20,6 +21,7 @@ from src.services.system_config_service import (
     save_transfer_target_dir,
     save_sensitive_words_config,
     save_ad_filter_config,
+    save_custom_ad_injection_config,
     save_storage_cleanup_config,
     save_search_scheduler_config,
 )
@@ -603,6 +605,30 @@ def update_storage_cleanup_config_api():
     })
 
 
+@system_config_bp.route("/admin/api/custom-ad-config", methods=["GET"])
+@token_required
+def get_custom_ad_config_api():
+    """获取自定义引流广告植入配置"""
+    config = get_custom_ad_injection_config()
+    return jsonify({"success": True, "config": config})
+
+
+@system_config_bp.route("/admin/api/custom-ad-config", methods=["PUT", "POST"])
+@token_required
+def update_custom_ad_config_api():
+    """更新自定义引流广告植入配置"""
+    data = request.get_json() or {}
+    success = save_custom_ad_injection_config(data)
+    if not success:
+        return jsonify({"success": False, "message": "自定义广告配置保存失败"}), 400
+
+    return jsonify({
+        "success": True,
+        "message": "自定义广告配置保存成功",
+        "config": get_custom_ad_injection_config(),
+    })
+
+
 @system_config_bp.route("/admin/api/storage-cleanup/run", methods=["POST"])
 @token_required
 def run_storage_cleanup_now_api():
@@ -610,5 +636,7 @@ def run_storage_cleanup_now_api():
     from src.services.storage_cleanup_service import cleanup_all_storage
     result = cleanup_all_storage()
     return jsonify({"success": True, "message": "存储优化与清理任务执行完毕", "result": result})
+
+
 
 
