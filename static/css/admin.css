@@ -382,7 +382,95 @@ body.admin-body::before {
 }
 
 .admin-panel-body {
-    padding: 20px;
+    padding: 20px 24px;
+}
+
+/* Setting Item Row Layout (Refined Breathing Room & Typography) */
+.setting-item-row {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .setting-item-row {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.setting-item-row:first-child {
+    padding-top: 0.25rem;
+}
+
+.setting-item-row:last-child {
+    padding-bottom: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   Interactive Tooltips (Clean, unobtrusive micro-interactions)
+   -------------------------------------------------------------------------- */
+.help-tooltip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: help;
+    color: #94a3b8;
+    transition: color 0.15s ease;
+    vertical-align: middle;
+    margin-left: 2px;
+}
+
+.help-tooltip:hover {
+    color: #475569;
+}
+
+.help-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+    font-weight: 400;
+    line-height: 1.45;
+    white-space: normal;
+    width: max-content;
+    max-width: 260px;
+    text-align: left;
+    z-index: 1050;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.help-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    border: 5px solid transparent;
+    border-top-color: #0f172a;
+    z-index: 1050;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.help-tooltip:hover::after,
+.help-tooltip:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
 }
 
 /* --------------------------------------------------------------------------

@@ -37,23 +37,26 @@
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
-                    <i class="fas fa-plug text-purple-600"></i> REST API 开放接口服务控制
+                    <i class="fas fa-plug text-purple-600"></i> 开放接口服务
                 </h2>
-                <p class="admin-panel-desc">集中管理对外公开的开放 REST API 聚合搜索与中转端点</p>
+                <p class="admin-panel-desc">对外提供标准 REST API 聚合搜索与转存服务端点</p>
             </div>
         </div>
         <div class="admin-panel-body">
             <div class="divide-y divide-slate-100">
                 <!-- 配置: 开放 REST API 接口 -->
-                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-900 text-sm">启用开放 REST API 聚合搜索接口 (`GET /api/v1/search`)</span>
-                            <span class="badge badge-success text-[10px]" id="publicSearchApiBadge">已开启</span>
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">公开聚合搜索接口</span>
+                            <code class="text-[11px] font-mono text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/50">GET /api/v1/search</code>
+                            <span class="help-tooltip" data-tooltip="关闭后外部应用访问将直接返回 403 (接口已关闭)">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-500">对外提供 JSON 聚合搜索端点；关闭后外部调用将直接返回 403 (接口服务已关闭)</p>
+                        <p class="text-xs text-slate-500">对外提供聚合搜索 JSON 接口，供小程序或机器人接入</p>
                     </div>
-                    <div class="flex items-center space-x-3 flex-shrink-0">
+                    <div class="flex items-center flex-shrink-0">
                         <label class="plugin-switch" title="切换开放 API 状态">
                             <input type="checkbox" id="publicSearchApiToggle" onchange="savePublicSearchApiConfig()">
                             <span class="plugin-switch-slider"></span>
@@ -69,21 +72,23 @@
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
-                    <i class="fas fa-shield-halved text-indigo-600"></i> API 检索与转存安全策略
+                    <i class="fas fa-shield-halved text-indigo-600"></i> 检索与转存安全策略
                 </h2>
-                <p class="admin-panel-desc">配置 API 搜索默认检索作用域及转存鉴权 Key (X-API-Key)</p>
+                <p class="admin-panel-desc">设置 API 检索范围及转存鉴权密钥</p>
             </div>
         </div>
         <div class="admin-panel-body">
             <div class="divide-y divide-slate-100">
                 <!-- 配置 1: API 默认检索作用域 -->
-                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-900 text-sm">API 搜索默认作用域 (Scope)</span>
-                            <span class="badge badge-info text-[10px]" id="searchScopeBadge">仅站长收益库</span>
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">默认搜索作用域</span>
+                            <span class="help-tooltip" data-tooltip="own 仅查私有收益库 (0服务器开销、毫秒响应)；all 全网并发聚合">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-500"><code>own</code>: 仅检索站长收益库 (0 服务器开销、毫秒级响应)；<code>all</code>: 全网并发聚合检索</p>
+                        <p class="text-xs text-slate-500">外部请求未指定 scope 时的默认检索模式</p>
                     </div>
                     <div class="flex items-center space-x-3 flex-shrink-0">
                         <select id="searchScopeSelect" class="form-select form-select-sm" onchange="saveApiModeConfig()" style="min-width: 170px;">
@@ -94,13 +99,16 @@
                 </div>
 
                 <!-- 配置 2: 转存 API 校验 Key -->
-                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-900 text-sm">转存 API 校验 Key (`X-API-Key`)</span>
-                            <span class="badge badge-secondary text-[10px]" id="transferApiKeyBadge">公开调用</span>
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">转存接口鉴权密钥</span>
+                            <code class="text-[11px] font-mono text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/50">POST /api/v1/transfer</code>
+                            <span class="help-tooltip" data-tooltip="留空则公开调用；填写后请求头需携带 X-API-Key 或 Bearer 凭证">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-500">留空表示 <code>POST /api/v1/transfer</code> 公开允许调用；配置密钥后请求需在 Header 中携带 <code>X-API-Key</code> 或 Bearer 凭证</p>
+                        <p class="text-xs text-slate-500">保护转存接口避免被恶意调用消耗网盘容量</p>
                     </div>
                     <div class="flex items-center space-x-2 flex-shrink-0">
                         <div class="relative flex items-center">
@@ -137,7 +145,7 @@
 
         <!-- 正文阅读流与固定目录布局 (Layout: Article + Sticky TOC) -->
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-10 items-start">
-            <article class="space-y-10 min-w-0">
+            <article class="space-y-10 min-w-0 pb-36">
 
                 <!-- 1. 两步走收益接入工作流 -->
                 <section id="sec-workflow" class="api-doc-section scroll-mt-24 space-y-4">
@@ -508,26 +516,10 @@
         const tocLinks = Array.from(document.querySelectorAll('.doc-toc-link'));
         if (!sections.length || !tocLinks.length) return;
 
-        function updateDocTocActive() {
-            const docsTab = document.getElementById('tab-pane-docs');
-            if (docsTab && docsTab.classList.contains('hidden')) return;
+        let isManualScroll = false;
+        let manualScrollTimer = null;
 
-            const scrollEl = document.querySelector('main.admin-main');
-            const isBottom = scrollEl && (scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 30);
-
-            let activeId = sections[0].id;
-            if (isBottom) {
-                activeId = sections[sections.length - 1].id;
-            } else {
-                for (const sec of sections) {
-                    const rect = sec.getBoundingClientRect();
-                    // 当区块顶部进入视口上方 160px 范围即判定为激活
-                    if (rect.top <= 160) {
-                        activeId = sec.id;
-                    }
-                }
-            }
-
+        function setActiveToc(activeId) {
             tocLinks.forEach(link => {
                 const targetId = link.getAttribute('data-target');
                 if (targetId === activeId) {
@@ -538,6 +530,29 @@
                     link.classList.add('text-slate-500', 'font-medium', 'border-transparent');
                 }
             });
+        }
+
+        function updateDocTocActive() {
+            if (isManualScroll) return;
+            const docsTab = document.getElementById('tab-pane-docs');
+            if (docsTab && docsTab.classList.contains('hidden')) return;
+
+            const focusLine = 170; // 视口判定基准线（像素）
+            let currentSection = sections[0];
+
+            for (const sec of sections) {
+                const rect = sec.getBoundingClientRect();
+                if (rect.top <= focusLine && rect.bottom > focusLine) {
+                    currentSection = sec;
+                    break;
+                } else if (rect.top <= focusLine) {
+                    currentSection = sec;
+                }
+            }
+
+            if (currentSection) {
+                setActiveToc(currentSection.id);
+            }
         }
 
         const scrollTarget = document.querySelector('main.admin-main') || window;
@@ -551,16 +566,23 @@
                 const targetId = link.getAttribute('data-target');
                 const targetEl = document.getElementById(targetId);
                 if (targetEl) {
+                    isManualScroll = true;
+                    setActiveToc(targetId);
+
                     targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     history.replaceState(null, '', `#${targetId}`);
-                    setTimeout(updateDocTocActive, 80);
-                    setTimeout(updateDocTocActive, 250);
+
+                    clearTimeout(manualScrollTimer);
+                    manualScrollTimer = setTimeout(() => {
+                        isManualScroll = false;
+                        updateDocTocActive();
+                    }, 600);
                 }
             });
         });
 
         window.updateDocTocActive = updateDocTocActive;
-        setTimeout(updateDocTocActive, 50);
+        setTimeout(updateDocTocActive, 80);
     }
 
     // --- Playground Drawer 逻辑 ---

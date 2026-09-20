@@ -24,23 +24,26 @@
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
-                    <i class="fas fa-desktop text-blue-600"></i> 前台 Web 界面功能控制
+                    <i class="fas fa-desktop text-blue-600"></i> 前台 Web 功能控制
                 </h2>
-                <p class="admin-panel-desc">控制前台 Web 搜索界面的访问开关及搜索工具栏功能</p>
+                <p class="admin-panel-desc">控制前台 Web 搜索端点与工具栏功能</p>
             </div>
         </div>
         <div class="admin-panel-body">
             <div class="divide-y divide-slate-100">
                 <!-- 开关 1: 前台 Web 界面开关 -->
-                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-900 text-sm">启用前台 Web 搜索界面 (`GET /`)</span>
-                            <span class="badge badge-success text-[10px]" id="enableFrontendBadge">已开启</span>
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">前台 Web 搜索界面</span>
+                            <code class="text-[11px] font-mono text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/50">GET /</code>
+                            <span class="help-tooltip" data-tooltip="关闭后访客访问主页将自动重定向至后台管理登录页面 (/login)">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-500">关闭后禁用前台 Web 搜索界面，访客访问主页 <code>GET /</code> 将自动重定向至后台管理登录页面 (<code>/login</code>)</p>
+                        <p class="text-xs text-slate-500">控制是否允许访客直接访问公共搜索首页</p>
                     </div>
-                    <div class="flex items-center space-x-3 flex-shrink-0">
+                    <div class="flex items-center flex-shrink-0">
                         <label class="plugin-switch" title="切换前台界面">
                             <input type="checkbox" id="enableFrontendToggle" onchange="saveApiModeConfig()">
                             <span class="plugin-switch-slider"></span>
@@ -49,14 +52,16 @@
                 </div>
 
                 <!-- 开关 2: 搜索出链与动态转存策略 (前台专属) -->
-                <div class="py-4 first:pt-0 last:pb-0">
+                <div class="setting-item-row flex-col items-stretch">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2">
-                                <span class="font-bold text-slate-900 text-sm">搜索出链与动态转存策略</span>
-                                <span class="badge badge-info text-[10px]" id="frontendLinkModeBadge">原始链接模式</span>
+                        <div class="space-y-1 min-w-0 pr-4">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-semibold text-slate-800 text-sm">搜索出链策略</span>
+                                <span class="help-tooltip" data-tooltip="原始链接模式直接跳转第三方；动态转存模式通过网盘凭证自动转存为站长专属收益链接">
+                                    <i class="far fa-circle-question text-xs"></i>
+                                </span>
                             </div>
-                            <p class="text-xs text-slate-500">控制前台资源点击行为：直接提供原始分享链接，或通过后端凭证自动转存为站长私有链接</p>
+                            <p class="text-xs text-slate-500">前台用户点击资源时的链接提供方式</p>
                         </div>
                         <div class="flex items-center space-x-3 flex-shrink-0">
                             <select id="frontendLinkModeSelect" class="form-select form-select-sm" onchange="saveFrontendLinkMode()" style="min-width: 170px;">
@@ -67,7 +72,7 @@
                     </div>
 
                     <!-- 动态转存凭证微型状态栏 -->
-                    <div class="dynamic-transfer-status-bar d-none mt-3 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5" id="dynamicTransferStatusPanel">
+                    <div class="dynamic-transfer-status-bar d-none mt-2 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5" id="dynamicTransferStatusPanel">
                         <div class="flex items-center gap-2.5 flex-wrap">
                             <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 flex-shrink-0">
                                 <i class="fas fa-key text-blue-500 text-[11px]"></i>
@@ -85,15 +90,17 @@
                 </div>
 
                 <!-- 开关 3: 前台 Excel 下载与导出 -->
-                <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-900 text-sm">前台 Excel 下载与导出</span>
-                            <span class="badge badge-success text-[10px]" id="allowExcelDownloadBadge">允许下载</span>
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">搜索结果 Excel 导出</span>
+                            <span class="help-tooltip" data-tooltip="控制前台搜索结果列表顶部工具栏中是否展示“导出 Excel”操作按钮">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-500">控制前台搜索结果页面工具栏中是否显示“导出 Excel”按钮</p>
+                        <p class="text-xs text-slate-500">允许访客将前台搜索列表结果导出为表格</p>
                     </div>
-                    <div class="flex items-center space-x-3 flex-shrink-0">
+                    <div class="flex items-center flex-shrink-0">
                         <label class="plugin-switch" title="切换 Excel 导出按钮">
                             <input type="checkbox" id="allowExcelDownloadToggle" onchange="saveAllowExcelDownloadConfig()">
                             <span class="plugin-switch-slider"></span>

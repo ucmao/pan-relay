@@ -4,135 +4,196 @@
 
 {% block content %}
 <div class="space-y-6 animate-fade-in">
-    <!-- 顶栏欢迎与操作条 -->
+    <!-- 顶栏欢迎与全局操作 -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white px-6 py-5 rounded-2xl border border-slate-200/80 shadow-2xs">
         <div class="flex items-center space-x-3">
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight">仪表盘</h1>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>系统运行正常
-            </span>
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shadow-2xs">
+                <i class="fas fa-gauge-high text-base"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">系统仪表盘</h1>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100/80">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>系统运行正常
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">实时监控全网聚合检索、网盘自动转存、私有收益资源沉淀与服务吞吐指标</p>
+            </div>
         </div>
         <div class="flex items-center space-x-2.5">
-            <button onclick="refreshDashboardStats()" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center space-x-1.5">
+            <button onclick="refreshDashboardStats()" class="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors flex items-center space-x-1.5" title="异步刷新所有仪表盘统计数据">
                 <i class="fas fa-sync-alt text-slate-500" id="refresh-icon"></i>
                 <span>刷新统计</span>
             </button>
-            <button onclick="openQuickAddModal()" class="px-4 py-2 text-xs font-semibold rounded-xl bg-blue-600 text-white shadow-xs hover:bg-blue-700 transition-all flex items-center space-x-1.5">
-                <i class="fas fa-plus text-[10px]"></i>
-                <span>新增入库</span>
-            </button>
         </div>
     </div>
 
-    <!-- 4 大核心指标卡片 (优化层级与呼吸感) -->
+    <!-- =========================================================================
+         第一层级：4 大核心量化 KPI 卡片 (Hero KPI Cards)
+         ========================================================================= -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 卡片 1: 资源总数 -->
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between">
+        <!-- KPI 1: 私有资源库总量 (Primary Asset) -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">资源库总量</span>
-                    <div class="w-8 h-8 rounded-lg bg-blue-50/80 flex items-center justify-center text-blue-600">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">私有资源库</span>
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                         <i class="fas fa-layer-group text-xs"></i>
                     </div>
                 </div>
-                <div class="mt-3.5 flex items-baseline justify-between">
+                <div class="mt-3 flex items-baseline justify-between">
                     <span class="text-3xl font-extrabold text-slate-900 tracking-tight" id="stat-resources-total">{{ summary.resources.total_count }}</span>
-                    <span class="text-[11px] text-slate-400 font-normal">已替换 <strong class="text-slate-600 font-semibold" id="stat-resources-replaced">{{ summary.resources.replaced_count }}</strong></span>
+                    <span class="text-[11px] text-slate-400 font-normal">已替换收益链 <strong class="text-slate-700 font-semibold" id="stat-resources-replaced">{{ summary.resources.replaced_count }}</strong></span>
                 </div>
             </div>
-            <div class="mt-4 pt-3 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100/90">
+            <div class="mt-4 pt-3 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100">
                 <span>云盘类别: {{ summary.resources.cloud_distribution|length }} 种</span>
                 <a href="{{ url_for('resources.resources_page') }}" class="text-blue-600 font-medium hover:text-blue-700 flex items-center group">
-                    管理资源 <i class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
+                    资源管理 <i class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
                 </a>
             </div>
         </div>
 
-        <!-- 卡片 2: 搜索源健康率 -->
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between">
+        <!-- KPI 2: 今日请求与吞吐 (Primary Traffic) -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">搜索源综合健康率</span>
-                    <div class="w-8 h-8 rounded-lg bg-emerald-50/80 flex items-center justify-center text-emerald-600">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">今日总请求</span>
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <i class="fas fa-bolt text-xs"></i>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-baseline justify-between">
+                    <span class="text-3xl font-extrabold text-slate-900 tracking-tight" id="stat-today-total">{{ summary.logs.today_total }}</span>
+                    <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60" id="stat-today-rate">{{ summary.logs.today_success_rate }}% 成功</span>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100">
+                <span>搜索 {{ summary.logs.today_search }} · 转存 {{ summary.logs.today_transfer }}</span>
+                <a href="{{ url_for('logs.logs_page') }}" class="text-blue-600 font-medium hover:text-blue-700 flex items-center group">
+                    运行日志 <i class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- KPI 3: 搜索源集群健康率 (Primary Health) -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">搜索源综合健康率</span>
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
                         <i class="fas fa-satellite-dish text-xs"></i>
                     </div>
                 </div>
-                <div class="mt-3.5 flex items-baseline justify-between">
+                <div class="mt-3 flex items-baseline justify-between">
                     <span class="text-3xl font-extrabold text-slate-900 tracking-tight" id="stat-health-rate">{{ summary.sources.overall_health_rate }}%</span>
-                    <span class="text-[11px] font-medium text-emerald-600 bg-emerald-50/80 px-2 py-0.5 rounded-full border border-emerald-100/60">在线</span>
+                    <span class="text-[11px] text-slate-400 font-normal">活跃源在线</span>
                 </div>
             </div>
-            <div class="mt-4 pt-3 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100/90">
-                <span class="truncate max-w-[120px]" title="API / 插件 / TG 渠道">API / 插件 / TG</span>
+            <div class="mt-4 pt-3 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100">
+                <span class="truncate max-w-[130px]">API / 插件 / TG 频道</span>
                 <a href="{{ url_for('search_sources.sources_page') }}" class="text-blue-600 font-medium hover:text-blue-700 flex items-center group flex-shrink-0">
-                    源管理 <i class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
+                    源调度 <i class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
                 </a>
             </div>
         </div>
 
-        <!-- 卡片 3: 转存凭证激活率 -->
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between">
+        <!-- KPI 4: 转存凭证就绪度 (Primary Capability) -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">自动转存凭证</span>
-                    <div class="w-8 h-8 rounded-lg bg-amber-50/80 flex items-center justify-center text-amber-600">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">转存引擎就绪度</span>
+                    <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
                         <i class="fas fa-key text-xs"></i>
                     </div>
                 </div>
-                <div class="mt-3.5 flex items-baseline justify-between">
+                <div class="mt-3 flex items-baseline justify-between">
                     <span class="text-3xl font-extrabold text-slate-900 tracking-tight" id="stat-credentials-ratio">{{ summary.credentials.summary.enabled_count }} <span class="text-lg font-normal text-slate-400">/ {{ summary.credentials.summary.total_count }}</span></span>
-                    <span class="text-[11px] text-slate-400 font-normal">已启用凭证</span>
+                    <span class="text-[11px] text-slate-400 font-normal">已就绪云盘</span>
                 </div>
             </div>
-            <div class="mt-4 pt-3 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100/90">
-                <span class="truncate max-w-[120px]" title="百度/夸克/阿里/UC/迅雷">主流云盘支持</span>
-                <a href="{{ url_for('system_config.system_config_page') }}" class="text-blue-600 font-medium hover:text-blue-700 flex items-center group flex-shrink-0">
-                    更新凭证 <i class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
-                </a>
-            </div>
-        </div>
-
-        <!-- 卡片 4: 前台服务能力 -->
-        <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all flex flex-col justify-between">
-            <div>
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">前台服务模式</span>
-                    <div class="w-8 h-8 rounded-lg bg-indigo-50/80 flex items-center justify-center text-indigo-600">
-                        <i class="fas fa-sliders-h text-xs"></i>
-                    </div>
-                </div>
-                <div class="mt-3.5 flex items-baseline justify-between">
-                    <span class="text-2xl font-extrabold text-slate-900 tracking-tight" id="stat-link-mode">
-                        {% if summary.system.frontend_link_mode == 'direct' %}直接出链
-                        {% elif summary.system.frontend_link_mode == 'temp' %}临时转存
-                        {% else %}智能模式{% endif %}
-                    </span>
-                    <span class="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">当前生效</span>
-                </div>
-            </div>
-            <div class="mt-4 pt-3 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100/90">
-                <span>公开API: <strong id="stat-public-api-status" class="{% if summary.system.public_search_api_enabled %}text-emerald-600{% else %}text-rose-500{% endif %} font-semibold">{% if summary.system.public_search_api_enabled %}已开启{% else %}已关闭{% endif %}</strong></span>
-                <a href="{{ url_for('system_config.system_config_page') }}" class="text-blue-600 font-medium hover:text-blue-700 flex items-center group">
-                    系统设置 <i class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
+            <div class="mt-4 pt-3 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100">
+                <span class="truncate max-w-[130px]">主流 5 大网盘接入</span>
+                <a href="{{ url_for('system_config.system_config_page', tab='credentials') }}" class="text-blue-600 font-medium hover:text-blue-700 flex items-center group flex-shrink-0">
+                    管理凭证 <i class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- 主板块：网格两列布局 -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- 左侧 8 列：核心业务看板 -->
-        <div class="lg:col-span-8 space-y-6">
-            
-            <!-- 全量搜索源治理看板 (展平优化版) -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+    <!-- =========================================================================
+         第二层级：两栏主看板布局 (左侧：运行监控与引擎矩阵 | 右侧：最新收录私有资源)
+         ========================================================================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- 左侧核心运行与调度 (约 2/3 宽度) -->
+        <div class="lg:col-span-7 xl:col-span-8 space-y-6">
+
+            <!-- 1. 今日流量与运行审计概览 -->
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <i class="fas fa-chart-line text-xs"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">今日流量与运行审计</h2>
+                            <p class="text-xs text-slate-400">实时请求吞吐、服务响应速度与稳定性监控</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('logs.logs_page') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 group">
+                        <span>查看完整审计日志</span>
+                        <i class="fas fa-chevron-right text-[9px] group-hover:translate-x-0.5 transition-transform"></i>
+                    </a>
+                </div>
+
+                <!-- 4 格核心运营数据磁贴 -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mt-5">
+                    <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200/60 flex flex-col justify-between">
+                        <span class="text-[11px] font-semibold text-slate-400">今日总请求</span>
+                        <div class="text-2xl font-extrabold text-slate-900 mt-1" id="dash-log-today-total">{{ summary.logs.today_total }}</div>
+                        <span class="text-[10px] text-slate-400 mt-1">HTTP 访问总频次</span>
+                    </div>
+                    <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200/60 flex flex-col justify-between">
+                        <span class="text-[11px] font-semibold text-slate-400">请求成功率</span>
+                        <div class="text-2xl font-extrabold text-emerald-600 mt-1" id="dash-log-today-rate">{{ summary.logs.today_success_rate }}%</div>
+                        <span class="text-[10px] text-slate-400 mt-1">异常告警: <strong class="text-rose-600" id="dash-log-today-errors">{{ summary.logs.today_errors }}</strong> 次</span>
+                    </div>
+                    <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200/60 flex flex-col justify-between">
+                        <span class="text-[11px] font-semibold text-slate-400">聚合搜索量</span>
+                        <div class="text-2xl font-extrabold text-indigo-600 mt-1" id="dash-log-today-search">{{ summary.logs.today_search }}</div>
+                        <span class="text-[10px] text-slate-400 mt-1">跨源并发检索</span>
+                    </div>
+                    <div class="p-4 bg-slate-50/80 rounded-xl border border-slate-200/60 flex flex-col justify-between">
+                        <span class="text-[11px] font-semibold text-slate-400">网盘转存量</span>
+                        <div class="text-2xl font-extrabold text-purple-600 mt-1" id="dash-log-today-transfer">{{ summary.logs.today_transfer }}</div>
+                        <span class="text-[10px] text-slate-400 mt-1">私有化沉淀转化</span>
+                    </div>
+                </div>
+
+                <!-- 底部辅助指标 -->
+                <div class="mt-4 pt-3.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 gap-2">
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <span>平均响应耗时: <strong class="text-slate-800 font-semibold" id="dash-log-avg-duration">{{ summary.logs.today_avg_duration_ms }} ms</strong></span>
+                        <span class="text-slate-200">|</span>
+                        <span>API 开放调用: <strong class="text-slate-800 font-semibold" id="dash-log-today-api">{{ summary.logs.today_api }} 次</strong></span>
+                    </div>
+                    <div>
+                        <span>历史累计日志: <strong class="text-slate-800 font-semibold" id="dash-log-total-count">{{ summary.logs.total_logs_count }} 条</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 全量搜索源调度与健康状态 -->
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
                     <div class="flex items-center space-x-2.5">
                         <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                             <i class="fas fa-network-wired text-xs"></i>
                         </div>
                         <div>
-                            <h2 class="text-base font-bold text-slate-900">全量搜索源治理看板</h2>
+                            <h2 class="text-base font-bold text-slate-900">全量搜索源调度与集群状态</h2>
+                            <p class="text-xs text-slate-400">API 接口源、Python 扩展插件及 Telegram 抓取网络</p>
                         </div>
                     </div>
                     <a href="{{ url_for('search_sources.sources_page') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center group">
@@ -140,18 +201,20 @@
                     </a>
                 </div>
 
-                <!-- 扁平 3 列网格，优化间距与层级 -->
+                <!-- 3 大源通道网格 -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-5">
                     <!-- API 接口源统计块 -->
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-700">API 接口源</span>
-                            <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-medium">REST API</span>
+                            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fas fa-code text-blue-500"></i> API 接口源
+                            </span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-600">REST API</span>
                         </div>
-                        <div class="text-2xl font-extrabold text-slate-900 tracking-tight">
+                        <div class="text-2xl font-extrabold text-slate-900 tracking-tight" id="source-stat-api">
                             {{ summary.sources.api.enabled_count }} <span class="text-xs font-normal text-slate-400">/ {{ summary.sources.api.total_count }} 启用</span>
                         </div>
-                        <div class="pt-1.5 space-y-1.5 text-[11px] text-slate-400 border-t border-slate-100/80">
+                        <div class="pt-2 space-y-1.5 text-[11px] text-slate-400 border-t border-slate-100">
                             <div class="flex justify-between items-center">
                                 <span>正常响应</span>
                                 <span class="font-semibold text-emerald-600">{{ summary.sources.api.healthy_count }} 组</span>
@@ -166,13 +229,15 @@
                     <!-- 插件扩展统计块 -->
                     <div class="space-y-3 sm:border-l sm:border-slate-100 sm:pl-6">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-700">爬虫扩展插件</span>
-                            <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-medium">Python</span>
+                            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fas fa-puzzle-piece text-indigo-500"></i> 扩展插件
+                            </span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-600">Python</span>
                         </div>
-                        <div class="text-2xl font-extrabold text-slate-900 tracking-tight">
+                        <div class="text-2xl font-extrabold text-slate-900 tracking-tight" id="source-stat-plugins">
                             {{ summary.sources.plugins.enabled_count }} <span class="text-xs font-normal text-slate-400">/ {{ summary.sources.plugins.total_count }} 开启</span>
                         </div>
-                        <div class="pt-1.5 space-y-1.5 text-[11px] text-slate-400 border-t border-slate-100/80">
+                        <div class="pt-2 space-y-1.5 text-[11px] text-slate-400 border-t border-slate-100">
                             <div class="flex justify-between items-center">
                                 <span>运行状态</span>
                                 <span class="font-semibold text-emerald-600">正常加载</span>
@@ -187,13 +252,15 @@
                     <!-- Telegram 频道统计块 -->
                     <div class="space-y-3 sm:border-l sm:border-slate-100 sm:pl-6">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-semibold text-slate-700">Telegram 频道</span>
-                            <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-medium">TG Bot</span>
+                            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fab fa-telegram-plane text-sky-500"></i> Telegram 频道
+                            </span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-100 text-slate-600">TG Bot</span>
                         </div>
-                        <div class="text-2xl font-extrabold text-slate-900 tracking-tight">
+                        <div class="text-2xl font-extrabold text-slate-900 tracking-tight" id="source-stat-tg">
                             {{ summary.sources.telegram.enabled_count }} <span class="text-xs font-normal text-slate-400">/ {{ summary.sources.telegram.total_count }} 关注</span>
                         </div>
-                        <div class="pt-1.5 space-y-1.5 text-[11px] text-slate-400 border-t border-slate-100/80">
+                        <div class="pt-2 space-y-1.5 text-[11px] text-slate-400 border-t border-slate-100">
                             <div class="flex justify-between items-center">
                                 <span>连通正常</span>
                                 <span class="font-semibold text-emerald-600">{{ summary.sources.telegram.healthy_count }} 频道</span>
@@ -207,212 +274,110 @@
                 </div>
             </div>
 
-            <!-- 网盘凭证与转存状态矩阵 (优化版) -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+            <!-- 3. 网盘转存凭证与私有化引擎矩阵 -->
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
                 <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                     <div class="flex items-center space-x-2.5">
-                        <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
+                        <div class="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
                             <i class="fas fa-hdd text-xs"></i>
                         </div>
                         <div>
-                            <h2 class="text-base font-bold text-slate-900">网盘凭证与转存状态</h2>
+                            <h2 class="text-base font-bold text-slate-900">网盘转存引擎与凭证</h2>
+                            <p class="text-xs text-slate-400">主流网盘私有化转存与专属分享链接生成能力</p>
                         </div>
                     </div>
-                    <a href="{{ url_for('system_config.system_config_page') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center group">
-                        管理凭证 <i class="fas fa-arrow-right text-[9px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
+                    <a href="{{ url_for('system_config.system_config_page', tab='credentials') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center group">
+                        配置凭证 <i class="fas fa-arrow-right text-[9px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
                     </a>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 mt-4">
                     {% for item in summary.credentials.statuses %}
-                    <div class="p-4 rounded-xl border border-slate-200/70 bg-white hover:border-slate-300 hover:shadow-2xs transition-all flex flex-col justify-between space-y-2.5">
+                    <div class="p-3 rounded-xl border border-slate-200/70 bg-slate-50/50 hover:bg-white hover:border-slate-300 hover:shadow-2xs transition-all flex flex-col justify-between space-y-2" title="{{ item.description }}">
                         <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <span class="w-2 h-2 rounded-full
-                                    {% if item.status == 'enabled' %}bg-emerald-500
-                                    {% elif item.status == 'invalid' %}bg-amber-500
-                                    {% else %}bg-slate-300{% endif %}"></span>
-                                <span class="text-xs font-bold text-slate-900">{{ item.cloud_name }}</span>
-                            </div>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full font-medium
+                            <span class="text-xs font-bold text-slate-800 tracking-tight">{{ item.cloud_name }}</span>
+                            <span class="w-2 h-2 rounded-full flex-shrink-0
+                                {% if item.status == 'enabled' %}bg-emerald-500 shadow-xs shadow-emerald-500/50
+                                {% elif item.status == 'invalid' %}bg-amber-500
+                                {% else %}bg-slate-300{% endif %}"></span>
+                        </div>
+                        <div>
+                            <span class="inline-block text-[10px] px-2 py-0.5 rounded font-medium
                                 {% if item.status == 'enabled' %}bg-emerald-50 text-emerald-700 border border-emerald-100/80
                                 {% elif item.status == 'invalid' %}bg-amber-50 text-amber-700 border border-amber-100/80
-                                {% else %}bg-slate-100 text-slate-500{% endif %}">
+                                {% else %}bg-slate-100 text-slate-400{% endif %}">
                                 {{ item.title }}
                             </span>
                         </div>
-                        <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">{{ item.description }}</p>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- 最新资源列表 -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
-                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
-                    <div class="flex items-center space-x-2.5">
-                        <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
-                            <i class="fas fa-clock text-xs"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-base font-bold text-slate-900">最新收录资源</h2>
-                        </div>
-                    </div>
-                    <a href="{{ url_for('resources.resources_page') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center group">
-                        完整资源库 <i class="fas fa-arrow-right text-[9px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
-                    </a>
-                </div>
+        </div>
 
-                <div class="overflow-x-auto mt-4">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                                <th class="pb-3 px-3">资源名称</th>
-                                <th class="pb-3 px-3">云盘类型</th>
-                                <th class="pb-3 px-3">分类</th>
-                                <th class="pb-3 px-3">录入时间</th>
-                                <th class="pb-3 px-3 text-right">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 text-xs" id="recent-resources-tbody">
-                            {% if summary.resources.recent_items %}
-                                {% for res in summary.resources.recent_items %}
-                                <tr class="hover:bg-slate-50/80 transition-colors">
-                                    <td class="py-3.5 px-3 font-medium text-slate-900 max-w-xs truncate" title="{{ res.name }}">
+        <!-- 右侧最新收录私有资源 (简化版列表，约 1/3 宽度) -->
+        <div class="lg:col-span-5 xl:col-span-4">
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
+                                <i class="fas fa-clock text-xs"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">最新收录私有资源</h2>
+                                <p class="text-xs text-slate-400">已沉淀至私有收益库</p>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('resources.resources_page') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center group">
+                            <span>管理资源</span>
+                            <i class="fas fa-arrow-right text-[9px] ml-1 group-hover:translate-x-0.5 transition-transform"></i>
+                        </a>
+                    </div>
+
+                    <!-- 简化资源条目流 -->
+                    <div class="divide-y divide-slate-100 mt-2">
+                        {% if summary.resources.recent_items %}
+                            {% for res in summary.resources.recent_items %}
+                            <div class="py-3 group flex items-center justify-between gap-3 hover:bg-slate-50/70 -mx-2 px-2 rounded-xl transition-colors">
+                                <div class="min-w-0 flex-1 space-y-1">
+                                    <div class="font-medium text-xs text-slate-800 truncate" title="{{ res.name }}">
                                         {{ res.name }}
-                                    </td>
-                                    <td class="py-3.5 px-3">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">
+                                    </div>
+                                    <div class="flex items-center gap-2 text-[10px] text-slate-400">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded font-medium bg-slate-100 text-slate-600">
                                             {{ res.cloud_name or '通用网盘' }}
                                         </span>
-                                    </td>
-                                    <td class="py-3.5 px-3 text-slate-400 text-[11px]">
-                                        {{ res.type or '综合' }}
-                                    </td>
-                                    <td class="py-3.5 px-3 text-slate-400 text-[11px]">
-                                        {{ res.created_at or '-' }}
-                                    </td>
-                                    <td class="py-3.5 px-3 text-right">
-                                        <a href="{{ res.share_link }}" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold text-xs inline-flex items-center">
-                                            打开链接 <i class="fas fa-external-link-alt text-[9px] ml-1"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="5" class="py-8 text-center text-slate-400">暂无录入资源记录</td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+                                        {% if res.type %}
+                                        <span class="text-slate-400">{{ res.type }}</span>
+                                        <span class="text-slate-200">·</span>
+                                        {% endif %}
+                                        <span>{{ res.created_at or '-' }}</span>
+                                    </div>
+                                </div>
+                                <a href="{{ res.share_link }}" target="_blank" class="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-blue-50 text-slate-400 group-hover:text-blue-600 flex items-center justify-center transition-colors flex-shrink-0" title="打开分享链接">
+                                    <i class="fas fa-external-link-alt text-[10px]"></i>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="py-12 text-center text-xs text-slate-400">
+                                <i class="far fa-folder-open text-2xl text-slate-300 mb-2 block"></i>
+                                暂无录入资源记录
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 底部统计信息 -->
+                <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                    <span>累计收录: <strong class="text-slate-700 font-semibold">{{ summary.resources.total_count }}</strong> 条</span>
+                    <span>展示最近入库</span>
                 </div>
             </div>
-
         </div>
 
-        <!-- 右侧 4 列：快捷控制中心 (模块化规整排版) -->
-        <div class="lg:col-span-4 space-y-6">
-            
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
-                <div class="flex items-center space-x-2.5 pb-4 border-b border-slate-100">
-                    <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-700">
-                        <i class="fas fa-sliders-h text-xs"></i>
-                    </div>
-                    <h2 class="text-base font-bold text-slate-900">快捷控制中心</h2>
-                </div>
-
-                <!-- 导航入口按钮 -->
-                <div class="mt-4 space-y-2.5">
-                    <a href="{{ url_for('search_index') }}" target="_blank" class="w-full py-2.5 px-3.5 rounded-xl bg-slate-50/90 hover:bg-slate-100 text-slate-700 font-medium text-xs border border-slate-200/60 transition-all flex items-center justify-between group shadow-2xs">
-                        <span class="flex items-center text-slate-800"><i class="fas fa-search mr-2.5 text-slate-400 group-hover:text-blue-600 transition-colors"></i>前台聚合搜索</span>
-                        <i class="fas fa-external-link-alt text-[10px] text-slate-400 group-hover:text-slate-600 transition-colors"></i>
-                    </a>
-
-                    <a href="{{ url_for('search_sources.sources_page') }}" class="w-full py-2.5 px-3.5 rounded-xl bg-slate-50/90 hover:bg-slate-100 text-slate-700 font-medium text-xs border border-slate-200/60 transition-all flex items-center justify-between group shadow-2xs">
-                        <span class="flex items-center text-slate-800"><i class="fas fa-cog mr-2.5 text-slate-400 group-hover:text-blue-600 transition-colors"></i>搜索源管理工作区</span>
-                        <i class="fas fa-chevron-right text-[10px] text-slate-400 group-hover:text-slate-600 transition-colors"></i>
-                    </a>
-                </div>
-
-                <!-- 快捷模式切换与开关 (轻量卡片化) -->
-                <div class="mt-5 pt-4 border-t border-slate-100 space-y-3">
-                    <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-100">
-                        <label class="block text-xs font-semibold text-slate-700 mb-2">前台出链模式</label>
-                        <select id="quick-link-mode-select" onchange="quickUpdateLinkMode(this.value)" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs">
-                            <option value="direct" {% if summary.system.frontend_link_mode == 'direct' %}selected{% endif %}>直接出链</option>
-                            <option value="temp" {% if summary.system.frontend_link_mode == 'temp' %}selected{% endif %}>强制临时转存</option>
-                            <option value="auto" {% if summary.system.frontend_link_mode == 'auto' %}selected{% endif %}>智能自适应模式</option>
-                        </select>
-                    </div>
-
-                    <div class="p-3.5 rounded-xl bg-slate-50/70 border border-slate-100 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <span class="text-xs font-semibold text-slate-700 block">公开 API 搜索接口</span>
-                                <span class="text-[11px] text-slate-400 font-normal">允许免鉴权调用 /api/search</span>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
-                                <input type="checkbox" id="toggle-public-api" onchange="quickTogglePublicApi(this.checked)" class="sr-only peer" {% if summary.system.public_search_api_enabled %}checked{% endif %}>
-                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        <div class="pt-2.5 border-t border-slate-200/60 flex items-center justify-between">
-                            <div>
-                                <span class="text-xs font-semibold text-slate-700 block">前台 Excel 批量导出</span>
-                                <span class="text-[11px] text-slate-400 font-normal">允许游客导出搜索结果表格</span>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
-                                <input type="checkbox" id="toggle-excel-download" onchange="quickToggleExcel(this.checked)" class="sr-only peer" {% if summary.system.allow_excel_download_enabled %}checked{% endif %}>
-                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 今日运行与审计日志卡片 -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <div class="flex items-center space-x-2.5">
-                        <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                            <i class="fas fa-clock-rotate-left text-xs"></i>
-                        </div>
-                        <h2 class="text-base font-bold text-slate-900">今日运行审计</h2>
-                    </div>
-                    <a href="{{ url_for('logs.logs_page') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 group">
-                        <span>查看日志</span>
-                        <i class="fas fa-chevron-right text-[9px] group-hover:translate-x-0.5 transition-transform"></i>
-                    </a>
-                </div>
-
-                <div class="mt-4 grid grid-cols-2 gap-2.5">
-                    <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                        <div class="text-[11px] text-slate-400 font-medium">今日总请求</div>
-                        <div class="text-lg font-extrabold text-slate-900 mt-1" id="dash-log-today-total">{{ summary.logs.today_total }}</div>
-                    </div>
-                    <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                        <div class="text-[11px] text-slate-400 font-medium">今日成功率</div>
-                        <div class="text-lg font-extrabold text-emerald-600 mt-1" id="dash-log-today-rate">{{ summary.logs.today_success_rate }}%</div>
-                    </div>
-                    <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                        <div class="text-[11px] text-slate-400 font-medium">聚合搜索量</div>
-                        <div class="text-lg font-extrabold text-indigo-600 mt-1" id="dash-log-today-search">{{ summary.logs.today_search }}</div>
-                    </div>
-                    <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                        <div class="text-[11px] text-slate-400 font-medium">网盘转存量</div>
-                        <div class="text-lg font-extrabold text-purple-600 mt-1" id="dash-log-today-transfer">{{ summary.logs.today_transfer }}</div>
-                    </div>
-                </div>
-
-                <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                    <span>平均响应耗时: <strong class="text-slate-700 font-semibold" id="dash-log-avg-duration">{{ summary.logs.today_avg_duration_ms }} ms</strong></span>
-                    <span>历史总计: <strong class="text-slate-700 font-semibold" id="dash-log-total-count">{{ summary.logs.total_logs_count }} 条</strong></span>
-                </div>
-            </div>
-
-        </div>
     </div>
 </div>
 
@@ -685,6 +650,18 @@
                     if (s.sources) {
                         const hrEl = document.getElementById('stat-health-rate');
                         if (hrEl) hrEl.textContent = `${s.sources.overall_health_rate || 100}%`;
+                        const apiEl = document.getElementById('source-stat-api');
+                        if (apiEl && s.sources.api) {
+                            apiEl.innerHTML = `${s.sources.api.enabled_count} <span class="text-xs font-normal text-slate-400">/ ${s.sources.api.total_count} 启用</span>`;
+                        }
+                        const plugEl = document.getElementById('source-stat-plugins');
+                        if (plugEl && s.sources.plugins) {
+                            plugEl.innerHTML = `${s.sources.plugins.enabled_count} <span class="text-xs font-normal text-slate-400">/ ${s.sources.plugins.total_count} 开启</span>`;
+                        }
+                        const tgEl = document.getElementById('source-stat-tg');
+                        if (tgEl && s.sources.telegram) {
+                            tgEl.innerHTML = `${s.sources.telegram.enabled_count} <span class="text-xs font-normal text-slate-400">/ ${s.sources.telegram.total_count} 关注</span>`;
+                        }
                     }
                     if (s.credentials && s.credentials.summary) {
                         const credEl = document.getElementById('stat-credentials-ratio');
@@ -692,14 +669,23 @@
                     }
                     if (s.logs) {
                         const l = s.logs;
+                        const topTodayTotal = document.getElementById('stat-today-total');
+                        if (topTodayTotal) topTodayTotal.textContent = l.today_total || 0;
+                        const topTodayRate = document.getElementById('stat-today-rate');
+                        if (topTodayRate) topTodayRate.textContent = `${l.today_success_rate || 100}% 成功`;
+
                         const totalReqEl = document.getElementById('dash-log-today-total');
                         if (totalReqEl) totalReqEl.textContent = l.today_total || 0;
                         const rateEl = document.getElementById('dash-log-today-rate');
                         if (rateEl) rateEl.textContent = `${l.today_success_rate || 100}%`;
+                        const errEl = document.getElementById('dash-log-today-errors');
+                        if (errEl) errEl.textContent = l.today_errors || 0;
                         const searchEl = document.getElementById('dash-log-today-search');
                         if (searchEl) searchEl.textContent = l.today_search || 0;
                         const transEl = document.getElementById('dash-log-today-transfer');
                         if (transEl) transEl.textContent = l.today_transfer || 0;
+                        const apiLogEl = document.getElementById('dash-log-today-api');
+                        if (apiLogEl) apiLogEl.textContent = `${l.today_api || 0} 次`;
                         const durEl = document.getElementById('dash-log-avg-duration');
                         if (durEl) durEl.textContent = `${l.today_avg_duration_ms || 0} ms`;
                         const countEl = document.getElementById('dash-log-total-count');

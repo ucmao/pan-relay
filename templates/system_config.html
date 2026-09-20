@@ -53,21 +53,23 @@
             <div class="admin-panel-header">
                 <div class="admin-panel-title-area">
                     <h2 class="admin-panel-title">
-                        <i class="fas fa-folder-tree text-indigo-600"></i> 网盘通用转存目标目录
+                        <i class="fas fa-folder-tree text-indigo-600"></i> 网盘转存目标目录
                     </h2>
-                    <p class="admin-panel-desc">API 与前台通用的后端转存配置；转存成功后的资源将统一存入指定网盘文件夹</p>
+                    <p class="admin-panel-desc">转存成功后的资源将统一存入指定网盘文件夹</p>
                 </div>
             </div>
             <div class="admin-panel-body">
                 <div class="divide-y divide-slate-100">
                     <!-- 配置: 默认转存目标文件夹 -->
-                    <div class="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2">
-                                <span class="font-bold text-slate-900 text-sm">默认转存目标文件夹</span>
-                                <span class="badge badge-info text-[10px]" id="transferTargetDirBadge">Pan-Relay分享</span>
+                    <div class="setting-item-row">
+                        <div class="space-y-1 min-w-0 pr-4">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-semibold text-slate-800 text-sm">默认转存目录</span>
+                                <span class="help-tooltip" data-tooltip="各网盘自动转存时将存入该文件夹，不存在时自动新建，留空或 / 则存入根目录">
+                                    <i class="far fa-circle-question text-xs"></i>
+                                </span>
                             </div>
-                            <p class="text-xs text-slate-500">所有网盘自动转存时将自动识别并存入该文件夹（不存在时自动新建，留空或 / 则存入根目录）</p>
+                            <p class="text-xs text-slate-500">转存文件在站长云盘中的统一存放路径</p>
                         </div>
                         <div class="flex items-center space-x-2 flex-shrink-0">
                             <div class="relative flex items-center">
@@ -88,16 +90,16 @@
             <div class="admin-panel-header">
                 <div class="admin-panel-title-area">
                     <h2 class="admin-panel-title">
-                        <i class="fas fa-bullhorn text-indigo-600"></i> 个人自定义引流广告植入
+                        <i class="fas fa-bullhorn text-indigo-600"></i> 自定义引流文件植入
                     </h2>
-                    <p class="admin-panel-desc">转存到私有网盘时，可自动在生成的分享目录中附带您的专属宣传资源或引流分享 (支持 Quark / UC 网盘)</p>
+                    <p class="admin-panel-desc">转存时自动在生成的分享目录中附带专属宣传文件 (支持 Quark / UC)</p>
                 </div>
             </div>
             <div class="admin-panel-body space-y-4">
-                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                <div class="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
                     <div>
-                        <span class="font-bold text-slate-800 text-xs block">启用自定义广告引流植入</span>
-                        <span class="text-[11px] text-slate-500">开启后转存时将自动拉取此分享链接中的宣传文件并合并至转存文件夹</span>
+                        <span class="font-bold text-slate-800 text-xs block">广告引流植入</span>
+                        <span class="text-[11px] text-slate-500">转存时自动合并此分享链接中的宣传文件至分享文件夹</span>
                     </div>
                     <label class="plugin-switch">
                         <input type="checkbox" id="customAdGlobalToggle" onchange="saveCustomAdConfig()">
@@ -105,13 +107,15 @@
                     </label>
                 </div>
 
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div class="space-y-1 flex-1">
-                        <div class="flex items-center gap-2">
-                            <label for="customAdShareUrlInput" class="form-label font-bold text-slate-800 text-xs mb-0">自定义引流分享链接</label>
-                            <span class="badge badge-secondary text-[10px]" id="customAdShareUrlBadge">未配置</span>
+                <div class="setting-item-row pt-2 pb-0">
+                    <div class="space-y-1 flex-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <label for="customAdShareUrlInput" class="form-label font-semibold text-slate-800 text-sm mb-0">引流分享链接</label>
+                            <span class="help-tooltip" data-tooltip="提供包含宣传文件或公众号说明的完整公开分享链接">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-500">支持提供您自己网盘里包含引流/公众号说明文件的完整公开分享链接</p>
+                        <p class="text-xs text-slate-500">包含引流宣传文件的完整网盘公开分享链接</p>
                     </div>
                     <div class="flex items-center space-x-2 flex-shrink-0 sm:w-1/2">
                         <div class="relative flex-1">
@@ -131,42 +135,42 @@
             <div class="admin-panel-header">
                 <div class="admin-panel-title-area">
                     <h2 class="admin-panel-title">
-                        <i class="fas fa-recycle text-amber-600"></i> 存储空间优化与过期自动清理
+                        <i class="fas fa-recycle text-amber-600"></i> 存储空间优化与过期清理
                     </h2>
-                    <p class="admin-panel-desc">基于后台 APScheduler 周期任务，自动回收过期临时分享与超期转存资源，释放网盘容量</p>
+                    <p class="admin-panel-desc">定时自动回收过期临时分享与超期转存资源，释放网盘容量</p>
                 </div>
                 <div class="flex items-center space-x-2">
                     <button class="btn btn-outline-primary btn-sm" id="runStorageCleanupBtn" type="button" onclick="runStorageCleanupNow()">
-                        <i class="fas fa-trash-alt text-[10px] mr-1"></i> 立即执行全量清理
+                        <i class="fas fa-trash-alt text-[10px] mr-1"></i> 立即执行清理
                     </button>
                 </div>
             </div>
             <div class="admin-panel-body space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-3 border-b border-slate-100">
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-3 border-b border-slate-100">
+                    <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
                         <div>
-                            <span class="font-bold text-slate-800 text-xs block">启用自动清理调度任务</span>
-                            <span class="text-[11px] text-slate-500">周期性自动回收过期资源</span>
+                            <span class="font-bold text-slate-800 text-xs block">自动清理调度</span>
+                            <span class="text-[11px] text-slate-500">定时回收过期资源</span>
                         </div>
                         <label class="plugin-switch">
                             <input type="checkbox" id="storageCleanupGlobalToggle" onchange="saveStorageCleanupConfig()">
                             <span class="plugin-switch-slider"></span>
                         </label>
                     </div>
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
                         <div>
-                            <span class="font-bold text-slate-800 text-xs block">清理过期临时分享</span>
-                            <span class="text-[11px] text-slate-500">动态临时分享记录与文件</span>
+                            <span class="font-bold text-slate-800 text-xs block">清理临时分享</span>
+                            <span class="text-[11px] text-slate-500">超期动态临时分享</span>
                         </div>
                         <label class="plugin-switch">
                             <input type="checkbox" id="storageCleanTempSharesToggle" onchange="saveStorageCleanupConfig()">
                             <span class="plugin-switch-slider"></span>
                         </label>
                     </div>
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
                         <div>
-                            <span class="font-bold text-slate-800 text-xs block">清理超期转存历史</span>
-                            <span class="text-[11px] text-slate-500">超过保留期的转存资源</span>
+                            <span class="font-bold text-slate-800 text-xs block">清理转存历史</span>
+                            <span class="text-[11px] text-slate-500">物理删除超期转存</span>
                         </div>
                         <label class="plugin-switch">
                             <input type="checkbox" id="storageCleanOldResourcesToggle" onchange="saveStorageCleanupConfig()">
@@ -175,19 +179,19 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
                     <div>
-                        <label for="storageRetentionDaysInput" class="form-label font-bold text-slate-800 text-xs mb-1">转存资源保留期 (天)</label>
+                        <label for="storageRetentionDaysInput" class="form-label font-bold text-slate-800 text-xs mb-1">转存保留期 (天)</label>
                         <input type="number" id="storageRetentionDaysInput" class="form-control form-control-sm text-xs font-semibold" min="1" max="365" value="15" onchange="saveStorageCleanupConfig()">
-                        <p class="text-[11px] text-slate-400 mt-1 mb-0">超过此天数的转存资源将被物理删除</p>
+                        <p class="text-[11px] text-slate-400 mt-1 mb-0">超期转存资源将被物理删除</p>
                     </div>
                     <div>
-                        <label for="storageCleanupIntervalInput" class="form-label font-bold text-slate-800 text-xs mb-1">清理任务执行周期 (小时)</label>
+                        <label for="storageCleanupIntervalInput" class="form-label font-bold text-slate-800 text-xs mb-1">扫描周期 (小时)</label>
                         <input type="number" id="storageCleanupIntervalInput" class="form-control form-control-sm text-xs font-semibold" min="1" max="168" value="12" onchange="saveStorageCleanupConfig()">
-                        <p class="text-[11px] text-slate-400 mt-1 mb-0">后台调度器每隔 N 小时执行一次扫描</p>
+                        <p class="text-[11px] text-slate-400 mt-1 mb-0">后台调度器定期执行扫描</p>
                     </div>
                     <div>
-                        <label for="storageLimitPerRunInput" class="form-label font-bold text-slate-800 text-xs mb-1">单次清理批量上限 (条)</label>
+                        <label for="storageLimitPerRunInput" class="form-label font-bold text-slate-800 text-xs mb-1">单次批量上限 (条)</label>
                         <input type="number" id="storageLimitPerRunInput" class="form-control form-control-sm text-xs font-semibold" min="10" max="1000" value="100" onchange="saveStorageCleanupConfig()">
                         <p class="text-[11px] text-slate-400 mt-1 mb-0">待清理过期资源：<span id="expiredResourcesCount" class="font-bold text-amber-600">0</span> 条</p>
                     </div>
@@ -205,37 +209,37 @@
             <div class="admin-panel-header">
                 <div class="admin-panel-title-area">
                     <h2 class="admin-panel-title">
-                        <i class="fas fa-shield-alt text-red-600"></i> 敏感词过滤与安全防护
+                        <i class="fas fa-shield-alt text-red-600"></i> 敏感词过滤与风控
                     </h2>
-                    <p class="admin-panel-desc">高效率 DFA 匹配算法，实时阻断非法搜索关键词与剔除网盘脏数据资源</p>
+                    <p class="admin-panel-desc">实时阻断非法搜索关键词与剔除脏数据结果</p>
                 </div>
             </div>
             <div class="admin-panel-body space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-3 border-b border-slate-100">
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-3 border-b border-slate-100">
+                    <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
                         <div>
-                            <span class="font-bold text-slate-800 text-xs block">启用敏感词过滤引擎</span>
-                            <span class="text-[11px] text-slate-500">全局匹配引擎总开关</span>
+                            <span class="font-bold text-slate-800 text-xs block">敏感词过滤引擎</span>
+                            <span class="text-[11px] text-slate-500">全局匹配总开关</span>
                         </div>
                         <label class="plugin-switch">
                             <input type="checkbox" id="sensitiveWordsGlobalToggle" onchange="saveSensitiveWordsConfig()">
                             <span class="plugin-switch-slider"></span>
                         </label>
                     </div>
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
                         <div>
-                            <span class="font-bold text-slate-800 text-xs block">拦截搜索输入关键词</span>
-                            <span class="text-[11px] text-slate-500">命中则直接拒绝搜索</span>
+                            <span class="font-bold text-slate-800 text-xs block">拦截搜索输入</span>
+                            <span class="text-[11px] text-slate-500">命中直接拒绝搜索</span>
                         </div>
                         <label class="plugin-switch">
                             <input type="checkbox" id="sensitiveWordsInputToggle" onchange="saveSensitiveWordsConfig()">
                             <span class="plugin-switch-slider"></span>
                         </label>
                     </div>
-                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
                         <div>
-                            <span class="font-bold text-slate-800 text-xs block">剔除输出脏数据结果</span>
-                            <span class="text-[11px] text-slate-500">命中标题或链接时自动丢弃</span>
+                            <span class="font-bold text-slate-800 text-xs block">净化输出结果</span>
+                            <span class="text-[11px] text-slate-500">命中自动剔除结果</span>
                         </div>
                         <label class="plugin-switch">
                             <input type="checkbox" id="sensitiveWordsOutputToggle" onchange="saveSensitiveWordsConfig()">
@@ -244,7 +248,7 @@
                     </div>
                 </div>
 
-                <div>
+                <div class="pt-1">
                     <div class="flex items-center justify-between mb-2">
                         <label for="sensitiveWordsTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
                             敏感词黑名单词库 (每行一个词)
@@ -252,7 +256,7 @@
                         <span class="text-xs text-slate-500">当前词数：<strong id="sensitiveWordsCount" class="text-blue-600">0</strong> 条</span>
                     </div>
                     <textarea class="form-control font-mono text-xs" id="sensitiveWordsTextarea" rows="4" placeholder="请输入敏感词，每行一个（例如：外挂、博彩、破解工具等）" onblur="saveSensitiveWordsConfig()"></textarea>
-                    <p class="text-[11px] text-slate-400 mt-1.5 mb-0">提示：切换开关或编辑词库离开焦点后系统将自动保存并即时生效。</p>
+                    <p class="text-[11px] text-slate-400 mt-1.5 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                 </div>
             </div>
         </section>
@@ -262,16 +266,16 @@
             <div class="admin-panel-header">
                 <div class="admin-panel-title-area">
                     <h2 class="admin-panel-title">
-                        <i class="fas fa-broom text-emerald-600"></i> 广告智能净化与词库过滤
+                        <i class="fas fa-broom text-emerald-600"></i> 广告智能净化
                     </h2>
-                    <p class="admin-panel-desc">自动识别并剔除转存资源中的广告引流文件 (如防失联、关注公众号、福利群等广告 txt/html/apk)</p>
+                    <p class="admin-panel-desc">转存时自动识别并剔除广告引流文件 (如防失联、关注公众号等 txt/apk/html)</p>
                 </div>
             </div>
             <div class="admin-panel-body space-y-4">
-                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                <div class="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
                     <div>
                         <span class="font-bold text-slate-800 text-xs block">启用广告智能净化</span>
-                        <span class="text-[11px] text-slate-500">转存时自动丢弃匹配广告关键词的非主体附属文件</span>
+                        <span class="text-[11px] text-slate-500">转存时自动丢弃匹配广告关键词的非主体文件</span>
                     </div>
                     <label class="plugin-switch">
                         <input type="checkbox" id="adFilterGlobalToggle" onchange="saveAdFilterConfig()">
@@ -279,7 +283,7 @@
                     </label>
                 </div>
 
-                <div>
+                <div class="pt-1">
                     <div class="flex items-center justify-between mb-2">
                         <label for="adFilterTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
                             广告关键词过滤库 (每行一个词)
@@ -287,7 +291,7 @@
                         <span class="text-xs text-slate-500">当前词数：<strong id="adFilterWordsCount" class="text-emerald-600">0</strong> 条</span>
                     </div>
                     <textarea class="form-control font-mono text-xs" id="adFilterTextarea" rows="4" placeholder="请输入广告关键词，每行一个（例如：公众号、防失联、福利群、更新地址等）" onblur="saveAdFilterConfig()"></textarea>
-                    <p class="text-[11px] text-slate-400 mt-1.5 mb-0">提示：切换开关或编辑词库离开焦点后系统将自动保存并即时生效。</p>
+                    <p class="text-[11px] text-slate-400 mt-1.5 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                 </div>
             </div>
         </section>
