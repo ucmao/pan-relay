@@ -204,4 +204,22 @@ def get_dashboard_summary() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"仪表盘获取运行日志指标失败: {e}")
 
+    # 7. 搜索运营分析与热词/零结果待补词榜单
+    try:
+        from src.services.log_service import get_search_analytics
+        summary["search_analytics"] = get_search_analytics()
+    except Exception as e:
+        logger.error(f"仪表盘获取搜索运营分析失败: {e}")
+        summary["search_analytics"] = {
+            "today_total_searches": 0,
+            "today_web_searches": 0,
+            "today_api_searches": 0,
+            "today_hit_searches": 0,
+            "today_zero_searches": 0,
+            "today_hit_rate": 100.0,
+            "today_avg_duration_ms": 0,
+            "top_keywords": [],
+            "top_zero_keywords": [],
+        }
+
     return summary

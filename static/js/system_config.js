@@ -79,6 +79,14 @@ function bindCredentialTabEvents() {
             }
         });
     });
+
+    const queryCred = new URLSearchParams(window.location.search).get('cred');
+    if (queryCred) {
+        const targetBtn = document.querySelector(`[data-cred-target="${queryCred}"]`);
+        if (targetBtn) {
+            targetBtn.click();
+        }
+    }
 }
 
 function renderDynamicTransferStatuses(statuses, summary) {
@@ -173,7 +181,7 @@ function renderDynamicTransferStatuses(statuses, summary) {
                         }
                     }, 120);
                 } else {
-                    window.location.href = `/admin/system-config?tab=credentials`;
+                    window.location.href = `/admin/system-config?tab=credentials&cred=${targetKey}`;
                 }
             });
         });
@@ -505,12 +513,14 @@ async function saveFrontendLinkMode() {
 }
 
 async function loadCookieConfig() {
-    const baidu = document.getElementById('baiduCookie');
-    if (!baidu) return;
     try {
         const response = await fetch('/admin/api/credential-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
-        baidu.value = data.baidu_cookie || '';
+        const baidu = document.getElementById('baiduCookie');
+        if (baidu) baidu.value = data.baidu_cookie || '';
         const quark = document.getElementById('quarkCookie');
         if (quark) quark.value = data.quark_cookie || '';
         const aliyun = document.getElementById('aliyunToken');

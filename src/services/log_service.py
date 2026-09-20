@@ -10,7 +10,9 @@ from src.db.logs import (
     clear_all_logs as db_clear_all_logs,
     delete_logs_by_ids,
     get_logs_summary_stats,
+    get_search_analytics_stats,
     insert_system_log,
+    query_search_logs,
     query_system_logs,
 )
 
@@ -183,3 +185,37 @@ def export_logs_csv(
         ])
 
     return output.getvalue()
+
+
+def list_search_logs(
+    page: int = 1,
+    page_size: int = 15,
+    q: str = "",
+    channel: str = "",
+    result_filter: str = "",
+    start_date: str = "",
+    end_date: str = "",
+    sort_by: str = "created_at",
+    order: str = "desc",
+) -> Tuple[bool, str, Dict[str, Any]]:
+    """
+    分页查询搜索业务日志（Web / API）
+    """
+    return query_search_logs(
+        page=page,
+        page_size=page_size,
+        q=q,
+        channel=channel,
+        result_filter=result_filter,
+        start_date=start_date,
+        end_date=end_date,
+        sort_by=sort_by,
+        order=order,
+    )
+
+
+def get_search_analytics() -> Dict[str, Any]:
+    """
+    获取搜索业务分析指标与热词榜
+    """
+    return get_search_analytics_stats()

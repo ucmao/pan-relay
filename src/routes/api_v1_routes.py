@@ -62,8 +62,8 @@ def api_search():
     start_time = time.time()
     if not is_public_search_api_enabled():
         record_log(
-            log_type="api",
-            action="api.v1.search",
+            log_type="search",
+            action="search.api.v1",
             query_text=request.args.get("keyword", ""),
             status_code=403,
             error_message="公开聚合查询接口已被关闭",
@@ -77,8 +77,8 @@ def api_search():
 
     if not keyword:
         record_log(
-            log_type="api",
-            action="api.v1.search",
+            log_type="search",
+            action="search.api.v1",
             query_text="",
             status_code=400,
             error_message="缺少必填参数: keyword",
@@ -87,8 +87,8 @@ def api_search():
 
     if cloud_name and cloud_name not in FRONTEND_DISPLAY_NETDISK_OPTIONS:
         record_log(
-            log_type="api",
-            action="api.v1.search",
+            log_type="search",
+            action="search.api.v1",
             query_text=f"{keyword} [cloud={cloud_name}]",
             status_code=400,
             error_message=f"不支持的网盘类型: {cloud_name}",
@@ -118,8 +118,8 @@ def api_search():
         ]
         duration_ms = int((time.time() - start_time) * 1000)
         record_log(
-            log_type="api",
-            action="api.v1.search.own",
+            log_type="search",
+            action="search.api.v1.own",
             query_text=f"{keyword} [cloud={cloud_name or 'all'}]",
             status_code=200,
             duration_ms=duration_ms,
@@ -138,26 +138,9 @@ def api_search():
         cloud_name=cloud_name,
     )
 
-    duration_ms = int((time.time() - start_time) * 1000)
     if not success:
-        record_log(
-            log_type="api",
-            action="api.v1.search.all",
-            query_text=f"{keyword} [cloud={cloud_name or 'all'}]",
-            status_code=500,
-            error_message=message,
-            duration_ms=duration_ms,
-        )
         return jsonify({"success": False, "message": message}), 500
 
-    record_log(
-        log_type="api",
-        action="api.v1.search.all",
-        query_text=f"{keyword} [cloud={cloud_name or 'all'}]",
-        status_code=200,
-        duration_ms=duration_ms,
-        result_count=len(results),
-    )
     return jsonify({
         "success": True,
         "scope": "all",

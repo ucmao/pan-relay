@@ -431,7 +431,7 @@ def generate_search_stream_events(keyword):
         if not keyword:
             record_log(
                 log_type="search",
-                action="search.stream",
+                action="search.web",
                 query_text="",
                 status_code=400,
                 error_message="缺少搜索关键词",
@@ -445,7 +445,7 @@ def generate_search_stream_events(keyword):
         if is_blocked:
             record_log(
                 log_type="search",
-                action="search.stream",
+                action="search.web",
                 query_text=keyword,
                 status_code=400,
                 error_message=f"触发敏感词拦截: {matched_word}",
@@ -469,7 +469,7 @@ def generate_search_stream_events(keyword):
             duration_ms = int((time.time() - start_time) * 1000)
             record_log(
                 log_type="search",
-                action="search.stream.cache",
+                action="search.web.cache",
                 query_text=keyword,
                 status_code=200,
                 duration_ms=duration_ms,
@@ -529,7 +529,7 @@ def generate_search_stream_events(keyword):
         duration_ms = int((time.time() - start_time) * 1000)
         record_log(
             log_type="search",
-            action="search.stream",
+            action="search.web",
             query_text=keyword,
             status_code=200,
             duration_ms=duration_ms,
@@ -842,7 +842,7 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
     if not keyword:
         record_log(
             log_type="search",
-            action="search.public",
+            action="search.api",
             query_text=query_display,
             status_code=400,
             error_message="缺少搜索关键词",
@@ -856,7 +856,7 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
         duration_ms = int((time.time() - start_time) * 1000)
         record_log(
             log_type="search",
-            action="search.public",
+            action="search.api",
             query_text=query_display,
             status_code=400,
             error_message=f"触发敏感词拦截: {matched_word}",
@@ -874,7 +874,7 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
         duration_ms = int((time.time() - start_time) * 1000)
         record_log(
             log_type="search",
-            action="search.public.cache",
+            action="search.api.cache",
             query_text=query_display,
             status_code=200,
             duration_ms=duration_ms,
@@ -904,7 +904,7 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
     duration_ms = int((time.time() - start_time) * 1000)
     record_log(
         log_type="search",
-        action="search.public",
+        action="search.api",
         query_text=query_display,
         status_code=200,
         duration_ms=duration_ms,

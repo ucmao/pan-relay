@@ -7,7 +7,9 @@ from src.services.log_service import (
     delete_logs,
     export_logs_csv,
     get_logs_summary,
+    get_search_analytics,
     list_logs,
+    list_search_logs,
 )
 from src.utils.auth_utils import token_required
 
@@ -22,7 +24,50 @@ def logs_page():
     """
     渲染后台运行日志管理页面
     """
-    return render_template("admin_logs.html", active_page="logs")
+    tab = request.args.get("tab", "analytics")
+    return render_template("admin_logs.html", active_page="logs", current_tab=tab)
+
+
+@log_bp.route("/admin/api/search-logs", methods=["GET"])
+@token_required
+def get_search_logs_api():
+    """
+    分页并多维度筛选查询用户与 API 的搜索行为日志
+    """
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("page_size", 15, type=int)
+    q = request.args.get("q", "", type=str)
+    channel = request.args.get("channel", "", type=str)
+    result_filter = request.args.get("result_filter", "", type=str)
+    start_date = request.args.get("start_date", "", type=str)
+    end_date = request.args.get("end_date", "", type=str)
+    sort_by = request.args.get("sort_by", "created_at", type=str)
+    order = request.args.get("order", "desc", type=str)
+
+    success, message, data = list_search_logs(
+        page=page,
+        page_size=page_size,
+        q=q,
+        channel=channel,
+        result_filter=result_filter,
+        start_date=start_date,
+        end_date=end_date,
+        sort_by=sort_by,
+        order=order,
+    )
+    if not success:
+        return jsonify({"success": False, "message": message}), 500
+    return jsonify({"success": True, "data": data})
+
+
+@log_bp.route("/admin/api/search-analytics", methods=["GET"])
+@token_required
+def get_search_analytics_api():
+    """
+    获取搜索行为分析指标（今日总搜索量、Web/API 占比、热词榜、零结果待补词榜等）
+    """
+    stats = get_search_analytics()
+    return jsonify({"success": True, "data": stats})
 
 
 @log_bp.route("/admin/api/logs", methods=["GET"])
