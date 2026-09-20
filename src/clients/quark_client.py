@@ -1,3 +1,4 @@
+import json
 import logging
 import random
 import re
@@ -7,14 +8,13 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import requests
 
 from src.clients.base_client import BasePanClient
+from src.services.ad_filter_service import is_ad_filename
 
 logger = logging.getLogger(__name__)
 
 
 def ad_check(file_name: str) -> bool:
-    ad_keywords = ["公众号", "备用", "防失联", "防封", "更新", "关注", "发布页"]
-    file_name_lower = file_name.lower()
-    return any(keyword in file_name_lower for keyword in ad_keywords)
+    return is_ad_filename(file_name)
 
 
 def generate_timestamp(length: int) -> int:
@@ -69,17 +69,19 @@ class QuarkPanClient(BasePanClient):
             return None, None, None
 
         file_name = detail.get("title")
-        first_id = detail.get("fid")
-        share_fid_token = detail.get("share_fid_token")
-        if not all([first_id, share_fid_token]):
+        file_list = detail.get("list") or []
+        fid_list = [item["fid"] for item in file_list if item.get("fid")]
+        fid_token_list = [item["share_fid_token"] for item in file_list if item.get("share_fid_token")]
+
+        if not fid_list or len(fid_list) != len(fid_token_list):
             logger.error(
-                "夸克网盘分享详情缺少必要信息: fid=%s, share_fid_token=%s",
-                first_id,
-                share_fid_token,
+                "夸克网盘分享详情缺少必要信息: fid_list=%s, share_fid_token_list=%s",
+                fid_list,
+                fid_token_list,
             )
             return None, None, None
 
-        save_task_id = self.save_task_id(pwd_id, stoken, first_id, share_fid_token, to_pdir_fid)
+        save_task_id = self.save_task_id(pwd_id, stoken, fid_list, fid_token_list, to_pdir_fid)
         if not save_task_id:
             logger.error("夸克网盘创建保存任务失败")
             return None, None, None
@@ -91,8 +93,13 @@ class QuarkPanClient(BasePanClient):
             logger.error("夸克网盘保存结果中没有找到文件 ID")
             return None, None, None
 
-        file_id = save_as_top_fids[0]
-        share_task_id = self.share_task_id(file_id, file_name or "夸克网盘资源")
+        # 广告过滤与净化
+        cleaned_top_fids = self._clean_ad_files_and_folders(save_as_top_fids)
+        if not cleaned_top_fids:
+            logger.warning("夸克网盘转存内容全为广告，已删除并终止分享")
+            return None, None, None
+
+        share_task_id = self.share_task_id(cleaned_top_fids, file_name or "夸克网盘资源")
         if not share_task_id:
             logger.error("夸克网盘创建分享任务失败")
             return None, None, None
@@ -108,7 +115,8 @@ class QuarkPanClient(BasePanClient):
             logger.error("夸克网盘获取分享链接失败")
             return None, None, None
 
-        return file_id, file_name, share_link
+        file_id_ret = cleaned_top_fids[0] if len(cleaned_top_fids) == 1 else json.dumps(cleaned_top_fids, ensure_ascii=False)
+        return file_id_ret, file_name, share_link
 
     def get_stoken(self, pwd_id: str) -> str:
         data = self._request(
@@ -157,29 +165,33 @@ class QuarkPanClient(BasePanClient):
             return {}
 
         item = file_list[0]
+        title = (response_data.get("share") or {}).get("title") or item.get("file_name") or "夸克网盘资源"
         return {
-            "title": item.get("file_name"),
+            "title": title,
             "file_type": item.get("file_type"),
             "fid": item.get("fid"),
             "pdir_fid": item.get("pdir_fid"),
             "share_fid_token": item.get("share_fid_token"),
+            "list": file_list,
         }
 
     def save_task_id(
         self,
         pwd_id: str,
         stoken: str,
-        first_id: str,
-        share_fid_token: str,
+        first_id: Union[str, List[str]],
+        share_fid_token: Union[str, List[str]],
         to_pdir_fid: str = "0",
     ) -> str:
         logger.info("夸克网盘创建保存任务")
+        fid_list = first_id if isinstance(first_id, list) else [first_id]
+        fid_token_list = share_fid_token if isinstance(share_fid_token, list) else [share_fid_token]
         data = self._request(
             "POST",
             "https://drive.quark.cn/1/clouddrive/share/sharepage/save",
             payload={
-                "fid_list": [first_id],
-                "fid_token_list": [share_fid_token],
+                "fid_list": fid_list,
+                "fid_token_list": fid_token_list,
                 "to_pdir_fid": to_pdir_fid,
                 "pwd_id": pwd_id,
                 "stoken": stoken,
@@ -250,12 +262,13 @@ class QuarkPanClient(BasePanClient):
         logger.warning("夸克网盘任务执行失败或超时: %s", task_id)
         return None
 
-    def share_task_id(self, file_id: str, file_name: str) -> str:
+    def share_task_id(self, file_id: Union[str, List[str]], file_name: str) -> str:
+        fid_list = file_id if isinstance(file_id, list) else [file_id]
         data = self._request(
             "POST",
             "https://drive-pc.quark.cn/1/clouddrive/share",
             payload={
-                "fid_list": [file_id],
+                "fid_list": fid_list,
                 "title": file_name,
                 "url_type": 1,
                 "expired_type": 1,
@@ -263,6 +276,49 @@ class QuarkPanClient(BasePanClient):
             params={"pr": "ucpro", "fr": "pc", "uc_param_str": ""},
         )
         return ((data or {}).get("data") or {}).get("task_id", "")
+
+    def _clean_ad_files_and_folders(self, save_as_top_fids: List[str]) -> List[str]:
+        """
+        扫描转存后的顶级文件/文件夹，智能检测并清理广告与引流文件。
+        若文件夹内全部为广告文件，则彻底删除整个文件夹并从顶级列表中剔除。
+        """
+        valid_fids = []
+        for fid in save_as_top_fids:
+            if not fid:
+                continue
+            # 尝试作为文件夹列取其子文件
+            try:
+                sub_files = self.get_dir_file(str(fid))
+            except Exception as e:
+                logger.warning("夸克网盘读取目录 %s 内容失败: %s", fid, e)
+                sub_files = []
+
+            if sub_files:
+                # 是文件夹且包含子内容
+                total_count = len(sub_files)
+                ad_fids_to_del = []
+                for child in sub_files:
+                    c_name = child.get("file_name", "")
+                    c_fid = str(child.get("fid") or "")
+                    if c_fid and is_ad_filename(c_name):
+                        logger.info("夸克网盘检测到广告文件并准备清理: %s (fid=%s)", c_name, c_fid)
+                        ad_fids_to_del.append(c_fid)
+
+                if ad_fids_to_del:
+                    self.del_file(ad_fids_to_del)
+                    logger.info("夸克网盘已清理 %d 个广告文件", len(ad_fids_to_del))
+
+                # 若文件夹中全部都是广告文件，或者清理后无实质有效内容
+                if len(ad_fids_to_del) >= total_count:
+                    logger.warning("夸克网盘目录 %s 内容全为广告，正在删除空目录...", fid)
+                    self.del_file(str(fid))
+                    continue
+
+                valid_fids.append(fid)
+            else:
+                valid_fids.append(fid)
+
+        return valid_fids
 
     def get_share_link(self, share_id: str) -> str:
         data = self._request(
@@ -387,9 +443,14 @@ class QuarkPanClient(BasePanClient):
 
     def del_ad_file(self, file_list: List[Dict[str, Any]]) -> None:
         logger.info("夸克网盘删除可能存在广告的文件")
+        ad_fids = []
         for file in file_list:
             if ad_check(file.get("file_name", "")):
-                self.del_file(file.get("fid"))
+                fid = file.get("fid")
+                if fid:
+                    ad_fids.append(str(fid))
+        if ad_fids:
+            self.del_file(ad_fids)
 
     def add_ad(self, dir_id: str) -> None:
         logger.info("夸克网盘添加个人自定义广告")

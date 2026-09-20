@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 from src.clients.base_client import BasePanClient
+from src.services.ad_filter_service import is_ad_filename
 from src.utils.netdisk_utils import extract_password_from_url
 
 logger = logging.getLogger(__name__)
@@ -99,6 +100,12 @@ class BaiduPanClient(BasePanClient):
 
             new_fs_id = trans_res if isinstance(trans_res, int) and trans_res > 1 else None
             full_path = f"{to_dir.rstrip('/')}/{file_name}" if to_dir != "/" else f"/{file_name}"
+
+            # 广告过滤与净化
+            if not self._clean_ad_files(full_path):
+                logger.warning("百度网盘转存内容全为广告，已删除并终止分享: %s", full_path)
+                return None, None, None
+
             if not new_fs_id:
                 new_fs_id = self._get_file_id_by_path(full_path)
             if not new_fs_id:
@@ -114,6 +121,59 @@ class BaiduPanClient(BasePanClient):
         except Exception as exc:
             logger.exception("百度网盘 store 异常: %s", exc)
             return None, None, None
+
+    def _clean_ad_files(self, target_path: str) -> bool:
+        """
+        扫描百度网盘转存目标目录/文件，清理广告引流文件。
+        若转存内容全为广告，则删除并返回 False；否则返回 True。
+        """
+        clean_path = "/" + target_path.strip("/")
+        normalized_path = clean_path[:-1] if clean_path.endswith("/") else clean_path
+        filename = normalized_path.rsplit("/", 1)[-1]
+
+        # 1. 检查根文件/文件夹本身是否为广告
+        if is_ad_filename(filename):
+            logger.info("百度网盘转存项本身命中广告关键词，正在清理: %s", clean_path)
+            self.del_file([clean_path])
+            return False
+
+        # 2. 尝试作为目录列取子文件
+        try:
+            params = {
+                "dir": clean_path,
+                "bdstoken": self.bdstoken,
+                "clienttype": 0,
+                "web": 1,
+                "page": 1,
+                "num": 1000,
+                "order": "time",
+                "desc": 1,
+            }
+            data = self._request("GET", "https://pan.baidu.com/api/list", params=params)
+            if data.get("errno") == 0:
+                sub_list = data.get("list") or []
+                if sub_list:
+                    total_count = len(sub_list)
+                    ad_paths_to_del = []
+                    for item in sub_list:
+                        s_name = item.get("server_filename", "")
+                        s_path = item.get("path", "")
+                        if s_path and is_ad_filename(s_name):
+                            logger.info("百度网盘检测到广告文件并准备清理: %s", s_path)
+                            ad_paths_to_del.append(s_path)
+
+                    if ad_paths_to_del:
+                        self.del_file(ad_paths_to_del)
+                        logger.info("百度网盘已清理 %d 个广告文件", len(ad_paths_to_del))
+
+                    if len(ad_paths_to_del) >= total_count:
+                        logger.warning("百度网盘目录 %s 内容全为广告，正在删除空目录...", clean_path)
+                        self.del_file([clean_path])
+                        return False
+        except Exception as exc:
+            logger.debug("百度网盘非目录或列目录异常 (跳过子目录广告清理): %s", exc)
+
+        return True
 
     def del_file(self, file_path_list: List[str]) -> bool:
         logger.info("正在删除百度网盘文件: %s", file_path_list)

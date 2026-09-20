@@ -1,5 +1,6 @@
 import json
 import logging
+import threading
 import time
 from typing import Any, Dict, List
 
@@ -10,12 +11,25 @@ from src.clients import (
     UcPanClient,
     XunleiPanClient,
 )
-from src.db.resources import insert_resource, delete_by_share_link, update_share_link
+from src.db.resources import insert_resource, delete_by_share_link, update_share_link, get_resource_by_share_link
 from src.db.credentials import get_cookie_by_cloud_name
 from src.services.link_checker import check_link, STATE_BAD, STATE_LOCKED
 from src.utils.netdisk_utils import match_netdisk_link, extract_password_from_url
 
 logger = logging.getLogger(__name__)
+
+# 并发转存防击穿互斥锁表与临时转存结果缓存 (URL -> Result Record)
+_TRANSFER_LOCKS: Dict[str, threading.Lock] = {}
+_TRANSFER_LOCKS_MUTEX = threading.Lock()
+_TRANSFERRED_URL_CACHE: Dict[str, Dict[str, Any]] = {}
+
+
+def _get_transfer_lock(url: str) -> threading.Lock:
+    clean_url = str(url or "").strip()
+    with _TRANSFER_LOCKS_MUTEX:
+        if clean_url not in _TRANSFER_LOCKS:
+            _TRANSFER_LOCKS[clean_url] = threading.Lock()
+        return _TRANSFER_LOCKS[clean_url]
 
 # --- 工具函数：凭证校验 ---
 
@@ -158,10 +172,13 @@ def _resolve_target_dir(client_class, client_credential, target_dir_name: str) -
 
 def create_share(share_data):
     """
-    创建/转存分享链接
+    创建/转存分享链接（支持并发互斥锁防击穿）
     """
     try:
-        share_url = share_data.get('share_url')
+        share_url = (share_data.get('share_url') or '').strip()
+        if not share_url:
+            return share_data if 'id' not in share_data else None
+
         title = share_data.get('title', f"资源_{int(time.time())}")
         save_to_netdisk = share_data.get('save_to_netdisk', {})
         has_id = 'id' in share_data
@@ -189,57 +206,75 @@ def create_share(share_data):
         if not client_credential:
             return share_data if not has_id else None
 
-        # 3.1 前置免登录测活检查 (避免死链无效提交给网盘造成风控或报错)
-        check_res = check_link(share_url, password=share_data.get("password"), disk_type=netdisk_type)
-        if check_res.get("state") == STATE_BAD:
-            logger.warning(
-                f"[{netdisk_type}] 转存前检测到链接已失效/违规，终止转存: {check_res.get('summary')} ({share_url})"
-            )
-            return None
-        if check_res.get("state") == STATE_LOCKED:
-            pwd = share_data.get("password") or extract_password_from_url(share_url)
-            if not pwd:
+        # 使用 URL 互斥锁防止高并发重复转存同一资源 (防击穿)
+        lock = _get_transfer_lock(share_url)
+        with lock:
+            # Double-check: 若无 id 的搜索发现场景，先检查内存缓存或数据库是否已被其他并发线程转存成功
+            if not has_id:
+                if share_url in _TRANSFERRED_URL_CACHE:
+                    logger.info(f"并发防击穿: 资源已由其他线程转存完成 (命中内存缓存: {share_url})")
+                    return _TRANSFERRED_URL_CACHE[share_url]
+
+                existing = get_resource_by_share_link(share_url)
+                if existing and existing.get("file_id") and existing.get("share_link"):
+                    logger.info(f"并发防击穿: 资源已由其他线程转存入库 ({share_url})")
+                    _TRANSFERRED_URL_CACHE[share_url] = existing
+                    return existing
+
+            # 3.1 前置免登录测活检查 (避免死链无效提交给网盘造成风控或报错)
+            check_res = check_link(share_url, password=share_data.get("password"), disk_type=netdisk_type)
+            if check_res.get("state") == STATE_BAD:
                 logger.warning(
-                    f"[{netdisk_type}] 转存前检测到链接需要提取码但未提供密码，终止转存 ({share_url})"
+                    f"[{netdisk_type}] 转存前检测到链接已失效/违规，终止转存: {check_res.get('summary')} ({share_url})"
                 )
                 return None
+            if check_res.get("state") == STATE_LOCKED:
+                pwd = share_data.get("password") or extract_password_from_url(share_url)
+                if not pwd:
+                    logger.warning(
+                        f"[{netdisk_type}] 转存前检测到链接需要提取码但未提供密码，终止转存 ({share_url})"
+                    )
+                    return None
 
-        # 4. 执行转存（读取系统配置的目标转存目录）
-        from src.services.system_config_service import get_transfer_target_dir
-        target_dir_name = get_transfer_target_dir()
-        target_pdir = _resolve_target_dir(conf["class"], client_credential, target_dir_name)
+            # 4. 执行转存（读取系统配置的目标转存目录）
+            from src.services.system_config_service import get_transfer_target_dir
+            target_dir_name = get_transfer_target_dir()
+            target_pdir = _resolve_target_dir(conf["class"], client_credential, target_dir_name)
 
-        new_file_id, file_name, new_share_url = _handle_netdisk_operation(
-            client_class=conf["class"],
-            client_credential=client_credential,
-            share_url=share_url,
-            to_pdir_path=target_pdir,
-            operation='store'
-        )
+            new_file_id, file_name, new_share_url = _handle_netdisk_operation(
+                client_class=conf["class"],
+                client_credential=client_credential,
+                share_url=share_url,
+                to_pdir_path=target_pdir,
+                operation='store'
+            )
 
-        if not new_share_url:
-            return share_data if not has_id else None
+            if not new_share_url:
+                return share_data if not has_id else None
 
-        # 5. 数据库同步
-        if has_id:
-            # 场景 A: 已有记录更新链接
-            update_share_link(share_id, new_share_url, new_file_id)
-            return None
-        else:
-            # 场景 B: 搜索发现新资源，入库并返回新对象
-            if any(key in share_data for key in ['name', 'cloud_name']):
-                new_record = {
-                    'file_id': new_file_id,
-                    'name': share_data.get('name', file_name or title),
-                    'share_link': new_share_url,
-                    'cloud_name': netdisk_type,
-                    'type': share_data.get('resource_type'),
-                    'remarks': share_data.get('remark')
-                }
-                new_record['file_id'] = _normalize_file_id(new_record['file_id'])
-                insert_resource(new_record)
-                return new_record
-            return {"share_url": new_share_url, "file_id": _normalize_file_id(new_file_id)}
+            # 5. 数据库同步与缓存更新
+            if has_id:
+                # 场景 A: 已有记录更新链接
+                update_share_link(share_id, new_share_url, new_file_id)
+                return None
+            else:
+                # 场景 B: 搜索发现新资源，入库并返回新对象
+                if any(key in share_data for key in ['name', 'cloud_name']):
+                    new_record = {
+                        'file_id': new_file_id,
+                        'name': share_data.get('name', file_name or title),
+                        'share_link': new_share_url,
+                        'cloud_name': netdisk_type,
+                        'type': share_data.get('resource_type'),
+                        'remarks': share_data.get('remark')
+                    }
+                    new_record['file_id'] = _normalize_file_id(new_record['file_id'])
+                    insert_resource(new_record)
+                    _TRANSFERRED_URL_CACHE[share_url] = new_record
+                    return new_record
+                result_payload = {"share_url": new_share_url, "file_id": _normalize_file_id(new_file_id)}
+                _TRANSFERRED_URL_CACHE[share_url] = result_payload
+                return result_payload
 
     except Exception as e:
         logger.exception(f"create_share 运行异常: {e}")

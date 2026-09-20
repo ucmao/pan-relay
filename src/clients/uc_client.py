@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import requests
 
 from src.clients.base_client import BasePanClient
+from src.services.ad_filter_service import is_ad_filename
 
 logger = logging.getLogger(__name__)
 
@@ -126,11 +127,17 @@ class UcPanClient(BasePanClient):
             logger.error("UC 网盘未返回转存后的 fid")
             return None, None, None
 
+        # 广告过滤与净化
+        cleaned_top_fids = self._clean_ad_files_and_folders(save_as_top_fids)
+        if not cleaned_top_fids:
+            logger.warning("UC 网盘转存内容全为广告，已删除并终止分享")
+            return None, None, None
+
         share_task_result = self._request(
             "POST",
             "https://pc-api.uc.cn/1/clouddrive/share",
             {
-                "fid_list": save_as_top_fids,
+                "fid_list": cleaned_top_fids,
                 "expired_type": 1,
                 "title": title,
                 "url_type": 1,
@@ -168,7 +175,64 @@ class UcPanClient(BasePanClient):
             return None, None, None
 
         final_url = f"{share_url_new}?pwd={pass_code}" if pass_code else share_url_new
-        return json.dumps(save_as_top_fids, ensure_ascii=False), title, final_url
+        return json.dumps(cleaned_top_fids, ensure_ascii=False), title, final_url
+
+    def get_dir_file(self, dir_id: str, page: int = 1, size: int = 100) -> List[Dict[str, Any]]:
+        """遍历 UC 网盘目录文件"""
+        list_data = self._request(
+            "GET",
+            "https://pc-api.uc.cn/1/clouddrive/file/sort",
+            params={
+                "pr": "UCBrowser",
+                "fr": "pc",
+                "pdir_fid": dir_id,
+                "_page": page,
+                "_size": size,
+                "_fetch_total": 1,
+                "_sort": "file_type:asc,updated_at:desc",
+            },
+        )
+        return ((list_data or {}).get("data") or {}).get("list") or []
+
+    def _clean_ad_files_and_folders(self, save_as_top_fids: List[str]) -> List[str]:
+        """
+        扫描 UC 网盘转存后的顶级文件/文件夹，智能检测并清理广告引流文件。
+        若文件夹内全部为广告文件，则彻底删除整个文件夹并从顶级列表中剔除。
+        """
+        valid_fids = []
+        for fid in save_as_top_fids:
+            if not fid:
+                continue
+            try:
+                sub_files = self.get_dir_file(str(fid))
+            except Exception as e:
+                logger.warning("UC 网盘读取目录 %s 内容失败: %s", fid, e)
+                sub_files = []
+
+            if sub_files:
+                total_count = len(sub_files)
+                ad_fids_to_del = []
+                for child in sub_files:
+                    c_name = child.get("file_name", "")
+                    c_fid = str(child.get("fid") or "")
+                    if c_fid and is_ad_filename(c_name):
+                        logger.info("UC 网盘检测到广告文件并准备清理: %s (fid=%s)", c_name, c_fid)
+                        ad_fids_to_del.append(c_fid)
+
+                if ad_fids_to_del:
+                    self.del_file(ad_fids_to_del)
+                    logger.info("UC 网盘已清理 %d 个广告文件", len(ad_fids_to_del))
+
+                if len(ad_fids_to_del) >= total_count:
+                    logger.warning("UC 网盘目录 %s 内容全为广告，正在删除空目录...", fid)
+                    self.del_file([str(fid)])
+                    continue
+
+                valid_fids.append(fid)
+            else:
+                valid_fids.append(fid)
+
+        return valid_fids
 
     def get_or_create_dir(self, dir_name: str, parent_dir_id: str = "0") -> str:
         """获取指定名称的文件夹 fid，若不存在则自动新建"""
