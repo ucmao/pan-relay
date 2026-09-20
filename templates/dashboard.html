@@ -372,6 +372,46 @@
                 </div>
             </div>
 
+            <!-- 今日运行与审计日志卡片 -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <i class="fas fa-clock-rotate-left text-xs"></i>
+                        </div>
+                        <h2 class="text-base font-bold text-slate-900">今日运行审计</h2>
+                    </div>
+                    <a href="{{ url_for('logs.logs_page') }}" class="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 group">
+                        <span>查看日志</span>
+                        <i class="fas fa-chevron-right text-[9px] group-hover:translate-x-0.5 transition-transform"></i>
+                    </a>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-2.5">
+                    <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
+                        <div class="text-[11px] text-slate-400 font-medium">今日总请求</div>
+                        <div class="text-lg font-extrabold text-slate-900 mt-1" id="dash-log-today-total">{{ summary.logs.today_total }}</div>
+                    </div>
+                    <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
+                        <div class="text-[11px] text-slate-400 font-medium">今日成功率</div>
+                        <div class="text-lg font-extrabold text-emerald-600 mt-1" id="dash-log-today-rate">{{ summary.logs.today_success_rate }}%</div>
+                    </div>
+                    <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
+                        <div class="text-[11px] text-slate-400 font-medium">聚合搜索量</div>
+                        <div class="text-lg font-extrabold text-indigo-600 mt-1" id="dash-log-today-search">{{ summary.logs.today_search }}</div>
+                    </div>
+                    <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
+                        <div class="text-[11px] text-slate-400 font-medium">网盘转存量</div>
+                        <div class="text-lg font-extrabold text-purple-600 mt-1" id="dash-log-today-transfer">{{ summary.logs.today_transfer }}</div>
+                    </div>
+                </div>
+
+                <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>平均响应耗时: <strong class="text-slate-700 font-semibold" id="dash-log-avg-duration">{{ summary.logs.today_avg_duration_ms }} ms</strong></span>
+                    <span>历史总计: <strong class="text-slate-700 font-semibold" id="dash-log-total-count">{{ summary.logs.total_logs_count }} 条</strong></span>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -625,6 +665,55 @@
         .then(res => {
             if (res.success) showToast(res.message, 'success');
         });
+    }
+
+    function refreshDashboardStats() {
+        const icon = document.getElementById('refresh-icon');
+        if (icon) icon.classList.add('fa-spin');
+
+        fetch('/admin/api/dashboard/stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.data) {
+                    const s = data.data;
+                    if (s.resources) {
+                        const totalEl = document.getElementById('stat-resources-total');
+                        if (totalEl) totalEl.textContent = s.resources.total_count || 0;
+                        const repEl = document.getElementById('stat-resources-replaced');
+                        if (repEl) repEl.textContent = s.resources.replaced_count || 0;
+                    }
+                    if (s.sources) {
+                        const hrEl = document.getElementById('stat-health-rate');
+                        if (hrEl) hrEl.textContent = `${s.sources.overall_health_rate || 100}%`;
+                    }
+                    if (s.credentials && s.credentials.summary) {
+                        const credEl = document.getElementById('stat-credentials-ratio');
+                        if (credEl) credEl.innerHTML = `${s.credentials.summary.enabled_count} <span class="text-lg font-normal text-slate-400">/ ${s.credentials.summary.total_count}</span>`;
+                    }
+                    if (s.logs) {
+                        const l = s.logs;
+                        const totalReqEl = document.getElementById('dash-log-today-total');
+                        if (totalReqEl) totalReqEl.textContent = l.today_total || 0;
+                        const rateEl = document.getElementById('dash-log-today-rate');
+                        if (rateEl) rateEl.textContent = `${l.today_success_rate || 100}%`;
+                        const searchEl = document.getElementById('dash-log-today-search');
+                        if (searchEl) searchEl.textContent = l.today_search || 0;
+                        const transEl = document.getElementById('dash-log-today-transfer');
+                        if (transEl) transEl.textContent = l.today_transfer || 0;
+                        const durEl = document.getElementById('dash-log-avg-duration');
+                        if (durEl) durEl.textContent = `${l.today_avg_duration_ms || 0} ms`;
+                        const countEl = document.getElementById('dash-log-total-count');
+                        if (countEl) countEl.textContent = `${l.total_logs_count || 0} 条`;
+                    }
+                    if (typeof showToast === 'function') showToast('仪表盘指标已刷新', 'success');
+                }
+            })
+            .catch(err => {
+                console.error('刷新仪表盘指标失败:', err);
+            })
+            .finally(() => {
+                if (icon) icon.classList.remove('fa-spin');
+            });
     }
 </script>
 {% endblock %}

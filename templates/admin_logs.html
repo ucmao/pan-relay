@@ -1,0 +1,834 @@
+{% extends "admin_layout.html" %}
+{% set active_page = 'logs' %}
+
+{% block head %}
+    {{ super() }}
+    <title>Pan-Relay - 系统运行与审计日志</title>
+    <style>
+        .log-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            line-height: 1rem;
+        }
+        .log-badge-search { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+        .log-badge-transfer { background-color: #faf5ff; color: #7e22ce; border: 1px solid #f3e8ff; }
+        .log-badge-api { background-color: #ecfdf5; color: #047857; border: 1px solid #d1fae5; }
+        .log-badge-system { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+        .log-status-200 { background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .log-status-error { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+        .log-duration-fast { color: #059669; font-weight: 600; }
+        .log-duration-medium { color: #d97706; font-weight: 600; }
+        .log-duration-slow { color: #dc2626; font-weight: 600; }
+
+        /* Floating Batch Toolbar */
+        .batch-floating-toolbar {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(1rem);
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 0.5rem 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 40;
+            font-size: 0.75rem;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .batch-floating-toolbar.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header (ucmao admin_modern style) -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                <i class="fas fa-clock-rotate-left text-blue-600"></i> 系统运行与审计日志
+            </h1>
+            <p class="text-xs text-slate-500 mt-0.5">监控全网聚合搜索、网盘转存、开放 API 调用与后台定时任务的实时运行状态</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button type="button" onclick="exportLogs()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5" title="导出当前筛选日志为 CSV">
+                <i class="fas fa-file-export text-slate-400"></i>
+                <span>导出 CSV</span>
+            </button>
+            <div class="relative inline-block text-left" id="cleanupDropdownWrap">
+                <button type="button" onclick="toggleCleanupMenu()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5">
+                    <i class="fas fa-broom text-slate-400"></i>
+                    <span>日志维护</span>
+                    <i class="fas fa-chevron-down text-[10px] text-slate-400 ml-0.5"></i>
+                </button>
+                <div id="cleanupMenu" class="hidden absolute right-0 mt-1.5 w-44 bg-white rounded-xl shadow-lg border border-slate-200/80 py-1 z-30 text-xs">
+                    <button type="button" onclick="cleanupLogs(7)" class="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                        <i class="fas fa-calendar-minus text-amber-500 w-3.5"></i> 清理 7 天前日志
+                    </button>
+                    <button type="button" onclick="cleanupLogs(30)" class="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                        <i class="fas fa-calendar-xmark text-amber-500 w-3.5"></i> 清理 30 天前日志
+                    </button>
+                    <div class="border-t border-slate-100 my-1"></div>
+                    <button type="button" onclick="confirmClearAllLogs()" class="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2">
+                        <i class="fas fa-trash-can text-rose-500 w-3.5"></i> 清空全部日志
+                    </button>
+                </div>
+            </div>
+            <button type="button" onclick="refreshLogsData()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition shadow-2xs flex items-center gap-1.5" title="刷新最新数据">
+                <i class="fas fa-rotate text-xs"></i>
+                <span>刷新</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 顶部 KPI 卡片 -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日总请求量</span>
+                <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
+                    <i class="fas fa-bolt"></i>
+                </span>
+            </div>
+            <div class="text-xl font-black text-slate-900 mt-2" id="kpiTodayTotal">0</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">历史总计: <span id="kpiTotalLogs">0</span> 条</div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日聚合搜索</span>
+                <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs">
+                    <i class="fas fa-search"></i>
+                </span>
+            </div>
+            <div class="text-xl font-black text-slate-900 mt-2" id="kpiTodaySearch">0</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">SSE 流式 + 开放检索</div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日网盘转存</span>
+                <span class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xs">
+                    <i class="fas fa-arrow-right-arrow-left"></i>
+                </span>
+            </div>
+            <div class="text-xl font-black text-slate-900 mt-2" id="kpiTodayTransfer">0</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">夸克 / 阿里 / 百度 / UC</div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日成功率</span>
+                <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                    <i class="fas fa-circle-check"></i>
+                </span>
+            </div>
+            <div class="text-xl font-black text-emerald-600 mt-2" id="kpiTodaySuccessRate">100%</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">今日异常: <span id="kpiTodayErrors" class="text-rose-500 font-semibold">0</span> 次</div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">平均响应耗时</span>
+                <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs">
+                    <i class="fas fa-stopwatch"></i>
+                </span>
+            </div>
+            <div class="text-xl font-black text-slate-900 mt-2"><span id="kpiTodayAvgDuration">0</span> <span class="text-xs font-normal text-slate-500">ms</span></div>
+            <div class="text-[11px] text-slate-400 mt-0.5">全链路平均耗时</div>
+        </div>
+    </div>
+
+    <!-- 数据面板与筛选栏 -->
+    <section class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 space-y-4">
+        <!-- 筛选与搜索工具栏 -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+                <!-- 搜索框 -->
+                <div class="relative w-full sm:w-64">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="logsSearchInput" placeholder="搜索关键词 / URL / 错误 / IP..." class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-slate-50/50 hover:bg-white focus:bg-white" onkeydown="if(event.key==='Enter'){handleFilterChange();}">
+                </div>
+
+                <!-- 类型筛选 -->
+                <select id="logsTypeFilter" onchange="handleFilterChange()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
+                    <option value="">全部类型</option>
+                    <option value="search">聚合搜索 (search)</option>
+                    <option value="transfer">网盘转存 (transfer)</option>
+                    <option value="api">开放 API (api)</option>
+                    <option value="system">系统自检 (system)</option>
+                </select>
+
+                <!-- 状态筛选 -->
+                <select id="logsStatusFilter" onchange="handleFilterChange()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
+                    <option value="">全部状态</option>
+                    <option value="200">成功 (&lt;400)</option>
+                    <option value="error">失败 (&gt;=400)</option>
+                </select>
+
+                <!-- 日期范围 -->
+                <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1">
+                    <input type="date" id="logsStartDate" title="起始日期" class="bg-transparent text-xs text-slate-600 focus:outline-none w-28" onchange="handleFilterChange()">
+                    <span class="text-slate-300 text-xs select-none">-</span>
+                    <input type="date" id="logsEndDate" title="结束日期" class="bg-transparent text-xs text-slate-600 focus:outline-none w-28" onchange="handleFilterChange()">
+                </div>
+
+                <!-- 重置按钮 -->
+                <button type="button" onclick="resetFilters()" class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-2xs" title="重置筛选条件">
+                    重置
+                </button>
+            </div>
+
+            <div class="text-xs text-slate-400 whitespace-nowrap">
+                共找到 <strong id="logsResultTotal" class="text-slate-800 font-bold">0</strong> 条日志
+            </div>
+        </div>
+
+        <!-- 日志表格 -->
+        <div class="overflow-x-auto rounded-xl border border-slate-200/80 min-h-[320px] relative">
+            <table class="w-full min-w-[960px] text-left text-xs border-collapse" id="logsTable">
+                <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider select-none">
+                    <tr>
+                        <th class="w-10 px-3 py-3 text-center">
+                            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer" title="全选当前页">
+                        </th>
+                        <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-36" onclick="handleSort('created_at')">
+                            时间 <span id="sortIconCreatedAt" class="text-blue-600 font-bold ml-0.5">↓</span>
+                        </th>
+                        <th class="px-3 py-3 whitespace-nowrap w-24">类型</th>
+                        <th class="px-3 py-3 whitespace-nowrap w-32">动作/接口</th>
+                        <th class="px-3 py-3 min-w-[200px]">搜索词 / 目标链接</th>
+                        <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-20 text-center" onclick="handleSort('status_code')">
+                            状态 <span id="sortIconStatusCode" class="text-slate-300 ml-0.5">↕</span>
+                        </th>
+                        <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-24 text-right" onclick="handleSort('duration_ms')">
+                            耗时 <span id="sortIconDurationMs" class="text-slate-300 ml-0.5">↕</span>
+                        </th>
+                        <th class="px-3 py-3 whitespace-nowrap w-20 text-center">命中数</th>
+                        <th class="px-3 py-3 whitespace-nowrap w-28">客户端 IP</th>
+                        <th class="px-3 py-3 whitespace-nowrap w-20 text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="logsTableBody" class="divide-y divide-slate-100 text-slate-700 font-normal">
+                    <!-- Dynamic rendering by JS -->
+                    <tr>
+                        <td colspan="10" class="text-center py-16 text-slate-400">
+                            <i class="fas fa-spinner fa-spin text-lg text-blue-600 mb-2"></i>
+                            <p>正在加载系统运行日志...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 底部工具与分页栏 -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3">
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span>每页显示</span>
+                <select id="logsPageSizeSelector" onchange="handlePageSizeChange(this.value)" class="px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-500">
+                    <option value="15">15 条</option>
+                    <option value="30">30 条</option>
+                    <option value="50">50 条</option>
+                    <option value="100">100 条</option>
+                </select>
+                <span class="text-slate-400">第 <span id="currentPageNum">1</span> / <span id="totalPageNum">1</span> 页</span>
+            </div>
+
+            <!-- 分页按钮 -->
+            <div class="flex items-center space-x-1" id="paginationControls">
+                <button type="button" id="prevPageBtn" onclick="changePage(-1)" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition">
+                    <i class="fas fa-chevron-left text-[10px] mr-1"></i> 上一页
+                </button>
+                <div id="pageNumbersContainer" class="flex items-center space-x-1"></div>
+                <button type="button" id="nextPageBtn" onclick="changePage(1)" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition">
+                    下一页 <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- 底部悬浮批量工具栏 -->
+<div id="logsBatchToolbar" class="batch-floating-toolbar">
+    <div class="flex items-center gap-1.5 text-slate-700">
+        <i class="fas fa-circle-check text-emerald-500"></i>
+        <span>已选 <strong id="selectedLogCount" class="text-slate-900 font-bold">0</strong> 项</span>
+    </div>
+    <div class="w-px h-4 bg-slate-200"></div>
+    <button type="button" onclick="exportSelectedLogs()" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-2xs transition flex items-center gap-1">
+        <i class="fas fa-file-export text-[10px]"></i> 导出所选
+    </button>
+    <button type="button" onclick="deleteSelectedLogs()" class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold shadow-2xs transition flex items-center gap-1">
+        <i class="fas fa-trash-can text-[10px]"></i> 批量删除
+    </button>
+    <div class="w-px h-4 bg-slate-200"></div>
+    <button type="button" onclick="clearSelection()" class="text-slate-400 hover:text-slate-700 font-medium px-1.5 py-0.5" title="取消全选">
+        &times; 取消
+    </button>
+</div>
+
+<!-- 日志详情查看 Modal -->
+<div id="logDetailModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+    <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
+                    <i class="fas fa-file-lines"></i>
+                </span>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">日志详情审计</h3>
+                    <p class="text-[11px] text-slate-400" id="modalLogId">ID: --</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeLogModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-4 overflow-y-auto text-xs flex-1">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="text-[10px] font-semibold text-slate-400 uppercase">日志类型</div>
+                    <div class="font-bold text-slate-800 mt-1" id="modalLogType">--</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="text-[10px] font-semibold text-slate-400 uppercase">响应状态</div>
+                    <div class="font-bold text-slate-800 mt-1" id="modalLogStatus">--</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="text-[10px] font-semibold text-slate-400 uppercase">请求耗时</div>
+                    <div class="font-bold text-slate-800 mt-1" id="modalLogDuration">--</div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="text-[10px] font-semibold text-slate-400 uppercase">命中资源数</div>
+                    <div class="font-bold text-slate-800 mt-1" id="modalLogCount">--</div>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <div class="text-[11px] font-semibold text-slate-500">调用动作 / 接口：</div>
+                <div class="p-2.5 rounded-xl bg-slate-50 font-mono text-slate-700 border border-slate-100 break-all" id="modalLogAction">--</div>
+            </div>
+
+            <div class="space-y-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-semibold text-slate-500">搜索关键词 / 请求内容 / 目标链接：</span>
+                    <button type="button" onclick="copyModalText('modalLogQuery')" class="text-blue-600 hover:text-blue-700 text-[11px]">复制内容</button>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900 text-slate-200 font-mono text-[11px] break-all max-h-40 overflow-y-auto" id="modalLogQuery">--</div>
+            </div>
+
+            <div class="space-y-1" id="modalLogErrorWrap">
+                <div class="text-[11px] font-semibold text-rose-600 flex items-center gap-1">
+                    <i class="fas fa-triangle-exclamation"></i> 异常与报错详情：
+                </div>
+                <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 font-mono text-[11px] break-all max-h-48 overflow-y-auto whitespace-pre-wrap" id="modalLogError">--</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                <div>客户端 IP: <span class="font-mono text-slate-700" id="modalLogIP">--</span></div>
+                <div>记录时间: <span class="text-slate-700" id="modalLogTime">--</span></div>
+            </div>
+        </div>
+        <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+            <button type="button" onclick="closeLogModal()" class="px-4 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition">关闭</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    let currentLogsState = {
+        page: 1,
+        pageSize: 15,
+        total: 0,
+        totalPages: 1,
+        sortBy: 'created_at',
+        order: 'desc',
+        q: '',
+        logType: '',
+        status: '',
+        startDate: '',
+        endDate: '',
+        selectedIds: new Set(),
+        logsData: []
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchLogsStats();
+        fetchLogsList();
+
+        // 点击空白关闭菜单
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('cleanupDropdownWrap');
+            if (dropdown && !dropdown.contains(e.target)) {
+                document.getElementById('cleanupMenu').classList.add('hidden');
+            }
+        });
+    });
+
+    function toggleCleanupMenu() {
+        const menu = document.getElementById('cleanupMenu');
+        menu.classList.toggle('hidden');
+    }
+
+    function refreshLogsData() {
+        fetchLogsStats();
+        fetchLogsList();
+    }
+
+    async function fetchLogsStats() {
+        try {
+            const res = await fetch('/admin/api/logs/stats');
+            const data = await res.json();
+            if (data.success && data.data) {
+                const s = data.data;
+                document.getElementById('kpiTodayTotal').textContent = (s.today_total || 0).toLocaleString();
+                document.getElementById('kpiTotalLogs').textContent = (s.total_logs_count || 0).toLocaleString();
+                document.getElementById('kpiTodaySearch').textContent = (s.today_search || 0).toLocaleString();
+                document.getElementById('kpiTodayTransfer').textContent = (s.today_transfer || 0).toLocaleString();
+                document.getElementById('kpiTodaySuccessRate').textContent = `${s.today_success_rate || 100}%`;
+                document.getElementById('kpiTodayErrors').textContent = (s.today_errors || 0).toLocaleString();
+                document.getElementById('kpiTodayAvgDuration').textContent = s.today_avg_duration_ms || 0;
+            }
+        } catch (err) {
+            console.error('获取日志统计指标异常:', err);
+        }
+    }
+
+    async function fetchLogsList() {
+        const tbody = document.getElementById('logsTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center py-16 text-slate-400">
+                    <i class="fas fa-spinner fa-spin text-lg text-blue-600 mb-2"></i>
+                    <p>正在拉取日志列表...</p>
+                </td>
+            </tr>
+        `;
+
+        const params = new URLSearchParams({
+            page: currentLogsState.page,
+            page_size: currentLogsState.pageSize,
+            sort_by: currentLogsState.sortBy,
+            order: currentLogsState.order,
+            q: currentLogsState.q,
+            log_type: currentLogsState.logType,
+            status: currentLogsState.status,
+            start_date: currentLogsState.startDate,
+            end_date: currentLogsState.endDate,
+        });
+
+        try {
+            const res = await fetch(`/admin/api/logs?${params.toString()}`);
+            const data = await res.json();
+
+            if (!data.success || !data.data) {
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-12 text-rose-500">加载失败: ${data.message || '未知错误'}</td></tr>`;
+                return;
+            }
+
+            const resData = data.data;
+            currentLogsState.total = resData.total || 0;
+            currentLogsState.totalPages = resData.total_pages || 1;
+            currentLogsState.logsData = resData.logs || [];
+
+            document.getElementById('logsResultTotal').textContent = currentLogsState.total.toLocaleString();
+            document.getElementById('currentPageNum').textContent = currentLogsState.page;
+            document.getElementById('totalPageNum').textContent = currentLogsState.totalPages;
+
+            renderLogsTable(currentLogsState.logsData);
+            renderPaginationControls();
+            updateBatchToolbar();
+        } catch (err) {
+            console.error('拉取日志列表失败:', err);
+            tbody.innerHTML = `<tr><td colspan="10" class="text-center py-12 text-rose-500">网络连接异常，无法加载日志</td></tr>`;
+        }
+    }
+
+    function renderLogsTable(logs) {
+        const tbody = document.getElementById('logsTableBody');
+        if (!logs || logs.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="text-center py-16 text-slate-400">
+                        <i class="fas fa-inbox text-3xl text-slate-300 mb-2"></i>
+                        <p>暂无符合条件的系统日志记录</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const typeBadges = {
+            search: '<span class="log-badge log-badge-search"><i class="fas fa-search mr-1 text-[10px]"></i> 搜索</span>',
+            transfer: '<span class="log-badge log-badge-transfer"><i class="fas fa-arrow-right-arrow-left mr-1 text-[10px]"></i> 转存</span>',
+            api: '<span class="log-badge log-badge-api"><i class="fas fa-plug mr-1 text-[10px]"></i> API</span>',
+            system: '<span class="log-badge log-badge-system"><i class="fas fa-gear mr-1 text-[10px]"></i> 系统</span>',
+        };
+
+        const rowsHtml = logs.map((log) => {
+            const isChecked = currentLogsState.selectedIds.has(log.id);
+            const typeBadge = typeBadges[log.log_type] || `<span class="log-badge log-badge-system">${escapeHtml(log.log_type)}</span>`;
+            const isSuccess = log.status_code >= 200 && log.status_code < 400;
+            const statusBadge = isSuccess
+                ? `<span class="log-badge log-status-200">${log.status_code}</span>`
+                : `<span class="log-badge log-status-error font-bold">${log.status_code}</span>`;
+
+            let durationClass = 'log-duration-fast';
+            if (log.duration_ms > 2000) durationClass = 'log-duration-slow';
+            else if (log.duration_ms > 500) durationClass = 'log-duration-medium';
+
+            const queryDisplay = escapeHtml(log.query_text || '-');
+            const actionDisplay = escapeHtml(log.action || '-');
+            const hasError = Boolean(log.error_message);
+
+            return `
+                <tr class="hover:bg-slate-50/80 transition-colors ${isChecked ? 'bg-blue-50/40' : ''}">
+                    <td class="px-3 py-3 text-center">
+                        <input type="checkbox" value="${log.id}" onchange="toggleSelectRow(${log.id}, this.checked)" class="row-checkbox rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer" ${isChecked ? 'checked' : ''}>
+                    </td>
+                    <td class="px-3 py-3 whitespace-nowrap text-slate-500 font-mono text-[11px]">${escapeHtml(log.created_at || '')}</td>
+                    <td class="px-3 py-3 whitespace-nowrap">${typeBadge}</td>
+                    <td class="px-3 py-3 whitespace-nowrap">
+                        <code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-mono border border-slate-200/60">${actionDisplay}</code>
+                    </td>
+                    <td class="px-3 py-3 max-w-xs truncate text-slate-800" title="${queryDisplay}">
+                        ${hasError ? `<i class="fas fa-circle-exclamation text-rose-500 mr-1" title="包含错误"></i>` : ''}
+                        <span>${queryDisplay}</span>
+                    </td>
+                    <td class="px-3 py-3 whitespace-nowrap text-center">${statusBadge}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-right font-mono ${durationClass}">${log.duration_ms} ms</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-center font-mono text-slate-600">${log.result_count !== null ? log.result_count : '-'}</td>
+                    <td class="px-3 py-3 whitespace-nowrap font-mono text-[11px] text-slate-500">${escapeHtml(log.client_ip || '-')}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-center">
+                        <button type="button" onclick="viewLogDetail(${log.id})" class="p-1 text-slate-400 hover:text-blue-600 transition" title="查看详情">
+                            <i class="fas fa-eye text-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        tbody.innerHTML = rowsHtml;
+        updateSelectAllState();
+    }
+
+    function handleFilterChange() {
+        currentLogsState.q = document.getElementById('logsSearchInput').value.trim();
+        currentLogsState.logType = document.getElementById('logsTypeFilter').value;
+        currentLogsState.status = document.getElementById('logsStatusFilter').value;
+        currentLogsState.startDate = document.getElementById('logsStartDate').value;
+        currentLogsState.endDate = document.getElementById('logsEndDate').value;
+        currentLogsState.page = 1;
+        fetchLogsList();
+    }
+
+    function resetFilters() {
+        document.getElementById('logsSearchInput').value = '';
+        document.getElementById('logsTypeFilter').value = '';
+        document.getElementById('logsStatusFilter').value = '';
+        document.getElementById('logsStartDate').value = '';
+        document.getElementById('logsEndDate').value = '';
+
+        currentLogsState.q = '';
+        currentLogsState.logType = '';
+        currentLogsState.status = '';
+        currentLogsState.startDate = '';
+        currentLogsState.endDate = '';
+        currentLogsState.page = 1;
+        fetchLogsList();
+    }
+
+    function handleSort(field) {
+        if (currentLogsState.sortBy === field) {
+            currentLogsState.order = currentLogsState.order === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentLogsState.sortBy = field;
+            currentLogsState.order = 'desc';
+        }
+
+        // 更新排序指示图标
+        const iconCreated = document.getElementById('sortIconCreatedAt');
+        const iconStatus = document.getElementById('sortIconStatusCode');
+        const iconDuration = document.getElementById('sortIconDurationMs');
+
+        iconCreated.className = 'text-slate-300 ml-0.5';
+        iconCreated.textContent = '↕';
+        iconStatus.className = 'text-slate-300 ml-0.5';
+        iconStatus.textContent = '↕';
+        iconDuration.className = 'text-slate-300 ml-0.5';
+        iconDuration.textContent = '↕';
+
+        const activeIcon = field === 'created_at' ? iconCreated : (field === 'status_code' ? iconStatus : iconDuration);
+        activeIcon.className = 'text-blue-600 font-bold ml-0.5';
+        activeIcon.textContent = currentLogsState.order === 'asc' ? '↑' : '↓';
+
+        fetchLogsList();
+    }
+
+    function handlePageSizeChange(size) {
+        currentLogsState.pageSize = parseInt(size, 10);
+        currentLogsState.page = 1;
+        fetchLogsList();
+    }
+
+    function changePage(delta) {
+        const targetPage = currentLogsState.page + delta;
+        if (targetPage >= 1 && targetPage <= currentLogsState.totalPages) {
+            currentLogsState.page = targetPage;
+            fetchLogsList();
+        }
+    }
+
+    function goToPage(page) {
+        if (page >= 1 && page <= currentLogsState.totalPages && page !== currentLogsState.page) {
+            currentLogsState.page = page;
+            fetchLogsList();
+        }
+    }
+
+    function renderPaginationControls() {
+        const prevBtn = document.getElementById('prevPageBtn');
+        const nextBtn = document.getElementById('nextPageBtn');
+        const container = document.getElementById('pageNumbersContainer');
+
+        prevBtn.disabled = currentLogsState.page <= 1;
+        nextBtn.disabled = currentLogsState.page >= currentLogsState.totalPages;
+
+        const total = currentLogsState.totalPages;
+        const current = currentLogsState.page;
+        let pages = [];
+
+        if (total <= 7) {
+            for (let i = 1; i <= total; i++) pages.push(i);
+        } else {
+            if (current <= 4) {
+                pages = [1, 2, 3, 4, 5, '...', total];
+            } else if (current >= total - 3) {
+                pages = [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+            } else {
+                pages = [1, '...', current - 1, current, current + 1, '...', total];
+            }
+        }
+
+        container.innerHTML = pages.map((p) => {
+            if (p === '...') {
+                return '<span class="px-2 text-slate-400 select-none text-xs">...</span>';
+            }
+            const isActive = p === current;
+            return `
+                <button type="button" onclick="goToPage(${p})" class="w-7 h-7 rounded-lg text-xs font-semibold flex items-center justify-center transition ${isActive ? 'bg-blue-600 text-white shadow-2xs' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}">
+                    ${p}
+                </button>
+            `;
+        }).join('');
+    }
+
+    // --- 选择与批量管理 ---
+    function toggleSelectRow(id, checked) {
+        if (checked) {
+            currentLogsState.selectedIds.add(id);
+        } else {
+            currentLogsState.selectedIds.delete(id);
+        }
+        updateSelectAllState();
+        updateBatchToolbar();
+    }
+
+    function toggleSelectAll(checkbox) {
+        const checked = checkbox.checked;
+        currentLogsState.logsData.forEach((log) => {
+            if (checked) {
+                currentLogsState.selectedIds.add(log.id);
+            } else {
+                currentLogsState.selectedIds.delete(log.id);
+            }
+        });
+        renderLogsTable(currentLogsState.logsData);
+        updateBatchToolbar();
+    }
+
+    function updateSelectAllState() {
+        const selectAll = document.getElementById('selectAllCheckbox');
+        if (!selectAll || currentLogsState.logsData.length === 0) return;
+        const allPageSelected = currentLogsState.logsData.every(l => currentLogsState.selectedIds.has(l.id));
+        selectAll.checked = allPageSelected;
+    }
+
+    function updateBatchToolbar() {
+        const count = currentLogsState.selectedIds.size;
+        const toolbar = document.getElementById('logsBatchToolbar');
+        document.getElementById('selectedLogCount').textContent = count;
+        if (count > 0) {
+            toolbar.classList.add('active');
+        } else {
+            toolbar.classList.remove('active');
+        }
+    }
+
+    function clearSelection() {
+        currentLogsState.selectedIds.clear();
+        renderLogsTable(currentLogsState.logsData);
+        updateBatchToolbar();
+    }
+
+    // --- 日志详情 Modal ---
+    function viewLogDetail(id) {
+        const log = currentLogsState.logsData.find(l => l.id === id);
+        if (!log) return;
+
+        document.getElementById('modalLogId').textContent = `ID: #${log.id}`;
+        document.getElementById('modalLogType').textContent = log.log_type || '-';
+        document.getElementById('modalLogStatus').textContent = log.status_code || 200;
+        document.getElementById('modalLogDuration').textContent = `${log.duration_ms} ms`;
+        document.getElementById('modalLogCount').textContent = log.result_count !== null ? `${log.result_count} 条` : '-';
+        document.getElementById('modalLogAction').textContent = log.action || '-';
+        document.getElementById('modalLogQuery').textContent = log.query_text || '(无请求入参)';
+        document.getElementById('modalLogIP').textContent = log.client_ip || '-';
+        document.getElementById('modalLogTime').textContent = log.created_at || '-';
+
+        const errorWrap = document.getElementById('modalLogErrorWrap');
+        if (log.error_message) {
+            errorWrap.classList.remove('hidden');
+            document.getElementById('modalLogError').textContent = log.error_message;
+        } else {
+            errorWrap.classList.add('hidden');
+        }
+
+        document.getElementById('logDetailModal').classList.remove('hidden');
+    }
+
+    function closeLogModal() {
+        document.getElementById('logDetailModal').classList.add('hidden');
+    }
+
+    function copyModalText(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert('已成功复制到剪贴板！');
+        }).catch(() => {
+            alert('复制失败，请手动选取复制');
+        });
+    }
+
+    // --- 导出与清理操作 ---
+    function exportLogs() {
+        const params = new URLSearchParams({
+            q: currentLogsState.q,
+            log_type: currentLogsState.logType,
+            status: currentLogsState.status,
+            start_date: currentLogsState.startDate,
+            end_date: currentLogsState.endDate,
+        });
+        window.location.href = `/admin/api/logs/export?${params.toString()}`;
+    }
+
+    function exportSelectedLogs() {
+        const ids = Array.from(currentLogsState.selectedIds);
+        if (ids.length === 0) return;
+        window.location.href = `/admin/api/logs/export?ids=${ids.join(',')}`;
+    }
+
+    async function deleteSelectedLogs() {
+        const ids = Array.from(currentLogsState.selectedIds);
+        if (ids.length === 0) return;
+
+        if (!confirm(`确定要删除选中的 ${ids.length} 条日志吗？此操作无法撤销。`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/admin/api/logs/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`已成功删除 ${data.deleted_count || ids.length} 条日志记录`);
+                currentLogsState.selectedIds.clear();
+                refreshLogsData();
+            } else {
+                alert(`删除失败: ${data.message || '未知错误'}`);
+            }
+        } catch (err) {
+            alert('删除请求发送失败，请稍后重试');
+        }
+    }
+
+    async function cleanupLogs(days) {
+        document.getElementById('cleanupMenu').classList.add('hidden');
+        if (!confirm(`确定要清理 ${days} 天前的历史日志吗？`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/admin/api/logs/cleanup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ days: days }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message || `已成功清理 ${days} 天前的日志`);
+                refreshLogsData();
+            } else {
+                alert(`清理失败: ${data.message || '未知错误'}`);
+            }
+        } catch (err) {
+            alert('请求发送失败');
+        }
+    }
+
+    async function confirmClearAllLogs() {
+        document.getElementById('cleanupMenu').classList.add('hidden');
+        if (!confirm('警告：此操作将彻底清空数据库中的全部日志，确定要继续吗？')) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/admin/api/logs/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message || '全部日志已清空');
+                currentLogsState.selectedIds.clear();
+                refreshLogsData();
+            } else {
+                alert(`清空失败: ${data.message || '未知错误'}`);
+            }
+        } catch (err) {
+            alert('清空请求发送失败');
+        }
+    }
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+</script>
+{% endblock %}

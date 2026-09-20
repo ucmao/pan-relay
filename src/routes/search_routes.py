@@ -4,8 +4,10 @@ from flask import Blueprint, request, jsonify, Response
 
 import json
 import logging
+import time
 
 from src.pan_operator import create_share, del_share
+from src.services.log_service import record_log
 from src.services.search_service import (
     generate_search_stream_events,
     search_public_resources,
@@ -104,51 +106,132 @@ def check_single_link_api():
 
 @search_bp.route("/create_share", methods=["POST"])
 def create_share_route():
+    start_time = time.time()
     try:
         share_data = request.get_json()
         if not share_data:
+            record_log(
+                log_type="transfer",
+                action="transfer.create_share",
+                query_text="",
+                status_code=400,
+                error_message="缺少参数",
+                duration_ms=0,
+            )
             return jsonify({"error": "缺少参数"}), 400
         result = create_share(share_data)
+        duration_ms = int((time.time() - start_time) * 1000)
+        query_text = share_data.get("share_url") or share_data.get("title")
         if result:
             logger.info(f"分享创建成功: {share_data.get('title')}")
+            record_log(
+                log_type="transfer",
+                action="transfer.create_share",
+                query_text=query_text,
+                status_code=200,
+                duration_ms=duration_ms,
+                result_count=1,
+            )
             return jsonify({"message": "分享创建成功", "success": True}), 200
         else:
             logger.warning(f"分享创建失败: {share_data.get('title')}")
+            record_log(
+                log_type="transfer",
+                action="transfer.create_share",
+                query_text=query_text,
+                status_code=500,
+                error_message="网盘转存/分享创建失败",
+                duration_ms=duration_ms,
+            )
             return jsonify({"error": "分享创建失败", "success": False}), 500
     except Exception as e:
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="transfer",
+            action="transfer.create_share",
+            query_text=str(request.get_json(silent=True) or {}),
+            status_code=500,
+            error_message=str(e),
+            duration_ms=duration_ms,
+        )
         logger.error(f"创建分享时发生未知错误: {str(e)}", exc_info=True)
         return jsonify({"error": f"发生未知错误: {str(e)}"}), 500
 
 
 @search_bp.route("/del_share", methods=["POST"])
 def del_share_route():
+    start_time = time.time()
     try:
         share_data = request.get_json()
         if not share_data:
             return jsonify({"error": "缺少参数"}), 400
         result = del_share(share_data)
+        duration_ms = int((time.time() - start_time) * 1000)
+        query_text = share_data.get("share_url") or ""
         if result:
             logger.info(f"分享删除成功: URL={share_data.get('share_url')}")
+            record_log(
+                log_type="transfer",
+                action="transfer.del_share",
+                query_text=query_text,
+                status_code=200,
+                duration_ms=duration_ms,
+            )
             return jsonify({"message": "分享删除成功", "success": True}), 200
         else:
             logger.warning(f"分享删除失败: URL={share_data.get('share_url')}")
+            record_log(
+                log_type="transfer",
+                action="transfer.del_share",
+                query_text=query_text,
+                status_code=500,
+                error_message="删除转存分享失败",
+                duration_ms=duration_ms,
+            )
             return jsonify({"error": "分享删除失败", "success": False}), 500
     except Exception as e:
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="transfer",
+            action="transfer.del_share",
+            query_text=str(request.get_json(silent=True) or {}),
+            status_code=500,
+            error_message=str(e),
+            duration_ms=duration_ms,
+        )
         logger.error(f"删除分享时发生未知错误: {str(e)}", exc_info=True)
         return jsonify({"error": f"发生未知错误: {str(e)}"}), 500
 
 
 @search_bp.route("/api/view-link", methods=["POST"])
 def resolve_view_link():
+    start_time = time.time()
     data = request.get_json() or {}
     original_url = data.get("url", "")
     title = data.get("title", "未命名资源")
     netdisk_name = data.get("netdisk_name", "")
 
     if not original_url:
+        record_log(
+            log_type="transfer",
+            action="transfer.view_link",
+            query_text="",
+            status_code=400,
+            error_message="缺少链接参数",
+            duration_ms=0,
+        )
         return jsonify({"success": False, "message": "缺少链接参数"}), 400
 
     resolved = resolve_view_url(title=title, original_url=original_url, netdisk_name=netdisk_name)
+    duration_ms = int((time.time() - start_time) * 1000)
+    record_log(
+        log_type="transfer",
+        action="transfer.view_link",
+        query_text=f"{original_url} [{netdisk_name or 'auto'}]",
+        status_code=200 if resolved.get("mode") != "error" else 500,
+        error_message=resolved.get("message") if resolved.get("mode") == "error" else None,
+        duration_ms=duration_ms,
+    )
     return jsonify({"success": True, **resolved})
 
 
@@ -156,4 +239,10 @@ def resolve_view_link():
 @token_required
 def cleanup_temp_shares():
     cleaned_count = cleanup_expired_temp_shares()
+    record_log(
+        log_type="system",
+        action="system.temp_shares_cleanup",
+        status_code=200,
+        result_count=cleaned_count,
+    )
     return jsonify({"success": True, "cleaned_count": cleaned_count})

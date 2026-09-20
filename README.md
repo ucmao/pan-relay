@@ -4,13 +4,13 @@
 
 **基于 Python 的多网盘聚合中继与自动化变现管理系统**
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![Framework](https://img.shields.io/badge/Framework-Flask-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#-部署指南) [![API Mode](https://img.shields.io/badge/API__ONLY-Supported-purple.svg)](#-API_ONLY-无头模式) [![Telegram](https://img.shields.io/badge/Telegram-Ready-26A5E4?logo=telegram&logoColor=white)](#-部署指南) [![Support](https://img.shields.io/badge/Support-5%20Major%20Clouds-brightgreen.svg)](#-支持的网盘矩阵)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![Framework](https://img.shields.io/badge/Framework-Flask-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#-部署指南) [![REST API](https://img.shields.io/badge/REST__API-v1.0-purple.svg)](#-开放-rest-api-与无头部署) [![Telegram](https://img.shields.io/badge/Telegram-Ready-26A5E4?logo=telegram&logoColor=white)](#-部署指南) [![Support](https://img.shields.io/badge/Support-5%20Major%20Clouds-brightgreen.svg)](#-支持的网盘矩阵)
 
 <p align="center">
   <a href="#-核心业务逻辑">业务逻辑</a> •
   <a href="#-支持的网盘矩阵">支持网盘</a> •
   <a href="#-部署指南">部署指南</a> •
-  <a href="#-API_ONLY-无头模式与开发者-API">API/无头模式</a> •
+  <a href="#-开放-rest-api-与无头部署">开放 API</a> •
   <a href="#-网盘凭证说明">凭证配置</a> •
   <a href="#-联系作者">联系作者</a>
 </p>
@@ -19,7 +19,7 @@ Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化�
 
 通过“资源聚合 -> 自动转存 -> 收益链接替换 -> 优先分发”的闭环，将外部资源转化为自己的分享链接，提升拉新与转存收益。
 
-**内置 SQLite 数据库，支持本地资源、第三方 API、Telegram 公开频道与可扩展插件聚合搜索。支持完全解耦的 API_ONLY 无头模式与小程序/APP 快速接入。**
+**内置 SQLite 数据库，支持本地资源、第三方 API、Telegram 公开频道与可扩展插件聚合搜索。支持完全解耦的开放 REST API 与小程序/APP 快速接入。**
 
 </div>
 
@@ -37,7 +37,7 @@ Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化�
 ## ✨ 项目特点
 
 * **无需外部数据库**：内置 SQLite 与 WAL 模式，无需安装配置 MySQL 等数据库服务。
-* **支持API_ONLY无头模式**：支持一键关闭 Web 前前端界面，充当无头（Headless）中转服务，由环境变量或后台自由控制。
+* **开放 REST API 与独立开关**：前台搜索界面与开放 API 服务完全解耦，可按需独立启闭，支持作为纯后端中转服务运行。
 * **开箱即用**：启动时自动初始化表结构及预置 API、TG 频道和插件搜索源，支持源码与 Docker 部署。
 * **免凭证TG搜索**：直接抓取 Telegram 公开频道，无需 Bot Token，并自动提取网盘链接与提取码。
 * **搜索源可扩展**：后台统一管理 API、TG 频道和 Python 搜索插件，支持启停、测试与调度配置。
@@ -105,23 +105,22 @@ python app.py
 
 ---
 
-## 🔌 API_ONLY 无头模式与开发者 API
-
+## 🔌 开放 REST API 与无头部署
+ 
 针对需要接入自定义微信小程序、Mobile APP 或使用无头 (Headless) 模式的开发者，`pan-relay` 提供了完善的环境变量开关与标准化 `/api/v1` REST API。
 
-### 1. 模式环境变量配置
+### 1. 通道与环境变量配置
 
 可以通过环境变量控制前后台 UI 开关（可写在 `.env` 或 Docker 环境中）：
 
 | 环境变量 | 示例 | 说明 |
 | :--- | :--- | :--- |
-| `API_ONLY` | `true` / `1` | 开启无头 API 模式，屏蔽前台 UI，仅作为后端中转 API 运行 |
-| `ENABLE_FRONTEND` | `false` / `0` | 独立禁用前台 Web 搜索界面 (`GET /` 返回 API Status JSON) |
+| `ENABLE_FRONTEND` | `false` / `0` | 独立禁用前台 Web 搜索界面 (访客访问 `GET /` 自动重定向至后台管理登录页面 `/login`) |
 | `ENABLE_ADMIN_UI` | `false` / `0` | 独立禁用后台 Web 管理界面 (`/admin/*`) |
 | `SEARCH_API_SCOPE` | `own` / `all` | API 搜索默认检索作用域 (`own`: 仅站长收益库 / `all`: 全网并发) |
 | `TRANSFER_API_KEY` | `your_key` | API 转存鉴权密钥 (留空表示公开允许转存，设置后客户端请求需携带 `X-API-Key`) |
 
-*注：即使 UI 完全关闭，系统后台的定时清理 Worker（`storage_cleanup_service`）依然会独立正常调度运行。*
+*注：即使前台 Web 完全关闭，系统后台的开放 API、管理后台及定时清理 Worker（`storage_cleanup_service`）依然会独立正常运行。*
 
 ---
 

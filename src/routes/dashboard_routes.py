@@ -34,7 +34,8 @@ def get_dashboard_stats_api():
 @token_required
 def admin_docs_page():
     """
-    渲染后台内置开发者 API 接入指南页面
+    重定向至开放 API 配置内置的开发者指南 Tab
     """
-    return render_template("admin_docs.html", active_page="docs")
+    from flask import redirect, url_for
+    return redirect(url_for("system_config.api_config_page", tab="docs"))
 

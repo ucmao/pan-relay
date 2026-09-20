@@ -14,6 +14,7 @@ from src.utils.auth_utils import create_jwt_token
 auth_bp = Blueprint('auth', __name__)
 
 # 登录页面路由
+@auth_bp.route('/login', methods=['GET', 'POST'])
 @auth_bp.route('/admin', methods=['GET', 'POST'])
 def login():
     token = request.cookies.get('token')

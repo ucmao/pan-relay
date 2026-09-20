@@ -23,6 +23,7 @@ from src.utils.netdisk_utils import (
     extract_canonical_resource_key,
     extract_password_from_url,
 )
+from src.services.log_service import record_log
 
 import threading
 
@@ -426,12 +427,31 @@ def generate_search_stream_events(keyword):
     keyword = str(keyword or "").strip()
 
     def _event_generator():
+        start_time = time.time()
         if not keyword:
+            record_log(
+                log_type="search",
+                action="search.stream",
+                query_text="",
+                status_code=400,
+                error_message="缺少搜索关键词",
+                duration_ms=0,
+                result_count=0,
+            )
             yield json.dumps({"type": "error", "message": "请提供有效的搜索关键词"})
             return
 
         is_blocked, matched_word = check_input_keyword(keyword)
         if is_blocked:
+            record_log(
+                log_type="search",
+                action="search.stream",
+                query_text=keyword,
+                status_code=400,
+                error_message=f"触发敏感词拦截: {matched_word}",
+                duration_ms=int((time.time() - start_time) * 1000),
+                result_count=0,
+            )
             yield json.dumps({"type": "error", "message": f"搜索关键词包含敏感词汇 '{matched_word}'，已禁止搜索"}, ensure_ascii=False)
             return
 
@@ -446,6 +466,15 @@ def generate_search_stream_events(keyword):
         if cached_items is not None:
             logger.info(f"关键词 '{keyword}' 流式搜索击中内存缓存 ({len(cached_items)} 条)。")
             cached_items = filter_results_by_title(filter_search_results(cached_items), keyword)
+            duration_ms = int((time.time() - start_time) * 1000)
+            record_log(
+                log_type="search",
+                action="search.stream.cache",
+                query_text=keyword,
+                status_code=200,
+                duration_ms=duration_ms,
+                result_count=len(cached_items),
+            )
             yield json.dumps({"type": "complete", "results": _serialize_items(cached_items)})
             return
 
@@ -497,6 +526,15 @@ def generate_search_stream_events(keyword):
         if final_stream_items:
             set_cached_search_items(keyword, final_stream_items)
 
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="search",
+            action="search.stream",
+            query_text=keyword,
+            status_code=200,
+            duration_ms=duration_ms,
+            result_count=len(final_stream_items),
+        )
         logger.info(f"关键词 '{keyword}' 所有流式搜索完成，共 {len(final_stream_items)} 条。")
         yield json.dumps({"type": "complete", "results": _serialize_items(final_stream_items)})
 
@@ -797,12 +835,34 @@ def _filter_results_by_cloud_name(results, cloud_name=""):
 
 
 def search_public_resources(keyword="", limit=100, cloud_name=""):
+    start_time = time.time()
     keyword = (keyword or "").strip()
+    query_display = f"{keyword} [cloud={cloud_name}]" if cloud_name else keyword
+
     if not keyword:
+        record_log(
+            log_type="search",
+            action="search.public",
+            query_text=query_display,
+            status_code=400,
+            error_message="缺少搜索关键词",
+            duration_ms=0,
+            result_count=0,
+        )
         return False, "请提供搜索关键词", []
 
     is_blocked, matched_word = check_input_keyword(keyword)
     if is_blocked:
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="search",
+            action="search.public",
+            query_text=query_display,
+            status_code=400,
+            error_message=f"触发敏感词拦截: {matched_word}",
+            duration_ms=duration_ms,
+            result_count=0,
+        )
         return False, f"搜索关键词包含敏感词汇 '{matched_word}'，已禁止搜索", []
 
     cached_items = get_cached_search_items(keyword)
@@ -811,6 +871,15 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
         filtered_cached = filter_results_by_title(filter_search_results(cached_items), keyword)
         filtered_cached = _filter_results_by_cloud_name(filtered_cached, cloud_name)
         limited_cached = filtered_cached[: max(limit, 1)]
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="search",
+            action="search.public.cache",
+            query_text=query_display,
+            status_code=200,
+            duration_ms=duration_ms,
+            result_count=len(limited_cached),
+        )
         return True, "聚合搜索成功 (缓存)", [item.to_dict() for item in limited_cached]
 
     aggregated_results = []
@@ -831,6 +900,16 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
 
     filtered_results = _filter_results_by_cloud_name(sorted_results, cloud_name)
     limited_results = filtered_results[: max(limit, 1)]
+
+    duration_ms = int((time.time() - start_time) * 1000)
+    record_log(
+        log_type="search",
+        action="search.public",
+        query_text=query_display,
+        status_code=200,
+        duration_ms=duration_ms,
+        result_count=len(limited_results),
+    )
 
     return True, "聚合搜索成功", [
         item.to_dict()

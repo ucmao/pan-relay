@@ -78,3 +78,20 @@ CREATE TABLE IF NOT EXISTS telegram_channel (
 );
 
 CREATE INDEX IF NOT EXISTS idx_telegram_channel_name ON telegram_channel(channel);
+
+CREATE TABLE IF NOT EXISTS system_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  log_type TEXT NOT NULL,
+  action TEXT NOT NULL,
+  query_text TEXT DEFAULT NULL,
+  status_code INTEGER NOT NULL DEFAULT 200,
+  error_message TEXT DEFAULT NULL,
+  duration_ms INTEGER NOT NULL DEFAULT 0,
+  result_count INTEGER DEFAULT 0,
+  client_ip TEXT DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_logs_created_at ON system_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_logs_type_created ON system_logs(log_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_logs_status_created ON system_logs(status_code, created_at DESC);

@@ -3,7 +3,9 @@
 from flask import Blueprint, jsonify, request, Response, render_template
 import json
 import logging
+import time
 
+from src.services.log_service import record_log
 from src.services.search_service import (
     generate_search_stream_events,
     search_public_resources,
@@ -57,7 +59,15 @@ def api_search():
     - scope=own: 仅查询站长私有收益库资源 (响应极快、0开销、专属收益)
     - scope=all: 全网并发聚合查询 (私有库 + 爬虫 + TG)
     """
+    start_time = time.time()
     if not is_public_search_api_enabled():
+        record_log(
+            log_type="api",
+            action="api.v1.search",
+            query_text=request.args.get("keyword", ""),
+            status_code=403,
+            error_message="公开聚合查询接口已被关闭",
+        )
         return jsonify({"success": False, "message": "公开聚合查询接口已被关闭"}), 403
 
     keyword = request.args.get("keyword", "", type=str).strip()
@@ -66,9 +76,23 @@ def api_search():
     req_scope = request.args.get("scope", "", type=str).strip().lower()
 
     if not keyword:
+        record_log(
+            log_type="api",
+            action="api.v1.search",
+            query_text="",
+            status_code=400,
+            error_message="缺少必填参数: keyword",
+        )
         return jsonify({"success": False, "message": "缺少必填参数: keyword"}), 400
 
     if cloud_name and cloud_name not in FRONTEND_DISPLAY_NETDISK_OPTIONS:
+        record_log(
+            log_type="api",
+            action="api.v1.search",
+            query_text=f"{keyword} [cloud={cloud_name}]",
+            status_code=400,
+            error_message=f"不支持的网盘类型: {cloud_name}",
+        )
         return jsonify({
             "success": False,
             "message": f"不支持的网盘类型: {cloud_name}",
@@ -92,6 +116,15 @@ def api_search():
             item.to_dict() if hasattr(item, "to_dict") else item
             for item in filtered_items[:limit]
         ]
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="api",
+            action="api.v1.search.own",
+            query_text=f"{keyword} [cloud={cloud_name or 'all'}]",
+            status_code=200,
+            duration_ms=duration_ms,
+            result_count=len(results),
+        )
         return jsonify({
             "success": True,
             "scope": "own",
@@ -105,9 +138,26 @@ def api_search():
         cloud_name=cloud_name,
     )
 
+    duration_ms = int((time.time() - start_time) * 1000)
     if not success:
+        record_log(
+            log_type="api",
+            action="api.v1.search.all",
+            query_text=f"{keyword} [cloud={cloud_name or 'all'}]",
+            status_code=500,
+            error_message=message,
+            duration_ms=duration_ms,
+        )
         return jsonify({"success": False, "message": message}), 500
 
+    record_log(
+        log_type="api",
+        action="api.v1.search.all",
+        query_text=f"{keyword} [cloud={cloud_name or 'all'}]",
+        status_code=200,
+        duration_ms=duration_ms,
+        result_count=len(results),
+    )
     return jsonify({
         "success": True,
         "scope": "all",
@@ -138,6 +188,7 @@ def api_transfer():
     步骤 2: 替换/转存为系统专属资源接口。
     支持通过 Header 'X-API-Key' 或 'Authorization: Bearer <key>' 校验转存权限。
     """
+    start_time = time.time()
     data = request.get_json(silent=True) or {}
     url = data.get("url") or data.get("share_url") or ""
     title = data.get("title", "未命名资源")
@@ -160,22 +211,55 @@ def api_transfer():
                 req_key = auth.strip()
 
         if not req_key or req_key != expected_api_key:
+            record_log(
+                log_type="api",
+                action="api.v1.transfer",
+                query_text=url,
+                status_code=401,
+                error_message="API Key 校验失败",
+            )
             return jsonify({
                 "success": False,
                 "message": "API Key 校验失败，缺乏转存调用的有效授权",
             }), 401
 
     if not url:
+        record_log(
+            log_type="api",
+            action="api.v1.transfer",
+            query_text="",
+            status_code=400,
+            error_message="缺少必填参数: url",
+        )
         return jsonify({"success": False, "message": "缺少必填参数: url"}), 400
 
     try:
         resolved = resolve_view_url(title=title, original_url=url, netdisk_name=netdisk_name)
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="api",
+            action=f"api.v1.transfer.{netdisk_name or 'auto'}",
+            query_text=f"{url} [title={title}]",
+            status_code=200 if resolved.get("mode") != "error" else 500,
+            error_message=resolved.get("message") if resolved.get("mode") == "error" else None,
+            duration_ms=duration_ms,
+            result_count=1,
+        )
         return jsonify({
             "success": True,
             "message": "资源转换与链接生成成功",
             "data": resolved,
         })
     except Exception as exc:
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="api",
+            action=f"api.v1.transfer.{netdisk_name or 'auto'}",
+            query_text=url,
+            status_code=500,
+            error_message=str(exc),
+            duration_ms=duration_ms,
+        )
         logger.error(f"API v1 转存异常: {exc}", exc_info=True)
         return jsonify({"success": False, "message": f"转存处理失败: {str(exc)}"}), 500
 
@@ -185,17 +269,34 @@ def api_link_check():
     """
     网盘链接有效性检测接口 (支持单条及批量检测)
     """
+    start_time = time.time()
     data = request.get_json(silent=True) or {}
 
     # 1. 批量检测模式
     items = data.get("items")
     if items and isinstance(items, list):
         results = check_links_batch(items)
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="api",
+            action="api.v1.link_check.batch",
+            query_text=f"批量检测 {len(items)} 条链接",
+            status_code=200,
+            duration_ms=duration_ms,
+            result_count=len(results),
+        )
         return jsonify({"success": True, "mode": "batch", "total": len(results), "results": results})
 
     # 2. 单条检测模式
     url = data.get("url") or request.args.get("url", "").strip()
     if not url:
+        record_log(
+            log_type="api",
+            action="api.v1.link_check.single",
+            query_text="",
+            status_code=400,
+            error_message="缺少待检测链接",
+        )
         return jsonify({"success": False, "message": "请提供待检测的网盘链接 (url 或 items 列表)"}), 400
 
     password = data.get("password") or data.get("pwd")

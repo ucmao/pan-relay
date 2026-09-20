@@ -41,10 +41,9 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
         self.assertEqual("own", config["search_scope"])
         self.assertEqual("secret123", config["transfer_api_key"])
 
-        save_api_mode_config(api_only=True, enable_frontend=True, enable_admin_ui=False, search_scope="all", transfer_api_key="")
+        save_api_mode_config(api_only=False, enable_frontend=False, enable_admin_ui=False, search_scope="all", transfer_api_key="")
         config = get_api_mode_config()
-        self.assertTrue(config["api_only"])
-        self.assertFalse(config["enable_frontend"])  # api_only=True 自动覆盖 enable_frontend 为 False
+        self.assertFalse(config["enable_frontend"])
         self.assertFalse(config["enable_admin_ui"])
         self.assertEqual("all", config["search_scope"])
 
@@ -158,15 +157,14 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
         self.assertIn("endpoints", data)
 
 
-    # --- 3. UI 屏蔽与 API_ONLY 模式中间件拦截测试 ---
+    # --- 3. UI 屏蔽与重定向测试 ---
 
     def test_frontend_disabled_interception(self):
-        # 开启 API_ONLY 屏蔽前台
-        os.environ["API_ONLY"] = "1"
+        # 关闭前台时，访问根路径 / 自动重定向到后台管理登录页
+        save_api_mode_config(enable_frontend=False)
         resp = self.client.get("/")
-        self.assertEqual(200, resp.status_code)
-        data = resp.get_json()
-        self.assertIn("前台 Web UI 当前已禁用", data["message"])
+        self.assertEqual(302, resp.status_code)
+        self.assertIn(resp.headers.get("Location", ""), ["/admin", "/login"])
 
     def test_admin_ui_disabled_interception(self):
         # 关闭后台 UI

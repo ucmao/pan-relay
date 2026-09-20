@@ -62,6 +62,16 @@ def get_dashboard_summary() -> Dict[str, Any]:
             "python_version": sys.version.split()[0],
             "platform": sys.platform,
         },
+        "logs": {
+            "today_total": 0,
+            "today_search": 0,
+            "today_transfer": 0,
+            "today_api": 0,
+            "today_errors": 0,
+            "today_success_rate": 100.0,
+            "today_avg_duration_ms": 0,
+            "total_logs_count": 0,
+        },
     }
 
     # 1. 资源库统计
@@ -186,5 +196,12 @@ def get_dashboard_summary() -> Dict[str, Any]:
             summary["system"]["db_size_mb"] = round(db_size_bytes / (1024 * 1024), 2)
     except Exception as e:
         logger.error(f"仪表盘获取系统配置失败: {e}")
+
+    # 6. 运行日志与审计指标
+    try:
+        from src.services.log_service import get_logs_summary
+        summary["logs"] = get_logs_summary()
+    except Exception as e:
+        logger.error(f"仪表盘获取运行日志指标失败: {e}")
 
     return summary

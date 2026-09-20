@@ -78,22 +78,13 @@
                 </a>
             </div>
 
-            <!-- 开放 API 服务 -->
+            <!-- 对外服务通道 -->
             <div class="space-y-1">
-                <div class="px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">开放 API 服务</div>
+                <div class="px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">对外服务通道</div>
                 <a href="{{ url_for('system_config.api_config_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'config_api' else '' }}">
                     <i class="fas fa-plug w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-purple-600' if active_page == 'config_api' else '' }}"></i>
                     <span>开放 API 配置</span>
                 </a>
-                <a href="{{ url_for('dashboard.admin_docs_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'docs' else '' }}">
-                    <i class="fas fa-book-bookmark w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-purple-600' if active_page == 'docs' else '' }}"></i>
-                    <span>开放 API 指南</span>
-                </a>
-            </div>
-
-            <!-- 前台 Web 服务 -->
-            <div class="space-y-1">
-                <div class="px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">前台 Web 服务</div>
                 <a href="{{ url_for('system_config.frontend_config_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'config_frontend' else '' }}">
                     <i class="fas fa-desktop w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'config_frontend' else '' }}"></i>
                     <span>前台 Web 配置</span>
@@ -111,9 +102,9 @@
                     <i class="fas fa-sliders-h w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'config_system' else '' }}"></i>
                     <span>后端通用配置</span>
                 </a>
-                <a href="{{ url_for('system_config.system_config_page', tab='credentials') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'config_credentials' else '' }}">
-                    <i class="fas fa-key w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'config_credentials' else '' }}"></i>
-                    <span>云盘转存凭证</span>
+                <a href="{{ url_for('logs.logs_page') }}" class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'logs' else '' }}">
+                    <i class="fas fa-clock-rotate-left w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'logs' else '' }}"></i>
+                    <span>运行日志</span>
                 </a>
             </div>
         </nav>

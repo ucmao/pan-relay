@@ -618,21 +618,17 @@ def is_api_only_enabled() -> bool:
 
 
 def is_frontend_enabled() -> bool:
-    config = get_api_mode_config()
-    if config["api_only"]:
-        return False
-    return config["enable_frontend"]
+    return get_api_mode_config()["enable_frontend"]
 
 
 def is_admin_ui_enabled() -> bool:
-    config = get_api_mode_config()
-    return config["enable_admin_ui"]
+    return get_api_mode_config()["enable_admin_ui"]
 
 
 def save_api_mode_config(api_only: bool = False, enable_frontend: bool = True, enable_admin_ui: bool = True, search_scope: str = "own", transfer_api_key: str = "") -> bool:
     config = {
         "api_only": bool(api_only),
-        "enable_frontend": False if api_only else bool(enable_frontend),
+        "enable_frontend": bool(enable_frontend),
         "enable_admin_ui": bool(enable_admin_ui),
         "search_scope": "own" if str(search_scope).strip().lower() in ("own", "local") else "all",
         "transfer_api_key": str(transfer_api_key or "").strip(),

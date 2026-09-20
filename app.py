@@ -4,7 +4,7 @@ from src.configs.logging_setup import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect, url_for
 from src.routes.api_config_routes import api_config_bp
 from src.routes.search_routes import search_bp
 from src.routes.resource_routes import resources_bp
@@ -14,6 +14,7 @@ from src.routes.plugin_routes import plugin_bp
 from src.routes.search_sources_routes import search_sources_bp
 from src.routes.dashboard_routes import dashboard_bp
 from src.routes.api_v1_routes import api_v1_bp
+from src.routes.log_routes import log_bp
 from src.configs.app_config import SECRET_KEY
 from src.db.connection import init_sqlite_db
 from src.services.scheduler_service import start_scheduler
@@ -42,6 +43,7 @@ app.register_blueprint(system_config_bp)
 app.register_blueprint(plugin_bp)
 app.register_blueprint(search_sources_bp)
 app.register_blueprint(api_v1_bp)
+app.register_blueprint(log_bp)
 start_scheduler()
 
 # 上下文处理器，将登录状态传递给所有模板
@@ -63,14 +65,9 @@ def inject_login_status():
 def check_ui_access():
     path = request.path
 
-    # 若试图访问前台根路径但前台 UI 已关闭
+    # 若试图访问前台根路径但前台 UI 已关闭，自动重定向至后台管理登录页
     if path == "/" and not is_frontend_enabled():
-        return jsonify({
-            "service": "pan-relay",
-            "message": "前台 Web UI 当前已禁用 (已开启 API_ONLY 模式或禁用前台)",
-            "api_status": "/api/v1/status",
-            "api_docs": "/api/v1/docs",
-        }), 200
+        return redirect(url_for('auth.login'))
 
     # 若试图访问后台 HTML 页面但后台 UI 已关闭
     if path.startswith("/admin") and not path.startswith("/admin/api") and not is_admin_ui_enabled():
@@ -80,16 +77,11 @@ def check_ui_access():
         }), 403
 
 
-# 首页，返回 HTML 文件或 API 信息
+# 首页，返回 HTML 文件或重定向
 @app.route('/')
 def search_index():
     if not is_frontend_enabled():
-        return jsonify({
-            "service": "pan-relay",
-            "message": "前台 Web UI 当前已禁用 (已开启 API_ONLY 模式或禁用前台)",
-            "api_status": "/api/v1/status",
-            "api_docs": "/api/v1/docs",
-        }), 200
+        return redirect(url_for('auth.login'))
 
     return render_template(
         'index.html',

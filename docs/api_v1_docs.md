@@ -31,15 +31,16 @@ sequenceDiagram
 
 ---
 
-## 全局环境变量与模式控制
+## 全局环境变量与通道控制
 
-系统支持在后台或环境变量中开启无头 API 模式 (`API_ONLY`)：
+系统支持在后台或环境变量中独立控制服务通道与 UI 开关：
 
 | 环境变量 | 可选值 | 说明 |
 | :--- | :--- | :--- |
-| `API_ONLY` / `PAN_RELAY_API_ONLY` | `1`, `true`, `0`, `false` | 开启后全面禁用前台 HTML UI，只保留纯 API 服务 |
-| `ENABLE_FRONTEND` | `1`, `true`, `0`, `false` | 控制是否开放前台 Web 搜索界面 (`GET /`) |
+| `ENABLE_FRONTEND` | `1`, `true`, `0`, `false` | 控制是否开放前台 Web 搜索界面 (关闭时访问根路径 `GET /` 自动重定向至后台管理登录页面 `/login`) |
 | `ENABLE_ADMIN_UI` | `1`, `true`, `0`, `false` | 控制是否开放后台 Web 管理界面 (`/admin/*`) |
+| `SEARCH_API_SCOPE` | `own`, `all` | API 搜索默认检索作用域 (`own`: 仅站长收益库 / `all`: 全网并发) |
+| `TRANSFER_API_KEY` | 字符串 | API 转存鉴权密钥 (留空表示公开，设置后客户端请求需携带 `X-API-Key`) |
 
 ---
 
@@ -48,7 +49,7 @@ sequenceDiagram
 ### 1. 服务健康状态与 API 概览
 
 - **接口地址**: `GET /api/v1/status`
-- **说明**: 检查后端服务是否可用，并获取当前开启的 API 模式。
+- **说明**: 检查后端服务是否可用，并获取当前开启的服务模式。
 
 **响应示例**:
 ```json
@@ -58,9 +59,9 @@ sequenceDiagram
   "version": "1.0.0",
   "status": "healthy",
   "api_mode": {
-    "api_only": false,
     "enable_frontend": true,
-    "enable_admin_ui": true
+    "enable_admin_ui": true,
+    "search_scope": "own"
   }
 }
 ```

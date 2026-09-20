@@ -133,6 +133,12 @@ def init_sqlite_db():
         _db_initialized = True
 
         try:
+            from src.db.logs import ensure_system_logs_table
+            ensure_system_logs_table()
+        except Exception as e:
+            logger.warning(f"自动初始化 system_logs 表结构失败: {e}")
+
+        try:
             from src.services.system_config_service import init_default_search_sources
             init_default_search_sources()
         except Exception as e:
