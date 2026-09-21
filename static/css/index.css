@@ -1269,3 +1269,64 @@
         padding: 4px 9px;
     }
 }
+
+/* --- 网盘链接健康测活状态徽章与失效过滤 --- */
+.link-health-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.link-health-badge.badge-ok {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.link-health-badge.badge-bad {
+    background: rgba(244, 63, 94, 0.12);
+    color: #e11d48;
+    border: 1px solid rgba(244, 63, 94, 0.28);
+}
+
+.link-health-badge.badge-locked {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.link-health-badge.badge-checking {
+    background: rgba(100, 116, 139, 0.1);
+    color: #64748b;
+    border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.link-health-badge.badge-uncertain {
+    background: rgba(148, 163, 184, 0.1);
+    color: #64748b;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.result-item.is-dead-link {
+    opacity: 0.58;
+    background: rgba(244, 63, 94, 0.03);
+    border-left: 3px solid rgba(244, 63, 94, 0.45);
+    transition: opacity 0.2s ease, border 0.2s ease;
+}
+
+.result-item.is-dead-link:hover {
+    opacity: 0.88;
+}
+
+#hideDeadLinksToggle.active {
+    background: rgba(16, 185, 129, 0.14);
+    color: #059669;
+    border-color: rgba(16, 185, 129, 0.45);
+    font-weight: 600;
+}

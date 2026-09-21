@@ -11,8 +11,17 @@ let includeKeywords = [];
 let excludeKeywords = [];
 const isViewModeEnabled = window.SEARCH_LINK_MODE === 'view';
 
+// 网盘链接健康检测状态
+let isHideDeadLinks = false;
+const linkHealthCache = new Map();
+const pendingCheckKeys = new Set();
+let checkQueue = [];
+let isCheckingQueueRunning = false;
+
 const filterBar = document.getElementById('netdisk-filter-bar');
 const filterAndCountContainer = document.querySelector('.filter-and-count-container');
+const hideDeadLinksToggle = document.getElementById('hideDeadLinksToggle');
+const hideDeadLinksText = document.getElementById('hideDeadLinksText');
 const includeFilterInput = document.getElementById('includeFilter');
 const excludeFilterInput = document.getElementById('excludeFilter');
 const applyFilterButton = document.getElementById('applyFilter');
@@ -42,6 +51,18 @@ const viewResultModal = viewResultModalElement ? {
 } : null;
 let currentResolvedViewResult = null;
 let isAdvancedFilterOpen = false;
+
+hideDeadLinksToggle?.addEventListener('click', function () {
+    isHideDeadLinks = !isHideDeadLinks;
+    this.classList.toggle('active', isHideDeadLinks);
+    this.setAttribute('aria-pressed', String(isHideDeadLinks));
+    if (hideDeadLinksText) {
+        hideDeadLinksText.textContent = isHideDeadLinks ? '已过滤失效' : '过滤失效';
+    }
+    updateFilterButtons();
+    renderResults(true);
+    toggleScrollbarBasedOnContent();
+});
 
 function setAdvancedFilterOpen(isOpen) {
     isAdvancedFilterOpen = isOpen;
@@ -230,17 +251,25 @@ function updateFilterButtons() {
     }
     filterBar.classList.remove('d-none');
 
-    // 1. 统计各网盘符合条件数量 (支持高级筛选关键词过滤)
-    const baseList = (includeKeywords.length > 0 || excludeKeywords.length > 0)
-        ? allResults.filter(result => {
-            const title = (result[1] || '').toLowerCase();
-            const matchesInclude = includeKeywords.length === 0 ||
-                includeKeywords.every(kw => title.includes(kw.toLowerCase()));
-            const matchesExclude = excludeKeywords.length === 0 ||
-                !excludeKeywords.some(kw => title.includes(kw.toLowerCase()));
-            return matchesInclude && matchesExclude;
-        })
-        : allResults;
+    // 1. 统计各网盘符合条件数量 (支持高级筛选关键词过滤与失效链接过滤)
+    const baseList = allResults.filter(result => {
+        const title = (result[1] || '').toLowerCase();
+        const matchesInclude = includeKeywords.length === 0 ||
+            includeKeywords.every(kw => title.includes(kw.toLowerCase()));
+        const matchesExclude = excludeKeywords.length === 0 ||
+            !excludeKeywords.some(kw => title.includes(kw.toLowerCase()));
+
+        if (isHideDeadLinks) {
+            const url = result[2] || '';
+            const key = extractCanonicalResourceKeyFront(url);
+            const health = (key && linkHealthCache.get(key)) || linkHealthCache.get(url);
+            if (health && health.state === 'bad') {
+                return false;
+            }
+        }
+
+        return matchesInclude && matchesExclude;
+    });
 
     const counts = {};
     let totalCount = baseList.length;
@@ -377,6 +406,8 @@ function performSearch() {
     allResults = [];
     currentPage = 1;
     currentFilter = '全部';
+    checkQueue = [];
+    pendingCheckKeys.clear();
     filterBar.classList.add('d-none');
     if (filterAndCountContainer) {
         filterAndCountContainer.classList.add('d-none');
@@ -576,6 +607,16 @@ function getFilteredResults() {
         const matchesExclude = excludeKeywords.length === 0 ||
             !excludeKeywords.some(keyword => title.includes(keyword.toLowerCase()));
 
+        // 失效与空链接过滤
+        if (isHideDeadLinks) {
+            const url = result[2] || '';
+            const key = extractCanonicalResourceKeyFront(url);
+            const health = (key && linkHealthCache.get(key)) || linkHealthCache.get(url);
+            if (health && health.state === 'bad') {
+                return false;
+            }
+        }
+
         return matchesNetdisk && matchesInclude && matchesExclude;
     });
 
@@ -700,20 +741,42 @@ function renderResults(reset = false) {
         // Use default netdisk badge class (no hot override)
         const finalBadgeClass = `${badgeClass} ${badgeTextClass}`;
 
+        const key = extractCanonicalResourceKeyFront(urlLink);
+        const health = (key && linkHealthCache.get(key)) || linkHealthCache.get(urlLink);
+
+        let healthBadgeHtml = '';
+        let deadItemClass = '';
+        if (health) {
+            if (health.state === 'ok') {
+                healthBadgeHtml = `<span class="link-health-badge badge-ok" title="${escapeHtml(health.summary || '资源有效')}"><i class="fas fa-check-circle"></i> 有效</span>`;
+            } else if (health.state === 'bad') {
+                deadItemClass = 'is-dead-link';
+                healthBadgeHtml = `<span class="link-health-badge badge-bad" title="${escapeHtml(health.summary || '资源已失效或为空')}"><i class="fas fa-times-circle"></i> 失效</span>`;
+            } else if (health.state === 'locked') {
+                healthBadgeHtml = `<span class="link-health-badge badge-locked" title="${escapeHtml(health.summary || '需提取码')}"><i class="fas fa-key"></i> 需提取码</span>`;
+            } else if (health.state === 'uncertain') {
+                healthBadgeHtml = `<span class="link-health-badge badge-uncertain" title="${escapeHtml(health.summary || '探测超时或未知')}"><i class="fas fa-question-circle"></i> 未知</span>`;
+            }
+        } else if (urlLink && !urlLink.startsWith('magnet:') && !urlLink.startsWith('ed2k:') && !urlLink.startsWith('thunder:')) {
+            healthBadgeHtml = `<span class="link-health-badge badge-checking" title="正在探测网盘链接有效性..."><span class="spinner-border spinner-border-sm" style="width: 0.65rem; height: 0.65rem; border-width: 0.1em;"></span> 测活中</span>`;
+        }
+
         const fullItem = document.createElement('div');
+        fullItem.className = 'result-item-wrapper';
 
         const itemHtml = `
-            <div class="result-item ${hotClass}">
+            <div class="result-item ${hotClass} ${deadItemClass}" data-key="${escapeHtml(key)}" data-url="${escapeHtml(urlLink)}">
                 <div class="result-info">
-                    <span class="result-title" title="${titleText}">${titleText}</span>
+                    <span class="result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
                     <div class="result-url-line ${isViewModeEnabled ? 'd-none' : ''}">
                         ${linkIconHtml}
-                        <a href="${urlLink}" target="_blank" title="${urlLink}">${urlLink}</a>
+                        <a href="${urlLink}" target="_blank" title="${urlLink}">${escapeHtml(urlLink)}</a>
                     </div>
                 </div>
                 <div class="result-actions">
-                    <span class="netdisk-badge ${finalBadgeClass}">${netdiskName}</span>
-                    <button class="btn btn-sm ${isViewModeEnabled ? 'view-button btn-outline-secondary' : 'copy-button btn-outline-secondary'}" data-title="${titleText}" data-url="${urlLink}" data-netdisk="${netdiskName}">
+                    <span class="netdisk-badge ${finalBadgeClass}">${escapeHtml(netdiskName)}</span>
+                    ${healthBadgeHtml}
+                    <button class="btn btn-sm ${isViewModeEnabled ? 'view-button btn-outline-secondary' : 'copy-button btn-outline-secondary'}" data-title="${escapeHtml(titleText)}" data-url="${escapeHtml(urlLink)}" data-netdisk="${escapeHtml(netdiskName)}">
                         ${isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
                     </button>
                 </div>
@@ -724,8 +787,12 @@ function renderResults(reset = false) {
         resultContainer.appendChild(fullItem);
     });
 
+    // 触发当前渲染批次的网盘链接异步测活
+    queueLinksForVerification(currentBatch);
+
     // 绑定复制按钮事件
-    resultContainer.querySelectorAll('.copy-button').forEach(button => {
+    resultContainer.querySelectorAll('.copy-button:not([data-bound="true"])').forEach(button => {
+        button.setAttribute('data-bound', 'true');
         button.addEventListener('click', function () {
             const title = this.getAttribute('data-title');
             const url = this.getAttribute('data-url');
@@ -743,7 +810,8 @@ function renderResults(reset = false) {
         });
     });
 
-    resultContainer.querySelectorAll('.view-button').forEach(button => {
+    resultContainer.querySelectorAll('.view-button:not([data-bound="true"])').forEach(button => {
+        button.setAttribute('data-bound', 'true');
         button.addEventListener('click', function () {
             handleViewButtonClick(this);
         });
@@ -769,6 +837,177 @@ function renderResults(reset = false) {
         currentPage++;
     }
     isLoadingNextBatch = false;
+}
+
+/**
+ * 安全转义 CSS 选择器字符
+ */
+function safeEscapeCss(str) {
+    if (!str) return '';
+    if (window.CSS && typeof CSS.escape === 'function') {
+        return CSS.escape(str);
+    }
+    return str.replace(/([!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~])/g, '\\$1');
+}
+
+/**
+ * 将待测活链接入队并触发后台异步并发检测
+ */
+function queueLinksForVerification(items) {
+    if (!items || !items.length) return;
+
+    for (const item of items) {
+        const url = item[2] || '';
+        const diskType = item[3] || '';
+        if (!url || url.startsWith('magnet:') || url.startsWith('ed2k:') || url.startsWith('thunder:')) {
+            continue;
+        }
+
+        const key = extractCanonicalResourceKeyFront(url);
+        if ((key && linkHealthCache.has(key)) || linkHealthCache.has(url)) {
+            continue;
+        }
+
+        if ((key && pendingCheckKeys.has(key)) || pendingCheckKeys.has(url)) {
+            continue;
+        }
+
+        if (key) pendingCheckKeys.add(key);
+        pendingCheckKeys.add(url);
+        checkQueue.push({ url, disk_type: diskType, key });
+    }
+
+    processCheckQueue();
+}
+
+/**
+ * 循环消费队列进行批量并发检测
+ */
+async function processCheckQueue() {
+    if (isCheckingQueueRunning || checkQueue.length === 0) return;
+    isCheckingQueueRunning = true;
+
+    try {
+        while (checkQueue.length > 0) {
+            const chunk = checkQueue.splice(0, 6);
+            const payloadItems = chunk.map(c => ({ url: c.url, disk_type: c.disk_type }));
+
+            try {
+                const resp = await fetch('/api/check/links', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: payloadItems })
+                });
+
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.success && Array.isArray(data.results)) {
+                        let hasNewDeadLink = false;
+                        for (const res of data.results) {
+                            if (!res) continue;
+                            if (res.canonical_key) linkHealthCache.set(res.canonical_key, res);
+                            if (res.url) linkHealthCache.set(res.url, res);
+
+                            if (res.state === 'bad') {
+                                hasNewDeadLink = true;
+                            }
+                            updateHealthBadgeInDOM(res);
+                        }
+
+                        if (isHideDeadLinks && hasNewDeadLink) {
+                            updateFilterButtons();
+                            const currentFiltered = getFilteredResults();
+                            resultCountText.textContent = `共找到 ${currentFiltered.length} 个结果 (${currentFilter})`;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('批量检测网盘链接异常:', err);
+            } finally {
+                for (const c of chunk) {
+                    if (c.key) pendingCheckKeys.delete(c.key);
+                    pendingCheckKeys.delete(c.url);
+                }
+            }
+        }
+    } finally {
+        isCheckingQueueRunning = false;
+    }
+}
+
+/**
+ * 实时局部更新 DOM 中对应卡片的健康徽章与失效样式，避免整页重刷抖动
+ */
+function updateHealthBadgeInDOM(res) {
+    if (!res) return;
+    const key = res.canonical_key;
+    const url = res.url;
+    const state = res.state;
+    const summary = res.summary || '';
+
+    let matchedElements = [];
+    if (key) {
+        try {
+            matchedElements.push(...resultContainer.querySelectorAll(`.result-item[data-key="${safeEscapeCss(key)}"]`));
+        } catch (e) {}
+    }
+    if (url) {
+        try {
+            matchedElements.push(...resultContainer.querySelectorAll(`.result-item[data-url="${safeEscapeCss(url)}"]`));
+        } catch (e) {}
+    }
+
+    const uniqueElements = Array.from(new Set(matchedElements));
+    uniqueElements.forEach(item => {
+        const wrapper = item.closest('.result-item-wrapper') || item;
+        if (state === 'bad') {
+            item.classList.add('is-dead-link');
+            if (isHideDeadLinks) {
+                wrapper.style.display = 'none';
+            }
+        } else {
+            item.classList.remove('is-dead-link');
+            if (isHideDeadLinks) {
+                wrapper.style.display = '';
+            }
+        }
+
+        let badge = item.querySelector('.link-health-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'link-health-badge';
+            const actionsDiv = item.querySelector('.result-actions');
+            const btn = actionsDiv?.querySelector('.copy-button, .view-button');
+            if (actionsDiv && btn) {
+                actionsDiv.insertBefore(badge, btn);
+            } else if (actionsDiv) {
+                actionsDiv.appendChild(badge);
+            }
+        }
+
+        if (badge) {
+            badge.className = 'link-health-badge';
+            if (state === 'ok') {
+                badge.classList.add('badge-ok');
+                badge.title = summary || '资源有效';
+                badge.innerHTML = '<i class="fas fa-check-circle"></i> 有效';
+            } else if (state === 'bad') {
+                badge.classList.add('badge-bad');
+                badge.title = summary || '资源已失效或为空';
+                badge.innerHTML = '<i class="fas fa-times-circle"></i> 失效';
+            } else if (state === 'locked') {
+                badge.classList.add('badge-locked');
+                badge.title = summary || '需提取码';
+                badge.innerHTML = '<i class="fas fa-key"></i> 需提取码';
+            } else if (state === 'uncertain') {
+                badge.classList.add('badge-uncertain');
+                badge.title = summary || '探测超时或未知';
+                badge.innerHTML = '<i class="fas fa-question-circle"></i> 未知';
+            } else {
+                badge.remove();
+            }
+        }
+    });
 }
 
 // --- 无限滚动逻辑 (保持不变) ---

@@ -144,6 +144,53 @@ class ApiV1LinkStatusTest(unittest.TestCase):
         self.assertTrue(data["success"])
         self.assertEqual(0, mock_check.call_count)
 
+    @patch("src.routes.search_routes.check_links_batch")
+    def test_batch_check_links_api(self, mock_batch):
+        mock_batch.return_value = [
+            {"state": STATE_OK, "summary": "链接有效", "canonical_key": "quark:123", "url": "https://pan.quark.cn/s/123"},
+            {"state": STATE_BAD, "summary": "链接已失效或为空", "canonical_key": "quark:456", "url": "https://pan.quark.cn/s/456"},
+        ]
+
+        # 正常批量调用
+        resp = self.client.post(
+            "/api/check/links",
+            json={"items": [{"url": "https://pan.quark.cn/s/123"}, {"url": "https://pan.quark.cn/s/456"}]}
+        )
+        self.assertEqual(200, resp.status_code)
+        data = resp.get_json()
+        self.assertTrue(data["success"])
+        self.assertEqual(2, data["total"])
+        self.assertEqual(STATE_OK, data["results"][0]["state"])
+        self.assertEqual(STATE_BAD, data["results"][1]["state"])
+
+        # 缺少 items 参数
+        bad_resp = self.client.post("/api/check/links", json={})
+        self.assertEqual(400, bad_resp.status_code)
+        bad_data = bad_resp.get_json()
+        self.assertFalse(bad_data["success"])
+
+    @patch("src.routes.search_routes.check_link")
+    def test_single_check_link_api(self, mock_check):
+        mock_check.return_value = {
+            "state": STATE_OK,
+            "summary": "链接有效",
+            "canonical_key": "quark:789",
+            "url": "https://pan.quark.cn/s/789",
+        }
+
+        # 正常单条检测
+        resp = self.client.get("/api/check/link?url=https://pan.quark.cn/s/789")
+        self.assertEqual(200, resp.status_code)
+        data = resp.get_json()
+        self.assertTrue(data["success"])
+        self.assertEqual("quark:789", data["data"]["canonical_key"])
+
+        # 缺少 url 参数
+        bad_resp = self.client.get("/api/check/link")
+        self.assertEqual(400, bad_resp.status_code)
+        bad_data = bad_resp.get_json()
+        self.assertFalse(bad_data["success"])
+
 
 if __name__ == "__main__":
     unittest.main()
