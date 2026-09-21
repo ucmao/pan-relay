@@ -120,8 +120,8 @@ def check_single_link_api():
     if not url:
         return jsonify({"success": False, "message": "请提供待检测的网盘链接 (url)"}), 400
 
-    password = request.args.get("password") or request.args.get("pwd")
-    disk_type = request.args.get("disk_type") or request.args.get("cloud_name")
+    password = request.args.get("password")
+    disk_type = request.args.get("disk_type")
     force_refresh = request.args.get("refresh", "false").lower() in ("true", "1")
 
     res = check_link(url, password=password, disk_type=disk_type, force_refresh=force_refresh)

@@ -36,7 +36,7 @@
                     <div class="space-y-1 min-w-0 pr-4">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-semibold text-slate-800 text-sm">前台 Web 搜索界面</span>
-                            <code class="text-[11px] font-mono text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/50">GET /</code>
+                            <!-- <code class="text-[11px] font-mono text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/50">GET /</code> -->
                             <span class="help-tooltip" data-tooltip="关闭后访客访问主页将自动重定向至后台管理登录页面 (/login)">
                                 <i class="far fa-circle-question text-xs"></i>
                             </span>
@@ -64,7 +64,8 @@
                             <p class="text-xs text-slate-500">前台用户点击资源时的链接提供方式</p>
                         </div>
                         <div class="flex items-center space-x-3 flex-shrink-0">
-                            <select id="frontendLinkModeSelect" class="form-select form-select-sm" onchange="saveFrontendLinkMode()" style="min-width: 170px;">
+                            <select id="frontendLinkModeSelect" class="form-select form-select-sm"
+                                onchange="saveFrontendLinkMode()" style="min-width: 170px;">
                                 <option value="copy">原始链接模式</option>
                                 <option value="view">动态转存模式</option>
                             </select>
@@ -72,7 +73,8 @@
                     </div>
 
                     <!-- 动态转存凭证微型状态栏 -->
-                    <div class="dynamic-transfer-status-bar d-none mt-2 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5" id="dynamicTransferStatusPanel">
+                    <div class="dynamic-transfer-status-bar d-none mt-2 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+                        id="dynamicTransferStatusPanel">
                         <div class="flex items-center gap-2.5 flex-wrap">
                             <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 flex-shrink-0">
                                 <i class="fas fa-key text-blue-500 text-[11px]"></i>
@@ -81,8 +83,11 @@
                             <div class="flex items-center gap-1.5 flex-wrap" id="dynamicTransferStatusGrid"></div>
                         </div>
                         <div class="flex items-center gap-2.5 text-xs flex-shrink-0">
-                            <span class="text-slate-400 text-[11px] hidden md:inline" id="dynamicTransferStatusSummary"></span>
-                            <a href="{{ url_for('system_config.system_config_page', tab='credentials') }}" class="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors" id="dynamicTransferManageLink">
+                            <span class="text-slate-400 text-[11px] hidden md:inline"
+                                id="dynamicTransferStatusSummary"></span>
+                            <a href="{{ url_for('system_config.system_config_page', tab='credentials') }}"
+                                class="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors"
+                                id="dynamicTransferManageLink">
                                 管理凭证 <i class="fas fa-chevron-right text-[9px]"></i>
                             </a>
                         </div>
@@ -102,7 +107,48 @@
                     </div>
                     <div class="flex items-center flex-shrink-0">
                         <label class="plugin-switch" title="切换 Excel 导出按钮">
-                            <input type="checkbox" id="allowExcelDownloadToggle" onchange="saveAllowExcelDownloadConfig()">
+                            <input type="checkbox" id="allowExcelDownloadToggle"
+                                onchange="saveAllowExcelDownloadConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 开关 4: 前台链接实时免登录测活 -->
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">前台链接实时免登录测活</span>
+                            <span class="help-tooltip" data-tooltip="控制前台 Web 搜索结果是否在后台异步发起免登录测活并显示健康徽章。关闭后可大幅节省服务器请求并避免网盘风控">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500">在前台搜索结果中自动识别链接有效性、文件数及违规失效状态</p>
+                    </div>
+                    <div class="flex items-center flex-shrink-0">
+                        <label class="plugin-switch" title="切换前台链接实时测活">
+                            <input type="checkbox" id="enableFrontendLinkCheckToggle"
+                                onchange="saveFrontendLinkCheckConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 开关 5: 默认过滤失效与空资源 -->
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">前台默认过滤失效资源</span>
+                            <span class="help-tooltip" data-tooltip="开启后，访客在前台搜索结果列表将默认激活“已过滤失效”，自动隐藏已失效或文件为空的链接，无需访客手动点击">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500">前台搜索完毕后默认隐藏失效与空资源，打造高品质纯净资源体验</p>
+                    </div>
+                    <div class="flex items-center flex-shrink-0">
+                        <label class="plugin-switch" title="切换默认过滤失效资源">
+                            <input type="checkbox" id="defaultHideDeadLinksToggle"
+                                onchange="saveFrontendLinkCheckConfig()">
                             <span class="plugin-switch-slider"></span>
                         </label>
                     </div>
@@ -118,13 +164,17 @@
                 <h2 class="admin-panel-title">
                     <i class="fas fa-filter text-blue-600"></i> 前台展示网盘类型
                 </h2>
-                <p class="admin-panel-desc">控制前台 Web 搜索界面中允许选择与展示的网盘类型（不影响后端 API 检索），已选 <span id="frontendNetdiskSelectedCount" class="font-bold text-blue-600">0</span> / <span id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></p>
+                <p class="admin-panel-desc">控制前台 Web 搜索界面中允许选择与展示的网盘类型（不影响后端 API 检索），已选 <span
+                        id="frontendNetdiskSelectedCount" class="font-bold text-blue-600">0</span> / <span
+                        id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></p>
             </div>
             <div class="flex items-center space-x-2">
-                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="selectMainstreamFrontendNetdisks()">
+                <button class="btn btn-outline-secondary btn-sm" type="button"
+                    onclick="selectMainstreamFrontendNetdisks()">
                     <i class="fas fa-star text-amber-500 text-[10px] mr-1"></i>主流网盘
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button" onclick="toggleAllFrontendDisplayNetdisks()">
+                <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button"
+                    onclick="toggleAllFrontendDisplayNetdisks()">
                     全选 / 反选
                 </button>
             </div>
@@ -133,7 +183,8 @@
             <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
                 {% for netdisk_name in frontend_netdisk_options %}
                 <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
-                    <input class="frontend-display-netdisk-checkbox" type="checkbox" id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
+                    <input class="frontend-display-netdisk-checkbox" type="checkbox"
+                        id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}">
                     <span class="frontend-netdisk-card-name truncate">{{ netdisk_name }}</span>
                     <span class="frontend-netdisk-card-check-box">
                         <i class="fas fa-check"></i>

@@ -346,6 +346,59 @@ async function saveAllowExcelDownloadConfig() {
     }
 }
 
+async function loadFrontendLinkCheckConfig() {
+    try {
+        const response = await fetch('/admin/api/frontend-link-check-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const checkToggle = document.getElementById('enableFrontendLinkCheckToggle');
+        const hideToggle = document.getElementById('defaultHideDeadLinksToggle');
+        if (checkToggle) {
+            checkToggle.checked = Boolean(data.enable_link_check !== false);
+        }
+        if (hideToggle) {
+            hideToggle.checked = Boolean(data.default_hide_dead_links);
+        }
+    } catch (error) {
+        console.error('加载前台测活配置失败:', error);
+        showToast('加载前台测活配置失败，请检查后端日志。', 'danger');
+    }
+}
+
+async function saveFrontendLinkCheckConfig() {
+    const checkToggle = document.getElementById('enableFrontendLinkCheckToggle');
+    const hideToggle = document.getElementById('defaultHideDeadLinksToggle');
+
+    const enable_link_check = checkToggle ? checkToggle.checked : true;
+    const default_hide_dead_links = hideToggle ? hideToggle.checked : false;
+
+    try {
+        const response = await fetch('/admin/api/frontend-link-check-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                enable_link_check,
+                default_hide_dead_links
+            })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '前台测活与过滤配置保存成功', 'success');
+        await loadFrontendLinkCheckConfig();
+    } catch (error) {
+        console.error('保存前台测活配置失败:', error);
+        showToast(`保存前台测活配置失败: ${error.message}`, 'danger');
+        await loadFrontendLinkCheckConfig();
+    }
+}
+
 async function loadTransferTargetDirConfig() {
     try {
         const response = await fetch('/admin/api/transfer-target-dir');
@@ -1008,6 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadApiModeConfig();
     loadPublicSearchApiConfig();
     loadAllowExcelDownloadConfig();
+    loadFrontendLinkCheckConfig();
     loadTransferTargetDirConfig();
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();

@@ -207,164 +207,164 @@
 
 /* --- 结果区网盘徽章专属品牌配色（低饱和底色 + 品牌主色字，精致高辨识度） --- */
 /* 1. 国内主流网盘 */
-.result-actions .bg-baidu {
+.netdisk-badge.bg-baidu {
     background-color: #eaf2fe !important;
     color: #1e60d5 !important;
     border-color: rgba(30, 96, 213, 0.15) !important;
 }
-.result-actions .bg-quark {
+.netdisk-badge.bg-quark {
     background-color: #fdf0ec !important;
     color: #d93829 !important;
     border-color: rgba(217, 56, 41, 0.15) !important;
 }
-.result-actions .bg-aliyun {
+.netdisk-badge.bg-aliyun {
     background-color: #e6f8f3 !important;
     color: #059669 !important;
     border-color: rgba(5, 150, 105, 0.15) !important;
 }
-.result-actions .bg-xunlei {
+.netdisk-badge.bg-xunlei {
     background-color: #e6f6f9 !important;
     color: #0284c7 !important;
     border-color: rgba(2, 132, 199, 0.15) !important;
 }
-.result-actions .bg-uc {
+.netdisk-badge.bg-uc {
     background-color: #fef6e8 !important;
     color: #d97706 !important;
     border-color: rgba(217, 119, 6, 0.15) !important;
 }
-.result-actions .bg-123pan {
+.netdisk-badge.bg-123pan {
     background-color: #f5effe !important;
     color: #8b5cf6 !important;
     border-color: rgba(139, 92, 246, 0.15) !important;
 }
-.result-actions .bg-115 {
+.netdisk-badge.bg-115 {
     background-color: #fff3ea !important;
     color: #ea580c !important;
     border-color: rgba(234, 88, 12, 0.15) !important;
 }
 
 /* 2. 运营商云盘 */
-.result-actions .bg-tianyi {
+.netdisk-badge.bg-tianyi {
     background-color: #edf3ff !important;
     color: #2563eb !important;
     border-color: rgba(37, 99, 235, 0.15) !important;
 }
-.result-actions .bg-mobile {
+.netdisk-badge.bg-mobile {
     background-color: #ecfdf5 !important;
     color: #16a34a !important;
     border-color: rgba(22, 163, 74, 0.15) !important;
 }
-.result-actions .bg-unicom {
+.netdisk-badge.bg-unicom {
     background-color: #fff1f2 !important;
     color: #e11d48 !important;
     border-color: rgba(225, 29, 72, 0.15) !important;
 }
 
 /* 3. 国内特色 / 小众网盘 */
-.result-actions .bg-lanzou {
+.netdisk-badge.bg-lanzou {
     background-color: #e0f2fe !important;
     color: #0369a1 !important;
     border-color: rgba(3, 105, 161, 0.15) !important;
 }
-.result-actions .bg-ctfile {
+.netdisk-badge.bg-ctfile {
     background-color: #ecfdf5 !important;
     color: #047857 !important;
     border-color: rgba(4, 120, 87, 0.15) !important;
 }
-.result-actions .bg-weiyun {
+.netdisk-badge.bg-weiyun {
     background-color: #eff6ff !important;
     color: #1d4ed8 !important;
     border-color: rgba(29, 78, 216, 0.15) !important;
 }
-.result-actions .bg-jianguo {
+.netdisk-badge.bg-jianguo {
     background-color: #fcf4ea !important;
     color: #92400e !important;
     border-color: rgba(146, 64, 14, 0.15) !important;
 }
-.result-actions .bg-wukong {
+.netdisk-badge.bg-wukong {
     background-color: #edf2f7 !important;
     color: #334155 !important;
     border-color: rgba(51, 65, 85, 0.15) !important;
 }
-.result-actions .bg-kuaitu {
+.netdisk-badge.bg-kuaitu {
     background-color: #fdf2f8 !important;
     color: #db2777 !important;
     border-color: rgba(219, 39, 119, 0.15) !important;
 }
-.result-actions .bg-guangya {
+.netdisk-badge.bg-guangya {
     background-color: #fefce8 !important;
     color: #ca8a04 !important;
     border-color: rgba(202, 138, 4, 0.18) !important;
 }
 
 /* 4. 海外及跨境网盘 */
-.result-actions .bg-terabox {
+.netdisk-badge.bg-terabox {
     background-color: #eef2ff !important;
     color: #4f46e5 !important;
     border-color: rgba(79, 70, 229, 0.15) !important;
 }
-.result-actions .bg-gdrive {
+.netdisk-badge.bg-gdrive {
     background-color: #e6f4ea !important;
     color: #137333 !important;
     border-color: rgba(19, 115, 51, 0.15) !important;
 }
-.result-actions .bg-mega {
+.netdisk-badge.bg-mega {
     background-color: #fee2e2 !important;
     color: #dc2626 !important;
     border-color: rgba(220, 38, 38, 0.15) !important;
 }
-.result-actions .bg-gofile {
+.netdisk-badge.bg-gofile {
     background-color: #f3e8ff !important;
     color: #7c3aed !important;
     border-color: rgba(124, 58, 237, 0.15) !important;
 }
-.result-actions .bg-onedrive {
+.netdisk-badge.bg-onedrive {
     background-color: #e0f2fe !important;
     color: #0078d4 !important;
     border-color: rgba(0, 120, 212, 0.15) !important;
 }
-.result-actions .bg-pikpak {
+.netdisk-badge.bg-pikpak {
     background-color: #fff1eb !important;
     color: #c2410c !important;
     border-color: rgba(194, 65, 12, 0.15) !important;
 }
 
 /* 5. P2P 协议链接 & 兜底 */
-.result-actions .bg-magnet {
+.netdisk-badge.bg-magnet {
     background-color: #f1f5f9 !important;
     color: #1e293b !important;
     border-color: rgba(30, 41, 59, 0.18) !important;
 }
-.result-actions .bg-thunder {
+.netdisk-badge.bg-thunder {
     background-color: #e0f2fe !important;
     color: #0369a1 !important;
     border-color: rgba(3, 105, 161, 0.15) !important;
 }
-.result-actions .bg-ed2k {
+.netdisk-badge.bg-ed2k {
     background-color: #f3f4f6 !important;
     color: #475569 !important;
     border-color: rgba(71, 85, 105, 0.15) !important;
 }
-.result-actions .bg-other {
+.netdisk-badge.bg-other {
     background-color: #f8fafc !important;
     color: #64748b !important;
     border-color: rgba(100, 116, 139, 0.15) !important;
 }
 
 /* 兼容旧版本通用 class */
-.result-actions .bg-purple { background-color: #f5effe !important; color: #8b5cf6 !important; }
-.result-actions .bg-orange { background-color: #fff3ea !important; color: #ea580c !important; }
-.result-actions .bg-teal { background-color: #e6f6f9 !important; color: #0284c7 !important; }
-.result-actions .bg-mid-blue { background-color: #eaf2fe !important; color: #1e60d5 !important; }
-.result-actions .bg-light-green { background-color: #ecfdf5 !important; color: #16a34a !important; }
-.result-actions .bg-salmon { background-color: #fff1eb !important; color: #c2410c !important; }
-.result-actions .bg-deep-violet { background-color: #edf3ff !important; color: #2563eb !important; }
-.result-actions .bg-coral { background-color: #fdf2f8 !important; color: #db2777 !important; }
-.result-actions .bg-navy-blue { background-color: #edf2f7 !important; color: #334155 !important; }
-.result-actions .bg-dark-mint { background-color: #e6f8f3 !important; color: #059669 !important; }
-.result-actions .bg-warm-gold { background-color: #fef6e8 !important; color: #d97706 !important; }
-.result-actions .bg-olive { background-color: #eff4e6 !important; color: #6b7f38 !important; }
-.result-actions .bg-terracotta { background-color: #fdf0ec !important; color: #d93829 !important; }
+.netdisk-badge.bg-purple { background-color: #f5effe !important; color: #8b5cf6 !important; }
+.netdisk-badge.bg-orange { background-color: #fff3ea !important; color: #ea580c !important; }
+.netdisk-badge.bg-teal { background-color: #e6f6f9 !important; color: #0284c7 !important; }
+.netdisk-badge.bg-mid-blue { background-color: #eaf2fe !important; color: #1e60d5 !important; }
+.netdisk-badge.bg-light-green { background-color: #ecfdf5 !important; color: #16a34a !important; }
+.netdisk-badge.bg-salmon { background-color: #fff1eb !important; color: #c2410c !important; }
+.netdisk-badge.bg-deep-violet { background-color: #edf3ff !important; color: #2563eb !important; }
+.netdisk-badge.bg-coral { background-color: #fdf2f8 !important; color: #db2777 !important; }
+.netdisk-badge.bg-navy-blue { background-color: #edf2f7 !important; color: #334155 !important; }
+.netdisk-badge.bg-dark-mint { background-color: #e6f8f3 !important; color: #059669 !important; }
+.netdisk-badge.bg-warm-gold { background-color: #fef6e8 !important; color: #d97706 !important; }
+.netdisk-badge.bg-olive { background-color: #eff4e6 !important; color: #6b7f38 !important; }
+.netdisk-badge.bg-terracotta { background-color: #fdf0ec !important; color: #d93829 !important; }
 
 /* --- 初始提示区域 --- */
 .initial-prompt-area {
@@ -868,7 +868,7 @@
 }
 
 .result-item {
-    padding: 16px 0;
+    padding: 14px 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -879,6 +879,15 @@
     flex-grow: 1;
     min-width: 0;
     text-align: left;
+}
+
+.result-header,
+.result-title-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .result-title,
@@ -892,16 +901,18 @@
 }
 
 .result-title {
-    font-size: 1rem;
+    font-size: 0.98rem;
     font-weight: 700;
     color: #0f172a;
     letter-spacing: -0.01em;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .result-url-line {
     font-size: 0.86rem;
     color: #64748b;
-    margin-top: 7px;
+    margin-top: 6px;
 }
 
 .result-url-line a {
@@ -912,7 +923,7 @@
 /* --- Hot 资源定制样式 --- */
 .result-item.hot-result .result-title,
 .result-item.hot-result .result-url-line a {
-    font-size: 1rem;
+    font-size: 0.98rem;
     font-weight: 700;
 }
 
@@ -924,23 +935,34 @@
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    margin-left: 10px;
-    gap: 8px;
+    margin-left: 12px;
+    gap: 10px;
 }
 
 .netdisk-badge {
-    font-size: 0.74rem;
-    padding: 2px 7px;
-    border-radius: 5px;
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    border-radius: 4px;
     flex-shrink: 0;
     font-weight: 500;
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    box-shadow: none;
+    border: none !important;
+    box-shadow: none !important;
     letter-spacing: 0.01em;
     line-height: 1.4;
     display: inline-flex;
     align-items: center;
     height: 22px;
+    justify-content: center;
+    cursor: default;
+    user-select: none;
+}
+
+.action-btn-wrapper {
+    width: 88px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 .result-divider {
@@ -950,29 +972,48 @@
 
 .copy-button,
 .view-button {
-    min-width: 78px;
+    min-width: 86px;
     height: 34px;
-    padding: 0 15px !important;
-    font-size: 0.84rem !important;
+    padding: 0 10px !important;
+    font-size: 0.82rem !important;
+    white-space: nowrap !important;
     border-radius: 9999px !important;
-    border: 1px solid rgba(148, 163, 184, 0.28) !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-    color: #334155 !important;
+    border: 1px solid rgba(245, 191, 96, 0.45) !important;
+    background: linear-gradient(135deg, rgba(255, 251, 243, 0.98), rgba(254, 243, 199, 0.9)) !important;
+    color: #92400e !important;
     font-weight: 600 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 5px !important;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.12) !important;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .copy-button:hover,
 .view-button:hover {
-    border-color: rgba(245, 191, 96, 0.55) !important;
-    color: #b7791f !important;
-    background: rgba(255, 248, 235, 0.95) !important;
-    box-shadow: 0 3px 8px rgba(245, 191, 96, 0.18) !important;
+    border-color: rgba(245, 158, 11, 0.7) !important;
+    color: #78350f !important;
+    background: linear-gradient(135deg, #fde68a, #f59e0b) !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25) !important;
+    transform: translateY(-1px);
+}
+
+.copy-button.dead-btn,
+.view-button.dead-btn {
+    border: 1px solid rgba(203, 213, 225, 0.6) !important;
+    background: rgba(241, 245, 249, 0.85) !important;
+    color: #64748b !important;
+    box-shadow: none !important;
+    font-weight: 500 !important;
+}
+
+.copy-button.dead-btn:hover,
+.view-button.dead-btn:hover {
+    border-color: rgba(148, 163, 184, 0.6) !important;
+    background: #e2e8f0 !important;
+    color: #334155 !important;
+    box-shadow: none !important;
     transform: translateY(-1px);
 }
 
@@ -1212,7 +1253,8 @@
     }
 
     .result-actions .btn {
-        min-width: 84px;
+        min-width: 86px;
+        white-space: nowrap !important;
     }
 
     .login-shell {
@@ -1274,54 +1316,68 @@
 .link-health-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 3px;
     font-size: 0.72rem;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 6px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 4px;
     white-space: nowrap;
-    transition: all 0.2s ease;
+    height: 22px;
+    text-align: center;
+    border: none !important;
+    cursor: default;
+    user-select: none;
 }
 
 .link-health-badge.badge-ok {
-    background: rgba(16, 185, 129, 0.12);
+    background: rgba(16, 185, 129, 0.08);
     color: #059669;
-    border: 1px solid rgba(16, 185, 129, 0.28);
 }
 
 .link-health-badge.badge-bad {
-    background: rgba(244, 63, 94, 0.12);
+    background: rgba(244, 63, 94, 0.08);
     color: #e11d48;
-    border: 1px solid rgba(244, 63, 94, 0.28);
 }
 
 .link-health-badge.badge-locked {
-    background: rgba(245, 158, 11, 0.12);
+    background: rgba(245, 158, 11, 0.08);
     color: #d97706;
-    border: 1px solid rgba(245, 158, 11, 0.28);
 }
 
-.link-health-badge.badge-checking {
-    background: rgba(100, 116, 139, 0.1);
-    color: #64748b;
-    border: 1px solid rgba(100, 116, 139, 0.2);
-}
-
+.link-health-badge.badge-checking,
 .link-health-badge.badge-uncertain {
-    background: rgba(148, 163, 184, 0.1);
+    background: rgba(100, 116, 139, 0.06);
     color: #64748b;
-    border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
+/* 失效/死链条目视觉置灰与弱化 (淡雾灰标题，彻底隐藏操作按钮，自然融入整体) */
 .result-item.is-dead-link {
-    opacity: 0.58;
-    background: rgba(244, 63, 94, 0.03);
-    border-left: 3px solid rgba(244, 63, 94, 0.45);
-    transition: opacity 0.2s ease, border 0.2s ease;
+    background: transparent;
+    border-left: none;
+    padding: 14px 0;
+    margin: 0;
+    opacity: 0.75;
+    transition: all 0.2s ease;
 }
 
 .result-item.is-dead-link:hover {
-    opacity: 0.88;
+    opacity: 0.9;
+}
+
+.result-item.is-dead-link .result-title {
+    color: #94a3b8 !important;
+    font-weight: 500;
+}
+
+.result-item.is-dead-link .result-url-line,
+.result-item.is-dead-link .result-url-line a {
+    color: #cbd5e1 !important;
+}
+
+.result-item.is-dead-link .netdisk-badge {
+    opacity: 0.65;
+    filter: grayscale(30%);
 }
 
 #hideDeadLinksToggle.active {

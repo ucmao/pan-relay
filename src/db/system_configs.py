@@ -6,39 +6,7 @@ from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
 
-SYSTEM_CONFIG_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS system_config (
-  config_key TEXT PRIMARY KEY,
-  config_value TEXT DEFAULT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-"""
-
-
-def ensure_system_config_table() -> bool:
-    conn = get_db_connection()
-    if not conn:
-        return False
-
-    try:
-        cursor = conn.cursor()
-        cursor.execute(SYSTEM_CONFIG_TABLE_SQL)
-        conn.commit()
-        return True
-    except Error as err:
-        logger.error(f"初始化 system_config 表失败: {err}")
-        conn.rollback()
-        return False
-    finally:
-        cursor.close()
-        conn.close()
-
-
 def get_config_value(config_key: str) -> Optional[str]:
-    if not ensure_system_config_table():
-        return None
-
     conn = get_db_connection()
     if not conn:
         return None
@@ -60,9 +28,6 @@ def get_config_value(config_key: str) -> Optional[str]:
 
 
 def set_config_value(config_key: str, config_value: Dict[str, Any]) -> bool:
-    if not ensure_system_config_table():
-        return False
-
     conn = get_db_connection()
     if not conn:
         return False
@@ -89,9 +54,6 @@ def set_config_value(config_key: str, config_value: Dict[str, Any]) -> bool:
 
 
 def delete_config_value(config_key: str) -> bool:
-    if not ensure_system_config_table():
-        return False
-
     conn = get_db_connection()
     if not conn:
         return False
@@ -108,3 +70,4 @@ def delete_config_value(config_key: str) -> bool:
     finally:
         cursor.close()
         conn.close()
+

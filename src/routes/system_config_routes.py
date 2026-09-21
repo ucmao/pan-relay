@@ -6,6 +6,7 @@ from src.db.credentials import delete_cookie, get_cookie_by_cloud_name, save_coo
 from src.services.system_config_service import (
     get_public_search_api_config,
     get_allow_excel_download_config,
+    get_frontend_link_check_config,
     get_frontend_display_netdisk_config,
     get_frontend_link_mode,
     get_transfer_target_dir,
@@ -18,6 +19,7 @@ from src.services.system_config_service import (
     save_api_mode_config,
     save_public_search_api_config,
     save_allow_excel_download_config,
+    save_frontend_link_check_config,
     save_frontend_display_netdisk_config,
     save_frontend_link_mode,
     save_transfer_target_dir,
@@ -284,6 +286,37 @@ def update_allow_excel_download():
             "message": "已允许前台下载 Excel" if enabled else "已禁止前台下载 Excel",
         }
     )
+
+
+@system_config_bp.route("/admin/api/frontend-link-check-config", methods=["GET"])
+@token_required
+def get_frontend_link_check_route():
+    config = get_frontend_link_check_config()
+    return jsonify({
+        "success": True,
+        "enable_link_check": config["enable_link_check"],
+        "default_hide_dead_links": config["default_hide_dead_links"],
+    })
+
+
+@system_config_bp.route("/admin/api/frontend-link-check-config", methods=["PUT"])
+@token_required
+def update_frontend_link_check_route():
+    data = request.get_json() or {}
+    enable_link_check = bool(data.get("enable_link_check", True))
+    default_hide_dead_links = bool(data.get("default_hide_dead_links", False))
+
+    if not save_frontend_link_check_config(enable_link_check, default_hide_dead_links):
+        return jsonify({"success": False, "message": "前台测活配置保存失败"}), 400
+
+    return jsonify({
+        "success": True,
+        "message": "前台测活与过滤配置保存成功",
+        "data": {
+            "enable_link_check": enable_link_check,
+            "default_hide_dead_links": default_hide_dead_links,
+        }
+    })
 
 
 @system_config_bp.route("/admin/api/credential-config", methods=["GET"])
@@ -680,8 +713,8 @@ def update_api_mode_config_api():
     api_only = data.get("api_only", False)
     enable_frontend = data.get("enable_frontend", True)
     enable_admin_ui = data.get("enable_admin_ui", True)
-    search_scope = data.get("search_scope") or data.get("scope") or "own"
-    transfer_api_key = data.get("transfer_api_key") or data.get("api_key") or ""
+    search_scope = data.get("search_scope", "own")
+    transfer_api_key = data.get("transfer_api_key", "")
 
     success = save_api_mode_config(
         api_only=api_only,

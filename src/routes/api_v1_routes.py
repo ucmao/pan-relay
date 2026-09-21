@@ -207,9 +207,9 @@ def api_transfer():
     """
     start_time = time.time()
     data = request.get_json(silent=True) or {}
-    url = data.get("url") or data.get("share_url") or ""
+    url = (data.get("url") or "").strip()
     title = data.get("title", "未命名资源")
-    netdisk_name = data.get("netdisk_name") or data.get("cloud_name") or ""
+    netdisk_name = (data.get("netdisk_name") or "").strip()
 
     # API Key 校验
     expected_api_key = get_transfer_api_key()
@@ -252,7 +252,7 @@ def api_transfer():
 
     # 前置免登录测活检查 (提前阻断失效、下架、空文件或密码缺失的链接)
     skip_check = bool(data.get("skip_check", False))
-    password = data.get("password") or data.get("pwd")
+    password = data.get("password")
     if not skip_check:
         chk = check_link(url, password=password, disk_type=netdisk_name)
         if chk.get("state") == STATE_BAD:
@@ -355,8 +355,8 @@ def api_link_check():
         )
         return jsonify({"success": False, "message": "请提供待检测的网盘链接 (url 或 items 列表)"}), 400
 
-    password = data.get("password") or data.get("pwd")
-    disk_type = data.get("disk_type") or data.get("cloud_name")
+    password = data.get("password")
+    disk_type = data.get("disk_type")
     force_refresh = bool(data.get("refresh", False))
 
     res = check_link(url, password=password, disk_type=disk_type, force_refresh=force_refresh)

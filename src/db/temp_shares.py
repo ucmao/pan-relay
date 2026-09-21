@@ -4,47 +4,7 @@ from typing import Any, Dict, List, Optional
 from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
-
-TEMP_SHARE_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS temp_share (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  original_url TEXT NOT NULL,
-  title TEXT DEFAULT NULL,
-  cloud_name TEXT NOT NULL,
-  temp_share_url TEXT NOT NULL,
-  file_id TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'active',
-  expires_at DATETIME NOT NULL,
-  last_accessed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  deleted_at DATETIME DEFAULT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_temp_share_lookup ON temp_share(cloud_name, status, expires_at);
-CREATE INDEX IF NOT EXISTS idx_temp_share_original ON temp_share(original_url);
-"""
-
-
-def ensure_temp_share_table() -> bool:
-    conn = get_db_connection()
-    if not conn:
-        return False
-
-    try:
-        conn.executescript(TEMP_SHARE_TABLE_SQL)
-        conn.commit()
-        return True
-    except Error as err:
-        logger.error(f"初始化 temp_share 表失败: {err}")
-        conn.rollback()
-        return False
-    finally:
-        conn.close()
-
-
 def get_active_temp_share(original_url: str, cloud_name: str) -> Optional[Dict[str, Any]]:
-    if not ensure_temp_share_table():
-        return None
 
     conn = get_db_connection()
     if not conn:
@@ -104,9 +64,6 @@ def create_temp_share_record(
     file_id: str,
     expires_in_hours: int,
 ) -> Optional[int]:
-    if not ensure_temp_share_table():
-        return None
-
     conn = get_db_connection()
     if not conn:
         return None
@@ -134,9 +91,6 @@ def create_temp_share_record(
 
 
 def list_expired_temp_shares(limit: int = 50) -> List[Dict[str, Any]]:
-    if not ensure_temp_share_table():
-        return []
-
     conn = get_db_connection()
     if not conn:
         return []

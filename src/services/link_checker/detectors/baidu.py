@@ -34,8 +34,20 @@ class BaiduDetector(BaseDetector):
         sess = session or requests.Session()
         headers = self.get_headers({
             "Referer": url,
-            "Accept": "application/json, text/plain, */*",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Encoding": "identity",
         })
+
+        # 0. 先快速查验 HTML 页面 title 与关键错误，排除已删除/侵权/封禁死链
+        try:
+            page_resp = sess.get(f"https://pan.baidu.com/s/1{surl}", headers=headers, timeout=6, allow_redirects=True)
+            page_text = page_resp.text
+            if "链接不存在" in page_text or "涉及侵权" in page_text or "无法访问" in page_text or "已被取消" in page_text or "已失效" in page_text or "分享文件不存在" in page_text:
+                if "涉及侵权" in page_text or "无法访问" in page_text:
+                    return {"state": STATE_BAD, "summary": "资源因涉嫌侵权或低俗违规无法访问"}
+                return {"state": STATE_BAD, "summary": "百度分享链接不存在或已失效"}
+        except Exception as e:
+            logger.debug(f"百度页面 HTML 预检异常: {e}")
 
         # 1. 若提供了提取码，先进行 verify 校验
         randsk = ""
@@ -52,6 +64,8 @@ class BaiduDetector(BaseDetector):
                 errno = vdata.get("errno", -1)
                 if errno == 0:
                     randsk = vdata.get("randsk", "")
+                elif errno in (2, -21, 105, 110, 115):
+                    return {"state": STATE_BAD, "summary": "百度分享链接已被删除或取消"}
                 elif errno in (-9, -12):
                     return {"state": STATE_LOCKED, "summary": "提取码错误或失效"}
                 else:
@@ -81,9 +95,6 @@ class BaiduDetector(BaseDetector):
             if len(file_list) > 0:
                 return {"state": STATE_OK, "summary": "链接有效", "file_count": len(file_list)}
             return {"state": STATE_BAD, "summary": "分享链接无文件或已失效", "file_count": 0}
-        elif errno in (-9, -12):
+        if errno in (-9, -12):
             return {"state": STATE_LOCKED, "summary": "需要提取码"}
-        elif errno in (-7, 105, 115, 117, 145):
-            return {"state": STATE_BAD, "summary": errmsg or "分享链接已失效或违规已删除"}
-        else:
-            return {"state": STATE_UNCERTAIN, "summary": errmsg or f"百度错误代码 {errno}"}
+        return {"state": STATE_BAD, "summary": errmsg or f"百度分享链接已失效或受限({errno})"}

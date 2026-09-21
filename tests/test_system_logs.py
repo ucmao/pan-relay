@@ -2,7 +2,6 @@ import json
 import unittest
 from app import app
 from src.db.logs import (
-    ensure_system_logs_table,
     insert_system_log,
     query_system_logs,
     delete_logs_by_ids,
@@ -21,11 +20,9 @@ class TestSystemLogs(unittest.TestCase):
         cls.client = cls.app.test_client()
         cls.admin_token = create_jwt_token()
         cls.client.set_cookie(key="token", value=cls.admin_token)
-        ensure_system_logs_table()
 
     def setUp(self):
-        # 保证测试前表状态就绪
-        ensure_system_logs_table()
+        pass
 
     def test_01_insert_and_query_logs(self):
         log_id = insert_system_log(

@@ -29,7 +29,7 @@ def add_resource_and_share(resource_data: dict):
     若资源链接已存在，则复用现有记录并发起转存。
     """
     if not resource_data.get("name") or not resource_data.get("share_link"):
-        return False, "标题和分享链接为必填项", None
+        return False, "标题和链接为必填项", None
 
     share_link = resource_data["share_link"].strip()
     resource_data["share_link"] = share_link

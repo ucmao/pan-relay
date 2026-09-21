@@ -56,14 +56,12 @@ class QuarkDetector(BaseDetector):
 
         if code == 41008 or contains_any(msg, ["提取码", "密码", "passcode"]):
             return {"state": STATE_LOCKED, "summary": "需要提取码"}
-        if code in (41004, 41010, 41011) or contains_any(msg, ["不存在", "失效", "违规", "过期", "取消"]):
-            return {"state": STATE_BAD, "summary": msg or "分享链接已失效或不存在"}
         if code != 0:
-            return {"state": STATE_UNCERTAIN, "summary": msg or f"夸克返回异常代码 {code}"}
+            return {"state": STATE_BAD, "summary": msg or f"夸克分享已失效或受限({code})"}
 
         stoken = (data.get("data") or {}).get("stoken")
         if not stoken:
-            return {"state": STATE_UNCERTAIN, "summary": "未返回夸克访问令牌"}
+            return {"state": STATE_BAD, "summary": "未返回夸克访问令牌"}
 
         # 2. 查询分享详情确认文件列表与违规状态
         detail_api = f"https://drive-pc.quark.cn/1/clouddrive/share/sharepage/detail?pwd_id={quote(pwd_id)}&stoken={quote(stoken)}&ver=2&pr=ucpro"
@@ -75,12 +73,10 @@ class QuarkDetector(BaseDetector):
 
         detail_code = data_detail.get("code", -1)
         if detail_code != 0:
-            dmsg = str(data_detail.get("message") or "无法确认链接状态")
-            if contains_any(dmsg, ["不存在", "失效", "违规", "过期", "取消"]):
-                return {"state": STATE_BAD, "summary": dmsg}
+            dmsg = str(data_detail.get("message") or "夸克文件详情获取失败")
             if contains_any(dmsg, ["提取码", "密码"]):
                 return {"state": STATE_LOCKED, "summary": dmsg}
-            return {"state": STATE_UNCERTAIN, "summary": dmsg}
+            return {"state": STATE_BAD, "summary": dmsg}
 
         detail_data = data_detail.get("data") or {}
         share_info = detail_data.get("share") or {}

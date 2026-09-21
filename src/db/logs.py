@@ -5,55 +5,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from src.db.connection import Error, get_db_connection
 
 logger = logging.getLogger(__name__)
-
-SYSTEM_LOGS_TABLE_SQL = """
-CREATE TABLE IF NOT EXISTS system_logs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  log_type TEXT NOT NULL,
-  action TEXT NOT NULL,
-  query_text TEXT DEFAULT NULL,
-  status_code INTEGER NOT NULL DEFAULT 200,
-  error_message TEXT DEFAULT NULL,
-  duration_ms INTEGER NOT NULL DEFAULT 0,
-  result_count INTEGER DEFAULT 0,
-  client_ip TEXT DEFAULT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_logs_created_at ON system_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_logs_type_created ON system_logs(log_type, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_logs_status_created ON system_logs(status_code, created_at DESC);
-"""
-
-
-def ensure_system_logs_table() -> bool:
-    """
-    检查并确保 system_logs 数据表与相关索引已创建
-    """
-    conn = get_db_connection()
-    if not conn:
-        return False
-
-    try:
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='system_logs';"
-        )
-        row = cursor.fetchone()
-        if not row or row[0] == 0:
-            cursor.close()
-            conn.executescript(SYSTEM_LOGS_TABLE_SQL)
-            conn.commit()
-            logger.info("已成功初始化创建 system_logs 表与索引。")
-        return True
-    except Error as err:
-        logger.error(f"确保 system_logs 数据表存在时出错: {err}")
-        conn.rollback()
-        return False
-    finally:
-        conn.close()
-
-
 def insert_system_log(
     log_type: str,
     action: str,
@@ -67,7 +18,6 @@ def insert_system_log(
     """
     插入单条系统运行或业务审计日志
     """
-    ensure_system_logs_table()
     conn = get_db_connection()
     if not conn:
         return None
@@ -117,7 +67,6 @@ def query_system_logs(
     """
     分页并多维度筛选查询系统日志
     """
-    ensure_system_logs_table()
     conn = get_db_connection()
     if not conn:
         return False, "无法连接到 SQLite 数据库", {"total": 0, "logs": [], "page": page, "page_size": page_size}
@@ -215,7 +164,6 @@ def delete_logs_by_ids(ids: List[int]) -> Tuple[bool, str, int]:
     if not ids:
         return True, "未指定待删除日志 ID", 0
 
-    ensure_system_logs_table()
     conn = get_db_connection()
     if not conn:
         return False, "无法连接到数据库", 0
@@ -240,7 +188,6 @@ def clear_all_logs() -> Tuple[bool, str, int]:
     """
     清空全部系统日志
     """
-    ensure_system_logs_table()
     conn = get_db_connection()
     if not conn:
         return False, "无法连接到数据库", 0
@@ -265,7 +212,6 @@ def cleanup_logs_before_days(days: int = 7) -> Tuple[bool, str, int]:
     清理指定天数之前的历史日志
     """
     days = max(1, int(days))
-    ensure_system_logs_table()
     conn = get_db_connection()
     if not conn:
         return False, "无法连接到数据库", 0
@@ -292,7 +238,6 @@ def get_logs_summary_stats() -> Dict[str, Any]:
     """
     统计系统运行指标，供后台日志顶栏与仪表盘大盘使用
     """
-    ensure_system_logs_table()
     conn = get_db_connection()
     default_stats = {
         "today_total": 0,
@@ -374,7 +319,6 @@ def query_search_logs(
     """
     专门查询搜索业务明细日志（包括 Web 前台搜索与开放 API 搜索）。
     """
-    ensure_system_logs_table()
     conn = get_db_connection()
     if not conn:
         return False, "无法连接到 SQLite 数据库", {"total": 0, "logs": [], "page": page, "page_size": page_size}
@@ -493,7 +437,6 @@ def get_search_analytics_stats() -> Dict[str, Any]:
     """
     统计搜索行为与分析指标（今日搜索量、Web/API占比、命中率、Top 搜索热词、高频零结果待补词）
     """
-    ensure_system_logs_table()
     conn = get_db_connection()
     default_stats = {
         "today_total_searches": 0,

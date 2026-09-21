@@ -970,7 +970,7 @@ async function batchSaveResources() {
 
 function convertToCSV(data) {
     if (data.length === 0) return '';
-    const headers = ['ID', '标题', '分享链接', '云盘名称', '类型', '备注'];
+    const headers = ['ID', '标题', '链接', '云盘名称', '类型', '备注'];
     const csvContent = [headers.join(',')];
 
     data.forEach(resource => {

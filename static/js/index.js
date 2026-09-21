@@ -12,7 +12,8 @@ let excludeKeywords = [];
 const isViewModeEnabled = window.SEARCH_LINK_MODE === 'view';
 
 // 网盘链接健康检测状态
-let isHideDeadLinks = false;
+const isLinkCheckEnabled = window.ENABLE_LINK_CHECK !== false;
+let isHideDeadLinks = isLinkCheckEnabled && Boolean(window.DEFAULT_HIDE_DEAD_LINKS);
 const linkHealthCache = new Map();
 const pendingCheckKeys = new Set();
 let checkQueue = [];
@@ -22,6 +23,19 @@ const filterBar = document.getElementById('netdisk-filter-bar');
 const filterAndCountContainer = document.querySelector('.filter-and-count-container');
 const hideDeadLinksToggle = document.getElementById('hideDeadLinksToggle');
 const hideDeadLinksText = document.getElementById('hideDeadLinksText');
+
+// 初始化过滤失效按钮显隐与默认状态
+if (hideDeadLinksToggle) {
+    if (!isLinkCheckEnabled) {
+        hideDeadLinksToggle.classList.add('d-none');
+    } else if (isHideDeadLinks) {
+        hideDeadLinksToggle.classList.add('active');
+        hideDeadLinksToggle.setAttribute('aria-pressed', 'true');
+        if (hideDeadLinksText) {
+            hideDeadLinksText.textContent = '已过滤失效';
+        }
+    }
+}
 const includeFilterInput = document.getElementById('includeFilter');
 const excludeFilterInput = document.getElementById('excludeFilter');
 const applyFilterButton = document.getElementById('applyFilter');
@@ -646,7 +660,7 @@ function exportFilteredResultsToExcel() {
         return;
     }
 
-    const headers = ['序号', '资源标题', '分享链接', '云盘名称'];
+    const headers = ['序号', '资源标题', '链接', '云盘名称'];
     const csvLines = [headers.join(',')];
 
     filteredResults.forEach((item, index) => {
@@ -746,20 +760,33 @@ function renderResults(reset = false) {
 
         let healthBadgeHtml = '';
         let deadItemClass = '';
-        if (health) {
-            if (health.state === 'ok') {
-                healthBadgeHtml = `<span class="link-health-badge badge-ok" title="${escapeHtml(health.summary || '资源有效')}"><i class="fas fa-check-circle"></i> 有效</span>`;
-            } else if (health.state === 'bad') {
-                deadItemClass = 'is-dead-link';
-                healthBadgeHtml = `<span class="link-health-badge badge-bad" title="${escapeHtml(health.summary || '资源已失效或为空')}"><i class="fas fa-times-circle"></i> 失效</span>`;
-            } else if (health.state === 'locked') {
-                healthBadgeHtml = `<span class="link-health-badge badge-locked" title="${escapeHtml(health.summary || '需提取码')}"><i class="fas fa-key"></i> 需提取码</span>`;
-            } else if (health.state === 'uncertain') {
-                healthBadgeHtml = `<span class="link-health-badge badge-uncertain" title="${escapeHtml(health.summary || '探测超时或未知')}"><i class="fas fa-question-circle"></i> 未知</span>`;
+        if (isLinkCheckEnabled) {
+            if (health) {
+                if (health.state === 'ok') {
+                    healthBadgeHtml = `<span class="link-health-badge badge-ok" title="${escapeHtml(health.summary || '资源有效')}"><i class="fas fa-check-circle"></i> 有效</span>`;
+                } else if (health.state === 'bad') {
+                    deadItemClass = 'is-dead-link';
+                    healthBadgeHtml = `<span class="link-health-badge badge-bad" title="${escapeHtml(health.summary || '资源已失效或为空')}"><i class="fas fa-times-circle"></i> 失效</span>`;
+                } else if (health.state === 'locked') {
+                    healthBadgeHtml = `<span class="link-health-badge badge-locked" title="${escapeHtml(health.summary || '需提取码')}"><i class="fas fa-key"></i> 需提取码</span>`;
+                } else if (health.state === 'uncertain') {
+                    healthBadgeHtml = `<span class="link-health-badge badge-uncertain" title="${escapeHtml(health.summary || '探测超时或未知')}"><i class="fas fa-question-circle"></i> 未知</span>`;
+                }
+            } else if (urlLink && !urlLink.startsWith('magnet:') && !urlLink.startsWith('ed2k:') && !urlLink.startsWith('thunder:')) {
+                healthBadgeHtml = `<span class="link-health-badge badge-checking" title="正在探测网盘链接有效性..."><span class="spinner-border spinner-border-sm" style="width: 0.65rem; height: 0.65rem; border-width: 0.1em;"></span> 测活中</span>`;
             }
-        } else if (urlLink && !urlLink.startsWith('magnet:') && !urlLink.startsWith('ed2k:') && !urlLink.startsWith('thunder:')) {
-            healthBadgeHtml = `<span class="link-health-badge badge-checking" title="正在探测网盘链接有效性..."><span class="spinner-border spinner-border-sm" style="width: 0.65rem; height: 0.65rem; border-width: 0.1em;"></span> 测活中</span>`;
         }
+
+        let actionBtnClass = isViewModeEnabled ? 'view-button' : 'copy-button';
+        if (deadItemClass === 'is-dead-link') {
+            actionBtnClass += ' dead-btn';
+        }
+        const actionBtnHtml = `
+            <div class="action-btn-wrapper">
+                <button class="btn btn-sm ${actionBtnClass}" data-title="${escapeHtml(titleText)}" data-url="${escapeHtml(urlLink)}" data-netdisk="${escapeHtml(netdiskName)}">
+                    ${isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
+                </button>
+            </div>`;
 
         const fullItem = document.createElement('div');
         fullItem.className = 'result-item-wrapper';
@@ -767,18 +794,18 @@ function renderResults(reset = false) {
         const itemHtml = `
             <div class="result-item ${hotClass} ${deadItemClass}" data-key="${escapeHtml(key)}" data-url="${escapeHtml(urlLink)}">
                 <div class="result-info">
-                    <span class="result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
+                    <div class="result-title-line">
+                        <span class="netdisk-badge ${finalBadgeClass}">${escapeHtml(netdiskName)}</span>
+                        <span class="result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
+                    </div>
                     <div class="result-url-line ${isViewModeEnabled ? 'd-none' : ''}">
                         ${linkIconHtml}
                         <a href="${urlLink}" target="_blank" title="${urlLink}">${escapeHtml(urlLink)}</a>
                     </div>
                 </div>
                 <div class="result-actions">
-                    <span class="netdisk-badge ${finalBadgeClass}">${escapeHtml(netdiskName)}</span>
                     ${healthBadgeHtml}
-                    <button class="btn btn-sm ${isViewModeEnabled ? 'view-button btn-outline-secondary' : 'copy-button btn-outline-secondary'}" data-title="${escapeHtml(titleText)}" data-url="${escapeHtml(urlLink)}" data-netdisk="${escapeHtml(netdiskName)}">
-                        ${isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
-                    </button>
+                    ${actionBtnHtml}
                 </div>
             </div>
             ${(startIndex + index) < filteredResults.length - 1 ? '<hr class="result-divider">' : ''}
@@ -797,7 +824,7 @@ function renderResults(reset = false) {
             const title = this.getAttribute('data-title');
             const url = this.getAttribute('data-url');
             const textToCopy = `标题: ${title}
-分享链接: ${url}`;
+链接: ${url}`;
 
             copyTextToClipboard(textToCopy).then(success => {
                 if (success) {
@@ -854,7 +881,7 @@ function safeEscapeCss(str) {
  * 将待测活链接入队并触发后台异步并发检测
  */
 function queueLinksForVerification(items) {
-    if (!items || !items.length) return;
+    if (!isLinkCheckEnabled || !items || !items.length) return;
 
     for (const item of items) {
         const url = item[2] || '';
@@ -884,7 +911,7 @@ function queueLinksForVerification(items) {
  * 循环消费队列进行批量并发检测
  */
 async function processCheckQueue() {
-    if (isCheckingQueueRunning || checkQueue.length === 0) return;
+    if (!isLinkCheckEnabled || isCheckingQueueRunning || checkQueue.length === 0) return;
     isCheckingQueueRunning = true;
 
     try {
@@ -960,13 +987,53 @@ function updateHealthBadgeInDOM(res) {
     const uniqueElements = Array.from(new Set(matchedElements));
     uniqueElements.forEach(item => {
         const wrapper = item.closest('.result-item-wrapper') || item;
+        let actionWrapper = item.querySelector('.action-btn-wrapper');
+        if (!actionWrapper) {
+            actionWrapper = document.createElement('div');
+            actionWrapper.className = 'action-btn-wrapper';
+            item.querySelector('.result-actions')?.appendChild(actionWrapper);
+        }
+
+        let btn = actionWrapper.querySelector('button');
+        if (!btn) {
+            const titleText = item.querySelector('.result-title')?.getAttribute('title') || item.querySelector('.result-title')?.textContent || '';
+            const urlLink = item.querySelector('.result-url-line a')?.getAttribute('href') || item.getAttribute('data-url') || '';
+            const netdiskName = item.querySelector('.netdisk-badge')?.textContent.trim() || '';
+
+            btn = document.createElement('button');
+            btn.className = `btn btn-sm ${isViewModeEnabled ? 'view-button' : 'copy-button'}`;
+            btn.setAttribute('data-title', titleText);
+            btn.setAttribute('data-url', urlLink);
+            btn.setAttribute('data-netdisk', netdiskName);
+            btn.innerHTML = isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制';
+
+            btn.addEventListener('click', function () {
+                if (isViewModeEnabled) {
+                    handleViewButtonClick(this);
+                } else {
+                    const textToCopy = `标题: ${titleText}\n链接: ${urlLink}`;
+                    copyTextToClipboard(textToCopy).then(success => {
+                        if (success) {
+                            this.innerHTML = '<i class="fas fa-check"></i> 已复制';
+                            setTimeout(() => { this.innerHTML = isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'; }, 1500);
+                        } else {
+                            showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
+                        }
+                    });
+                }
+            });
+            actionWrapper.appendChild(btn);
+        }
+
         if (state === 'bad') {
             item.classList.add('is-dead-link');
+            btn.classList.add('dead-btn');
             if (isHideDeadLinks) {
                 wrapper.style.display = 'none';
             }
         } else {
             item.classList.remove('is-dead-link');
+            btn.classList.remove('dead-btn');
             if (isHideDeadLinks) {
                 wrapper.style.display = '';
             }
@@ -977,11 +1044,8 @@ function updateHealthBadgeInDOM(res) {
             badge = document.createElement('span');
             badge.className = 'link-health-badge';
             const actionsDiv = item.querySelector('.result-actions');
-            const btn = actionsDiv?.querySelector('.copy-button, .view-button');
-            if (actionsDiv && btn) {
-                actionsDiv.insertBefore(badge, btn);
-            } else if (actionsDiv) {
-                actionsDiv.appendChild(badge);
+            if (actionsDiv) {
+                actionsDiv.insertBefore(badge, actionsDiv.firstChild);
             }
         }
 
@@ -1100,7 +1164,7 @@ copyViewResultButton?.addEventListener('click', async function () {
     if (!currentResolvedViewResult) return;
 
     const textToCopy = `标题: ${currentResolvedViewResult.title}
-分享链接: ${currentResolvedViewResult.url}`;
+链接: ${currentResolvedViewResult.url}`;
 
     const success = await copyTextToClipboard(textToCopy);
     if (success) {

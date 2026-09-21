@@ -113,36 +113,16 @@ def init_sqlite_db():
         raw_conn.execute("PRAGMA journal_mode=WAL;")
         raw_conn.execute("PRAGMA synchronous=NORMAL;")
 
-        table_check = raw_conn.execute(
-            "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='resources';"
-        ).fetchone()
-
-        if table_check[0] == 0:
-            logger.info("SQLite 数据库表不存在，正在执行 schema_sqlite.sql 初始化建表...")
-            if os.path.exists(schema_file):
-                with open(schema_file, "r", encoding="utf-8") as f:
-                    schema_sql = f.read()
-                raw_conn.executescript(schema_sql)
-                logger.info("SQLite 数据库初始化建表完成。")
-            else:
-                logger.error(f"未找到数据库初始化脚本: {schema_file}")
+        if os.path.exists(schema_file):
+            with open(schema_file, "r", encoding="utf-8") as f:
+                schema_sql = f.read()
+            raw_conn.executescript(schema_sql)
+            logger.info("SQLite 数据库初始化与表结构校验完成。")
         else:
-            logger.info("SQLite 数据库表结构校验正常。")
+            logger.error(f"未找到数据库初始化脚本: {schema_file}")
 
         raw_conn.close()
         _db_initialized = True
-
-        try:
-            from src.db.logs import ensure_system_logs_table
-            ensure_system_logs_table()
-        except Exception as e:
-            logger.warning(f"自动初始化 system_logs 表结构失败: {e}")
-
-        try:
-            from src.db.resources import ensure_resource_health_columns
-            ensure_resource_health_columns()
-        except Exception as e:
-            logger.warning(f"自动扩展 resources 表健康状态字段失败: {e}")
 
         try:
             from src.services.system_config_service import init_default_search_sources

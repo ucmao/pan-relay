@@ -10,7 +10,7 @@ from src.services.link_checker import (
     STATE_LOCKED,
     STATE_OK,
     STATE_UNSUPPORTED,
-    LinkChecker,
+    LinkCheckEngine,
     check_link,
     check_links_batch,
 )
@@ -135,7 +135,7 @@ class SearchRankingTest(unittest.TestCase):
 class LinkCheckerTest(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
-        self.checker = LinkChecker()
+        self.checker = LinkCheckEngine()
         with self.checker._cache_lock:
             self.checker._cache.clear()
 

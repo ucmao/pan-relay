@@ -25,9 +25,6 @@ from .engine import LinkCheckEngine
 # 全局单例引擎
 _global_engine = LinkCheckEngine()
 
-# 向后兼容别名
-LinkChecker = LinkCheckEngine
-
 
 def check_link(
     url: str,
@@ -69,7 +66,6 @@ __all__ = [
     "CheckResult",
     "BaseDetector",
     "LinkCheckEngine",
-    "LinkChecker",
     "check_link",
     "check_links_batch",
 ]

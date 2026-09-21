@@ -17,6 +17,7 @@ FRONTEND_LINK_MODE_OPTIONS = {"copy", "view"}
 API_MODE_CONFIG_KEY = "api_mode_config"
 SEARCH_API_SCOPE_KEY = "search_api_scope"
 TRANSFER_API_KEY_KEY = "transfer_api_key"
+FRONTEND_LINK_CHECK_CONFIG_KEY = "frontend_link_check_config"
 
 
 
@@ -167,6 +168,48 @@ def save_allow_excel_download_config(enabled: bool) -> bool:
         ALLOW_EXCEL_DOWNLOAD_KEY,
         {"enabled": bool(enabled)},
     )
+
+
+def get_frontend_link_check_config() -> Dict[str, bool]:
+    """获取前台测活与过滤失效配置"""
+    raw_value = get_config_value(FRONTEND_LINK_CHECK_CONFIG_KEY)
+    default_config = {
+        "enable_link_check": True,
+        "default_hide_dead_links": False,
+    }
+    if not raw_value:
+        return default_config
+
+    try:
+        parsed = json.loads(raw_value)
+        if not isinstance(parsed, dict):
+            return default_config
+        return {
+            "enable_link_check": bool(parsed.get("enable_link_check", True)),
+            "default_hide_dead_links": bool(parsed.get("default_hide_dead_links", False)),
+        }
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("前台测活配置格式无效，已回退到默认值")
+        return default_config
+
+
+def save_frontend_link_check_config(enable_link_check: bool = True, default_hide_dead_links: bool = False) -> bool:
+    """保存前台测活与过滤失效配置"""
+    return set_config_value(
+        FRONTEND_LINK_CHECK_CONFIG_KEY,
+        {
+            "enable_link_check": bool(enable_link_check),
+            "default_hide_dead_links": bool(default_hide_dead_links),
+        },
+    )
+
+
+def is_frontend_link_check_enabled() -> bool:
+    return get_frontend_link_check_config()["enable_link_check"]
+
+
+def is_default_hide_dead_links_enabled() -> bool:
+    return get_frontend_link_check_config()["default_hide_dead_links"]
 
 
 SENSITIVE_WORDS_CONFIG_KEY = "sensitive_words_config"

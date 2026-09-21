@@ -506,37 +506,6 @@ def count_expired_resources(days: int = 15) -> int:
         conn.close()
 
 
-def ensure_resource_health_columns() -> bool:
-    """
-    检查并确保 resources 表中包含 health_status, health_message, checked_at 字段。
-    """
-    conn = get_db_connection()
-    if not conn:
-        return False
-    try:
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA table_info(resources);")
-        columns = [row[1] for row in cursor.fetchall()]
-        if "health_status" not in columns:
-            cursor.execute("ALTER TABLE resources ADD COLUMN health_status TEXT DEFAULT 'unknown';")
-            logger.info("已自动为 resources 表新增 health_status 字段")
-        if "health_message" not in columns:
-            cursor.execute("ALTER TABLE resources ADD COLUMN health_message TEXT DEFAULT NULL;")
-            logger.info("已自动为 resources 表新增 health_message 字段")
-        if "checked_at" not in columns:
-            cursor.execute("ALTER TABLE resources ADD COLUMN checked_at DATETIME DEFAULT NULL;")
-            logger.info("已自动为 resources 表新增 checked_at 字段")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_resources_health ON resources(health_status);")
-        conn.commit()
-        return True
-    except Error as err:
-        logger.error(f"检查或扩展 resources 表健康状态字段失败: {err}")
-        conn.rollback()
-        return False
-    finally:
-        cursor.close()
-        conn.close()
-
 
 def update_resource_health(
     resource_id: int, health_status: str, health_message: Optional[str] = None
