@@ -12,7 +12,12 @@ from src.services.search_service import (
     search_in_database,
     filter_results_by_frontend_netdisks,
 )
-from src.services.link_checker import check_link, check_links_batch
+from src.services.link_checker import (
+    check_link,
+    check_links_batch,
+    STATE_BAD,
+    STATE_LOCKED,
+)
 from src.services.temp_share_service import resolve_view_url
 from src.services.resource_service import list_resources
 from src.services.system_config_service import (
@@ -52,6 +57,31 @@ def api_status():
     })
 
 
+def _enrich_and_filter_results(results: list, check_status: bool, filter_bad: bool) -> list:
+    """对搜索结果进行并发测活注入 (health_state/summary/file_count) 与失效链接过滤"""
+    if not results or (not check_status and not filter_bad):
+        return results
+
+    check_items = []
+    for r in results:
+        u = r.get("share_link") or r.get("url") or ""
+        p = r.get("password") or r.get("pwd") or ""
+        d = r.get("cloud_name") or r.get("netdisk_name") or ""
+        check_items.append({"url": u, "password": p, "disk_type": d})
+
+    check_res_list = check_links_batch(check_items)
+    for item, chk in zip(results, check_res_list):
+        item["health_state"] = chk.get("state")
+        item["health_summary"] = chk.get("summary")
+        if chk.get("file_count") is not None:
+            item["file_count"] = chk.get("file_count")
+
+    if filter_bad:
+        results = [item for item in results if item.get("health_state") != STATE_BAD]
+
+    return results
+
+
 @api_v1_bp.route("/search", methods=["GET"])
 def api_search():
     """
@@ -74,6 +104,8 @@ def api_search():
     limit = request.args.get("limit", 100, type=int)
     cloud_name = request.args.get("cloud_name", "", type=str).strip()
     req_scope = request.args.get("scope", "", type=str).strip().lower()
+    check_status = request.args.get("check_status", "false").lower() in ("true", "1")
+    filter_bad = request.args.get("filter_bad", "false").lower() in ("true", "1")
 
     if not keyword:
         record_log(
@@ -116,6 +148,7 @@ def api_search():
             item.to_dict() if hasattr(item, "to_dict") else item
             for item in filtered_items[:limit]
         ]
+        results = _enrich_and_filter_results(results, check_status=check_status, filter_bad=filter_bad)
         duration_ms = int((time.time() - start_time) * 1000)
         record_log(
             log_type="search",
@@ -141,6 +174,7 @@ def api_search():
     if not success:
         return jsonify({"success": False, "message": message}), 500
 
+    results = _enrich_and_filter_results(results, check_status=check_status, filter_bad=filter_bad)
     return jsonify({
         "success": True,
         "scope": "all",
@@ -215,6 +249,45 @@ def api_transfer():
             error_message="缺少必填参数: url",
         )
         return jsonify({"success": False, "message": "缺少必填参数: url"}), 400
+
+    # 前置免登录测活检查 (提前阻断失效、下架、空文件或密码缺失的链接)
+    skip_check = bool(data.get("skip_check", False))
+    password = data.get("password") or data.get("pwd")
+    if not skip_check:
+        chk = check_link(url, password=password, disk_type=netdisk_name)
+        if chk.get("state") == STATE_BAD:
+            duration_ms = int((time.time() - start_time) * 1000)
+            record_log(
+                log_type="api",
+                action=f"api.v1.transfer.{netdisk_name or 'auto'}.invalid",
+                query_text=f"{url} [reason={chk.get('summary')}]",
+                status_code=422,
+                error_message=f"源链接已失效或为空: {chk.get('summary')}",
+                duration_ms=duration_ms,
+            )
+            return jsonify({
+                "success": False,
+                "code": "LINK_INVALID",
+                "message": f"源链接已失效、被下架或内容为空: {chk.get('summary')}",
+                "data": chk,
+            }), 422
+
+        if chk.get("state") == STATE_LOCKED and not password:
+            duration_ms = int((time.time() - start_time) * 1000)
+            record_log(
+                log_type="api",
+                action=f"api.v1.transfer.{netdisk_name or 'auto'}.locked",
+                query_text=url,
+                status_code=422,
+                error_message="源链接需要提取码",
+                duration_ms=duration_ms,
+            )
+            return jsonify({
+                "success": False,
+                "code": "LINK_LOCKED",
+                "message": "源链接需要提取码，请在请求体中提供 password 参数",
+                "data": chk,
+            }), 422
 
     try:
         resolved = resolve_view_url(title=title, original_url=url, netdisk_name=netdisk_name)

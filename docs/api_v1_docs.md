@@ -75,20 +75,26 @@ sequenceDiagram
   - `keyword` (string, **必填**): 搜索关键词，例如 `黑神话`
   - `cloud_name` (string, **可选**): 指定筛选网盘类型，如 `夸克网盘`、`百度网盘`、`阿里云盘`、`UC网盘`、`迅雷网盘`
   - `limit` (int, **可选**): 限制最大返回结果条数，默认 `100`
+  - `scope` (string, **可选**): 查询作用域 (`own` 仅自有库, `all` 全网聚合)
+  - `check_status` (bool, **可选**): 是否对搜索结果实时测活，默认 `false`。开启后每条结果将注入 `health_state` (`ok` / `bad` / `locked` / `uncertain`) 与 `health_summary`
+  - `filter_bad` (bool, **可选**): 是否自动在服务端剔除已失效、违规或空文件的链接，默认 `false`
 
-**响应示例**:
+**响应示例 (开启 `check_status=true`)**:
 ```json
 {
   "success": true,
+  "scope": "all",
   "total": 2,
   "results": [
     {
       "title": "黑神话：悟空 v1.0.8 官方中文版",
       "share_link": "https://pan.quark.cn/s/raw_public_link_123",
       "cloud_name": "夸克网盘",
-      "password": "ABCD",
+      "password": "",
       "source": "plugin",
-      "datetime": "2026-09-20 18:00:00"
+      "health_state": "ok",
+      "health_summary": "链接有效",
+      "file_count": 5
     },
     {
       "title": "黑神话：悟空 高清原画合集",
@@ -96,7 +102,9 @@ sequenceDiagram
       "cloud_name": "夸克网盘",
       "password": "",
       "source": "hot",
-      "datetime": "2026-09-20 19:30:00"
+      "health_state": "ok",
+      "health_summary": "链接有效",
+      "file_count": 1
     }
   ]
 }
@@ -114,6 +122,8 @@ sequenceDiagram
   - `url` (string, **必填**): 步骤 1 获取到的原始网盘链接 (`share_link`)
   - `title` (string, **可选**): 资源标题，默认 `未命名资源`
   - `netdisk_name` (string, **可选**): 网盘类型，如 `夸克网盘`
+  - `password` (string, **可选**): 原始链接提取码 (若有)
+  - `skip_check` (bool, **可选**): 是否跳过前置免登录测活检查，默认 `false`
 
 **请求示例**:
 ```json
@@ -124,7 +134,7 @@ sequenceDiagram
 }
 ```
 
-**响应示例**:
+**成功响应示例**:
 ```json
 {
   "success": true,
@@ -133,6 +143,36 @@ sequenceDiagram
     "url": "https://pan.quark.cn/s/my_relay_link_999",
     "mode": "temp_share",
     "netdisk_name": "夸克网盘"
+  }
+}
+```
+
+**失败响应示例 (HTTP 422 拦截失效或空链接)**:
+```json
+{
+  "success": false,
+  "code": "LINK_INVALID",
+  "message": "源链接已失效、被下架或内容为空: 分享链接无效：文件列表为空",
+  "data": {
+    "url": "https://pan.quark.cn/s/raw_public_link_123",
+    "state": "bad",
+    "summary": "分享链接无效：文件列表为空",
+    "disk_type": "夸克网盘"
+  }
+}
+```
+
+**失败响应示例 (HTTP 422 缺少提取码)**:
+```json
+{
+  "success": false,
+  "code": "LINK_LOCKED",
+  "message": "源链接需要提取码，请在请求体中提供 password 参数",
+  "data": {
+    "url": "https://pan.quark.cn/s/locked_link",
+    "state": "locked",
+    "summary": "需要提取码",
+    "disk_type": "夸克网盘"
   }
 }
 ```

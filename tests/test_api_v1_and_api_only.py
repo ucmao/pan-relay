@@ -96,8 +96,10 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
         self.assertEqual("all", data["scope"])
         mock_public_search.assert_called_once()
 
+    @patch("src.routes.api_v1_routes.check_link")
     @patch("src.routes.api_v1_routes.resolve_view_url")
-    def test_api_v1_transfer_with_api_key_protection(self, mock_resolve):
+    def test_api_v1_transfer_with_api_key_protection(self, mock_resolve, mock_check):
+        mock_check.return_value = {"state": "ok", "summary": "链接有效"}
         mock_resolve.return_value = {
             "url": "https://pan.quark.cn/s/new123",
             "mode": "temp_share",
