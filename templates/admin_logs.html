@@ -3,57 +3,98 @@
 {% set current_tab = current_tab or 'analytics' %}
 
 {% block head %}
-    {{ super() }}
-    <title>Pan-Relay - 运行与搜索日志</title>
-    <style>
-        .log-badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.15rem 0.5rem;
-            border-radius: 9999px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            line-height: 1rem;
-        }
-        .log-badge-search { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
-        .log-badge-transfer { background-color: #faf5ff; color: #7e22ce; border: 1px solid #f3e8ff; }
-        .log-badge-api { background-color: #ecfdf5; color: #047857; border: 1px solid #d1fae5; }
-        .log-badge-system { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+{{ super() }}
+<title>Pan-Relay - 运行与搜索日志</title>
+<style>
+    .log-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        line-height: 1rem;
+    }
 
-        .log-status-200 { background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-        .log-status-error { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .log-badge-search {
+        background-color: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #dbeafe;
+    }
 
-        .log-duration-fast { color: #059669; font-weight: 600; }
-        .log-duration-medium { color: #d97706; font-weight: 600; }
-        .log-duration-slow { color: #dc2626; font-weight: 600; }
+    .log-badge-transfer {
+        background-color: #faf5ff;
+        color: #7e22ce;
+        border: 1px solid #f3e8ff;
+    }
 
-        /* Floating Batch Toolbar */
-        .batch-floating-toolbar {
-            position: fixed;
-            bottom: 1.5rem;
-            left: 50%;
-            transform: translateX(-50%) translateY(1rem);
-            background: rgba(255, 255, 255, 0.96);
-            backdrop-filter: blur(12px);
-            border: 1px solid #e2e8f0;
-            border-radius: 1rem;
-            padding: 0.5rem 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            z-index: 40;
-            font-size: 0.75rem;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            opacity: 0;
-            pointer-events: none;
-        }
-        .batch-floating-toolbar.active {
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateX(-50%) translateY(0);
-        }
-    </style>
+    .log-badge-api {
+        background-color: #ecfdf5;
+        color: #047857;
+        border: 1px solid #d1fae5;
+    }
+
+    .log-badge-system {
+        background-color: #f1f5f9;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+    }
+
+    .log-status-200 {
+        background-color: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .log-status-error {
+        background-color: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .log-duration-fast {
+        color: #059669;
+        font-weight: 600;
+    }
+
+    .log-duration-medium {
+        color: #d97706;
+        font-weight: 600;
+    }
+
+    .log-duration-slow {
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+    /* Floating Batch Toolbar */
+    .batch-floating-toolbar {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%) translateY(1rem);
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 0.5rem 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 40;
+        font-size: 0.75rem;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .batch-floating-toolbar.active {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateX(-50%) translateY(0);
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -67,30 +108,39 @@
             <p class="text-xs text-slate-500 mt-0.5">监控用户与 API 检索明细、搜索热词排行、网盘转存及后台全量运行审计</p>
         </div>
         <div class="flex items-center space-x-2">
-            <button type="button" onclick="exportCurrentLogsView()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5" title="导出日志为 CSV">
+            <button type="button" onclick="exportCurrentLogsView()"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5"
+                title="导出日志为 CSV">
                 <i class="fas fa-file-export text-slate-400"></i>
                 <span>导出 CSV</span>
             </button>
             <div class="relative inline-block text-left" id="cleanupDropdownWrap">
-                <button type="button" onclick="toggleCleanupMenu()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5">
+                <button type="button" onclick="toggleCleanupMenu()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5">
                     <i class="fas fa-broom text-slate-400"></i>
                     <span>日志维护</span>
                     <i class="fas fa-chevron-down text-[10px] text-slate-400 ml-0.5"></i>
                 </button>
-                <div id="cleanupMenu" class="hidden absolute right-0 mt-1.5 w-44 bg-white rounded-xl shadow-lg border border-slate-200/80 py-1 z-30 text-xs">
-                    <button type="button" onclick="cleanupLogs(7)" class="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                <div id="cleanupMenu"
+                    class="hidden absolute right-0 mt-1.5 w-44 bg-white rounded-xl shadow-lg border border-slate-200/80 py-1 z-30 text-xs">
+                    <button type="button" onclick="cleanupLogs(7)"
+                        class="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2">
                         <i class="fas fa-calendar-minus text-amber-500 w-3.5"></i> 清理 7 天前日志
                     </button>
-                    <button type="button" onclick="cleanupLogs(30)" class="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    <button type="button" onclick="cleanupLogs(30)"
+                        class="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2">
                         <i class="fas fa-calendar-xmark text-amber-500 w-3.5"></i> 清理 30 天前日志
                     </button>
                     <div class="border-t border-slate-100 my-1"></div>
-                    <button type="button" onclick="confirmClearAllLogs()" class="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2">
+                    <button type="button" onclick="confirmClearAllLogs()"
+                        class="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2">
                         <i class="fas fa-trash-can text-rose-500 w-3.5"></i> 清空全部日志
                     </button>
                 </div>
             </div>
-            <button type="button" onclick="refreshActiveTab()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition shadow-2xs flex items-center gap-1.5" title="刷新最新数据">
+            <button type="button" onclick="refreshActiveTab()"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition shadow-2xs flex items-center gap-1.5"
+                title="刷新最新数据">
                 <i class="fas fa-rotate text-xs"></i>
                 <span>刷新</span>
             </button>
@@ -99,10 +149,12 @@
 
     <!-- 分段控制 Tab 导航 -->
     <div class="source-tabs-header">
-        <button class="source-tab-btn {{ 'is-active' if current_tab != 'audit' else '' }}" data-log-tab-target="analytics" onclick="switchLogTab('analytics')" type="button">
+        <button class="source-tab-btn {{ 'is-active' if current_tab != 'audit' else '' }}"
+            data-log-tab-target="analytics" onclick="switchLogTab('analytics')" type="button">
             <i class="fas fa-chart-pie text-blue-600"></i> 搜索运营视角
         </button>
-        <button class="source-tab-btn {{ 'is-active' if current_tab == 'audit' else '' }}" data-log-tab-target="audit" onclick="switchLogTab('audit')" type="button">
+        <button class="source-tab-btn {{ 'is-active' if current_tab == 'audit' else '' }}" data-log-tab-target="audit"
+            onclick="switchLogTab('audit')" type="button">
             <i class="fas fa-shield-halved text-purple-600"></i> 系统运维视角
         </button>
     </div>
@@ -131,7 +183,8 @@
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">搜索命中率</span>
-                    <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                    <span
+                        class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
                         <i class="fas fa-bullseye"></i>
                     </span>
                 </div>
@@ -153,47 +206,18 @@
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">平均搜索耗时</span>
-                    <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs">
+                    <span
+                        class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs">
                         <i class="fas fa-stopwatch"></i>
                     </span>
                 </div>
-                <div class="text-xl font-black text-slate-900 mt-2"><span id="searchKpiAvgDuration">0</span> <span class="text-xs font-normal text-slate-500">ms</span></div>
+                <div class="text-xl font-black text-slate-900 mt-2"><span id="searchKpiAvgDuration">0</span> <span
+                        class="text-xs font-normal text-slate-500">ms</span></div>
                 <div class="text-[11px] text-slate-400 mt-0.5">全链路聚合平均响应</div>
             </div>
         </div>
 
-        <!-- 热词榜与零结果待补词榜 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 热门搜索榜 Top 10 -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-4">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <i class="fas fa-fire-flame-curved text-amber-500"></i> 近 7 天热门搜索词 (Top 10)
-                    </h3>
-                    <span class="text-[11px] text-slate-400">频次 / 平均命中</span>
-                </div>
-                <div class="mt-3 space-y-2" id="topKeywordsList">
-                    <div class="text-center py-6 text-slate-400 text-xs">
-                        <i class="fas fa-spinner fa-spin mr-1"></i> 正在加载搜索热词...
-                    </div>
-                </div>
-            </div>
 
-            <!-- 零结果待补词榜 Top 10 -->
-            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-4">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <i class="fas fa-box-open text-rose-500"></i> 零结果搜索词 Top 10 (站长补库指南)
-                    </h3>
-                    <span class="text-[11px] text-slate-400">搜空频次 / 操作</span>
-                </div>
-                <div class="mt-3 space-y-2" id="topZeroKeywordsList">
-                    <div class="text-center py-6 text-slate-400 text-xs">
-                        <i class="fas fa-spinner fa-spin mr-1"></i> 正在加载待补词数据...
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- 精简搜索明细列表 -->
         <section class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 space-y-4">
@@ -203,18 +227,22 @@
                     <!-- 搜索词 -->
                     <div class="relative w-full sm:w-60">
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="text" id="searchLogsQueryInput" placeholder="输入搜索词 / IP 筛选..." class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-slate-50/50 hover:bg-white focus:bg-white" onkeydown="if(event.key==='Enter'){handleSearchFilterChange();}">
+                        <input type="text" id="searchLogsQueryInput" placeholder="输入搜索词 / IP 筛选..."
+                            class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-slate-50/50 hover:bg-white focus:bg-white"
+                            onkeydown="if(event.key==='Enter'){handleSearchFilterChange();}">
                     </div>
 
                     <!-- 渠道筛选 -->
-                    <select id="searchLogsChannelFilter" onchange="handleSearchFilterChange()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
+                    <select id="searchLogsChannelFilter" onchange="handleSearchFilterChange()"
+                        class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
                         <option value="">全部渠道 (Web + API)</option>
                         <option value="web">Web 前台搜索 (SSE)</option>
                         <option value="api">开放 API 搜索 (REST)</option>
                     </select>
 
                     <!-- 结果命中筛选 -->
-                    <select id="searchLogsResultFilter" onchange="handleSearchFilterChange()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
+                    <select id="searchLogsResultFilter" onchange="handleSearchFilterChange()"
+                        class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
                         <option value="">全部结果状态</option>
                         <option value="has_results">有命中结果 (&gt;0条)</option>
                         <option value="zero_results">零结果无资源 (0条)</option>
@@ -222,13 +250,19 @@
 
                     <!-- 日期范围 -->
                     <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1">
-                        <input type="date" id="searchLogsStartDate" title="起始日期" class="bg-transparent text-xs text-slate-600 focus:outline-none w-28" onchange="handleSearchFilterChange()">
+                        <input type="date" id="searchLogsStartDate" title="起始日期"
+                            class="bg-transparent text-xs text-slate-600 focus:outline-none w-28"
+                            onchange="handleSearchFilterChange()">
                         <span class="text-slate-300 text-xs select-none">-</span>
-                        <input type="date" id="searchLogsEndDate" title="结束日期" class="bg-transparent text-xs text-slate-600 focus:outline-none w-28" onchange="handleSearchFilterChange()">
+                        <input type="date" id="searchLogsEndDate" title="结束日期"
+                            class="bg-transparent text-xs text-slate-600 focus:outline-none w-28"
+                            onchange="handleSearchFilterChange()">
                     </div>
 
                     <!-- 重置按钮 -->
-                    <button type="button" onclick="resetSearchFilters()" class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-2xs" title="重置搜索筛选">
+                    <button type="button" onclick="resetSearchFilters()"
+                        class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-2xs"
+                        title="重置搜索筛选">
                         重置
                     </button>
                 </div>
@@ -241,17 +275,21 @@
             <!-- 搜索明细表格 -->
             <div class="overflow-x-auto rounded-xl border border-slate-200/80 min-h-[300px] relative">
                 <table class="w-full min-w-[860px] text-left text-xs border-collapse" id="searchLogsTable">
-                    <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider select-none">
+                    <thead
+                        class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider select-none">
                         <tr>
-                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-36" onclick="handleSearchSort('created_at')">
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-36"
+                                onclick="handleSearchSort('created_at')">
                                 搜索时间 <span id="searchSortIconCreatedAt" class="text-blue-600 font-bold ml-0.5">↓</span>
                             </th>
                             <th class="px-3 py-3 whitespace-nowrap w-28">搜索渠道</th>
                             <th class="px-3 py-3 min-w-[220px]">搜索关键词</th>
-                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-24 text-center" onclick="handleSearchSort('result_count')">
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-24 text-center"
+                                onclick="handleSearchSort('result_count')">
                                 命中结果 <span id="searchSortIconResultCount" class="text-slate-300 ml-0.5">↕</span>
                             </th>
-                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-24 text-right" onclick="handleSearchSort('duration_ms')">
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-24 text-right"
+                                onclick="handleSearchSort('duration_ms')">
                                 响应耗时 <span id="searchSortIconDurationMs" class="text-slate-300 ml-0.5">↕</span>
                             </th>
                             <th class="px-3 py-3 whitespace-nowrap w-32">客户端 IP</th>
@@ -273,13 +311,15 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3">
                 <div class="flex items-center gap-2 text-xs text-slate-500">
                     <span>每页显示</span>
-                    <select id="searchLogsPageSizeSelector" onchange="handleSearchPageSizeChange(this.value)" class="px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-500">
+                    <select id="searchLogsPageSizeSelector" onchange="handleSearchPageSizeChange(this.value)"
+                        class="px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-500">
                         <option value="15">15 条</option>
                         <option value="30">30 条</option>
                         <option value="50">50 条</option>
                         <option value="100">100 条</option>
                     </select>
-                    <span class="text-slate-400">第 <span id="searchCurrentPageNum">1</span> / <span id="searchTotalPageNum">1</span> 页</span>
+                    <span class="text-slate-400">第 <span id="searchCurrentPageNum">1</span> / <span
+                            id="searchTotalPageNum">1</span> 页</span>
                 </div>
 
                 <div class="flex items-center space-x-1.5" id="searchLogsPagination">
@@ -309,7 +349,8 @@
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日聚合搜索</span>
-                    <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs">
+                    <span
+                        class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs">
                         <i class="fas fa-search"></i>
                     </span>
                 </div>
@@ -320,7 +361,8 @@
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日网盘转存</span>
-                    <span class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xs">
+                    <span
+                        class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xs">
                         <i class="fas fa-arrow-right-arrow-left"></i>
                     </span>
                 </div>
@@ -331,22 +373,26 @@
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日成功率</span>
-                    <span class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                    <span
+                        class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
                         <i class="fas fa-circle-check"></i>
                     </span>
                 </div>
                 <div class="text-xl font-black text-emerald-600 mt-2" id="kpiTodaySuccessRate">100%</div>
-                <div class="text-[11px] text-slate-400 mt-0.5">今日异常: <span id="kpiTodayErrors" class="text-rose-500 font-semibold">0</span> 次</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">今日异常: <span id="kpiTodayErrors"
+                        class="text-rose-500 font-semibold">0</span> 次</div>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">平均响应耗时</span>
-                    <span class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs">
+                    <span
+                        class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs">
                         <i class="fas fa-stopwatch"></i>
                     </span>
                 </div>
-                <div class="text-xl font-black text-slate-900 mt-2"><span id="kpiTodayAvgDuration">0</span> <span class="text-xs font-normal text-slate-500">ms</span></div>
+                <div class="text-xl font-black text-slate-900 mt-2"><span id="kpiTodayAvgDuration">0</span> <span
+                        class="text-xs font-normal text-slate-500">ms</span></div>
                 <div class="text-[11px] text-slate-400 mt-0.5">全链路平均耗时</div>
             </div>
         </div>
@@ -359,11 +405,14 @@
                     <!-- 搜索框 -->
                     <div class="relative w-full sm:w-64">
                         <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="text" id="logsSearchInput" placeholder="搜索关键词 / URL / 错误 / IP..." class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-slate-50/50 hover:bg-white focus:bg-white" onkeydown="if(event.key==='Enter'){handleFilterChange();}">
+                        <input type="text" id="logsSearchInput" placeholder="搜索关键词 / URL / 错误 / IP..."
+                            class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-slate-50/50 hover:bg-white focus:bg-white"
+                            onkeydown="if(event.key==='Enter'){handleFilterChange();}">
                     </div>
 
                     <!-- 类型筛选 -->
-                    <select id="logsTypeFilter" onchange="handleFilterChange()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
+                    <select id="logsTypeFilter" onchange="handleFilterChange()"
+                        class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
                         <option value="">全部类型</option>
                         <option value="search">聚合搜索 (search)</option>
                         <option value="transfer">网盘转存 (transfer)</option>
@@ -372,7 +421,8 @@
                     </select>
 
                     <!-- 状态筛选 -->
-                    <select id="logsStatusFilter" onchange="handleFilterChange()" class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
+                    <select id="logsStatusFilter" onchange="handleFilterChange()"
+                        class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
                         <option value="">全部状态</option>
                         <option value="200">成功 (&lt;400)</option>
                         <option value="error">失败 (&gt;=400)</option>
@@ -380,13 +430,19 @@
 
                     <!-- 日期范围 -->
                     <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1">
-                        <input type="date" id="logsStartDate" title="起始日期" class="bg-transparent text-xs text-slate-600 focus:outline-none w-28" onchange="handleFilterChange()">
+                        <input type="date" id="logsStartDate" title="起始日期"
+                            class="bg-transparent text-xs text-slate-600 focus:outline-none w-28"
+                            onchange="handleFilterChange()">
                         <span class="text-slate-300 text-xs select-none">-</span>
-                        <input type="date" id="logsEndDate" title="结束日期" class="bg-transparent text-xs text-slate-600 focus:outline-none w-28" onchange="handleFilterChange()">
+                        <input type="date" id="logsEndDate" title="结束日期"
+                            class="bg-transparent text-xs text-slate-600 focus:outline-none w-28"
+                            onchange="handleFilterChange()">
                     </div>
 
                     <!-- 重置按钮 -->
-                    <button type="button" onclick="resetFilters()" class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-2xs" title="重置筛选条件">
+                    <button type="button" onclick="resetFilters()"
+                        class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-2xs"
+                        title="重置筛选条件">
                         重置
                     </button>
                 </div>
@@ -399,21 +455,27 @@
             <!-- 日志表格 -->
             <div class="overflow-x-auto rounded-xl border border-slate-200/80 min-h-[320px] relative">
                 <table class="w-full min-w-[960px] text-left text-xs border-collapse" id="logsTable">
-                    <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider select-none">
+                    <thead
+                        class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider select-none">
                         <tr>
                             <th class="w-10 px-3 py-3 text-center">
-                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer" title="全选当前页">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"
+                                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
+                                    title="全选当前页">
                             </th>
-                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-36" onclick="handleSort('created_at')">
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-36"
+                                onclick="handleSort('created_at')">
                                 时间 <span id="sortIconCreatedAt" class="text-blue-600 font-bold ml-0.5">↓</span>
                             </th>
                             <th class="px-3 py-3 whitespace-nowrap w-24">类型</th>
                             <th class="px-3 py-3 whitespace-nowrap w-32">动作/接口</th>
                             <th class="px-3 py-3 min-w-[200px]">搜索词 / 目标链接</th>
-                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-20 text-center" onclick="handleSort('status_code')">
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-20 text-center"
+                                onclick="handleSort('status_code')">
                                 状态 <span id="sortIconStatusCode" class="text-slate-300 ml-0.5">↕</span>
                             </th>
-                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-24 text-right" onclick="handleSort('duration_ms')">
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-24 text-right"
+                                onclick="handleSort('duration_ms')">
                                 耗时 <span id="sortIconDurationMs" class="text-slate-300 ml-0.5">↕</span>
                             </th>
                             <th class="px-3 py-3 whitespace-nowrap w-20 text-center">命中数</th>
@@ -437,13 +499,15 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3">
                 <div class="flex items-center gap-2 text-xs text-slate-500">
                     <span>每页显示</span>
-                    <select id="logsPageSizeSelector" onchange="handlePageSizeChange(this.value)" class="px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-500">
+                    <select id="logsPageSizeSelector" onchange="handlePageSizeChange(this.value)"
+                        class="px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-500">
                         <option value="15">15 条</option>
                         <option value="30">30 条</option>
                         <option value="50">50 条</option>
                         <option value="100">100 条</option>
                     </select>
-                    <span class="text-slate-400">第 <span id="currentPageNum">1</span> / <span id="totalPageNum">1</span> 页</span>
+                    <span class="text-slate-400">第 <span id="currentPageNum">1</span> / <span id="totalPageNum">1</span>
+                        页</span>
                 </div>
 
                 <div class="flex items-center space-x-1.5" id="logsPagination">
@@ -462,32 +526,39 @@
     </div>
     <div class="h-3.5 w-px bg-slate-200"></div>
     <div class="flex items-center gap-2">
-        <button type="button" onclick="exportSelectedLogs()" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition flex items-center gap-1">
+        <button type="button" onclick="exportSelectedLogs()"
+            class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition flex items-center gap-1">
             <i class="fas fa-download text-[10px]"></i>
             <span>导出选中</span>
         </button>
-        <button type="button" onclick="deleteSelectedLogs()" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-medium transition flex items-center gap-1">
+        <button type="button" onclick="deleteSelectedLogs()"
+            class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-medium transition flex items-center gap-1">
             <i class="fas fa-trash-can text-[10px]"></i>
             <span>批量删除</span>
         </button>
-        <button type="button" onclick="clearSelection()" class="px-2 py-1 text-slate-400 hover:text-slate-600 transition" title="取消选中">
+        <button type="button" onclick="clearSelection()"
+            class="px-2 py-1 text-slate-400 hover:text-slate-600 transition" title="取消选中">
             <i class="fas fa-xmark"></i>
         </button>
     </div>
 </div>
 
 <!-- 日志详情弹窗 Modal -->
-<div id="logDetailModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 max-w-2xl w-full overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+<div id="logDetailModal"
+    class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div
+        class="bg-white rounded-2xl shadow-xl border border-slate-200/80 max-w-2xl w-full overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <span class="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
                     <i class="fas fa-file-lines"></i>
                 </span>
                 <h3 class="font-bold text-slate-900 text-sm">日志记录详情</h3>
-                <span id="modalLogIdBadge" class="text-[11px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">#0</span>
+                <span id="modalLogIdBadge"
+                    class="text-[11px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">#0</span>
             </div>
-            <button type="button" onclick="closeLogModal()" class="text-slate-400 hover:text-slate-600 text-base leading-none p-1">
+            <button type="button" onclick="closeLogModal()"
+                class="text-slate-400 hover:text-slate-600 text-base leading-none p-1">
                 <i class="fas fa-xmark"></i>
             </button>
         </div>
@@ -514,25 +585,34 @@
             <div class="space-y-1">
                 <div class="flex items-center justify-between">
                     <span class="font-semibold text-slate-700">调用动作 / 接口:</span>
-                    <button type="button" onclick="copyModalText('modalLogAction')" class="text-blue-600 hover:text-blue-700 text-[11px]">复制</button>
+                    <button type="button" onclick="copyModalText('modalLogAction')"
+                        class="text-blue-600 hover:text-blue-700 text-[11px]">复制</button>
                 </div>
-                <div id="modalLogAction" class="p-2.5 rounded-lg bg-slate-50 font-mono text-slate-800 text-xs border border-slate-200/60 break-all select-all"></div>
+                <div id="modalLogAction"
+                    class="p-2.5 rounded-lg bg-slate-50 font-mono text-slate-800 text-xs border border-slate-200/60 break-all select-all">
+                </div>
             </div>
 
             <div class="space-y-1">
                 <div class="flex items-center justify-between">
                     <span class="font-semibold text-slate-700">请求入参 / 关键词 / 目标资源:</span>
-                    <button type="button" onclick="copyModalText('modalLogQuery')" class="text-blue-600 hover:text-blue-700 text-[11px]">复制</button>
+                    <button type="button" onclick="copyModalText('modalLogQuery')"
+                        class="text-blue-600 hover:text-blue-700 text-[11px]">复制</button>
                 </div>
-                <div id="modalLogQuery" class="p-2.5 rounded-lg bg-slate-50 font-mono text-slate-800 text-xs border border-slate-200/60 break-all max-h-36 overflow-y-auto select-all"></div>
+                <div id="modalLogQuery"
+                    class="p-2.5 rounded-lg bg-slate-50 font-mono text-slate-800 text-xs border border-slate-200/60 break-all max-h-36 overflow-y-auto select-all">
+                </div>
             </div>
 
             <div id="modalLogErrorWrap" class="space-y-1 hidden">
                 <div class="flex items-center justify-between">
                     <span class="font-semibold text-rose-700">异常堆栈 / 错误原因:</span>
-                    <button type="button" onclick="copyModalText('modalLogError')" class="text-rose-600 hover:text-rose-700 text-[11px]">复制</button>
+                    <button type="button" onclick="copyModalText('modalLogError')"
+                        class="text-rose-600 hover:text-rose-700 text-[11px]">复制</button>
                 </div>
-                <div id="modalLogError" class="p-2.5 rounded-lg bg-rose-50/70 font-mono text-rose-900 text-xs border border-rose-200/80 break-all max-h-48 overflow-y-auto select-all"></div>
+                <div id="modalLogError"
+                    class="p-2.5 rounded-lg bg-rose-50/70 font-mono text-rose-900 text-xs border border-rose-200/80 break-all max-h-48 overflow-y-auto select-all">
+                </div>
             </div>
 
             <div class="text-[11px] text-slate-400 pt-2 flex items-center justify-between border-t border-slate-100">
@@ -540,7 +620,8 @@
             </div>
         </div>
         <div class="px-5 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end">
-            <button type="button" onclick="closeLogModal()" class="px-4 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition shadow-2xs">
+            <button type="button" onclick="closeLogModal()"
+                class="px-4 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition shadow-2xs">
                 关闭
             </button>
         </div>
@@ -590,7 +671,7 @@
     // --- TAB 切换逻辑 ---
     function switchLogTab(targetTab, updateUrl = true) {
         activeLogTab = targetTab === 'audit' ? 'audit' : 'analytics';
-        
+
         document.querySelectorAll('[data-log-tab-target]').forEach(btn => {
             const isTarget = btn.getAttribute('data-log-tab-target') === activeLogTab;
             btn.classList.toggle('is-active', isTarget);
@@ -656,70 +737,9 @@
             document.getElementById('searchKpiHitRate').textContent = `${stats.today_hit_rate || 100}%`;
             document.getElementById('searchKpiZeroTotal').textContent = stats.today_zero_searches || 0;
             document.getElementById('searchKpiAvgDuration').textContent = stats.today_avg_duration_ms || 0;
-
-            renderTopKeywords(stats.top_keywords || []);
-            renderTopZeroKeywords(stats.top_zero_keywords || []);
         } catch (err) {
             console.error('加载搜索分析统计失败:', err);
         }
-    }
-
-    function renderTopKeywords(keywords) {
-        const wrap = document.getElementById('topKeywordsList');
-        if (!wrap) return;
-
-        if (!keywords || keywords.length === 0) {
-            wrap.innerHTML = '<div class="text-center py-6 text-slate-400 text-xs">近 7 天暂无搜索热词记录</div>';
-            return;
-        }
-
-        wrap.innerHTML = keywords.map((item, idx) => {
-            const rankClass = idx === 0 ? 'bg-amber-500 text-white' : idx === 1 ? 'bg-slate-700 text-white' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-slate-100 text-slate-600';
-            const escapedKw = escapeHtml(item.keyword);
-            return `
-                <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition border border-slate-100/80">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <span class="w-5 h-5 rounded-md ${rankClass} flex items-center justify-center text-[10px] font-bold flex-shrink-0">${idx + 1}</span>
-                        <span class="font-semibold text-slate-800 truncate text-xs cursor-pointer hover:text-blue-600" onclick="applySearchKeywordFilter('${escapedKw}')" title="点击过滤此关键词">${escapedKw}</span>
-                    </div>
-                    <div class="flex items-center gap-3 text-[11px] text-slate-500 flex-shrink-0">
-                        <span><strong class="text-slate-800">${item.count}</strong> 次</span>
-                        <span class="text-emerald-600 font-medium">均产 ${item.avg_results} 条</span>
-                        <a href="/?keyword=${encodeURIComponent(item.keyword)}" target="_blank" class="text-blue-600 hover:text-blue-700" title="在新窗口验证搜索">
-                            <i class="fas fa-external-link-alt text-[10px]"></i>
-                        </a>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function renderTopZeroKeywords(keywords) {
-        const wrap = document.getElementById('topZeroKeywordsList');
-        if (!wrap) return;
-
-        if (!keywords || keywords.length === 0) {
-            wrap.innerHTML = '<div class="text-center py-6 text-emerald-600 text-xs"><i class="fas fa-circle-check mr-1"></i> 棒极了！近 7 天没有搜空的关键词</div>';
-            return;
-        }
-
-        wrap.innerHTML = keywords.map((item, idx) => {
-            const escapedKw = escapeHtml(item.keyword);
-            return `
-                <div class="flex items-center justify-between p-2 rounded-xl hover:bg-rose-50/40 transition border border-rose-100/60 bg-rose-50/20">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <span class="w-5 h-5 rounded-md bg-rose-100 text-rose-700 flex items-center justify-center text-[10px] font-bold flex-shrink-0">${idx + 1}</span>
-                        <span class="font-semibold text-slate-800 truncate text-xs cursor-pointer hover:text-rose-600" onclick="applySearchKeywordFilter('${escapedKw}')" title="点击过滤此搜空词">${escapedKw}</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-[11px] flex-shrink-0">
-                        <span class="text-rose-600 font-semibold">${item.count} 次搜空</span>
-                        <a href="/admin/resources" class="px-2 py-0.5 rounded-md bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 font-medium text-[10px] transition" title="前往私有库录入资源">
-                            + 补库
-                        </a>
-                    </div>
-                </div>
-            `;
-        }).join('');
     }
 
     function applySearchKeywordFilter(kw) {
@@ -813,7 +833,7 @@
             const resultCount = log.result_count || 0;
             let resultBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">${resultCount} 条</span>`;
             if (resultCount === 0) {
-                resultBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">0 条 (无结果)</span>`;
+                resultBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">0 条</span>`;
             }
 
             let durationClass = 'log-duration-fast';

@@ -81,6 +81,13 @@ def cleanup_all_storage() -> Dict[str, Any]:
         except Exception as exc:
             logger.error(f"清理过期转存资源异常: {exc}")
 
+    # 3. 释放 SQLite 碎片与磁盘空间
+    try:
+        from src.db.connection import vacuum_db
+        vacuum_db()
+    except Exception as exc:
+        logger.error(f"清理自动压缩数据库异常: {exc}")
+
     result = {
         "status": "success",
         "temp_shares_cleaned": temp_cleaned,

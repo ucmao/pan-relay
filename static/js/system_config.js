@@ -724,10 +724,12 @@ async function loadAdFilterConfig() {
         const config = data.config || {};
 
         const globalToggle = document.getElementById('adFilterGlobalToggle');
+        const modeSelect = document.getElementById('titleFilterModeSelect');
         const textarea = document.getElementById('adFilterTextarea');
         const countEl = document.getElementById('adFilterWordsCount');
 
         if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? true);
+        if (modeSelect) modeSelect.value = config.title_filter_mode || 'loose';
 
         const keywords = Array.isArray(config.keywords) ? config.keywords : [];
         if (textarea) {
@@ -744,6 +746,7 @@ async function loadAdFilterConfig() {
 
 async function saveAdFilterConfig() {
     const globalToggle = document.getElementById('adFilterGlobalToggle');
+    const modeSelect = document.getElementById('titleFilterModeSelect');
     const textarea = document.getElementById('adFilterTextarea');
 
     const keywordsRaw = textarea ? textarea.value : '';
@@ -754,6 +757,7 @@ async function saveAdFilterConfig() {
 
     const payload = {
         enabled: globalToggle ? globalToggle.checked : true,
+        title_filter_mode: modeSelect ? modeSelect.value : 'loose',
         keywords: keywords,
     };
 
@@ -769,7 +773,7 @@ async function saveAdFilterConfig() {
             throw new Error(data.message || `HTTP error! status: ${response.status}`);
         }
 
-        showToast(data.message || '广告过滤配置保存成功', 'success');
+        showToast(data.message || '广告过滤与标题匹配配置保存成功', 'success');
         await loadAdFilterConfig();
     } catch (error) {
         console.error('保存广告过滤配置失败:', error);

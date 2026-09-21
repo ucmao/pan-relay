@@ -261,17 +261,29 @@
             </div>
         </section>
 
-        <!-- 2. 广告智能净化与词库过滤 -->
+        <!-- 2. 广告智能净化与搜索标题匹配 -->
         <section class="admin-panel">
             <div class="admin-panel-header">
                 <div class="admin-panel-title-area">
                     <h2 class="admin-panel-title">
-                        <i class="fas fa-broom text-emerald-600"></i> 广告智能净化
+                        <i class="fas fa-broom text-emerald-600"></i> 广告智能净化与标题匹配
                     </h2>
-                    <p class="admin-panel-desc">转存时自动识别并剔除广告引流文件 (如防失联、关注公众号等 txt/apk/html)</p>
+                    <p class="admin-panel-desc">控制搜索结果标题的比对过滤模式及广告引流关键词剔除</p>
                 </div>
             </div>
             <div class="admin-panel-body space-y-4">
+                <!-- 标题匹配模式选择 -->
+                <div class="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                    <div>
+                        <span class="font-bold text-slate-800 text-xs block">搜索标题匹配模式</span>
+                        <span class="text-[11px] text-slate-500">解决无空格复合词（如“英语培训资料”）被误杀或结果过少的问题</span>
+                    </div>
+                    <select id="titleFilterModeSelect" class="form-select form-select-sm text-xs font-semibold text-slate-700 rounded-lg border-slate-300 w-44" onchange="saveAdFilterConfig()">
+                        <option value="loose">智能标题匹配 (推荐)</option>
+                        <option value="off">关闭标题二次过滤</option>
+                    </select>
+                </div>
+
                 <div class="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
                     <div>
                         <span class="font-bold text-slate-800 text-xs block">启用广告智能净化</span>

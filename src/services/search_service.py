@@ -15,7 +15,8 @@ from src.db.resources import search_resources_by_title_terms, search_resources_a
 from src.models.search_item import SearchResultItem
 from src.services.plugin_manager import plugin_manager
 from src.services.sensitive_word_service import check_input_keyword, filter_search_results
-from src.services.system_config_service import get_allowed_frontend_netdisks
+from src.services.system_config_service import get_allowed_frontend_netdisks, get_title_filter_mode
+from src.services.ad_filter_service import is_ad_filename
 from src.services.telegram_search_service import search_telegram_channel
 from src.db.telegram_channels import get_enabled_channel_names
 from src.utils.netdisk_utils import (
@@ -183,27 +184,120 @@ def replace_keyword_in_config(configs, placeholder, keyword):
     return updated_configs
 
 
+QUALIFIER_WORDS = {
+    "4k", "1080p", "720p", "remux", "hdr", "原盘", "全集", "资料", "高清", "版",
+    "mp4", "mkv", "avi", "rmvb", "pdf", "zip", "rar", "7z", "1080", "2160p"
+}
+
+
+def parse_search_terms_fallback(keyword: str) -> List[str]:
+    """
+    零第三方库依赖的智能切词：
+    1. 用户含空格时，按空格切分。
+    2. 无空格时，英文/数字串（如 APScheduler, Win11, 4K）整词保留；
+    3. 连续中文串长于 4 字时，按双字滑动切分。
+    """
+    kw = str(keyword or "").strip()
+    if not kw:
+        return []
+
+    if " " in kw:
+        return [w for w in kw.split() if w]
+
+    # 按英文/数字串和非 ASCII (中文/符号) 分组提取
+    tokens = re.findall(r"[a-zA-Z0-9]+|[^\x00-\x7F]+", kw)
+    out = []
+
+    for tok in tokens:
+        if re.fullmatch(r"[a-zA-Z0-9]+", tok):
+            out.append(tok)
+        else:
+            if len(tok) >= 4:
+                out.extend([tok[i:i + 2] for i in range(0, len(tok), 2)])
+            else:
+                out.append(tok)
+
+    return [w.strip() for w in out if w.strip()]
+
+
 def parse_search_terms(keyword: str) -> List[str]:
-    """按任意空白字符拆分搜索词；单词查询保留其完整内容。"""
-    return str(keyword or "").split()
+    """按任意空白字符拆分搜索词；若无空格则使用降级分词。"""
+    kw = str(keyword or "").strip()
+    if not kw:
+        return []
+    if " " in kw:
+        return [w for w in kw.split() if w]
+    return parse_search_terms_fallback(kw)
 
 
 def get_title_matched_terms(title: str, keyword: str) -> List[str]:
     """返回标题命中的搜索词。"""
     normalized_title = str(title or "").casefold()
-    return [term for term in parse_search_terms(keyword) if term.casefold() in normalized_title]
+    terms = parse_search_terms(keyword)
+    return [term for term in terms if term.casefold() in normalized_title]
+
+
+def is_title_matched_loose(title: str, keyword: str) -> bool:
+    """
+    loose 模式匹配判断：
+    1. 提取核心词（排除 4k/原盘 等通用规格词和单字符）
+    2. 标题命中【任意核心词】或字符覆盖率 >= 40% 即判定通过
+    """
+    t_clean = str(title or "").casefold()
+    terms = parse_search_terms_fallback(keyword)
+    if not terms:
+        return True
+
+    core_terms = [
+        w.casefold() for w in terms
+        if w.casefold() not in QUALIFIER_WORDS and len(w) > 1
+    ]
+    if not core_terms:
+        core_terms = [w.casefold() for w in terms]
+
+    # 条件 A：命中任意一个核心词
+    if any(core in t_clean for core in core_terms):
+        return True
+
+    # 条件 B：计算字符覆重合率
+    kw_chars = set(keyword.casefold()) - set(" ")
+    if not kw_chars:
+        return False
+    matched_chars = sum(1 for c in kw_chars if c in t_clean)
+    return (matched_chars / len(kw_chars)) >= 0.4
 
 
 def filter_results_by_title(results: List[Any], keyword: str) -> List[SearchResultItem]:
-    """仅保留标题命中搜索词的结果，供所有搜索来源统一使用。"""
+    """
+    根据后台配置的标题匹配模式 (loose / exact / off) 过滤搜索结果。
+    统一拦截广告/黑名单词。
+    """
+    if not results:
+        return []
+
+    mode = get_title_filter_mode()  # 'loose' (默认) | 'exact' | 'off'
     matched_results = []
+
     for item in results:
         try:
             typed_item = SearchResultItem.from_item(item)
         except (TypeError, ValueError, IndexError):
             continue
-        if get_title_matched_terms(typed_item.title, keyword):
+
+        title = typed_item.title or ""
+
+        # 1. 任何模式下都拦截广告黑名单词（如“关注公众号”、“防走丢”）
+        if is_ad_filename(title):
+            continue
+
+        # 2. 根据模式判断标题匹配
+        if mode == "off":
             matched_results.append(typed_item)
+        else:
+            # loose 智能匹配模式（默认开启）
+            if is_title_matched_loose(title, keyword):
+                matched_results.append(typed_item)
+
     return matched_results
 
 

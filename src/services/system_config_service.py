@@ -294,10 +294,11 @@ DEFAULT_AD_KEYWORDS = [
 
 
 def get_ad_filter_config() -> Dict[str, Any]:
-    """获取广告过滤配置与关键词库"""
+    """获取广告过滤与标题匹配模式配置与关键词库"""
     default_config = {
         "enabled": True,
         "keywords": DEFAULT_AD_KEYWORDS.copy(),
+        "title_filter_mode": "loose",
     }
     raw_value = get_config_value(AD_FILTER_CONFIG_KEY)
     if not raw_value:
@@ -311,9 +312,15 @@ def get_ad_filter_config() -> Dict[str, Any]:
             keywords = [w.strip() for w in keywords.replace("\r\n", "\n").split("\n") if w.strip()]
         elif not isinstance(keywords, list):
             keywords = default_config["keywords"]
+
+        title_filter_mode = str(parsed.get("title_filter_mode", "loose")).strip().lower()
+        if title_filter_mode not in ("loose", "off"):
+            title_filter_mode = "loose"
+
         return {
             "enabled": bool(parsed.get("enabled", True)),
             "keywords": [str(w).strip().lower() for w in keywords if str(w).strip()],
+            "title_filter_mode": title_filter_mode,
         }
     except Exception as e:
         logger.warning(f"读取广告过滤配置失败，回退默认配置: {e}")
@@ -321,7 +328,7 @@ def get_ad_filter_config() -> Dict[str, Any]:
 
 
 def save_ad_filter_config(config_data: Dict[str, Any]) -> bool:
-    """保存广告过滤配置与关键词库"""
+    """保存广告过滤与标题匹配模式配置与关键词库"""
     if not isinstance(config_data, dict):
         return False
     current = get_ad_filter_config()
@@ -334,12 +341,26 @@ def save_ad_filter_config(config_data: Dict[str, Any]) -> bool:
     else:
         keywords = current["keywords"]
 
+    title_filter_mode = str(config_data.get("title_filter_mode", current.get("title_filter_mode", "loose"))).strip().lower()
+    if title_filter_mode not in ("loose", "off"):
+        title_filter_mode = "loose"
+
     unique_keywords = list(dict.fromkeys(keywords))
     payload = {
         "enabled": enabled,
         "keywords": unique_keywords,
+        "title_filter_mode": title_filter_mode,
     }
     return set_config_value(AD_FILTER_CONFIG_KEY, payload)
+
+
+def get_title_filter_mode() -> str:
+    """获取当前标题匹配过滤模式 ('loose' | 'off')"""
+    config = get_ad_filter_config()
+    mode = config.get("title_filter_mode", "loose")
+    return mode if mode in ("loose", "off") else "loose"
+
+
 
 
 CUSTOM_AD_INJECTION_CONFIG_KEY = "custom_ad_injection_config"

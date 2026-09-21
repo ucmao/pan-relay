@@ -186,3 +186,17 @@ def db_cursor(as_dict: bool = False):
             cursor.close()
         finally:
             conn.close()
+
+
+def vacuum_db() -> bool:
+    """执行 SQLite VACUUM，压缩数据库并自动归还硬盘碎片空间。"""
+    try:
+        raw_conn = sqlite3.connect(SQLITE_DB_PATH, timeout=60.0)
+        raw_conn.execute("VACUUM;")
+        raw_conn.close()
+        logger.info("SQLite 数据库已成功执行 VACUUM 压缩，已归还磁盘空间。")
+        return True
+    except Exception as e:
+        logger.error(f"执行 VACUUM 释放磁盘空间失败: {e}")
+        return False
+

@@ -78,12 +78,33 @@ class SearchRankingTest(unittest.TestCase):
     def tearDown(self):
         clear_search_cache()
 
-    def test_single_term_requires_contiguous_title_match(self):
+    def test_loose_title_filter_mode(self):
+        from src.services.system_config_service import save_ad_filter_config
+        save_ad_filter_config({"title_filter_mode": "loose"})
         results = [
-            SearchResultItem(source="other", title="先例汇编", share_link="https://pan.quark.cn/s/one", cloud_name="夸克网盘"),
-            SearchResultItem(source="other", title="先 行案例", share_link="https://pan.quark.cn/s/two", cloud_name="夸克网盘"),
+            SearchResultItem(source="other", title="全套商务英语口语培训讲义.pdf", share_link="https://pan.quark.cn/s/one", cloud_name="夸克网盘"),
+            SearchResultItem(source="other", title="新概念英语 1-4 册视频教程.rar", share_link="https://pan.quark.cn/s/two", cloud_name="夸克网盘"),
+            SearchResultItem(source="other", title="Python 基础教程.mp4", share_link="https://pan.quark.cn/s/three", cloud_name="夸克网盘"),
+            SearchResultItem(source="other", title="扫码关注公众号防走丢英语资料.zip", share_link="https://pan.quark.cn/s/four", cloud_name="夸克网盘"),
         ]
-        self.assertEqual(["先例汇编"], [item.title for item in filter_results_by_title(results, "先例")])
+        filtered = filter_results_by_title(results, "英语培训资料")
+        titles = [item.title for item in filtered]
+        self.assertIn("全套商务英语口语培训讲义.pdf", titles)
+        self.assertIn("新概念英语 1-4 册视频教程.rar", titles)
+        self.assertNotIn("Python 基础教程.mp4", titles)
+        self.assertNotIn("扫码关注公众号防走丢英语资料.zip", titles)
+
+    def test_off_title_filter_mode(self):
+        from src.services.system_config_service import save_ad_filter_config
+        save_ad_filter_config({"title_filter_mode": "off"})
+        results = [
+            SearchResultItem(source="other", title="任意无关资源.mp4", share_link="https://pan.quark.cn/s/one", cloud_name="夸克网盘"),
+            SearchResultItem(source="other", title="扫码关注公众号防走丢.zip", share_link="https://pan.quark.cn/s/two", cloud_name="夸克网盘"),
+        ]
+        filtered = filter_results_by_title(results, "英语培训资料")
+        titles = [item.title for item in filtered]
+        self.assertEqual(["任意无关资源.mp4"], titles)
+        save_ad_filter_config({"title_filter_mode": "loose"})
 
     def test_multiple_terms_match_any_whitespace_separated_term_and_rank_by_count(self):
         results = [
