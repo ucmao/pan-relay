@@ -80,3 +80,60 @@ def delete_resource(resource_id):
         status = 404 if message == "资源不存在" else 500
         return jsonify({"success": False, "message": message}), status
     return jsonify({"success": True, "message": message})
+
+
+@resources_bp.route("/admin/api/resources/audit", methods=["POST"])
+@token_required
+def audit_resources_route():
+    """批量巡检入库资源有效性与健康状态"""
+    from src.services.resource_health_service import audit_resources_batch
+
+    payload = request.get_json(silent=True) or {}
+    ids = payload.get("ids")
+    limit = max(1, min(int(payload.get("limit", 100)), 500))
+    max_workers = max(1, min(int(payload.get("max_workers", 4)), 10))
+
+    if ids and not isinstance(ids, list):
+        return jsonify({"success": False, "message": "ids 必须为资源ID列表"}), 400
+
+    result = audit_resources_batch(resource_ids=ids, limit=limit, max_workers=max_workers)
+    return jsonify({"success": True, "message": "巡检完成", "data": result})
+
+
+@resources_bp.route("/admin/api/resources/<int:resource_id>/check", methods=["POST"])
+@token_required
+def check_single_resource_route(resource_id):
+    """单条资源实时健康测活与更新"""
+    from src.services.resource_health_service import audit_single_resource
+
+    success, message, result = audit_single_resource(resource_id)
+    if not success:
+        status = 404 if message == "资源不存在" else 500
+        return jsonify({"success": False, "message": message}), status
+    return jsonify({"success": True, "message": message, "data": result})
+
+
+@resources_bp.route("/admin/api/resources/cleanup-dead", methods=["POST"])
+@token_required
+def cleanup_dead_resources_route():
+    """一键清理标记为失效 (bad) 的死链资源"""
+    from src.services.resource_health_service import cleanup_dead_resources
+
+    payload = request.get_json(silent=True) or {}
+    dry_run = bool(payload.get("dry_run", False))
+    limit = max(1, min(int(payload.get("limit", 100)), 500))
+
+    result = cleanup_dead_resources(dry_run=dry_run, limit=limit)
+    msg = f"成功检测到 {result['total_found']} 条失效资源，已清理 {result['cleaned_count']} 条"
+    return jsonify({"success": True, "message": msg, "data": result})
+
+
+@resources_bp.route("/admin/api/resources/health-stats", methods=["GET"])
+@token_required
+def get_resource_health_stats_route():
+    """获取资源库各健康状态数据统计"""
+    from src.services.resource_health_service import get_resource_health_overview
+
+    stats = get_resource_health_overview()
+    return jsonify({"success": True, "data": stats})
+

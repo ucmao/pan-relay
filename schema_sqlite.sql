@@ -24,11 +24,15 @@ CREATE TABLE IF NOT EXISTS resources (
   type TEXT DEFAULT NULL,
   remarks TEXT DEFAULT NULL,
   is_replaced INTEGER DEFAULT 0,
+  health_status TEXT DEFAULT 'unknown',
+  health_message TEXT DEFAULT NULL,
+  checked_at DATETIME DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_resources_name ON resources(name);
+CREATE INDEX IF NOT EXISTS idx_resources_health ON resources(health_status);
 
 CREATE TABLE IF NOT EXISTS cookie_config (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

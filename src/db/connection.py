@@ -139,6 +139,12 @@ def init_sqlite_db():
             logger.warning(f"自动初始化 system_logs 表结构失败: {e}")
 
         try:
+            from src.db.resources import ensure_resource_health_columns
+            ensure_resource_health_columns()
+        except Exception as e:
+            logger.warning(f"自动扩展 resources 表健康状态字段失败: {e}")
+
+        try:
             from src.services.system_config_service import init_default_search_sources
             init_default_search_sources()
         except Exception as e:

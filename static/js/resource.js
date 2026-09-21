@@ -37,6 +37,10 @@ const selectAllResourcesBtn = document.getElementById('selectAllResourcesBtn');
 const clearSelectionBtn = document.getElementById('clearSelectionBtn');
 const exportSelectedBtn = document.getElementById('exportSelectedBtn');
 const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+const auditAllResourcesBtn = document.getElementById('auditAllResourcesBtn');
+const cleanupDeadResourcesBtn = document.getElementById('cleanupDeadResourcesBtn');
+const auditSelectedBtn = document.getElementById('auditSelectedBtn');
+const kpiHealthStats = document.getElementById('kpiHealthStats');
 
 // 模态框与表单
 const addResourceForm = document.getElementById('addResourceForm');
@@ -202,6 +206,33 @@ function updateSingleLinkTransferHint() {
 // 4. 数据加载与渲染
 // ==========================================
 
+function renderHealthStatusBadge(status, message, checkedAt) {
+    status = status || 'unknown';
+    let badgeClass = 'bg-slate-100 text-slate-600';
+    let icon = 'fas fa-question-circle';
+    let text = '未检测';
+    if (status === 'ok') {
+        badgeClass = 'bg-emerald-100 text-emerald-700';
+        icon = 'fas fa-check-circle';
+        text = '有效';
+    } else if (status === 'bad') {
+        badgeClass = 'bg-rose-100 text-rose-700';
+        icon = 'fas fa-times-circle';
+        text = '失效';
+    } else if (status === 'locked') {
+        badgeClass = 'bg-amber-100 text-amber-700';
+        icon = 'fas fa-key';
+        text = '需提取码';
+    } else if (status === 'uncertain') {
+        badgeClass = 'bg-slate-100 text-slate-600';
+        icon = 'fas fa-info-circle';
+        text = '未知';
+    }
+    const tip = message ? `${text} (${message})` : (checkedAt ? `${text} (检测于: ${checkedAt})` : text);
+    const safeTip = String(tip).replace(/"/g, '&quot;');
+    return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${badgeClass}" title="${safeTip}"><i class="${icon}"></i> ${text}</span>`;
+}
+
 // 加载资源列表
 async function loadResources() {
     const searchKeyword = searchInput ? searchInput.value.trim() : '';
@@ -225,6 +256,7 @@ async function loadResources() {
             renderPagination();
             updatePaginationControls();
             updateSelectionUI();
+            loadHealthStats();
         } else {
             showToast('加载资源失败: ' + (data.message || '未知错误'), 'danger');
         }
@@ -241,7 +273,7 @@ function renderTable() {
 
     if (!resourcesData || resourcesData.length === 0) {
         const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = '<td colspan="8" class="text-center">暂无数据</td>';
+        emptyRow.innerHTML = '<td colspan="9" class="text-center">暂无数据</td>';
         resourcesTableBody.appendChild(emptyRow);
         return;
     }
@@ -258,6 +290,7 @@ function renderTable() {
             <td><a href="${resource.share_link}" target="_blank" class="text-truncate d-inline-block" style="max-width: 250px;">${resource.share_link}</a></td>
             <td>${resource.cloud_name || '-'}</td>
             <td>${resource.type || '-'}</td>
+            <td>${renderHealthStatusBadge(resource.health_status, resource.health_message, resource.checked_at)}</td>
             <td>${resource.is_replaced ? '<span class="status-synced">已同步</span>' : '-'}</td>
             <td class="action-buttons d-flex justify-content-center align-items-center">
                 <button class="btn btn-secondary btn-sm copy-btn" data-id="${resource.id}" title="复制链接">
@@ -269,6 +302,11 @@ function renderTable() {
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item check-health-btn" href="javascript:void(0)" data-id="${resource.id}">
+                                <i class="fas fa-heartbeat me-2 text-info"></i> 检测健康
+                            </a>
+                        </li>
                         <li>
                             <a class="dropdown-item edit-btn" href="javascript:void(0)" data-id="${resource.id}">
                                 <i class="fas fa-edit me-2"></i> 编辑
@@ -393,6 +431,13 @@ function bindActionEvents() {
     document.querySelectorAll('.resource-row-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', () => toggleResourceSelection(parseInt(checkbox.getAttribute('data-id'), 10), checkbox.checked));
     });
+    // 检测健康
+    document.querySelectorAll('.check-health-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const btnEl = e.currentTarget;
+            checkResourceHealth(parseInt(btnEl.getAttribute('data-id'), 10), btnEl);
+        });
+    });
     // 编辑
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', () => editResource(parseInt(btn.getAttribute('data-id'))));
@@ -492,6 +537,53 @@ async function copyResource(id, buttonEl) {
         }
     } else {
         showToast('复制失败，请手动选择复制', 'danger');
+    }
+}
+
+// 单条检测资源健康状态
+async function checkResourceHealth(id, btnEl) {
+    if (!id) return;
+    const originalHtml = btnEl ? btnEl.innerHTML : '';
+    if (btnEl) {
+        btnEl.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> 检测中...';
+    }
+    try {
+        const response = await fetch(`/admin/api/resources/${id}/check`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.success && data.data) {
+            const state = data.data.health_status;
+            const msg = data.data.health_message || '';
+            const statusText = state === 'ok' ? '有效' : (state === 'bad' ? '失效' : (state === 'locked' ? '需提取码' : '未知'));
+            showToast(`资源 [${id}] 检测完成: ${statusText}${msg ? ' (' + msg + ')' : ''}`, state === 'ok' ? 'success' : (state === 'bad' ? 'danger' : 'warning'));
+            loadResources();
+        } else {
+            showToast(data.message || '检测失败', 'danger');
+        }
+    } catch (err) {
+        showToast('检测请求失败: ' + err.message, 'danger');
+    } finally {
+        if (btnEl) {
+            btnEl.innerHTML = originalHtml;
+        }
+    }
+}
+
+// 加载资源健康状态汇总统计
+async function loadHealthStats() {
+    try {
+        const response = await fetch('/admin/api/resources/health-stats');
+        const data = await response.json();
+        if (data.success && data.data) {
+            const s = data.data;
+            if (kpiHealthStats) {
+                kpiHealthStats.innerHTML = `<span class="text-emerald-600 font-bold">${s.ok || 0}</span> / <span class="text-rose-600 font-bold">${s.bad || 0}</span>`;
+            }
+        }
+    } catch (e) {
+        console.warn('获取资源健康度统计失败:', e);
     }
 }
 
@@ -1068,6 +1160,104 @@ function initResourcePage() {
     if (clearSelectionBtn) clearSelectionBtn.addEventListener('click', clearResourceSelection);
     if (exportSelectedBtn) exportSelectedBtn.addEventListener('click', exportSelectedResources);
     if (deleteSelectedBtn) deleteSelectedBtn.addEventListener('click', deleteSelectedResources);
+
+    if (auditAllResourcesBtn) {
+        auditAllResourcesBtn.addEventListener('click', async function () {
+            if (this.disabled) return;
+            const originalHtml = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 正在巡检...';
+            showToast('已启动全盘资源健康巡检，请稍候...', 'info');
+
+            try {
+                const resp = await fetch('/admin/api/resources/audit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: 100 })
+                });
+                const data = await resp.json();
+                if (data.success && data.data) {
+                    const d = data.data;
+                    showToast(`巡检完成: 共检测 ${d.total} 条，有效 ${d.ok_count} 条，失效 ${d.bad_count} 条，需提取码 ${d.locked_count} 条`, 'success');
+                    loadResources();
+                } else {
+                    showToast(data.message || '巡检失败', 'danger');
+                }
+            } catch (err) {
+                showToast('巡检请求异常: ' + err.message, 'danger');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalHtml;
+            }
+        });
+    }
+
+    if (auditSelectedBtn) {
+        auditSelectedBtn.addEventListener('click', async function () {
+            const selectedIds = Array.from(selectedResourceMap.keys());
+            if (selectedIds.length === 0) {
+                showToast('请先选择需要巡检的资源', 'warning');
+                return;
+            }
+
+            const originalHtml = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 巡检中...';
+
+            try {
+                const resp = await fetch('/admin/api/resources/audit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: selectedIds })
+                });
+                const data = await resp.json();
+                if (data.success && data.data) {
+                    const d = data.data;
+                    showToast(`所选巡检完成: 检测 ${d.total} 条，有效 ${d.ok_count} 条，失效 ${d.bad_count} 条`, 'success');
+                    loadResources();
+                } else {
+                    showToast(data.message || '巡检失败', 'danger');
+                }
+            } catch (err) {
+                showToast('巡检请求异常: ' + err.message, 'danger');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalHtml;
+            }
+        });
+    }
+
+    if (cleanupDeadResourcesBtn) {
+        cleanupDeadResourcesBtn.addEventListener('click', async function () {
+            if (!confirm('确定要清理资源库中所有检测为失效 (bad) 的死链资源吗？此操作将同时清理网盘物理文件并删除数据库记录。')) {
+                return;
+            }
+
+            const originalHtml = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 正在清理...';
+
+            try {
+                const resp = await fetch('/admin/api/resources/cleanup-dead', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: 200 })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast(data.message || '清理完成', 'success');
+                    loadResources();
+                } else {
+                    showToast(data.message || '清理失败', 'danger');
+                }
+            } catch (err) {
+                showToast('清理请求失败: ' + err.message, 'danger');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalHtml;
+            }
+        });
+    }
 
     if (batchImportResourceBtn) {
         batchImportResourceBtn.addEventListener('click', () => {

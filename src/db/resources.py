@@ -179,7 +179,7 @@ def list_resources(
         offset = (page - 1) * page_size
 
         query_sql = f"""
-        SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, created_at, updated_at
+        SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, health_status, health_message, checked_at, created_at, updated_at
         FROM resources
         {where_clause}
         ORDER BY created_at DESC
@@ -190,10 +190,12 @@ def list_resources(
         rows = cursor.fetchall()
 
         for r in rows:
-            if r["created_at"]:
+            if r.get("created_at"):
                 r["created_at"] = str(r["created_at"])
-            if r["updated_at"]:
+            if r.get("updated_at"):
                 r["updated_at"] = str(r["updated_at"])
+            if r.get("checked_at"):
+                r["checked_at"] = str(r["checked_at"])
 
         data = {
             "items": rows,
@@ -220,7 +222,7 @@ def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, 
     try:
         cursor = conn.cursor(as_dict=True)
         sql = """
-        SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, created_at, updated_at
+        SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, health_status, health_message, checked_at, created_at, updated_at
         FROM resources WHERE id = ?
         """
         cursor.execute(sql, (resource_id,))
@@ -228,10 +230,12 @@ def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, 
         if not row:
             return False, "资源不存在", None
 
-        if row["created_at"]:
+        if row.get("created_at"):
             row["created_at"] = str(row["created_at"])
-        if row["updated_at"]:
+        if row.get("updated_at"):
             row["updated_at"] = str(row["updated_at"])
+        if row.get("checked_at"):
+            row["checked_at"] = str(row["checked_at"])
 
         return True, "", row
     except Error as err:
@@ -500,4 +504,159 @@ def count_expired_resources(days: int = 15) -> int:
     finally:
         cursor.close()
         conn.close()
+
+
+def ensure_resource_health_columns() -> bool:
+    """
+    检查并确保 resources 表中包含 health_status, health_message, checked_at 字段。
+    """
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(resources);")
+        columns = [row[1] for row in cursor.fetchall()]
+        if "health_status" not in columns:
+            cursor.execute("ALTER TABLE resources ADD COLUMN health_status TEXT DEFAULT 'unknown';")
+            logger.info("已自动为 resources 表新增 health_status 字段")
+        if "health_message" not in columns:
+            cursor.execute("ALTER TABLE resources ADD COLUMN health_message TEXT DEFAULT NULL;")
+            logger.info("已自动为 resources 表新增 health_message 字段")
+        if "checked_at" not in columns:
+            cursor.execute("ALTER TABLE resources ADD COLUMN checked_at DATETIME DEFAULT NULL;")
+            logger.info("已自动为 resources 表新增 checked_at 字段")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_resources_health ON resources(health_status);")
+        conn.commit()
+        return True
+    except Error as err:
+        logger.error(f"检查或扩展 resources 表健康状态字段失败: {err}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def update_resource_health(
+    resource_id: int, health_status: str, health_message: Optional[str] = None
+) -> bool:
+    """更新单个资源的健康状态与检测信息"""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        cursor = conn.cursor()
+        sql = """
+        UPDATE resources
+        SET health_status = ?, health_message = ?, checked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        """
+        cursor.execute(sql, (health_status, health_message, resource_id))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Error as err:
+        logger.error(f"更新资源健康状态失败 (ID={resource_id}): {err}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_resources_for_audit(
+    resource_ids: Optional[List[int]] = None, limit: int = 100
+) -> List[Dict[str, Any]]:
+    """
+    获取待检测健康状态的资源列表。
+    若指定 resource_ids 则按 ID 列表获取；否则优先获取未检测或最久未检测的资源。
+    """
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        cursor = conn.cursor(as_dict=True)
+        if resource_ids:
+            placeholders = ",".join(["?"] * len(resource_ids))
+            sql = f"""
+            SELECT id, name, share_link, cloud_name, type, health_status, health_message, checked_at
+            FROM resources
+            WHERE id IN ({placeholders})
+            LIMIT ?
+            """
+            params = list(resource_ids) + [int(limit)]
+            cursor.execute(sql, params)
+        else:
+            sql = """
+            SELECT id, name, share_link, cloud_name, type, health_status, health_message, checked_at
+            FROM resources
+            ORDER BY CASE WHEN checked_at IS NULL THEN 0 ELSE 1 END, checked_at ASC, id ASC
+            LIMIT ?
+            """
+            cursor.execute(sql, (int(limit),))
+        rows = cursor.fetchall()
+        for r in rows:
+            if r.get("checked_at"):
+                r["checked_at"] = str(r["checked_at"])
+        return rows or []
+    except Error as err:
+        logger.error(f"获取待巡检资源失败: {err}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_dead_resources(limit: int = 100) -> List[Dict[str, Any]]:
+    """获取健康状态为 bad 的失效资源列表"""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        cursor = conn.cursor(as_dict=True)
+        sql = """
+        SELECT id, file_id, name, share_link, cloud_name, type, remarks, health_status, health_message, checked_at
+        FROM resources
+        WHERE health_status = 'bad'
+        ORDER BY id ASC
+        LIMIT ?
+        """
+        cursor.execute(sql, (int(limit),))
+        return cursor.fetchall() or []
+    except Error as err:
+        logger.error(f"获取失效资源列表失败: {err}")
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def count_resources_by_health() -> Dict[str, int]:
+    """统计各健康状态的资源数量汇总"""
+    conn = get_db_connection()
+    if not conn:
+        return {"total": 0, "ok": 0, "bad": 0, "locked": 0, "uncertain": 0, "unknown": 0}
+    try:
+        cursor = conn.cursor(as_dict=True)
+        cursor.execute(
+            "SELECT health_status, COUNT(*) as count FROM resources GROUP BY health_status"
+        )
+        rows = cursor.fetchall()
+        stats = {"total": 0, "ok": 0, "bad": 0, "locked": 0, "uncertain": 0, "unknown": 0}
+        for r in rows:
+            status = r.get("health_status") or "unknown"
+            cnt = int(r.get("count", 0))
+            stats["total"] += cnt
+            if status in stats:
+                stats[status] += cnt
+            else:
+                stats["unknown"] += cnt
+        return stats
+    except Error as err:
+        logger.error(f"统计资源健康状态失败: {err}")
+        return {"total": 0, "ok": 0, "bad": 0, "locked": 0, "uncertain": 0, "unknown": 0}
+    finally:
+        cursor.close()
+        conn.close()
+
 

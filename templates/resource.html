@@ -39,6 +39,10 @@
                         <span class="stat-value" id="kpiResourceTotal">--</span>
                     </div>
                     <div class="stat-item">
+                        <span class="stat-label">健康度 (有效/失效)</span>
+                        <span class="stat-value" id="kpiHealthStats">--</span>
+                    </div>
+                    <div class="stat-item">
                         <span class="stat-label">支持平台</span>
                         <span class="stat-value" style="font-size: 0.8125rem;">5 类网盘</span>
                     </div>
@@ -61,6 +65,12 @@
                         <input type="text" class="admin-search-input" id="searchInput" placeholder="按资源标题回车或输入搜索...">
                     </div>
                     <div class="flex items-center space-x-2">
+                        <button class="btn btn-secondary btn-sm" id="auditAllResourcesBtn" type="button" title="对库内资源执行健康巡检测活">
+                            <i class="fas fa-stethoscope text-[10px]"></i> 批量巡检
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" id="cleanupDeadResourcesBtn" type="button" title="一键清理标记为失效的死链与空资源">
+                            <i class="fas fa-broom text-[10px]"></i> 清理失效
+                        </button>
                         <button class="btn btn-primary btn-sm" id="addResourceBtn" data-ui-modal-target="#addResourceModal">
                             <i class="fas fa-plus text-[10px]"></i> 新增入库
                         </button>
@@ -91,6 +101,9 @@
                 </div>
                 <div class="resource-batch-divider"></div>
                 <div class="resource-batch-actions">
+                    <button class="btn btn-info btn-sm" id="auditSelectedBtn" type="button" title="巡检所选资源的有效性">
+                        <i class="fas fa-stethoscope"></i> 巡检所选
+                    </button>
                     <button class="btn btn-primary btn-sm" id="exportSelectedBtn" type="button">
                         <i class="fas fa-file-export"></i> 导出
                     </button>
@@ -108,12 +121,13 @@
                             <th style="width: 44px; text-align: center;">
                                 <input class="form-check-input" type="checkbox" id="selectCurrentPageCheckbox" aria-label="选择当前页资源">
                             </th>
-                            <th style="width: 70px;">ID</th>
+                            <th style="width: 60px;">ID</th>
                             <th>标题</th>
                             <th>分享链接</th>
-                            <th style="width: 110px;">网盘</th>
-                            <th style="width: 100px;">类型</th>
-                            <th style="width: 100px;">同步状态</th>
+                            <th style="width: 100px;">网盘</th>
+                            <th style="width: 90px;">类型</th>
+                            <th style="width: 105px;">健康状态</th>
+                            <th style="width: 90px;">同步状态</th>
                             <th style="width: 130px; text-align: center;">操作</th>
                         </tr>
                     </thead>
