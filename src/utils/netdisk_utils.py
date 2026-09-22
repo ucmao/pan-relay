@@ -131,3 +131,30 @@ def extract_canonical_resource_key(url: str) -> str:
 
     return f"raw:{raw}"
 
+
+def parse_netdisk_names(val) -> set:
+    """
+    解析网盘名称入参，支持单个网盘名称、逗号/分号/竖线分隔的字符串、列表或集合。
+    例如:
+        "夸克网盘,百度网盘" -> {"夸克网盘", "百度网盘"}
+        ["夸克网盘", "百度网盘"] -> {"夸克网盘", "百度网盘"}
+    """
+    if not val:
+        return set()
+    if isinstance(val, (set, frozenset)):
+        return {str(x).strip() for x in val if str(x).strip()}
+    if isinstance(val, (list, tuple)):
+        result = set()
+        for item in val:
+            result.update(parse_netdisk_names(item))
+        return result
+    if isinstance(val, str):
+        result = set()
+        for part in re.split(r"[,;|]+", val):
+            clean = part.strip()
+            if clean:
+                result.add(clean)
+        return result
+    clean_single = str(val).strip()
+    return {clean_single} if clean_single else set()
+

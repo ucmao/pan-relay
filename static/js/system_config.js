@@ -7,6 +7,10 @@ function updateDynamicTransferStatusVisibility() {
     const select = document.getElementById('frontendLinkModeSelect');
     const badge = document.getElementById('frontendLinkModeBadge');
     const kpiEl = document.getElementById('kpiDeliveryMode');
+    const excelToggle = document.getElementById('allowExcelDownloadToggle');
+    const excelSwitchLabel = document.getElementById('allowExcelDownloadSwitchLabel');
+    const excelDesc = document.getElementById('excelDownloadDesc');
+    const excelContainer = document.getElementById('excelDownloadSettingContainer');
 
     const mode = select ? select.value : 'copy';
     const isView = mode === 'view';
@@ -18,11 +22,34 @@ function updateDynamicTransferStatusVisibility() {
         badge.textContent = isView ? '动态转存模式' : '原始链接模式';
         badge.className = `badge ${isView ? 'badge-warning' : 'badge-info'} text-[10px]`;
     }
-    if (!panel) {
-        return;
+    if (panel) {
+        panel.classList.toggle('d-none', !isView);
     }
 
-    panel.classList.toggle('d-none', !isView);
+    // 联动处理 Excel 下载导出配置
+    if (excelToggle && excelSwitchLabel) {
+        if (isView) {
+            excelToggle.disabled = true;
+            excelSwitchLabel.style.opacity = '0.55';
+            excelSwitchLabel.style.cursor = 'not-allowed';
+            excelSwitchLabel.setAttribute('title', '动态转存模式下已自动停用 Excel 批量导出');
+        } else {
+            excelToggle.disabled = false;
+            excelSwitchLabel.style.opacity = '1';
+            excelSwitchLabel.style.cursor = '';
+            excelSwitchLabel.setAttribute('title', '切换 Excel 导出按钮');
+        }
+    }
+    if (excelDesc) {
+        if (isView) {
+            excelDesc.innerHTML = '<span class="text-amber-600 dark:text-amber-500 font-medium inline-flex items-center gap-1.5"><i class="fas fa-lock text-[11px]"></i>当前为动态转存模式，为保障单条资源转存收益，已自动禁用导出</span>';
+        } else {
+            excelDesc.textContent = '允许访客将前台搜索列表结果导出为表格';
+        }
+    }
+    if (excelContainer) {
+        excelContainer.classList.toggle('opacity-90', isView);
+    }
 }
 
 function bindFrontendLinkModeEvents() {
@@ -328,6 +355,7 @@ async function loadAllowExcelDownloadConfig() {
             badge.textContent = data.enabled ? '允许下载' : '禁止下载';
             badge.className = data.enabled ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
         }
+        updateDynamicTransferStatusVisibility();
     } catch (error) {
         console.error('加载 Excel 下载配置失败:', error);
         showToast('加载 Excel 下载配置失败，请检查后端日志。', 'danger');
@@ -649,13 +677,11 @@ async function loadSensitiveWordsConfig() {
         const data = await response.json();
         const config = data.config || {};
 
-        const globalToggle = document.getElementById('sensitiveWordsGlobalToggle');
         const inputToggle = document.getElementById('sensitiveWordsInputToggle');
         const outputToggle = document.getElementById('sensitiveWordsOutputToggle');
         const textarea = document.getElementById('sensitiveWordsTextarea');
         const countEl = document.getElementById('sensitiveWordsCount');
 
-        if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? true);
         if (inputToggle) inputToggle.checked = Boolean(config.input_enabled ?? true);
         if (outputToggle) outputToggle.checked = Boolean(config.output_enabled ?? true);
 
@@ -673,7 +699,6 @@ async function loadSensitiveWordsConfig() {
 }
 
 async function saveSensitiveWordsConfig() {
-    const globalToggle = document.getElementById('sensitiveWordsGlobalToggle');
     const inputToggle = document.getElementById('sensitiveWordsInputToggle');
     const outputToggle = document.getElementById('sensitiveWordsOutputToggle');
     const textarea = document.getElementById('sensitiveWordsTextarea');
@@ -685,10 +710,13 @@ async function saveSensitiveWordsConfig() {
         .map((s) => s.trim())
         .filter(Boolean);
 
+    const inputEnabled = inputToggle ? inputToggle.checked : true;
+    const outputEnabled = outputToggle ? outputToggle.checked : true;
+
     const payload = {
-        enabled: globalToggle ? globalToggle.checked : true,
-        input_enabled: inputToggle ? inputToggle.checked : true,
-        output_enabled: outputToggle ? outputToggle.checked : true,
+        enabled: Boolean(inputEnabled || outputEnabled),
+        input_enabled: inputEnabled,
+        output_enabled: outputEnabled,
         words: words,
     };
 
@@ -768,9 +796,11 @@ async function saveAdFilterConfig() {
         .map((s) => s.trim())
         .filter(Boolean);
 
+    const titleFilterMode = modeSelect ? modeSelect.value : 'loose';
+
     const payload = {
         enabled: globalToggle ? globalToggle.checked : true,
-        title_filter_mode: modeSelect ? modeSelect.value : 'loose',
+        title_filter_mode: titleFilterMode,
         keywords: keywords,
     };
 

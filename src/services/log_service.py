@@ -23,13 +23,16 @@ logger = logging.getLogger(__name__)
 
 def get_current_client_ip() -> str:
     """
-    从 Flask 请求上下文中获取客户端 IP 地址，兼容反向代理
+    从 Flask 请求上下文中获取客户端 IP 地址，兼容反向代理与 CDN (X-Forwarded-For, X-Real-IP, CF-Connecting-IP 等)
     """
     if not has_request_context():
         return "127.0.0.1"
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    for header in ("X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP", "True-Client-IP"):
+        val = request.headers.get(header)
+        if val:
+            ip = val.split(",")[0].strip()
+            if ip:
+                return ip
     return request.remote_addr or "127.0.0.1"
 
 

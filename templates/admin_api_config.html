@@ -5,7 +5,7 @@
 {% block title %}开放 API 配置 - Pan-Relay Console{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto space-y-6">
+<div id="apiConfigContainer" class="{{ 'max-w-7xl' if current_tab == 'docs' else 'max-w-4xl' }} mx-auto space-y-6 transition-[max-width] duration-200">
     <!-- Page Header (ucmao admin_modern style) -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -156,7 +156,7 @@
         </div>
 
         <!-- 正文阅读流与固定目录布局 (Layout: Article + Sticky TOC) -->
-        <div class="grid grid-cols-1 lg:grid-cols-[1fr_125px] gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-10 items-start">
             <article class="space-y-10 min-w-0 pb-36">
 
                 <!-- 1. 两步走收益接入工作流 -->
@@ -697,20 +697,22 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
 
             </article>
 
-            <!-- 右侧 Sticky 本页目录 -->
-            <aside class="hidden lg:block sticky top-24 w-[120px] shrink-0">
-                <div class="space-y-1 border-l-2 border-slate-200 pl-2">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 pl-0.5">本页目录</div>
-                    <a href="#sec-workflow" data-target="sec-workflow"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">1. 两步走工作流</a>
-                    <a href="#sec-auth" data-target="sec-auth"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">2. 接口鉴权机制</a>
-                    <a href="#sec-params" data-target="sec-params"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">3. 核心节点规范</a>
-                    <a href="#sec-schema" data-target="sec-schema"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">4. 返回数据字典</a>
-                    <a href="#sec-snippets" data-target="sec-snippets"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">5. 多语言对接示例</a>
+            <!-- 右侧 Sticky 本页目录 (参考 media-parser 风格) -->
+            <aside class="hidden lg:block sticky top-24 w-[200px] shrink-0">
+                <div class="space-y-4">
+                    <div class="text-sm font-semibold text-slate-900 tracking-tight pl-3.5">本页目录</div>
+                    <nav class="space-y-2.5 border-l border-slate-200/90">
+                        <a href="#sec-workflow" data-target="sec-workflow"
+                            class="doc-toc-link block pl-3.5 -ml-[1px] py-1 text-xs sm:text-[13px] font-medium text-slate-500 hover:text-slate-900 transition-colors border-l-2 border-transparent leading-relaxed">1. 两步走工作流</a>
+                        <a href="#sec-auth" data-target="sec-auth"
+                            class="doc-toc-link block pl-3.5 -ml-[1px] py-1 text-xs sm:text-[13px] font-medium text-slate-500 hover:text-slate-900 transition-colors border-l-2 border-transparent leading-relaxed">2. 接口鉴权机制</a>
+                        <a href="#sec-params" data-target="sec-params"
+                            class="doc-toc-link block pl-3.5 -ml-[1px] py-1 text-xs sm:text-[13px] font-medium text-slate-500 hover:text-slate-900 transition-colors border-l-2 border-transparent leading-relaxed">3. 核心节点规范</a>
+                        <a href="#sec-schema" data-target="sec-schema"
+                            class="doc-toc-link block pl-3.5 -ml-[1px] py-1 text-xs sm:text-[13px] font-medium text-slate-500 hover:text-slate-900 transition-colors border-l-2 border-transparent leading-relaxed">4. 返回数据字典</a>
+                        <a href="#sec-snippets" data-target="sec-snippets"
+                            class="doc-toc-link block pl-3.5 -ml-[1px] py-1 text-xs sm:text-[13px] font-medium text-slate-500 hover:text-slate-900 transition-colors border-l-2 border-transparent leading-relaxed">5. 多语言对接示例</a>
+                    </nav>
                 </div>
             </aside>
         </div>
@@ -818,6 +820,17 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
 <script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.4"></script>
 <script>
     function switchApiTab(targetTab) {
+        const container = document.getElementById('apiConfigContainer');
+        if (container) {
+            if (targetTab === 'docs') {
+                container.classList.remove('max-w-4xl');
+                container.classList.add('max-w-7xl');
+            } else {
+                container.classList.remove('max-w-7xl');
+                container.classList.add('max-w-4xl');
+            }
+        }
+
         document.querySelectorAll('.source-tab-btn').forEach(btn => {
             if (btn.getAttribute('data-api-tab-target') === targetTab) {
                 btn.classList.add('is-active');
@@ -858,10 +871,10 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
             tocLinks.forEach(link => {
                 const targetId = link.getAttribute('data-target');
                 if (targetId === activeId) {
-                    link.classList.add('text-blue-600', 'font-bold', 'border-blue-600', 'bg-blue-50/70');
+                    link.classList.add('text-blue-600', 'font-semibold', 'border-blue-600', 'bg-blue-50/70', 'rounded-r-md');
                     link.classList.remove('text-slate-500', 'font-medium', 'border-transparent');
                 } else {
-                    link.classList.remove('text-blue-600', 'font-bold', 'border-blue-600', 'bg-blue-50/70');
+                    link.classList.remove('text-blue-600', 'font-semibold', 'border-blue-600', 'bg-blue-50/70', 'rounded-r-md');
                     link.classList.add('text-slate-500', 'font-medium', 'border-transparent');
                 }
             });

@@ -23,8 +23,9 @@ from src.utils.netdisk_utils import (
     match_netdisk_link,
     extract_canonical_resource_key,
     extract_password_from_url,
+    parse_netdisk_names,
 )
-from src.services.log_service import record_log
+from src.services.log_service import record_log, get_current_client_ip
 
 import threading
 
@@ -514,23 +515,40 @@ def search_in_database(keyword):
         return []
 
 
-def generate_search_stream_events(keyword):
+def generate_search_stream_events(
+    keyword: str,
+    client_ip: Optional[str] = None,
+    action: str = "search.web",
+    apply_frontend_filter: Optional[bool] = None,
+):
     """
     生成搜索结果的 SSE 事件流 (生成字符串, 不直接返回 Response)
+    :param keyword: 搜索关键词
+    :param client_ip: 客户端 IP (可选)
+    :param action: 行为标识 (默认为 search.web, API v1 流为 search.api.v1)
+    :param apply_frontend_filter: 是否应用 Web 前端网盘显示过滤配置。若未指定，仅对 search.web 默认开启
     """
     keyword = str(keyword or "").strip()
+    if not client_ip:
+        client_ip = get_current_client_ip()
+
+    should_apply_frontend_filter = (
+        apply_frontend_filter if apply_frontend_filter is not None
+        else (action == "search.web")
+    )
 
     def _event_generator():
         start_time = time.time()
         if not keyword:
             record_log(
                 log_type="search",
-                action="search.web",
+                action=action,
                 query_text="",
                 status_code=400,
                 error_message="缺少搜索关键词",
                 duration_ms=0,
                 result_count=0,
+                client_ip=client_ip,
             )
             yield json.dumps({"type": "error", "message": "请提供有效的搜索关键词"})
             return
@@ -539,12 +557,13 @@ def generate_search_stream_events(keyword):
         if is_blocked:
             record_log(
                 log_type="search",
-                action="search.web",
+                action=action,
                 query_text=keyword,
                 status_code=400,
                 error_message=f"触发敏感词拦截: {matched_word}",
                 duration_ms=int((time.time() - start_time) * 1000),
                 result_count=0,
+                client_ip=client_ip,
             )
             yield json.dumps({"type": "error", "message": f"搜索关键词包含敏感词汇 '{matched_word}'，已禁止搜索"}, ensure_ascii=False)
             return
@@ -560,14 +579,17 @@ def generate_search_stream_events(keyword):
         if cached_items is not None:
             logger.info(f"关键词 '{keyword}' 流式搜索击中内存缓存 ({len(cached_items)} 条)。")
             cached_items = filter_results_by_title(filter_search_results(cached_items), keyword)
+            if should_apply_frontend_filter:
+                cached_items = filter_results_by_frontend_netdisks(cached_items)
             duration_ms = int((time.time() - start_time) * 1000)
             record_log(
                 log_type="search",
-                action="search.web.cache",
+                action=f"{action}.cache",
                 query_text=keyword,
                 status_code=200,
                 duration_ms=duration_ms,
                 result_count=len(cached_items),
+                client_ip=client_ip,
             )
             yield json.dumps({"type": "complete", "results": _serialize_items(cached_items)})
             return
@@ -602,14 +624,16 @@ def generate_search_stream_events(keyword):
             return unique_items
 
         db_results = search_in_database(keyword)
-        db_results = filter_results_by_frontend_netdisks(db_results)
+        if should_apply_frontend_filter:
+            db_results = filter_results_by_frontend_netdisks(db_results)
         db_results = filter_results_by_title(filter_search_results(db_results), keyword)
         db_results = _dedupe_stream_chunk(db_results)
         if db_results:
             yield json.dumps({"type": "initial", "results": _serialize_items(db_results)})
 
         for results in iter_upstream_search_results(keyword):
-            results = filter_results_by_frontend_netdisks(results)
+            if should_apply_frontend_filter:
+                results = filter_results_by_frontend_netdisks(results)
             results = filter_results_by_title(filter_search_results(results), keyword)
             results = _dedupe_stream_chunk(results)
             if results:
@@ -623,11 +647,12 @@ def generate_search_stream_events(keyword):
         duration_ms = int((time.time() - start_time) * 1000)
         record_log(
             log_type="search",
-            action="search.web",
+            action=action,
             query_text=keyword,
             status_code=200,
             duration_ms=duration_ms,
             result_count=len(final_stream_items),
+            client_ip=client_ip,
         )
         logger.info(f"关键词 '{keyword}' 所有流式搜索完成，共 {len(final_stream_items)} 条。")
         yield json.dumps({"type": "complete", "results": _serialize_items(final_stream_items)})
@@ -916,22 +941,24 @@ def sort_search_results(results: List[SearchResultItem], keyword: str = "") -> L
 
 
 def _filter_results_by_cloud_name(results, cloud_name=""):
-    """按网盘名称筛选聚合搜索结果；空值表示不过滤。"""
-    cloud_name = (cloud_name or "").strip()
-    if not cloud_name:
+    """按网盘名称筛选聚合搜索结果；支持单个网盘名称、逗号分隔或集合/列表；空值表示不过滤。"""
+    target_clouds = parse_netdisk_names(cloud_name)
+    if not target_clouds:
         return results
 
     return [
         item
         for item in results
-        if SearchResultItem.from_item(item).cloud_name == cloud_name
+        if SearchResultItem.from_item(item).cloud_name in target_clouds
     ]
 
 
 def search_public_resources(keyword="", limit=100, cloud_name=""):
     start_time = time.time()
     keyword = (keyword or "").strip()
-    query_display = f"{keyword} [cloud={cloud_name}]" if cloud_name else keyword
+    target_clouds = parse_netdisk_names(cloud_name)
+    cloud_display = ",".join(sorted(target_clouds)) if target_clouds else ""
+    query_display = f"{keyword} [cloud={cloud_display}]" if cloud_display else keyword
 
     if not keyword:
         record_log(
@@ -963,7 +990,7 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
     if cached_items is not None:
         logger.info(f"关键词 '{keyword}' 聚合搜索击中内存缓存 ({len(cached_items)} 条)。")
         filtered_cached = filter_results_by_title(filter_search_results(cached_items), keyword)
-        filtered_cached = _filter_results_by_cloud_name(filtered_cached, cloud_name)
+        filtered_cached = _filter_results_by_cloud_name(filtered_cached, target_clouds)
         limited_cached = filtered_cached[: max(limit, 1)]
         duration_ms = int((time.time() - start_time) * 1000)
         record_log(
@@ -979,11 +1006,11 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
     aggregated_results = []
 
     db_results = search_in_database(keyword)
-    aggregated_results.extend(filter_results_by_frontend_netdisks(db_results))
+    aggregated_results.extend(db_results)
 
     for results in iter_upstream_search_results(keyword):
         if results:
-            aggregated_results.extend(filter_results_by_frontend_netdisks(results))
+            aggregated_results.extend(results)
 
     # 敏感词过滤、去重与排序
     aggregated_results = filter_results_by_title(filter_search_results(aggregated_results), keyword)
@@ -992,7 +1019,7 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
     if sorted_results:
         set_cached_search_items(keyword, sorted_results)
 
-    filtered_results = _filter_results_by_cloud_name(sorted_results, cloud_name)
+    filtered_results = _filter_results_by_cloud_name(sorted_results, target_clouds)
     limited_results = filtered_results[: max(limit, 1)]
 
     duration_ms = int((time.time() - start_time) * 1000)
@@ -1034,7 +1061,7 @@ def search_resources(name="", cloud_name="", resource_type="", limit=100, sort="
         if not success:
             return success, message, results
 
-        return True, message, filter_results_by_frontend_netdisks(results)
+        return True, message, results
     except Exception as e:
         logger.error(f"API错误: {e}")
         return False, f"API错误: {e}", []

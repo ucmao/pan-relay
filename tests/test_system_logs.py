@@ -9,7 +9,7 @@ from src.db.logs import (
     cleanup_logs_before_days,
     get_logs_summary_stats,
 )
-from src.services.log_service import record_log, export_logs_csv
+from src.services.log_service import record_log, export_logs_csv, get_current_client_ip
 from src.services.system_config_service import save_public_search_api_config
 from src.utils.auth_utils import create_jwt_token
 
@@ -233,6 +233,43 @@ class TestSystemLogs(unittest.TestCase):
         self.assertIn("today_api_searches", analytics_data)
         self.assertIn("top_keywords", analytics_data)
         self.assertIn("top_zero_keywords", analytics_data)
+
+    def test_09_get_current_client_ip_headers(self):
+        # 1. 没有上下文时返回 127.0.0.1
+        self.assertEqual(get_current_client_ip(), "127.0.0.1")
+
+        # 2. X-Forwarded-For
+        with self.app.test_request_context(headers={"X-Forwarded-For": "203.0.113.195, 150.172.238.178"}):
+            self.assertEqual(get_current_client_ip(), "203.0.113.195")
+
+        # 3. X-Real-IP
+        with self.app.test_request_context(headers={"X-Real-IP": "198.51.100.1"}):
+            self.assertEqual(get_current_client_ip(), "198.51.100.1")
+
+        # 4. CF-Connecting-IP
+        with self.app.test_request_context(headers={"CF-Connecting-IP": "104.28.19.4"}):
+            self.assertEqual(get_current_client_ip(), "104.28.19.4")
+
+        # 5. True-Client-IP
+        with self.app.test_request_context(headers={"True-Client-IP": "104.28.19.8"}):
+            self.assertEqual(get_current_client_ip(), "104.28.19.8")
+
+    def test_10_search_stream_client_ip_logging(self):
+        test_ip = "192.0.2.123"
+        resp = self.client.get(
+            "/api/search_stream?keyword=ClientIpStreamTest",
+            headers={"X-Real-IP": test_ip},
+        )
+        self.assertEqual(resp.status_code, 200)
+        # 读取流以触发生成器执行与日志记录
+        _ = resp.data
+
+        # 验证记录的日志 client_ip 为传递的真实 IP
+        success, _, data = query_system_logs(q="ClientIpStreamTest")
+        self.assertTrue(success)
+        self.assertGreater(data["total"], 0)
+        latest_log = data["logs"][0]
+        self.assertEqual(latest_log["client_ip"], test_ip)
 
 
 if __name__ == "__main__":

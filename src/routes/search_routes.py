@@ -1,6 +1,6 @@
 # src/routes/search_routes.py
 
-from flask import Blueprint, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response, stream_with_context
 
 import json
 import logging
@@ -20,7 +20,7 @@ from src.services.link_checker import (
 from src.services.system_config_service import is_public_search_api_enabled
 from src.services.temp_share_service import cleanup_expired_temp_shares, resolve_view_url
 from src.utils.auth_utils import token_required
-from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
+from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS, parse_netdisk_names
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +39,10 @@ def search_stream():
     logger.info(f"用户 SSE 搜索关键词: {keyword}")
 
     def generate_events():
-        for payload in generate_search_stream_events(keyword):
+        for payload in generate_search_stream_events(keyword, action="search.web"):
             yield f"data: {payload}\n\n"
 
-    return Response(generate_events(), mimetype="text/event-stream")
+    return Response(stream_with_context(generate_events()), mimetype="text/event-stream")
 
 
 @search_bp.route("/api", methods=["GET"])
@@ -55,21 +55,30 @@ def search_api():
 
     keyword = request.args.get("keyword", "", type=str)
     limit = request.args.get("limit", 100, type=int)
-    cloud_name = request.args.get("cloud_name", "", type=str).strip()
+    raw_clouds = request.args.getlist("cloud_name") + request.args.getlist("cloud_names")
+    target_clouds = parse_netdisk_names(raw_clouds)
     check_status = request.args.get("check_status", "false").lower() in ("true", "1")
     filter_bad = request.args.get("filter_bad", "false").lower() in ("true", "1")
 
-    if cloud_name and cloud_name not in FRONTEND_DISPLAY_NETDISK_OPTIONS:
+    invalid_clouds = [c for c in target_clouds if c not in FRONTEND_DISPLAY_NETDISK_OPTIONS]
+    if invalid_clouds:
+        invalid_str = ", ".join(invalid_clouds)
         return jsonify({
             "success": False,
-            "message": f"不支持的网盘类型: {cloud_name}",
+            "message": f"不支持的网盘类型: {invalid_str}",
             "supported_cloud_names": FRONTEND_DISPLAY_NETDISK_OPTIONS,
         }), 400
+
+    passed_cloud = (
+        next(iter(target_clouds))
+        if len(target_clouds) == 1
+        else (target_clouds if target_clouds else "")
+    )
 
     success, message, results = search_public_resources(
         keyword=keyword,
         limit=limit,
-        cloud_name=cloud_name,
+        cloud_name=passed_cloud,
     )
 
     if not success:

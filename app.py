@@ -84,12 +84,13 @@ def search_index():
     if not is_frontend_enabled():
         return redirect(url_for('auth.login'))
 
+    link_mode = get_frontend_link_mode()
     link_check_config = get_frontend_link_check_config()
 
     return render_template(
         'index.html',
-        frontend_link_mode=get_frontend_link_mode(),
-        allow_excel_download=is_excel_download_enabled(),
+        frontend_link_mode=link_mode,
+        allow_excel_download=(link_mode != "view") and is_excel_download_enabled(),
         enable_link_check=link_check_config.get("enable_link_check", True),
         default_hide_dead_links=link_check_config.get("default_hide_dead_links", False),
     )

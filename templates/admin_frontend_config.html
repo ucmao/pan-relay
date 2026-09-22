@@ -93,7 +93,7 @@
                 </div>
 
                 <!-- 开关 3: 前台 Excel 下载与导出 -->
-                <div class="setting-item-row">
+                <div class="setting-item-row" id="excelDownloadSettingContainer">
                     <div class="space-y-1 min-w-0 pr-4">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-semibold text-slate-800 text-sm">搜索结果 Excel 导出</span>
@@ -101,10 +101,10 @@
                                 <i class="far fa-circle-question text-xs"></i>
                             </span>
                         </div>
-                        <p class="text-xs text-slate-500">允许访客将前台搜索列表结果导出为表格</p>
+                        <p class="text-xs text-slate-500" id="excelDownloadDesc">允许访客将前台搜索列表结果导出为表格</p>
                     </div>
                     <div class="flex items-center flex-shrink-0">
-                        <label class="plugin-switch" title="切换 Excel 导出按钮">
+                        <label class="plugin-switch" title="切换 Excel 导出按钮" id="allowExcelDownloadSwitchLabel">
                             <input type="checkbox" id="allowExcelDownloadToggle"
                                 onchange="saveAllowExcelDownloadConfig()">
                             <span class="plugin-switch-slider"></span>
@@ -217,6 +217,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.4"></script>
-<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.4"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.5"></script>
+<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.5"></script>
 {% endblock %}

@@ -580,7 +580,12 @@ async function loadHealthStats() {
         if (data.success && data.data) {
             const s = data.data;
             if (kpiHealthStats) {
-                kpiHealthStats.innerHTML = `<span class="text-emerald-600 font-bold">${s.ok || 0}</span> / <span class="text-rose-600 font-bold">${s.bad || 0}</span>`;
+                const badCount = s.bad || 0;
+                if (badCount > 0) {
+                    kpiHealthStats.innerHTML = `<span class="text-rose-600 font-bold">${badCount} 条</span>`;
+                } else {
+                    kpiHealthStats.innerHTML = `<span class="text-emerald-600 font-semibold">0 条</span>`;
+                }
             }
         }
     } catch (e) {

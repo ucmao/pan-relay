@@ -73,7 +73,7 @@ sequenceDiagram
 - **接口地址**: `GET /api/v1/search`
 - **请求参数**:
   - `keyword` (string, **必填**): 搜索关键词，例如 `黑神话`
-  - `cloud_name` (string, **可选**): 指定筛选网盘类型，如 `夸克网盘`、`百度网盘`、`阿里云盘`、`UC网盘`、`迅雷网盘`
+  - `cloud_name` / `cloud_names` (string, **可选**): 指定筛选网盘类型，支持单个网盘或逗号分隔多个网盘，如 `夸克网盘,百度网盘` 或 `cloud_name=夸克网盘&cloud_name=阿里云盘`
   - `limit` (int, **可选**): 限制最大返回结果条数，默认 `100`
   - `scope` (string, **可选**): 查询作用域 (`own` 仅自有库, `all` 全网聚合)
   - `check_status` (bool, **可选**): 是否对搜索结果实时测活，默认 `false`。开启后每条结果将注入 `health_state` (`ok` / `bad` / `locked` / `uncertain`) 与 `health_summary`
