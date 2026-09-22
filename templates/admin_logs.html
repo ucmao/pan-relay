@@ -700,10 +700,16 @@
     // --- 全局状态管理 ---
     let activeLogTab = '{{ current_tab or "analytics" }}';
 
+    const savedSearchLogsPageSize = parseInt(localStorage.getItem('panrelay_search_logs_pagesize'), 10);
+    const initialSearchLogsPageSize = (savedSearchLogsPageSize && [15, 30, 50, 100].includes(savedSearchLogsPageSize)) ? savedSearchLogsPageSize : 15;
+
+    const savedSystemLogsPageSize = parseInt(localStorage.getItem('panrelay_system_logs_pagesize'), 10);
+    const initialSystemLogsPageSize = (savedSystemLogsPageSize && [15, 30, 50, 100].includes(savedSystemLogsPageSize)) ? savedSystemLogsPageSize : 15;
+
     // 搜索分析专属状态
     const searchLogsState = {
         page: 1,
-        pageSize: 15,
+        pageSize: initialSearchLogsPageSize,
         q: '',
         channel: '',
         resultFilter: '',
@@ -721,7 +727,7 @@
     // 全量系统审计专属状态
     const currentLogsState = {
         page: 1,
-        pageSize: 15,
+        pageSize: initialSystemLogsPageSize,
         q: '',
         logType: '',
         status: '',
@@ -739,6 +745,9 @@
     // --- TAB 切换逻辑 ---
     function switchLogTab(targetTab, updateUrl = true) {
         activeLogTab = targetTab === 'audit' ? 'audit' : 'analytics';
+        try {
+            localStorage.setItem('panrelay_logs_tab', activeLogTab);
+        } catch (e) {}
 
         document.querySelectorAll('[data-log-tab-target]').forEach(btn => {
             const isTarget = btn.getAttribute('data-log-tab-target') === activeLogTab;
@@ -1028,6 +1037,9 @@
 
     function handleSearchPageSizeChange(newSize) {
         searchLogsState.pageSize = parseInt(newSize, 10) || 15;
+        try {
+            localStorage.setItem('panrelay_search_logs_pagesize', String(searchLogsState.pageSize));
+        } catch (e) {}
         searchLogsState.page = 1;
         loadSearchLogs();
     }
@@ -1063,9 +1075,26 @@
     // TAB 2: 全量系统运行与审计日志
     // ==========================================
     document.addEventListener('DOMContentLoaded', () => {
+        // 同步每页数量下拉选择框初始值
+        const searchSizeSelect = document.getElementById('searchLogsPageSizeSelector');
+        if (searchSizeSelect) {
+            searchSizeSelect.value = String(searchLogsState.pageSize);
+        }
+        const logSizeSelect = document.getElementById('logsPageSizeSelector');
+        if (logSizeSelect) {
+            logSizeSelect.value = String(currentLogsState.pageSize);
+        }
+
         const urlTab = new URLSearchParams(window.location.search).get('tab');
+        let savedTab = null;
+        try {
+            savedTab = localStorage.getItem('panrelay_logs_tab');
+        } catch (e) {}
+
         if (urlTab) {
             switchLogTab(urlTab, false);
+        } else if (savedTab && ['analytics', 'audit'].includes(savedTab)) {
+            switchLogTab(savedTab, false);
         } else {
             switchLogTab('analytics', false);
         }
@@ -1326,6 +1355,9 @@
 
     function handlePageSizeChange(newSize) {
         currentLogsState.pageSize = parseInt(newSize, 10) || 15;
+        try {
+            localStorage.setItem('panrelay_system_logs_pagesize', String(currentLogsState.pageSize));
+        } catch (e) {}
         currentLogsState.page = 1;
         loadLogs();
     }
@@ -1539,7 +1571,7 @@
         } else {
             const ids = Array.from(state.selectedIds);
             if (ids.length === 0) {
-                alert('请先勾选需要导出的日志记录');
+                window.showToast('请先勾选需要导出的日志记录', 'warning');
                 return;
             }
             window.location.href = `/admin/api/logs/export?ids=${ids.join(',')}`;
@@ -1552,7 +1584,7 @@
         const ids = Array.from(state.selectedIds);
 
         if (!isAll && ids.length === 0) {
-            alert('请先勾选需要删除的日志记录');
+            window.showToast('请先勾选需要删除的日志记录', 'warning');
             return;
         }
 
@@ -1560,7 +1592,17 @@
             ? `确定要删除符合当前筛选条件的全部 ${state.total} 条日志记录吗？此操作无法撤销。`
             : `确定要删除选中的 ${ids.length} 条日志记录吗？此操作无法撤销。`;
 
-        if (!confirm(confirmMsg)) {
+        const ok = window.confirmModal
+            ? await window.confirmModal({
+                title: '删除日志确认',
+                message: confirmMsg,
+                confirmText: '确定删除',
+                cancelText: '取消',
+                type: 'danger'
+            })
+            : confirm(confirmMsg);
+
+        if (!ok) {
             return;
         }
 
@@ -1595,14 +1637,14 @@
             });
             const data = await res.json();
             if (data.success) {
-                alert(`已成功删除 ${data.deleted_count || (isAll ? state.total : ids.length)} 条日志记录`);
+                window.showToast(`已成功删除 ${data.deleted_count || (isAll ? state.total : ids.length)} 条日志记录`, 'success');
                 clearActiveSelection();
                 refreshActiveTab();
             } else {
-                alert(`删除失败: ${data.message || '未知错误'}`);
+                window.showToast(`删除失败: ${data.message || '未知错误'}`, 'error');
             }
         } catch (err) {
-            alert('删除请求发送失败，请稍后重试');
+            window.showToast('删除请求发送失败，请稍后重试', 'error');
         }
     }
 
@@ -1644,13 +1686,27 @@
         document.getElementById('logDetailModal').classList.add('hidden');
     }
 
-    function copyModalText(elementId) {
-        const text = document.getElementById(elementId).innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            alert('已成功复制到剪贴板！');
-        }).catch(() => {
-            alert('复制失败，请手动选取复制');
-        });
+    async function copyModalText(elementId) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        const text = el.innerText || el.textContent || '';
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.top = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            window.showToast('已成功复制到剪贴板！', 'success');
+        } catch (err) {
+            window.showToast('复制失败，请手动选取复制', 'error');
+        }
     }
 
     function escapeHtml(str) {

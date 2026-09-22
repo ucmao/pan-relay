@@ -410,12 +410,14 @@ class UcPanClient(BasePanClient):
                 time.sleep(0.2)
                 continue
             data = result.get("data") or {}
-            if data.get("status") == 2 or data.get("save_as") or data.get("share_id"):
+            save_as_fids = (data.get("save_as") or {}).get("save_as_top_fids") or []
+            share_id = data.get("share_id")
+            if data.get("status") == 2 or save_as_fids or share_id:
                 return data
             if data.get("status") == 3:
                 logger.error("UC 网盘异步任务执行失败: %s", data.get("message") or "任务失败")
                 return None
-            time.sleep(0.2)
+            time.sleep(0.5)
 
         logger.error("UC 网盘任务轮询超时: %s", task_id)
         return None

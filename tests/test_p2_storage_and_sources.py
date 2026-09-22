@@ -43,7 +43,8 @@ class TestP2StorageAndSources(unittest.TestCase):
         """测试存储自动清理配置的保存与读取"""
         config = {
             "enabled": True,
-            "retention_days": 20,
+            "retention_unit": "days",
+            "retention_value": 20,
             "auto_cleanup_interval_hours": 6,
             "clean_temp_shares": True,
             "clean_old_resources": True,
@@ -52,9 +53,42 @@ class TestP2StorageAndSources(unittest.TestCase):
         self.assertTrue(save_storage_cleanup_config(config))
         current = get_storage_cleanup_config()
         self.assertTrue(current["enabled"])
-        self.assertEqual(current["retention_days"], 20)
+        self.assertEqual(current["retention_unit"], "days")
+        self.assertEqual(current["retention_value"], 20)
+        self.assertEqual(current["retention_minutes"], 20 * 1440)
         self.assertEqual(current["auto_cleanup_interval_hours"], 6)
         self.assertEqual(current["limit_per_run"], 50)
+
+        # 测试分钟单位及最小30分钟底线保护
+        minute_config = {
+            "retention_unit": "minutes",
+            "retention_value": 45,
+            "cleanup_interval_unit": "minutes",
+            "cleanup_interval_value": 30,
+        }
+        self.assertTrue(save_storage_cleanup_config(minute_config))
+        curr_min = get_storage_cleanup_config()
+        self.assertEqual(curr_min["retention_unit"], "minutes")
+        self.assertEqual(curr_min["retention_value"], 45)
+        self.assertEqual(curr_min["retention_minutes"], 45)
+        self.assertEqual(curr_min["cleanup_interval_unit"], "minutes")
+        self.assertEqual(curr_min["cleanup_interval_value"], 30)
+        self.assertEqual(curr_min["auto_cleanup_interval_minutes"], 30)
+
+        # 尝试设置小于30分钟/小于15分钟扫描周期，自动钳位
+        clamp_config = {
+            "retention_unit": "minutes",
+            "retention_value": 5,
+            "cleanup_interval_unit": "minutes",
+            "cleanup_interval_value": 5,
+        }
+        self.assertTrue(save_storage_cleanup_config(clamp_config))
+        curr_clamped = get_storage_cleanup_config()
+        self.assertEqual(curr_clamped["retention_unit"], "minutes")
+        self.assertEqual(curr_clamped["retention_value"], 30)
+        self.assertEqual(curr_clamped["retention_minutes"], 30)
+        self.assertEqual(curr_clamped["cleanup_interval_unit"], "minutes")
+        self.assertEqual(curr_clamped["cleanup_interval_value"], 15)
 
     @patch("src.services.storage_cleanup_service.del_share", return_value=True)
     @patch("src.services.storage_cleanup_service.list_expired_resources")

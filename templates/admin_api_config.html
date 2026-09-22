@@ -5,27 +5,28 @@
 {% block title %}开放 API 配置 - Pan-Relay Console{% endblock %}
 
 {% block content %}
-<!-- Page Header (ucmao admin_modern style) -->
-<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-        <h1 class="text-xl font-bold tracking-tight text-slate-900">开放 API 服务配置</h1>
-        <p class="text-xs text-slate-500 mt-0.5">管理开放 REST API 端点、无头运行模式、转存鉴权策略及开发者接入指南</p>
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Page Header (ucmao admin_modern style) -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">开放 API 服务配置</h1>
+            <p class="text-xs text-slate-500 mt-0.5">管理开放 REST API 端点、无头运行模式、转存鉴权策略及开发者接入指南</p>
+        </div>
+        <div class="flex items-center space-x-2.5">
+            <button type="button" onclick="openPlaygroundDrawer()"
+                class="btn btn-primary btn-sm flex items-center gap-1.5 shadow-2xs">
+                <i class="fas fa-play text-[10px]"></i>
+                <span>在线接口调试</span>
+            </button>
+        </div>
     </div>
-    <div class="flex items-center space-x-2.5">
-        <button type="button" onclick="openPlaygroundDrawer()"
-            class="btn btn-primary btn-sm flex items-center gap-1.5 shadow-2xs">
-            <i class="fas fa-play text-[10px]"></i>
-            <span>在线接口调试</span>
-        </button>
-    </div>
-</div>
 
-<!-- 分段控制 Tab 导航 -->
-<div class="source-tabs-header mb-6">
-    <button class="source-tab-btn {{ 'is-active' if current_tab != 'docs' else '' }}" data-api-tab-target="config"
-        onclick="switchApiTab('config')" type="button">
-        <i class="fas fa-sliders-h text-purple-600"></i> API 服务配置
-    </button>
+    <!-- 分段控制 Tab 导航 -->
+    <div class="source-tabs-header">
+        <button class="source-tab-btn {{ 'is-active' if current_tab != 'docs' else '' }}" data-api-tab-target="config"
+            onclick="switchApiTab('config')" type="button">
+            <i class="fas fa-sliders-h text-purple-600"></i> API 服务配置
+        </button>
     <button class="source-tab-btn {{ 'is-active' if current_tab == 'docs' else '' }}" data-api-tab-target="docs"
         onclick="switchApiTab('docs')" type="button">
         <i class="fas fa-book-bookmark text-blue-600"></i> 开发者 API 指南
@@ -155,7 +156,7 @@
         </div>
 
         <!-- 正文阅读流与固定目录布局 (Layout: Article + Sticky TOC) -->
-        <div class="grid grid-cols-1 lg:grid-cols-[1fr_200px] gap-10 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_125px] gap-6 items-start">
             <article class="space-y-10 min-w-0 pb-36">
 
                 <!-- 1. 两步走收益接入工作流 -->
@@ -169,10 +170,10 @@
                     </p>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-5 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">步骤 1 · 检索</span>
-                                <code class="text-xs font-mono text-slate-500">GET /api/v1/search</code>
+                        <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-4 sm:p-5 space-y-2.5">
+                            <div class="flex items-center justify-between gap-2 flex-wrap">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">步骤 1 · 检索</span>
+                                <code class="text-[11px] font-mono text-slate-500">GET /api/v1/search</code>
                             </div>
                             <h4 class="text-sm font-bold text-slate-800">查询全网或站长收益资源</h4>
                             <p class="text-xs text-slate-600 leading-relaxed">
@@ -184,10 +185,10 @@
                             </p>
                         </div>
 
-                        <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-5 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">步骤 2 · 转存沉淀</span>
-                                <code class="text-xs font-mono text-slate-400">POST /api/v1/transfer</code>
+                        <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-4 sm:p-5 space-y-2.5">
+                            <div class="flex items-center justify-between gap-2 flex-wrap">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">步骤 2 · 转存沉淀</span>
+                                <code class="text-[11px] font-mono text-slate-400">POST /api/v1/transfer</code>
                             </div>
                             <h4 class="text-sm font-bold text-slate-800">替换为站长收益分享链接</h4>
                             <p class="text-xs text-slate-600 leading-relaxed">
@@ -697,29 +698,25 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
             </article>
 
             <!-- 右侧 Sticky 本页目录 -->
-            <aside class="hidden lg:block sticky top-24">
-                <div class="space-y-1 border-l-2 border-slate-200 pl-3">
-                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 pl-0.5">本页目录</div>
+            <aside class="hidden lg:block sticky top-24 w-[120px] shrink-0">
+                <div class="space-y-1 border-l-2 border-slate-200 pl-2">
+                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 pl-0.5">本页目录</div>
                     <a href="#sec-workflow" data-target="sec-workflow"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2.5 rounded-r border-l-2 border-transparent -ml-[14px]">1.
-                        两步走工作流</a>
+                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">1. 两步走工作流</a>
                     <a href="#sec-auth" data-target="sec-auth"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2.5 rounded-r border-l-2 border-transparent -ml-[14px]">2.
-                        接口鉴权机制</a>
+                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">2. 接口鉴权机制</a>
                     <a href="#sec-params" data-target="sec-params"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2.5 rounded-r border-l-2 border-transparent -ml-[14px]">3.
-                        核心节点规范</a>
+                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">3. 核心节点规范</a>
                     <a href="#sec-schema" data-target="sec-schema"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2.5 rounded-r border-l-2 border-transparent -ml-[14px]">4.
-                        返回数据字典</a>
+                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">4. 返回数据字典</a>
                     <a href="#sec-snippets" data-target="sec-snippets"
-                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2.5 rounded-r border-l-2 border-transparent -ml-[14px]">5.
-                        多语言对接示例</a>
+                        class="doc-toc-link block text-xs font-medium text-slate-500 hover:text-slate-900 transition-all py-1 px-2 rounded-r border-l-2 border-transparent -ml-[10px] whitespace-nowrap">5. 多语言对接示例</a>
                 </div>
             </aside>
         </div>
 
     </div>
+</div>
 </div>
 
 <!-- ==========================================================================

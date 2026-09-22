@@ -1422,6 +1422,35 @@ textarea.form-control.font-mono {
     border-top: 1px solid #f1f5f9;
 }
 
+/* Custom Modern Confirmation Modal */
+#confirm-modal-backdrop {
+    opacity: 0;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#confirm-modal-backdrop.modal-open {
+    opacity: 1;
+}
+#confirm-modal-backdrop .modal-card {
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: scale(0.95);
+    background-color: #ffffff;
+}
+#confirm-modal-backdrop.modal-open .modal-card {
+    transform: scale(1);
+}
+#confirm-modal-backdrop .modal-header {
+    background-color: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+}
+#confirm-modal-backdrop .modal-footer,
+#confirm-modal-backdrop .confirm-modal-footer {
+    background-color: transparent !important;
+    padding: 1rem 0 0 0 !important;
+    border-top: 1px solid #f1f5f9 !important;
+    border-radius: 0 !important;
+}
+
 fieldset {
     border: 0;
     padding: 0;

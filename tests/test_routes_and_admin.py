@@ -14,6 +14,7 @@ from src.services.system_config_service import (
     get_search_scheduler_config,
     is_excel_download_enabled,
     save_allow_excel_download_config,
+    save_public_search_api_config,
     save_search_scheduler_config,
 )
 from src.services.telegram_channel_service import (
@@ -49,6 +50,7 @@ class RoutesAndAdminTest(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
         self.token = create_jwt_token()
+        save_public_search_api_config(True)
 
     # --- Phase 1: 路由基础与 CRUD 分享操作测试 ---
 
@@ -271,7 +273,7 @@ class SystemConfigPagesTest(unittest.TestCase):
     def test_system_config_page_renders(self):
         response = self.client.get("/admin/system-config")
         self.assertEqual(200, response.status_code)
-        self.assertIn("系统通用配置", response.text)
+        self.assertIn("系统配置", response.text)
 
 
 if __name__ == "__main__":

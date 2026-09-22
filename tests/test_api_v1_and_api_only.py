@@ -6,6 +6,7 @@ from app import app
 from src.services.system_config_service import (
     get_api_mode_config,
     save_api_mode_config,
+    save_public_search_api_config,
     save_search_api_scope,
     save_transfer_api_key,
     is_api_only_enabled,
@@ -19,10 +20,12 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
         self.token = create_jwt_token()
+        save_public_search_api_config(True)
 
     def tearDown(self):
         # 恢复默认系统配置
         save_api_mode_config(api_only=False, enable_frontend=True, enable_admin_ui=True, search_scope="own", transfer_api_key="")
+        save_public_search_api_config(True)
         os.environ.pop("API_ONLY", None)
         os.environ.pop("PAN_RELAY_API_ONLY", None)
         os.environ.pop("ENABLE_FRONTEND", None)

@@ -23,6 +23,9 @@
         if (!tabName) return;
         const validTabs = ['api', 'plugins', 'telegram'];
         const normalized = validTabs.includes(tabName) ? tabName : 'api';
+        try {
+            localStorage.setItem('panrelay_sources_tab', normalized);
+        } catch (e) {}
 
         document.querySelectorAll('.source-tab-btn').forEach((btn) => {
             btn.classList.toggle('is-active', btn.getAttribute('data-tab-target') === normalized);
@@ -47,7 +50,12 @@
 
         const hash = (window.location.hash || '').replace('#', '').trim();
         const queryTab = new URLSearchParams(window.location.search).get('tab');
-        switchTab(hash || queryTab || 'api', false);
+        let savedTab = null;
+        try {
+            savedTab = localStorage.getItem('panrelay_sources_tab');
+        } catch (e) {}
+
+        switchTab(hash || queryTab || savedTab || 'api', false);
         window.addEventListener('hashchange', () => {
             const currentHash = (window.location.hash || '').replace('#', '').trim();
             if (currentHash) switchTab(currentHash, false);

@@ -10,6 +10,7 @@ from src.db.logs import (
     get_logs_summary_stats,
 )
 from src.services.log_service import record_log, export_logs_csv
+from src.services.system_config_service import save_public_search_api_config
 from src.utils.auth_utils import create_jwt_token
 
 
@@ -20,6 +21,7 @@ class TestSystemLogs(unittest.TestCase):
         cls.client = cls.app.test_client()
         cls.admin_token = create_jwt_token()
         cls.client.set_cookie(key="token", value=cls.admin_token)
+        save_public_search_api_config(True)
 
     def setUp(self):
         pass

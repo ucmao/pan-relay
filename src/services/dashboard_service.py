@@ -11,6 +11,9 @@ from src.services.system_config_service import (
     get_allow_excel_download_config,
     get_frontend_link_mode,
     get_public_search_api_config,
+    get_sensitive_words_config,
+    get_storage_cleanup_config,
+    get_transfer_target_dir,
     is_frontend_enabled,
 )
 
@@ -193,6 +196,20 @@ def get_dashboard_summary() -> Dict[str, Any]:
         summary["system"]["enable_frontend"] = is_frontend_enabled()
         summary["system"]["public_search_api_enabled"] = get_public_search_api_config().get("enabled", True)
         summary["system"]["allow_excel_download_enabled"] = get_allow_excel_download_config().get("enabled", True)
+        summary["system"]["transfer_target_dir"] = get_transfer_target_dir()
+
+        cleanup_cfg = get_storage_cleanup_config()
+        unit_map = {"minutes": "分钟", "hours": "小时", "days": "天"}
+        unit_str = unit_map.get(cleanup_cfg.get("retention_unit", "days"), "天")
+        interval_unit_str = unit_map.get(cleanup_cfg.get("cleanup_interval_unit", "hours"), "小时")
+        interval_val = cleanup_cfg.get("cleanup_interval_value", cleanup_cfg.get("auto_cleanup_interval_hours", 12))
+        summary["system"]["retention_display"] = f"{cleanup_cfg.get('retention_value', 15)} {unit_str}"
+        summary["system"]["cleanup_interval_display"] = f"每 {interval_val} {interval_unit_str}"
+        summary["system"]["storage_cleanup_enabled"] = cleanup_cfg.get("enabled", True)
+
+        sens_cfg = get_sensitive_words_config()
+        summary["system"]["sensitive_words_enabled"] = sens_cfg.get("enabled", True)
+        summary["system"]["sensitive_words_count"] = len(sens_cfg.get("words", []))
 
         if os.path.exists(SQLITE_DB_PATH):
             db_size_bytes = os.path.getsize(SQLITE_DB_PATH)

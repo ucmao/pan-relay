@@ -257,8 +257,10 @@ class QuarkPanClient(BasePanClient):
                     continue
 
                 task_data = data.get("data") or {}
-                # 状态 2 表示任务成功完成
-                if task_data.get("status") == 2 or task_data.get("save_as") or task_data.get("share_id"):
+                save_as_fids = (task_data.get("save_as") or {}).get("save_as_top_fids") or []
+                share_id = task_data.get("share_id")
+                # 状态 2 表示任务成功完成，或者非空 save_as_top_fids / share_id
+                if task_data.get("status") == 2 or save_as_fids or share_id:
                     return data
                 # 状态 3 表示任务明确失败
                 if task_data.get("status") == 3:
@@ -267,7 +269,7 @@ class QuarkPanClient(BasePanClient):
                     return None
             except Exception as exc:
                 logger.error("夸克网盘任务轮询异常: %s", exc)
-            time.sleep(0.2)
+            time.sleep(0.5)
         logger.warning("夸克网盘任务执行失败或超时: %s", task_id)
         return None
 

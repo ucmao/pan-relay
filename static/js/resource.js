@@ -4,7 +4,8 @@
 // 1. 全局变量与配置
 // ==========================================
 let currentPage = 1;
-let pageSize = 50;
+const savedResourcePageSize = parseInt(localStorage.getItem('panrelay_resource_pagesize'), 10);
+let pageSize = (savedResourcePageSize && [20, 50, 100].includes(savedResourcePageSize)) ? savedResourcePageSize : 50;
 let totalPages = 1;
 let totalCount = 0;
 let resourcesData = [];
@@ -1229,7 +1230,18 @@ function initResourcePage() {
 
     if (cleanupDeadResourcesBtn) {
         cleanupDeadResourcesBtn.addEventListener('click', async function () {
-            if (!confirm('确定要清理资源库中所有检测为失效 (bad) 的死链资源吗？此操作将同时清理网盘物理文件并删除数据库记录。')) {
+            const confirmPrompt = '确定要清理资源库中所有检测为失效 (bad) 的死链资源吗？此操作将同时清理网盘物理文件并删除数据库记录。';
+            const ok = window.confirmModal
+                ? await window.confirmModal({
+                    title: '清理失效死链确认',
+                    message: confirmPrompt,
+                    confirmText: '确定清理',
+                    cancelText: '取消',
+                    type: 'danger'
+                })
+                : confirm(confirmPrompt);
+
+            if (!ok) {
                 return;
             }
 
@@ -1290,6 +1302,9 @@ function initResourcePage() {
         pageSizeSelect.value = String(pageSize);
         pageSizeSelect.addEventListener('change', () => {
             pageSize = parseInt(pageSizeSelect.value, 10) || 50;
+            try {
+                localStorage.setItem('panrelay_resource_pagesize', String(pageSize));
+            } catch (e) {}
             currentPage = 1;
             loadResources();
         });

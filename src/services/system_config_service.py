@@ -404,7 +404,13 @@ def save_custom_ad_injection_config(config_data: Dict[str, Any]) -> bool:
 STORAGE_CLEANUP_CONFIG_KEY = "storage_cleanup_config"
 DEFAULT_STORAGE_CLEANUP_CONFIG = {
     "enabled": True,
+    "retention_unit": "days",
+    "retention_value": 15,
     "retention_days": 15,
+    "retention_minutes": 15 * 24 * 60,
+    "cleanup_interval_unit": "hours",
+    "cleanup_interval_value": 12,
+    "auto_cleanup_interval_minutes": 12 * 60,
     "auto_cleanup_interval_hours": 12,
     "clean_temp_shares": True,
     "clean_old_resources": True,
@@ -422,12 +428,67 @@ def get_storage_cleanup_config() -> Dict[str, Any]:
         parsed = json.loads(raw_value)
         if not isinstance(parsed, dict):
             return default_config
+
+        # 1. 保留时长计算
+        retention_unit = str(parsed.get("retention_unit", "")).strip().lower()
+        if retention_unit not in ("minutes", "hours", "days"):
+            retention_unit = "days"
+
+        if "retention_value" in parsed:
+            retention_value = int(parsed["retention_value"])
+        elif "retention_days" in parsed:
+            retention_value = int(parsed["retention_days"])
+            retention_unit = "days"
+        else:
+            retention_value = default_config["retention_value"]
+
+        if retention_unit == "minutes":
+            retention_value = max(30, retention_value)
+            retention_minutes = retention_value
+        elif retention_unit == "hours":
+            retention_value = max(1, retention_value)
+            retention_minutes = retention_value * 60
+        else:
+            retention_value = max(1, retention_value)
+            retention_minutes = retention_value * 1440
+
+        retention_days = max(1, int(round(retention_minutes / 1440)))
+
+        # 2. 扫描清理周期计算
+        interval_unit = str(parsed.get("cleanup_interval_unit", "")).strip().lower()
+        if interval_unit not in ("minutes", "hours", "days"):
+            interval_unit = "hours"
+
+        if "cleanup_interval_value" in parsed:
+            interval_value = int(parsed["cleanup_interval_value"])
+        elif "auto_cleanup_interval_hours" in parsed:
+            interval_value = int(parsed["auto_cleanup_interval_hours"])
+            interval_unit = "hours"
+        else:
+            interval_value = default_config["cleanup_interval_value"]
+
+        if interval_unit == "minutes":
+            interval_value = max(15, interval_value)
+            interval_minutes = interval_value
+        elif interval_unit == "hours":
+            interval_value = max(1, interval_value)
+            interval_minutes = interval_value * 60
+        else:
+            interval_value = max(1, interval_value)
+            interval_minutes = interval_value * 1440
+
+        interval_hours = max(1, int(round(interval_minutes / 60)))
+
         return {
             "enabled": bool(parsed.get("enabled", default_config["enabled"])),
-            "retention_days": int(parsed.get("retention_days", default_config["retention_days"])),
-            "auto_cleanup_interval_hours": int(
-                parsed.get("auto_cleanup_interval_hours", default_config["auto_cleanup_interval_hours"])
-            ),
+            "retention_unit": retention_unit,
+            "retention_value": retention_value,
+            "retention_days": retention_days,
+            "retention_minutes": retention_minutes,
+            "cleanup_interval_unit": interval_unit,
+            "cleanup_interval_value": interval_value,
+            "auto_cleanup_interval_minutes": interval_minutes,
+            "auto_cleanup_interval_hours": interval_hours,
             "clean_temp_shares": bool(parsed.get("clean_temp_shares", default_config["clean_temp_shares"])),
             "clean_old_resources": bool(
                 parsed.get("clean_old_resources", default_config["clean_old_resources"])
@@ -444,17 +505,73 @@ def save_storage_cleanup_config(config_data: Dict[str, Any]) -> bool:
     if not isinstance(config_data, dict):
         return False
     current = get_storage_cleanup_config()
+
+    # 1. 保留时长
+    retention_unit = str(config_data.get("retention_unit", current["retention_unit"])).strip().lower()
+    if retention_unit not in ("minutes", "hours", "days"):
+        retention_unit = "days"
+
+    if "retention_value" in config_data:
+        raw_ret_val = int(config_data.get("retention_value", current["retention_value"]))
+    elif "retention_days" in config_data:
+        raw_ret_val = int(config_data.get("retention_days", current["retention_days"]))
+        retention_unit = "days"
+    else:
+        raw_ret_val = current["retention_value"]
+
+    if retention_unit == "minutes":
+        retention_value = max(30, raw_ret_val)
+        retention_minutes = retention_value
+    elif retention_unit == "hours":
+        retention_value = max(1, raw_ret_val)
+        retention_minutes = retention_value * 60
+    else:
+        retention_value = max(1, raw_ret_val)
+        retention_minutes = retention_value * 1440
+
+    retention_days = max(1, int(round(retention_minutes / 1440)))
+
+    # 2. 扫描周期
+    interval_unit = str(
+        config_data.get("cleanup_interval_unit", current.get("cleanup_interval_unit", "hours"))
+    ).strip().lower()
+    if interval_unit not in ("minutes", "hours", "days"):
+        interval_unit = "hours"
+
+    if "cleanup_interval_value" in config_data:
+        raw_int_val = int(
+            config_data.get("cleanup_interval_value", current.get("cleanup_interval_value", 12))
+        )
+    elif "auto_cleanup_interval_hours" in config_data:
+        raw_int_val = int(
+            config_data.get("auto_cleanup_interval_hours", current.get("auto_cleanup_interval_hours", 12))
+        )
+        interval_unit = "hours"
+    else:
+        raw_int_val = current.get("cleanup_interval_value", 12)
+
+    if interval_unit == "minutes":
+        interval_value = max(15, raw_int_val)
+        interval_minutes = interval_value
+    elif interval_unit == "hours":
+        interval_value = max(1, raw_int_val)
+        interval_minutes = interval_value * 60
+    else:
+        interval_value = max(1, raw_int_val)
+        interval_minutes = interval_value * 1440
+
+    interval_hours = max(1, int(round(interval_minutes / 60)))
+
     payload = {
         "enabled": bool(config_data.get("enabled", current["enabled"])),
-        "retention_days": max(1, int(config_data.get("retention_days", current["retention_days"]))),
-        "auto_cleanup_interval_hours": max(
-            1,
-            int(
-                config_data.get(
-                    "auto_cleanup_interval_hours", current["auto_cleanup_interval_hours"]
-                )
-            ),
-        ),
+        "retention_unit": retention_unit,
+        "retention_value": retention_value,
+        "retention_days": retention_days,
+        "retention_minutes": retention_minutes,
+        "cleanup_interval_unit": interval_unit,
+        "cleanup_interval_value": interval_value,
+        "auto_cleanup_interval_minutes": interval_minutes,
+        "auto_cleanup_interval_hours": interval_hours,
         "clean_temp_shares": bool(
             config_data.get("clean_temp_shares", current["clean_temp_shares"])
         ),

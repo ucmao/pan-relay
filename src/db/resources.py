@@ -509,21 +509,32 @@ def search_resources_advanced(
         conn.close()
 
 
-def list_expired_resources(days: int = 15, limit: int = 100) -> List[Dict[str, Any]]:
-    """查询创建时间超过指定天数的资源记录（用于存储自动优化与旧资源清理）。"""
+def list_expired_resources(days: Optional[int] = None, minutes: Optional[int] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    """查询创建时间超过指定分钟或天数的资源记录（用于存储自动优化与旧资源清理）。"""
     conn = get_db_connection()
     if not conn:
         return []
     try:
         cursor = conn.cursor(as_dict=True)
-        sql = """
-        SELECT id, file_id, name, share_link, cloud_name, type, remarks, created_at
-        FROM resources
-        WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
-        ORDER BY created_at ASC
-        LIMIT ?
-        """
-        cursor.execute(sql, (int(days), int(limit)))
+        if minutes is not None:
+            sql = """
+            SELECT id, file_id, name, share_link, cloud_name, type, remarks, created_at
+            FROM resources
+            WHERE datetime(created_at) < datetime('now', '-' || ? || ' minutes')
+            ORDER BY created_at ASC
+            LIMIT ?
+            """
+            cursor.execute(sql, (int(minutes), int(limit)))
+        else:
+            days_val = int(days) if days is not None else 15
+            sql = """
+            SELECT id, file_id, name, share_link, cloud_name, type, remarks, created_at
+            FROM resources
+            WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
+            ORDER BY created_at ASC
+            LIMIT ?
+            """
+            cursor.execute(sql, (days_val, int(limit)))
         rows = cursor.fetchall()
         return rows or []
     except Error as err:
@@ -534,19 +545,28 @@ def list_expired_resources(days: int = 15, limit: int = 100) -> List[Dict[str, A
         conn.close()
 
 
-def count_expired_resources(days: int = 15) -> int:
-    """统计创建时间超过指定天数的资源记录数量。"""
+def count_expired_resources(days: Optional[int] = None, minutes: Optional[int] = None) -> int:
+    """统计创建时间超过指定分钟或天数的资源记录数量。"""
     conn = get_db_connection()
     if not conn:
         return 0
     try:
         cursor = conn.cursor(as_dict=True)
-        sql = """
-        SELECT COUNT(*) AS total
-        FROM resources
-        WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
-        """
-        cursor.execute(sql, (int(days),))
+        if minutes is not None:
+            sql = """
+            SELECT COUNT(*) AS total
+            FROM resources
+            WHERE datetime(created_at) < datetime('now', '-' || ? || ' minutes')
+            """
+            cursor.execute(sql, (int(minutes),))
+        else:
+            days_val = int(days) if days is not None else 15
+            sql = """
+            SELECT COUNT(*) AS total
+            FROM resources
+            WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
+            """
+            cursor.execute(sql, (days_val,))
         row = cursor.fetchone()
         return int(row["total"]) if row else 0
     except Error as err:

@@ -62,7 +62,8 @@ def create_temp_share_record(
     cloud_name: str,
     temp_share_url: str,
     file_id: str,
-    expires_in_hours: int,
+    expires_in_hours: Optional[int] = None,
+    expires_in_minutes: Optional[int] = None,
 ) -> Optional[int]:
     conn = get_db_connection()
     if not conn:
@@ -70,15 +71,28 @@ def create_temp_share_record(
 
     try:
         cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO temp_share (
-              original_url, title, cloud_name, temp_share_url, file_id, status, expires_at, last_accessed_at
+        if expires_in_minutes is not None:
+            mins = max(30, int(expires_in_minutes))
+            cursor.execute(
+                """
+                INSERT INTO temp_share (
+                  original_url, title, cloud_name, temp_share_url, file_id, status, expires_at, last_accessed_at
+                )
+                VALUES (?, ?, ?, ?, ?, 'active', datetime('now', '+' || ? || ' minutes'), datetime('now'))
+                """,
+                (original_url, title, cloud_name, temp_share_url, file_id, mins),
             )
-            VALUES (?, ?, ?, ?, ?, 'active', datetime('now', '+' || ? || ' hours'), datetime('now'))
-            """,
-            (original_url, title, cloud_name, temp_share_url, file_id, expires_in_hours),
-        )
+        else:
+            hours = int(expires_in_hours) if expires_in_hours is not None else 6
+            cursor.execute(
+                """
+                INSERT INTO temp_share (
+                  original_url, title, cloud_name, temp_share_url, file_id, status, expires_at, last_accessed_at
+                )
+                VALUES (?, ?, ?, ?, ?, 'active', datetime('now', '+' || ? || ' hours'), datetime('now'))
+                """,
+                (original_url, title, cloud_name, temp_share_url, file_id, hours),
+            )
         conn.commit()
         return cursor.lastrowid
     except Error as err:

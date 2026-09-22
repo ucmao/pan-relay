@@ -13,7 +13,13 @@ const isViewModeEnabled = window.SEARCH_LINK_MODE === 'view';
 
 // 网盘链接健康检测状态
 const isLinkCheckEnabled = window.ENABLE_LINK_CHECK !== false;
-let isHideDeadLinks = isLinkCheckEnabled && Boolean(window.DEFAULT_HIDE_DEAD_LINKS);
+let savedHideDeadLinks = null;
+try {
+    const raw = localStorage.getItem('panrelay_hide_dead_links');
+    if (raw !== null) savedHideDeadLinks = (raw === 'true');
+} catch (e) {}
+
+let isHideDeadLinks = isLinkCheckEnabled && (savedHideDeadLinks !== null ? savedHideDeadLinks : Boolean(window.DEFAULT_HIDE_DEAD_LINKS));
 const linkHealthCache = new Map();
 const pendingCheckKeys = new Set();
 let checkQueue = [];
@@ -68,6 +74,9 @@ let isAdvancedFilterOpen = false;
 
 hideDeadLinksToggle?.addEventListener('click', function () {
     isHideDeadLinks = !isHideDeadLinks;
+    try {
+        localStorage.setItem('panrelay_hide_dead_links', String(isHideDeadLinks));
+    } catch (e) {}
     this.classList.toggle('active', isHideDeadLinks);
     this.setAttribute('aria-pressed', String(isHideDeadLinks));
     if (hideDeadLinksText) {

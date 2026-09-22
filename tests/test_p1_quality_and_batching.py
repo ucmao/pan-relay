@@ -83,6 +83,25 @@ class TestP1QualityAndBatching(unittest.TestCase):
         )
         mock_share_task.assert_called_once_with(["saved_fid_1", "saved_fid_2"], "电影合集")
 
+    @patch.object(QuarkPanClient, "_request")
+    def test_quark_task_polling_wait_pending_status(self, mock_request):
+        """测试夸克网盘任务轮询：当初次返回 pending (status 0) 且包含空 save_as 字典时，不会误判提前返回"""
+        client = QuarkPanClient("fake_quark_cookie")
+        # 第一次请求返回 status 0 和空列表，第二次返回 status 2 和真实 fid
+        mock_request.side_effect = [
+            {"status": 200, "data": {"status": 0, "save_as": {"save_as_top_fids": []}}},
+            {"status": 200, "data": {"status": 2, "save_as": {"save_as_top_fids": ["fid_ok_123"]}}},
+        ]
+        result = client.task("test_task_id")
+        self.assertIsNotNone(result)
+        self.assertEqual(result.get("data", {}).get("status"), 2)
+        self.assertEqual(
+            result.get("data", {}).get("save_as", {}).get("save_as_top_fids"),
+            ["fid_ok_123"],
+        )
+        self.assertEqual(mock_request.call_count, 2)
+
+
     @patch.object(QuarkPanClient, "del_file")
     @patch.object(QuarkPanClient, "get_dir_file")
     @patch.object(QuarkPanClient, "get_share_link")

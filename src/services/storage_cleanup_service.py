@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from src.db.resources import (
     count_expired_resources,
@@ -14,17 +14,28 @@ from src.services.temp_share_service import cleanup_expired_temp_shares
 logger = logging.getLogger(__name__)
 
 
-def cleanup_expired_resources(retention_days: int = 15, limit: int = 100) -> int:
+def cleanup_expired_resources(
+    retention_days: Optional[int] = None,
+    retention_minutes: Optional[int] = None,
+    limit: int = 100,
+) -> int:
     """
-    清理创建时间超过 retention_days 天的转存资源（物理删除网盘文件并清理数据库记录）
+    清理创建时间超过指定保留期的转存资源（物理删除网盘文件并清理数据库记录）
     """
-    expired_items = list_expired_resources(days=retention_days, limit=limit)
+    if retention_minutes is not None:
+        expired_items = list_expired_resources(minutes=retention_minutes, limit=limit)
+        retention_desc = f"{retention_minutes}分钟"
+    else:
+        days_val = retention_days if retention_days is not None else 15
+        expired_items = list_expired_resources(days=days_val, limit=limit)
+        retention_desc = f"{days_val}天"
+
     if not expired_items:
         return 0
 
     cleaned_count = 0
     logger.info(
-        f"开始执行过期转存资源清理，扫描到 {len(expired_items)} 条待清理记录 (保留期: {retention_days}天)..."
+        f"开始执行过期转存资源清理，扫描到 {len(expired_items)} 条待清理记录 (保留期: {retention_desc})..."
     )
 
     for item in expired_items:
@@ -69,18 +80,22 @@ def cleanup_all_storage() -> Dict[str, Any]:
     res_cleaned = 0
     limit = config.get("limit_per_run", 100)
 
-    # 1. 清理过期动态临时分享 (默认 6 小时)
+    # 1. 清理过期动态临时分享
     if config.get("clean_temp_shares", True):
         try:
             temp_cleaned = cleanup_expired_temp_shares(limit=limit)
         except Exception as exc:
             logger.error(f"清理临时分享异常: {exc}")
 
-    # 2. 清理超过保留期的转存资源 (默认 15 天)
+    # 2. 清理超过保留期的转存资源 (支持分钟/小时/天换算的 retention_minutes)
     if config.get("clean_old_resources", True):
-        retention_days = config.get("retention_days", 15)
+        retention_minutes = config.get("retention_minutes")
         try:
-            res_cleaned = cleanup_expired_resources(retention_days=retention_days, limit=limit)
+            if retention_minutes is not None:
+                res_cleaned = cleanup_expired_resources(retention_minutes=retention_minutes, limit=limit)
+            else:
+                retention_days = config.get("retention_days", 15)
+                res_cleaned = cleanup_expired_resources(retention_days=retention_days, limit=limit)
         except Exception as exc:
             logger.error(f"清理过期转存资源异常: {exc}")
 
@@ -104,8 +119,12 @@ def cleanup_all_storage() -> Dict[str, Any]:
 def get_storage_stats() -> Dict[str, Any]:
     """获取当前存储概览统计信息"""
     config = get_storage_cleanup_config()
-    retention_days = config.get("retention_days", 15)
-    expired_res_count = count_expired_resources(days=retention_days)
+    retention_minutes = config.get("retention_minutes")
+    if retention_minutes is not None:
+        expired_res_count = count_expired_resources(minutes=retention_minutes)
+    else:
+        retention_days = config.get("retention_days", 15)
+        expired_res_count = count_expired_resources(days=retention_days)
 
     return {
         "config": config,

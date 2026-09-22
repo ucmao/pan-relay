@@ -13,6 +13,24 @@ logger = logging.getLogger(__name__)
 _scheduler = None
 
 
+def _get_cleanup_trigger_kwargs(config: dict) -> tuple:
+    unit = str(config.get("cleanup_interval_unit", "hours")).strip().lower()
+    val = config.get("cleanup_interval_value")
+    if val is None:
+        val = config.get("auto_cleanup_interval_hours", 12)
+        unit = "hours"
+
+    if unit == "minutes":
+        mins = max(15, int(val))
+        return {"minutes": mins}, f"每 {mins} 分钟"
+    elif unit == "days":
+        days = max(1, int(val))
+        return {"days": days}, f"每 {days} 天"
+    else:
+        hours = max(1, int(val))
+        return {"hours": hours}, f"每 {hours} 小时"
+
+
 def reload_storage_cleanup_job():
     """重新载入存储清理定时任务"""
     global _scheduler
@@ -20,16 +38,16 @@ def reload_storage_cleanup_job():
         return
     try:
         config = get_storage_cleanup_config()
-        hours = max(1, config.get("auto_cleanup_interval_hours", 12))
+        trigger_kwargs, desc = _get_cleanup_trigger_kwargs(config)
         _scheduler.add_job(
             cleanup_all_storage,
             trigger="interval",
-            hours=hours,
+            **trigger_kwargs,
             id="cleanup_all_storage",
             max_instances=1,
             replace_existing=True,
         )
-        logger.info(f"已更新存储定时清理任务: 每 {hours} 小时执行一次")
+        logger.info(f"已更新存储定时清理任务: {desc}执行一次")
     except Exception as exc:
         logger.error(f"重载存储清理定时任务异常: {exc}")
 
@@ -54,11 +72,11 @@ def start_scheduler():
     )
 
     config = get_storage_cleanup_config()
-    hours = max(1, config.get("auto_cleanup_interval_hours", 12))
+    trigger_kwargs, desc = _get_cleanup_trigger_kwargs(config)
     scheduler.add_job(
         cleanup_all_storage,
         trigger="interval",
-        hours=hours,
+        **trigger_kwargs,
         id="cleanup_all_storage",
         max_instances=1,
         replace_existing=True,
@@ -75,6 +93,6 @@ def start_scheduler():
     )
 
     scheduler.start()
-    logger.info(f"定时任务已启动: 每30分钟清理过期动态分享, 每{hours}小时清理存储, 每24小时执行资源健康巡检")
+    logger.info(f"定时任务已启动: 每30分钟清理过期动态分享, {desc}清理存储, 每24小时执行资源健康巡检")
     _scheduler = scheduler
     return _scheduler

@@ -35,6 +35,9 @@ function bindFrontendLinkModeEvents() {
 function switchSystemTab(target, updateHash = true) {
     const validTabs = ['storage', 'security', 'credentials', 'strategy', 'api', 'frontend'];
     const normalized = validTabs.includes(target) ? target : 'storage';
+    try {
+        localStorage.setItem('panrelay_system_tab', normalized);
+    } catch (e) {}
 
     const tabBtns = document.querySelectorAll('[data-system-tab-target]');
     if (tabBtns.length === 0) return;
@@ -61,15 +64,20 @@ function bindSystemTabEvents() {
 
     const hash = (window.location.hash || '').replace('#', '').trim();
     const queryTab = new URLSearchParams(window.location.search).get('tab');
-    if (hash || queryTab) {
-        switchSystemTab(hash || queryTab, false);
-    }
+    let savedTab = null;
+    try {
+        savedTab = localStorage.getItem('panrelay_system_tab');
+    } catch (e) {}
+    switchSystemTab(hash || queryTab || savedTab || 'storage', false);
 }
 
 function bindCredentialTabEvents() {
     document.querySelectorAll('[data-cred-target]').forEach((btn) => {
         btn.addEventListener('click', () => {
             const target = btn.getAttribute('data-cred-target');
+            try {
+                localStorage.setItem('panrelay_cred_tab', target);
+            } catch (e) {}
             document.querySelectorAll('[data-cred-target]').forEach((b) => b.classList.remove('is-active'));
             document.querySelectorAll('.credential-tab-pane').forEach((pane) => pane.classList.remove('is-active'));
             btn.classList.add('is-active');
@@ -81,8 +89,13 @@ function bindCredentialTabEvents() {
     });
 
     const queryCred = new URLSearchParams(window.location.search).get('cred');
-    if (queryCred) {
-        const targetBtn = document.querySelector(`[data-cred-target="${queryCred}"]`);
+    let savedCred = null;
+    try {
+        savedCred = localStorage.getItem('panrelay_cred_tab');
+    } catch (e) {}
+    const activeCred = queryCred || savedCred;
+    if (activeCred) {
+        const targetBtn = document.querySelector(`[data-cred-target="${activeCred}"]`);
         if (targetBtn) {
             targetBtn.click();
         }
@@ -853,6 +866,71 @@ async function saveCustomAdConfig() {
     }
 }
 
+function handleRetentionUnitChange() {
+    const unitSelect = document.getElementById('storageRetentionUnitSelect');
+    const valueInput = document.getElementById('storageRetentionValueInput');
+    const intervalUnitSelect = document.getElementById('storageCleanupIntervalUnitSelect');
+    const intervalValueInput = document.getElementById('storageCleanupIntervalValueInput');
+    if (!unitSelect || !valueInput) return;
+
+    const unit = unitSelect.value;
+    if (unit === 'minutes') {
+        valueInput.min = '30';
+        if (parseInt(valueInput.value || '0', 10) < 30) {
+            valueInput.value = '30';
+        }
+        // 智能对齐：如果保留时长设为了分钟级，且当前扫描周期大于2小时，自动对齐为30分钟
+        if (intervalUnitSelect && intervalValueInput) {
+            if (intervalUnitSelect.value === 'days' || (intervalUnitSelect.value === 'hours' && parseInt(intervalValueInput.value || '0', 10) > 1)) {
+                intervalUnitSelect.value = 'minutes';
+                intervalValueInput.value = '30';
+                intervalValueInput.min = '15';
+            }
+        }
+    } else {
+        valueInput.min = '1';
+        if (parseInt(valueInput.value || '0', 10) < 1) {
+            valueInput.value = '1';
+        }
+    }
+    saveStorageCleanupConfig();
+}
+
+function handleCleanupIntervalUnitChange() {
+    const intervalUnitSelect = document.getElementById('storageCleanupIntervalUnitSelect');
+    const intervalValueInput = document.getElementById('storageCleanupIntervalValueInput');
+    if (!intervalUnitSelect || !intervalValueInput) return;
+
+    const unit = intervalUnitSelect.value;
+    if (unit === 'minutes') {
+        intervalValueInput.min = '15';
+        if (parseInt(intervalValueInput.value || '0', 10) < 15) {
+            intervalValueInput.value = '30';
+        }
+    } else {
+        intervalValueInput.min = '1';
+        if (parseInt(intervalValueInput.value || '0', 10) < 1) {
+            intervalValueInput.value = '1';
+        }
+    }
+    saveStorageCleanupConfig();
+}
+
+function updateStorageCleanupUiState(enabled) {
+    const body = document.getElementById('storageCleanupBody');
+    if (body) {
+        if (!enabled) {
+            body.classList.add('opacity-50', 'pointer-events-none');
+        } else {
+            body.classList.remove('opacity-50', 'pointer-events-none');
+        }
+        const inputs = body.querySelectorAll('input:not(#storageCleanupGlobalToggle), select');
+        inputs.forEach(input => {
+            input.disabled = !enabled;
+        });
+    }
+}
+
 async function loadStorageCleanupConfig() {
     try {
         const response = await fetch('/admin/api/storage-cleanup-config');
@@ -865,19 +943,48 @@ async function loadStorageCleanupConfig() {
         const config = resData.config || {};
 
         const globalToggle = document.getElementById('storageCleanupGlobalToggle');
-        const cleanTempSharesToggle = document.getElementById('storageCleanTempSharesToggle');
-        const cleanOldResourcesToggle = document.getElementById('storageCleanOldResourcesToggle');
+        const retentionValueInput = document.getElementById('storageRetentionValueInput');
+        const retentionUnitSelect = document.getElementById('storageRetentionUnitSelect');
         const retentionDaysInput = document.getElementById('storageRetentionDaysInput');
+        const cleanupIntervalValueInput = document.getElementById('storageCleanupIntervalValueInput');
+        const cleanupIntervalUnitSelect = document.getElementById('storageCleanupIntervalUnitSelect');
         const cleanupIntervalInput = document.getElementById('storageCleanupIntervalInput');
-        const limitPerRunInput = document.getElementById('storageLimitPerRunInput');
         const expiredCountEl = document.getElementById('expiredResourcesCount');
 
-        if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? true);
-        if (cleanTempSharesToggle) cleanTempSharesToggle.checked = Boolean(config.clean_temp_shares ?? true);
-        if (cleanOldResourcesToggle) cleanOldResourcesToggle.checked = Boolean(config.clean_old_resources ?? true);
-        if (retentionDaysInput) retentionDaysInput.value = config.retention_days || 15;
+        const isEnabled = Boolean(config.enabled ?? true);
+        if (globalToggle) globalToggle.checked = isEnabled;
+
+        updateStorageCleanupUiState(isEnabled);
+
+        if (retentionUnitSelect) {
+            retentionUnitSelect.value = config.retention_unit || 'days';
+        }
+        if (retentionValueInput) {
+            const val = config.retention_value ?? config.retention_days ?? 15;
+            retentionValueInput.value = val;
+            if (config.retention_unit === 'minutes') {
+                retentionValueInput.min = '30';
+            } else {
+                retentionValueInput.min = '1';
+            }
+        }
+        if (retentionDaysInput) {
+            retentionDaysInput.value = config.retention_days || 15;
+        }
+
+        if (cleanupIntervalUnitSelect) {
+            cleanupIntervalUnitSelect.value = config.cleanup_interval_unit || 'hours';
+        }
+        if (cleanupIntervalValueInput) {
+            const intervalVal = config.cleanup_interval_value ?? config.auto_cleanup_interval_hours ?? 12;
+            cleanupIntervalValueInput.value = intervalVal;
+            if (config.cleanup_interval_unit === 'minutes') {
+                cleanupIntervalValueInput.min = '15';
+            } else {
+                cleanupIntervalValueInput.min = '1';
+            }
+        }
         if (cleanupIntervalInput) cleanupIntervalInput.value = config.auto_cleanup_interval_hours || 12;
-        if (limitPerRunInput) limitPerRunInput.value = config.limit_per_run || 100;
 
         if (expiredCountEl) {
             expiredCountEl.textContent = String(resData.expired_resources_count ?? 0);
@@ -890,19 +997,48 @@ async function loadStorageCleanupConfig() {
 
 async function saveStorageCleanupConfig() {
     const globalToggle = document.getElementById('storageCleanupGlobalToggle');
-    const cleanTempSharesToggle = document.getElementById('storageCleanTempSharesToggle');
-    const cleanOldResourcesToggle = document.getElementById('storageCleanOldResourcesToggle');
+    const retentionValueInput = document.getElementById('storageRetentionValueInput');
+    const retentionUnitSelect = document.getElementById('storageRetentionUnitSelect');
     const retentionDaysInput = document.getElementById('storageRetentionDaysInput');
+    const cleanupIntervalValueInput = document.getElementById('storageCleanupIntervalValueInput');
+    const cleanupIntervalUnitSelect = document.getElementById('storageCleanupIntervalUnitSelect');
     const cleanupIntervalInput = document.getElementById('storageCleanupIntervalInput');
-    const limitPerRunInput = document.getElementById('storageLimitPerRunInput');
+
+    const unit = retentionUnitSelect?.value || 'days';
+    let val = parseInt(retentionValueInput?.value || retentionDaysInput?.value || '15', 10);
+    if (unit === 'minutes' && val < 30) {
+        val = 30;
+        if (retentionValueInput) retentionValueInput.value = '30';
+        showToast('为保障访客保存体验与防网盘风控，保留时间最低为 30 分钟。已自动调整为 30 分钟。', 'warning');
+    } else if (val < 1) {
+        val = 1;
+        if (retentionValueInput) retentionValueInput.value = '1';
+    }
+
+    const intervalUnit = cleanupIntervalUnitSelect?.value || 'hours';
+    let intervalVal = parseInt(cleanupIntervalValueInput?.value || cleanupIntervalInput?.value || '12', 10);
+    if (intervalUnit === 'minutes' && intervalVal < 15) {
+        intervalVal = 15;
+        if (cleanupIntervalValueInput) cleanupIntervalValueInput.value = '15';
+        showToast('为保障系统性能与防网盘风控，扫描周期最低为 15 分钟。已自动调整为 15 分钟。', 'warning');
+    } else if (intervalVal < 1) {
+        intervalVal = 1;
+        if (cleanupIntervalValueInput) cleanupIntervalValueInput.value = '1';
+    }
+
+    const isEnabled = globalToggle ? globalToggle.checked : true;
+    updateStorageCleanupUiState(isEnabled);
 
     const payload = {
-        enabled: globalToggle ? globalToggle.checked : true,
-        clean_temp_shares: cleanTempSharesToggle ? cleanTempSharesToggle.checked : true,
-        clean_old_resources: cleanOldResourcesToggle ? cleanOldResourcesToggle.checked : true,
-        retention_days: parseInt(retentionDaysInput?.value || '15', 10),
-        auto_cleanup_interval_hours: parseInt(cleanupIntervalInput?.value || '12', 10),
-        limit_per_run: parseInt(limitPerRunInput?.value || '100', 10),
+        enabled: isEnabled,
+        clean_temp_shares: true,
+        clean_old_resources: true,
+        retention_unit: unit,
+        retention_value: val,
+        retention_days: unit === 'days' ? val : Math.max(1, Math.round((unit === 'hours' ? val * 60 : val) / 1440)),
+        cleanup_interval_unit: intervalUnit,
+        cleanup_interval_value: intervalVal,
+        auto_cleanup_interval_hours: intervalUnit === 'hours' ? intervalVal : Math.max(1, Math.round((intervalUnit === 'minutes' ? intervalVal : intervalVal * 1440) / 60)),
     };
 
     try {
@@ -926,6 +1062,21 @@ async function saveStorageCleanupConfig() {
 }
 
 async function runStorageCleanupNow() {
+    const expiredCount = document.getElementById('expiredResourcesCount')?.textContent || '0';
+    const confirmPrompt = `确定要立即按当前策略执行全量存储清理吗？系统将自动回收已失效的临时分享并物理删除超过保留期的转存资源（当前检测到约 ${expiredCount} 条超期资源）。此操作不可撤销。`;
+
+    const ok = window.confirmModal
+        ? await window.confirmModal({
+            title: '执行存储清理确认',
+            message: confirmPrompt,
+            confirmText: '立即执行',
+            cancelText: '取消',
+            type: 'danger'
+        })
+        : confirm(confirmPrompt);
+
+    if (!ok) return;
+
     const runBtn = document.getElementById('runStorageCleanupBtn');
     if (runBtn) {
         runBtn.disabled = true;
@@ -952,7 +1103,7 @@ async function runStorageCleanupNow() {
     } finally {
         if (runBtn) {
             runBtn.disabled = false;
-            runBtn.innerHTML = '<i class="fas fa-trash-alt text-[10px] mr-1"></i> 立即执行全量清理';
+            runBtn.innerHTML = '<i class="fas fa-trash-alt text-[10px] mr-1"></i> 立即执行清理';
         }
     }
 }

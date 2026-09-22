@@ -145,17 +145,17 @@
                 <div class="space-y-1">
                     <div class="px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">通用配置与系统
                     </div>
+                    <a href="{{ url_for('system_config.system_config_page') }}"
+                        class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'config_system' else '' }}">
+                        <i
+                            class="fas fa-sliders-h w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'config_system' else '' }}"></i>
+                        <span>系统配置</span>
+                    </a>
                     <a href="{{ url_for('search_sources.sources_page') }}"
                         class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'sources' else '' }}">
                         <i
                             class="fas fa-satellite-dish w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'sources' else '' }}"></i>
                         <span>搜索源管理</span>
-                    </a>
-                    <a href="{{ url_for('system_config.system_config_page') }}"
-                        class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'config_system' else '' }}">
-                        <i
-                            class="fas fa-sliders-h w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'config_system' else '' }}"></i>
-                        <span>系统通用配置</span>
                     </a>
                     <a href="{{ url_for('logs.logs_page') }}"
                         class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'logs' else '' }}">
@@ -223,6 +223,46 @@
         </main>
     </div>
 
+    <!-- 顶部浮动气泡卡片提示容器 (Toast Notification) -->
+    <div id="toast-container" class="toast-container fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none" aria-live="polite">
+        {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="toast-bubble pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg bg-white text-sm transition-all duration-300 {{ 'border-red-200 text-red-700 bg-red-50/90' if category in ['error', 'danger'] else ('border-amber-200 text-amber-700 bg-amber-50/90' if category == 'warning' else 'border-emerald-200 text-emerald-800 bg-emerald-50/90') }}" role="alert">
+            <div class="toast-icon shrink-0">
+                {% if category in ['error', 'danger'] %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                {% elif category == 'warning' %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                {% else %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 10 11 15 8 12"/></svg>
+                {% endif %}
+            </div>
+            <div class="toast-content flex-1 font-medium">{{ message }}</div>
+            <button type="button" class="toast-close text-slate-400 hover:text-slate-700 text-lg leading-none" onclick="dismissToast(this.closest('.toast-bubble'))" aria-label="关闭">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 自定义操作确认弹窗 (Custom Confirmation Modal) -->
+    <div id="confirm-modal-backdrop" class="modal-backdrop fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200" style="display:none" aria-hidden="true">
+        <div class="modal-card bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 transition-all duration-200 scale-95" role="dialog" aria-modal="true">
+            <div class="modal-header flex items-start gap-4 mb-5">
+                <div class="modal-icon-wrap w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-red-50 text-red-600 border border-red-200" id="modal-icon-wrap">
+                    <svg id="modal-icon-danger" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <svg id="modal-icon-warning" style="display:none" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <svg id="modal-icon-primary" style="display:none" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                </div>
+                <div>
+                    <h3 class="modal-title text-base font-bold text-slate-900" id="modal-title">操作确认</h3>
+                    <p class="modal-desc text-sm text-slate-600 mt-1 leading-relaxed" id="modal-message">确认执行此操作吗？</p>
+                </div>
+            </div>
+            <div class="confirm-modal-footer flex items-center justify-end gap-3 pt-4 border-t border-slate-100 bg-transparent p-0">
+                <button type="button" class="btn btn-secondary px-4 py-2 rounded-lg text-sm font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition shadow-xs cursor-pointer" id="modal-btn-cancel">取消</button>
+                <button type="button" class="btn btn-danger px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition shadow-xs cursor-pointer" id="modal-btn-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
     <script>
         function toggleSidebar() {
@@ -231,6 +271,255 @@
                 sidebar.classList.toggle('open');
             }
         }
+
+        function dismissToast(el) {
+            if (!el || el.classList.contains('toast-hiding')) return;
+            el.classList.add('toast-hiding');
+            setTimeout(() => {
+                if (el && el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            }, 280);
+        }
+
+        function initToasts() {
+            const bubbles = document.querySelectorAll('.toast-bubble');
+            bubbles.forEach(bubble => {
+                let timer = setTimeout(() => dismissToast(bubble), 3500);
+                bubble.addEventListener('mouseenter', () => clearTimeout(timer));
+                bubble.addEventListener('mouseleave', () => {
+                    timer = setTimeout(() => dismissToast(bubble), 1500);
+                });
+            });
+        }
+
+        window.showToast = function(message, type = 'success', duration = 3000) {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm pointer-events-none';
+                document.body.appendChild(container);
+            }
+
+            const activeToasts = Array.from(container.querySelectorAll('.toast-bubble:not(.toast-hiding)'));
+            const duplicate = activeToasts.find(t => {
+                const content = t.querySelector('.toast-content');
+                return content && content.textContent.trim() === (message || '').trim();
+            });
+
+            if (duplicate) {
+                duplicate.style.animation = 'none';
+                void duplicate.offsetHeight;
+                duplicate.style.animation = 'toastSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+                if (duplicate._timer) clearTimeout(duplicate._timer);
+                duplicate._timer = setTimeout(() => dismissToast(duplicate), duration);
+                return;
+            }
+
+            const MAX_TOASTS = 3;
+            if (activeToasts.length >= MAX_TOASTS) {
+                const toRemove = activeToasts.length - MAX_TOASTS + 1;
+                for (let i = 0; i < toRemove; i++) {
+                    dismissToast(activeToasts[i]);
+                }
+            }
+
+            const bubble = document.createElement('div');
+            const isError = type === 'error' || type === 'danger';
+            const isWarning = type === 'warning';
+            const isInfo = type === 'info';
+            const colorClasses = isError
+                ? 'border-red-200 text-red-700 bg-red-50/90' 
+                : (isWarning ? 'border-amber-200 text-amber-700 bg-amber-50/90' : (isInfo ? 'border-blue-200 text-blue-700 bg-blue-50/90' : 'border-emerald-200 text-emerald-800 bg-emerald-50/90'));
+            bubble.className = `toast-bubble pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg bg-white text-sm transition-all duration-300 ${colorClasses}`;
+            bubble.setAttribute('role', 'alert');
+            
+            let iconSvg = '';
+            if (isError) {
+                iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+            } else if (isWarning) {
+                iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+            } else if (isInfo) {
+                iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+            } else {
+                iconSvg = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 10 11 15 8 12"/></svg>';
+            }
+            
+            bubble.innerHTML = `
+                <div class="toast-icon shrink-0">${iconSvg}</div>
+                <div class="toast-content flex-1 font-medium"></div>
+                <button type="button" class="toast-close text-slate-400 hover:text-slate-700 text-lg leading-none" aria-label="关闭">&times;</button>
+            `;
+            bubble.querySelector('.toast-content').textContent = message;
+            bubble.querySelector('.toast-close').onclick = () => dismissToast(bubble);
+            
+            bubble._timer = setTimeout(() => dismissToast(bubble), duration);
+            bubble.addEventListener('mouseenter', () => clearTimeout(bubble._timer));
+            bubble.addEventListener('mouseleave', () => {
+                bubble._timer = setTimeout(() => dismissToast(bubble), 1500);
+            });
+            
+            container.appendChild(bubble);
+        };
+
+        window.confirmModal = function({
+            title = '操作确认',
+            message = '确定继续执行此操作吗？',
+            confirmText = '确定',
+            cancelText = '取消',
+            type = 'danger'
+        } = {}) {
+            return new Promise((resolve) => {
+                const backdrop = document.getElementById('confirm-modal-backdrop');
+                if (!backdrop) {
+                    resolve(window.confirm(message));
+                    return;
+                }
+
+                const titleEl = document.getElementById('modal-title');
+                const msgEl = document.getElementById('modal-message');
+                const btnConfirm = document.getElementById('modal-btn-confirm');
+                const btnCancel = document.getElementById('modal-btn-cancel');
+                const iconWrap = document.getElementById('modal-icon-wrap');
+                const iconDanger = document.getElementById('modal-icon-danger');
+                const iconWarning = document.getElementById('modal-icon-warning');
+                const iconPrimary = document.getElementById('modal-icon-primary');
+
+                titleEl.textContent = title;
+                msgEl.textContent = message;
+                btnConfirm.textContent = confirmText;
+                btnCancel.textContent = cancelText;
+
+                if (type === 'danger' || type === 'error') {
+                    btnConfirm.className = 'btn btn-danger px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition shadow-xs cursor-pointer';
+                    iconWrap.className = 'modal-icon-wrap w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-red-50 text-red-600 border border-red-200';
+                } else if (type === 'warning') {
+                    btnConfirm.className = 'btn btn-primary px-4 py-2 rounded-lg text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 transition shadow-xs cursor-pointer';
+                    iconWrap.className = 'modal-icon-wrap w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 text-amber-600 border border-amber-200';
+                } else {
+                    btnConfirm.className = 'btn btn-primary px-4 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition shadow-xs cursor-pointer';
+                    iconWrap.className = 'modal-icon-wrap w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-blue-50 text-blue-600 border border-blue-200';
+                }
+
+                if (iconDanger) iconDanger.style.display = (type === 'danger' || type === 'error') ? 'block' : 'none';
+                if (iconWarning) iconWarning.style.display = type === 'warning' ? 'block' : 'none';
+                if (iconPrimary) iconPrimary.style.display = (type !== 'danger' && type !== 'error' && type !== 'warning') ? 'block' : 'none';
+
+                function cleanup(result) {
+                    backdrop.classList.remove('modal-open');
+                    setTimeout(() => {
+                        backdrop.style.display = 'none';
+                    }, 180);
+                    window.removeEventListener('keydown', onKeyDown);
+                    btnConfirm.onclick = null;
+                    btnCancel.onclick = null;
+                    backdrop.onclick = null;
+                    resolve(result);
+                }
+
+                function onKeyDown(e) {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        cleanup(false);
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        cleanup(true);
+                    }
+                }
+
+                btnConfirm.onclick = () => cleanup(true);
+                btnCancel.onclick = () => cleanup(false);
+                backdrop.onclick = (e) => {
+                    if (e.target === backdrop) cleanup(false);
+                };
+                window.addEventListener('keydown', onKeyDown);
+
+                backdrop.style.display = 'flex';
+                void backdrop.offsetHeight;
+                backdrop.classList.add('modal-open');
+                btnConfirm.focus();
+            });
+        };
+
+        window.showConfirm = window.confirmModal;
+
+        function initConfirmInterceptions() {
+            document.addEventListener('click', async (e) => {
+                const btn = e.target.closest('[data-confirm]');
+                if (!btn) return;
+
+                if (btn.dataset.confirmed === 'true') {
+                    delete btn.dataset.confirmed;
+                    return;
+                }
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                const message = btn.getAttribute('data-confirm') || '确定执行此操作吗？';
+                const title = btn.getAttribute('data-confirm-title') || '操作确认';
+                const confirmText = btn.getAttribute('data-confirm-text') || '确定';
+                const type = btn.getAttribute('data-confirm-type') || 'danger';
+
+                const ok = await window.confirmModal({ title, message, confirmText, type });
+                if (ok) {
+                    btn.dataset.confirmed = 'true';
+                    if (btn.tagName === 'FORM') {
+                        if (e.target && e.target.name) {
+                            const hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.name = e.target.name;
+                            hidden.value = e.target.value;
+                            btn.appendChild(hidden);
+                        }
+                        btn.submit();
+                    } else if (btn.type === 'submit' && btn.form) {
+                        if (btn.name) {
+                            const hidden = document.createElement('input');
+                            hidden.type = 'hidden';
+                            hidden.name = btn.name;
+                            hidden.value = btn.value;
+                            btn.form.appendChild(hidden);
+                        }
+                        btn.form.submit();
+                    } else if (btn.tagName === 'A') {
+                        window.location.href = btn.href;
+                    } else {
+                        btn.click();
+                    }
+                }
+            }, true);
+
+            document.addEventListener('submit', async (e) => {
+                const form = e.target;
+                const confirmMsg = form.getAttribute('data-confirm');
+                if (!confirmMsg) return;
+
+                if (form.dataset.confirmed === 'true') {
+                    delete form.dataset.confirmed;
+                    return;
+                }
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                const title = form.getAttribute('data-confirm-title') || '操作确认';
+                const confirmText = form.getAttribute('data-confirm-text') || '确定';
+                const type = form.getAttribute('data-confirm-type') || 'danger';
+
+                const ok = await window.confirmModal({ title, message: confirmMsg, confirmText, type });
+                if (ok) {
+                    form.dataset.confirmed = 'true';
+                    form.submit();
+                }
+            }, true);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initToasts();
+            initConfirmInterceptions();
+        });
     </script>
     {% block scripts %}{% endblock %}
 

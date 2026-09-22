@@ -15,38 +15,28 @@
                 <i class="fas fa-gauge-high text-base"></i>
             </div>
             <div>
-                <div class="flex items-center gap-2 flex-wrap">
-                    <h1 class="text-xl font-bold text-slate-900 tracking-tight mr-1">系统仪表盘</h1>
-                    <!-- Web 前台服务状态 -->
-                    <a href="{{ url_for('system_config.frontend_config_page') }}" id="dash-header-web-badge"
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition {{ 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/70' if summary.system.enable_frontend else 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/70' }}"
-                        title="Web 前台服务状态 (点击前往前台配置)">
-                        <span
-                            class="w-1.5 h-1.5 rounded-full mr-1.5 {{ 'bg-emerald-500 animate-pulse' if summary.system.enable_frontend else 'bg-slate-400' }}"></span>
-                        <span>Web前台: </span><span class="font-semibold ml-1" id="dash-header-web-text">{{ '运行中' if
-                            summary.system.enable_frontend else '已关闭' }}</span>
-                    </a>
-
-                    <!-- 开放 API 接口状态 -->
-                    <a href="{{ url_for('system_config.api_config_page') }}" id="dash-header-api-badge"
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition {{ 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/70' if summary.system.public_search_api_enabled else 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/70' }}"
-                        title="开放 API 服务状态 (点击前往 API 配置)">
-                        <span
-                            class="w-1.5 h-1.5 rounded-full mr-1.5 {{ 'bg-emerald-500' if summary.system.public_search_api_enabled else 'bg-slate-400' }}"></span>
-                        <span>公开API: </span><span class="font-semibold ml-1" id="dash-header-api-text">{{ '运行中' if
-                            summary.system.public_search_api_enabled else '已关闭' }}</span>
-                    </a>
-                </div>
+                <h1 class="text-xl font-bold text-slate-900 tracking-tight">系统仪表盘</h1>
                 <p class="text-xs text-slate-400 mt-0.5">全网聚合检索、网盘自动转存、私有收益沉淀与服务集群总览</p>
             </div>
         </div>
-        <div class="flex items-center space-x-2.5">
-            <button onclick="refreshDashboardStats()"
-                class="px-3.5 py-1.5 text-xs font-medium rounded-xl bg-white text-slate-700 hover:bg-slate-50 transition-colors flex items-center space-x-1.5 border border-slate-200 shadow-2xs"
-                title="异步刷新所有仪表盘统计数据">
-                <i class="fas fa-sync-alt text-slate-400" id="refresh-icon"></i>
-                <span>刷新统计</span>
-            </button>
+        <div class="flex items-center space-x-2">
+            <!-- Web 前台服务状态 -->
+            <a href="{{ url_for('system_config.frontend_config_page') }}" id="dash-header-web-badge"
+                class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs transition-colors group {{ 'text-slate-700 hover:text-slate-900' if summary.system.enable_frontend else 'text-slate-400 hover:text-slate-600' }}"
+                title="Web 前台服务 (点击前往配置 · {{ '已启用' if summary.system.enable_frontend else '已关闭' }})">
+                <span
+                    class="w-2 h-2 rounded-full mr-2 {{ 'bg-emerald-500 ring-2 ring-emerald-100' if summary.system.enable_frontend else 'bg-slate-300' }}"></span>
+                <span>Web前台</span>
+            </a>
+
+            <!-- 开放 API 接口状态 -->
+            <a href="{{ url_for('system_config.api_config_page') }}" id="dash-header-api-badge"
+                class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs transition-colors group {{ 'text-slate-700 hover:text-slate-900' if summary.system.public_search_api_enabled else 'text-slate-400 hover:text-slate-600' }}"
+                title="开放 API 服务 (点击前往配置 · {{ '已启用' if summary.system.public_search_api_enabled else '已关闭' }})">
+                <span
+                    class="w-2 h-2 rounded-full mr-2 {{ 'bg-emerald-500 ring-2 ring-emerald-100' if summary.system.public_search_api_enabled else 'bg-slate-300' }}"></span>
+                <span>公开API</span>
+            </a>
         </div>
     </div>
 
@@ -639,49 +629,42 @@
                         <span class="font-bold text-slate-800 font-mono">{{ summary.system.db_size_mb }} MB</span>
                     </div>
 
-                    <!-- 前台出链策略 -->
+                    <!-- 转存目标目录 -->
                     <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
+                        <span class="text-slate-500">默认转存目录</span>
+                        <span class="font-mono text-slate-800 text-[11px] truncate max-w-[130px] font-semibold" title="{{ summary.system.transfer_target_dir or 'Pan-Relay分享' }}">
+                            <i class="fas fa-folder text-indigo-500 text-[10px] mr-1"></i>{{ summary.system.transfer_target_dir or 'Pan-Relay分享' }}
+                        </span>
+                    </div>
+
+                    <!-- 统一转存保留时长 -->
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
+                        <span class="text-slate-500">存储保留时长</span>
+                        <span class="font-bold text-slate-800 font-mono">{{ summary.system.retention_display or '15 天' }}</span>
+                    </div>
+
+                    <!-- 敏感词风控 -->
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
+                        <span class="text-slate-500">敏感词安全风控</span>
+                        <span class="inline-flex items-center text-[11px] font-medium text-slate-700">
+                            <span class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.system.sensitive_words_enabled %}bg-emerald-500{% else %}bg-slate-300{% endif %}"></span>
+                            {{ '已启用' if summary.system.sensitive_words_enabled else '已关闭' }} ({{ summary.system.sensitive_words_count }}词)
+                        </span>
+                    </div>
+
+                    <!-- 存储扫描周期 -->
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
+                        <span class="text-slate-500">存储扫描周期</span>
+                        <span class="font-bold text-slate-800 font-mono">{{ summary.system.cleanup_interval_display or '每 12 小时' }}</span>
+                    </div>
+
+                    <!-- 前台出链策略 -->
+                    <div class="flex items-center justify-between">
                         <span class="text-slate-500">前台出链策略</span>
                         <span
                             class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200/60">
                             {{ '直接原盘' if summary.system.frontend_link_mode == 'direct' else '转存专属' }}
                         </span>
-                    </div>
-
-                    <!-- 前台 Web 服务 -->
-                    <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
-                        <span class="text-slate-500">前台 Web 服务</span>
-                        <span id="dash-system-web-status"
-                            class="inline-flex items-center text-[11px] font-medium text-slate-700">
-                            <span
-                                class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.system.enable_frontend %}bg-emerald-500{% else %}bg-slate-300{% endif %}"></span>
-                            {{ '已启用' if summary.system.enable_frontend else '已关闭' }}
-                        </span>
-                    </div>
-
-                    <!-- 开放 API 接口 -->
-                    <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
-                        <span class="text-slate-500">开放 API 服务</span>
-                        <span id="dash-system-api-status"
-                            class="inline-flex items-center text-[11px] font-medium text-slate-700">
-                            <span
-                                class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.system.public_search_api_enabled %}bg-emerald-500{% else %}bg-slate-300{% endif %}"></span>
-                            {{ '已启用' if summary.system.public_search_api_enabled else '已关闭' }}
-                        </span>
-                    </div>
-
-                    <!-- 运行环境 -->
-                    <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
-                        <span class="text-slate-500">Python 运行时</span>
-                        <span class="font-mono text-slate-700 truncate max-w-[130px]">{{ summary.system.python_version
-                            }}</span>
-                    </div>
-
-                    <!-- Excel 批量下载 -->
-                    <div class="flex items-center justify-between">
-                        <span class="text-slate-500">Excel 批量下载</span>
-                        <span class="font-medium text-slate-700">{{ '允许' if summary.system.allow_excel_download_enabled
-                            else '禁止' }}</span>
                     </div>
                 </div>
             </div>
@@ -1076,37 +1059,21 @@
                     }
                     if (s.system) {
                         const webBadge = document.getElementById('dash-header-web-badge');
-                        const webText = document.getElementById('dash-header-web-text');
-                        if (webBadge && webText) {
+                        if (webBadge) {
                             const isWebOn = !!s.system.enable_frontend;
-                            webBadge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition ${isWebOn ? 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/70' : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/70'}`;
-                            webText.textContent = isWebOn ? '运行中' : '已关闭';
+                            webBadge.className = `inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs transition-colors group ${isWebOn ? 'text-slate-700 hover:text-slate-900' : 'text-slate-400 hover:text-slate-600'}`;
+                            webBadge.title = `Web 前台服务 (点击前往配置 · ${isWebOn ? '已启用' : '已关闭'})`;
                             const dot = webBadge.querySelector('span:first-child');
-                            if (dot) dot.className = `w-1.5 h-1.5 rounded-full mr-1.5 ${isWebOn ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`;
+                            if (dot) dot.className = `w-2 h-2 rounded-full mr-2 ${isWebOn ? 'bg-emerald-500 ring-2 ring-emerald-100' : 'bg-slate-300'}`;
                         }
 
                         const apiBadge = document.getElementById('dash-header-api-badge');
-                        const apiText = document.getElementById('dash-header-api-text');
-                        if (apiBadge && apiText) {
+                        if (apiBadge) {
                             const isApiOn = !!s.system.public_search_api_enabled;
-                            apiBadge.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition ${isApiOn ? 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200/70' : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/70'}`;
-                            apiText.textContent = isApiOn ? '运行中' : '已关闭';
+                            apiBadge.className = `inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs transition-colors group ${isApiOn ? 'text-slate-700 hover:text-slate-900' : 'text-slate-400 hover:text-slate-600'}`;
+                            apiBadge.title = `开放 API 服务 (点击前往配置 · ${isApiOn ? '已启用' : '已关闭'})`;
                             const dot = apiBadge.querySelector('span:first-child');
-                            if (dot) dot.className = `w-1.5 h-1.5 rounded-full mr-1.5 ${isApiOn ? 'bg-emerald-500' : 'bg-slate-400'}`;
-                        }
-
-                        const sysWebStatus = document.getElementById('dash-system-web-status');
-                        if (sysWebStatus) {
-                            const isWebOn = !!s.system.enable_frontend;
-                            sysWebStatus.className = `inline-flex items-center text-[11px] font-medium text-slate-700`;
-                            sysWebStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full mr-1.5 ${isWebOn ? 'bg-emerald-500' : 'bg-slate-300'}"></span>${isWebOn ? '已启用' : '已关闭'}`;
-                        }
-
-                        const sysApiStatus = document.getElementById('dash-system-api-status');
-                        if (sysApiStatus) {
-                            const isApiOn = !!s.system.public_search_api_enabled;
-                            sysApiStatus.className = `inline-flex items-center text-[11px] font-medium text-slate-700`;
-                            sysApiStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full mr-1.5 ${isApiOn ? 'bg-emerald-500' : 'bg-slate-300'}"></span>${isApiOn ? '已启用' : '已关闭'}`;
+                            if (dot) dot.className = `w-2 h-2 rounded-full mr-2 ${isApiOn ? 'bg-emerald-500 ring-2 ring-emerald-100' : 'bg-slate-300'}`;
                         }
                     }
                     if (typeof showToast === 'function') showToast('仪表盘指标已刷新', 'success');

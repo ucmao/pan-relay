@@ -4,20 +4,19 @@
 {% block title %}前台 Web 配置 - Pan-Relay Console{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <div>
-        <h1 class="text-xl font-bold tracking-tight text-slate-900">前台 Web 界面配置</h1>
-        <p class="text-xs text-slate-500 mt-0.5">控制前台 Web 搜索界面的访问开关、导出下载权限及网盘展示筛选</p>
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">前台 Web 界面配置</h1>
+            <p class="text-xs text-slate-500 mt-0.5">控制前台 Web 搜索界面的访问开关、导出下载权限及网盘展示筛选</p>
+        </div>
+        <div class="flex items-center space-x-2.5">
+            <a href="{{ url_for('search_index') }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-external-link-alt text-[10px] mr-1"></i> 访问前台 Web
+            </a>
+        </div>
     </div>
-    <div class="flex items-center space-x-2.5">
-        <a href="{{ url_for('search_index') }}" target="_blank" class="btn btn-outline-primary btn-sm">
-            <i class="fas fa-external-link-alt text-[10px] mr-1"></i> 访问前台 Web
-        </a>
-    </div>
-</div>
-
-<div class="space-y-6">
 
     <!-- 1. 前台访问与出链策略 -->
     <section class="admin-panel">
@@ -128,12 +127,13 @@
         </div>
         <div class="admin-panel-body">
             <div class="divide-y divide-slate-100">
-                <!-- 开关 4: 前台链接实时免登录测活 -->
+                <!-- 开关 4: 前台链接实时测活 -->
                 <div class="setting-item-row">
                     <div class="space-y-1 min-w-0 pr-4">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-semibold text-slate-800 text-sm">前台链接实时免登录测活</span>
-                            <span class="help-tooltip" data-tooltip="控制前台 Web 搜索结果是否在后台异步发起免登录测活并显示健康徽章。关闭后可大幅节省服务器请求并避免网盘风控">
+                            <span class="help-tooltip"
+                                data-tooltip="控制前台 Web 搜索结果是否在后台异步发起免登录测活并显示健康徽章。关闭后可大幅节省服务器请求并避免网盘风控">
                                 <i class="far fa-circle-question text-xs"></i>
                             </span>
                         </div>
@@ -153,7 +153,8 @@
                     <div class="space-y-1 min-w-0 pr-4">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-semibold text-slate-800 text-sm">前台默认过滤失效资源</span>
-                            <span class="help-tooltip" data-tooltip="开启后，访客在前台搜索结果列表将默认激活“已过滤失效”，自动隐藏已失效或文件为空的链接，无需访客手动点击">
+                            <span class="help-tooltip"
+                                data-tooltip="开启后，访客在前台搜索结果列表将默认激活“已过滤失效”，自动隐藏已失效或文件为空的链接，无需访客手动点击">
                                 <i class="far fa-circle-question text-xs"></i>
                             </span>
                         </div>

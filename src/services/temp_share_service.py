@@ -67,13 +67,17 @@ def resolve_view_url(title: str, original_url: str, netdisk_name: str = "") -> D
     if not new_share_url or not file_id:
         return fallback
 
+    from src.services.system_config_service import get_storage_cleanup_config
+    cleanup_cfg = get_storage_cleanup_config()
+    expire_minutes = max(30, int(cleanup_cfg.get("retention_minutes", TEMP_SHARE_EXPIRE_HOURS * 60)))
+
     create_temp_share_record(
         original_url=original_url,
         title=title,
         cloud_name=resolved_netdisk_name,
         temp_share_url=new_share_url,
         file_id=file_id,
-        expires_in_hours=TEMP_SHARE_EXPIRE_HOURS,
+        expires_in_minutes=expire_minutes,
     )
 
     return {
