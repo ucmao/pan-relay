@@ -8,10 +8,12 @@ from flask import has_request_context, request
 from src.db.logs import (
     cleanup_logs_before_days,
     clear_all_logs as db_clear_all_logs,
+    delete_logs_by_filter,
     delete_logs_by_ids,
     get_logs_summary_stats,
     get_search_analytics_stats,
     insert_system_log,
+    query_logs_for_export,
     query_search_logs,
     query_system_logs,
 )
@@ -97,6 +99,31 @@ def delete_logs(ids: List[int]) -> Tuple[bool, str, int]:
     return delete_logs_by_ids(ids)
 
 
+def delete_logs_with_filter(
+    ids: Optional[List[int]] = None,
+    q: str = "",
+    log_type: str = "",
+    status: str = "",
+    channel: str = "",
+    result_filter: str = "",
+    start_date: str = "",
+    end_date: str = "",
+) -> Tuple[bool, str, int]:
+    """
+    按过滤条件或 ID 列表批量删除日志
+    """
+    return delete_logs_by_filter(
+        ids=ids,
+        q=q,
+        log_type=log_type,
+        status=status,
+        channel=channel,
+        result_filter=result_filter,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
 def clear_all_logs() -> Tuple[bool, str, int]:
     """
     清空全部日志
@@ -123,35 +150,24 @@ def export_logs_csv(
     q: str = "",
     log_type: str = "",
     status: str = "",
+    channel: str = "",
+    result_filter: str = "",
     start_date: str = "",
     end_date: str = "",
 ) -> str:
     """
     导出系统日志为带 UTF-8 BOM 的 CSV 文本
     """
-    if ids and len(ids) > 0:
-        # 导出指定勾选的日志列表
-        success, _, data = query_system_logs(
-            page=1,
-            page_size=len(ids) + 10,
-            sort_by="created_at",
-            order="desc",
-        )
-        logs = [item for item in data.get("logs", []) if item["id"] in ids] if success else []
-    else:
-        # 导出当前筛选条件下的全量日志（最多支持导出前 5000 条）
-        success, _, data = query_system_logs(
-            page=1,
-            page_size=5000,
-            q=q,
-            log_type=log_type,
-            status=status,
-            start_date=start_date,
-            end_date=end_date,
-            sort_by="created_at",
-            order="desc",
-        )
-        logs = data.get("logs", []) if success else []
+    logs = query_logs_for_export(
+        ids=ids,
+        q=q,
+        log_type=log_type,
+        status=status,
+        channel=channel,
+        result_filter=result_filter,
+        start_date=start_date,
+        end_date=end_date,
+    )
 
     output = io.StringIO()
     # 写入 UTF-8 BOM 便于 Excel 正常打开中文无乱码

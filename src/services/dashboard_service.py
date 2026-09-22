@@ -11,6 +11,7 @@ from src.services.system_config_service import (
     get_allow_excel_download_config,
     get_frontend_link_mode,
     get_public_search_api_config,
+    is_frontend_enabled,
 )
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,7 @@ def get_dashboard_summary() -> Dict[str, Any]:
         },
         "system": {
             "frontend_link_mode": "direct",
+            "enable_frontend": True,
             "public_search_api_enabled": True,
             "allow_excel_download_enabled": True,
             "db_size_mb": 0.0,
@@ -188,6 +190,7 @@ def get_dashboard_summary() -> Dict[str, Any]:
     # 5. 系统开关与文件体积
     try:
         summary["system"]["frontend_link_mode"] = get_frontend_link_mode()
+        summary["system"]["enable_frontend"] = is_frontend_enabled()
         summary["system"]["public_search_api_enabled"] = get_public_search_api_config().get("enabled", True)
         summary["system"]["allow_excel_download_enabled"] = get_allow_excel_download_config().get("enabled", True)
 

@@ -129,5 +129,11 @@ def delete_resource_and_share(resource_id: int):
     except Exception as share_err:
         logger.error(f"调用del_share处理资源分享链接时出错: {share_err}")
 
+    try:
+        from src.db.temp_shares import mark_temp_share_deleted_by_url_or_file
+        mark_temp_share_deleted_by_url_or_file(url=resource["share_link"], file_id=resource.get("file_id"))
+    except Exception as temp_err:
+        logger.warning(f"同步标记 temp_share 删除状态异常: {temp_err}")
+
     return True, "资源删除成功"
 

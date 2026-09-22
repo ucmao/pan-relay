@@ -133,6 +133,16 @@ class TestSystemLogs(unittest.TestCase):
         self.assertTrue(success)
         self.assertEqual(count, 2)
 
+        # 全选模式过滤删除 API 测试
+        insert_system_log(log_type="search", action="search.web.del_all", query_text="batch_all_delete_kw")
+        resp = self.client.post("/admin/api/logs/delete", json={
+            "select_mode": "all",
+            "q": "batch_all_delete_kw",
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json()["success"])
+        self.assertGreaterEqual(resp.get_json()["deleted_count"], 1)
+
         # 历史清理测试
         success, msg, count = cleanup_logs_before_days(30)
         self.assertTrue(success)

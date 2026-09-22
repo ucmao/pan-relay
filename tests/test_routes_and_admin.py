@@ -271,7 +271,7 @@ class SystemConfigPagesTest(unittest.TestCase):
     def test_system_config_page_renders(self):
         response = self.client.get("/admin/system-config")
         self.assertEqual(200, response.status_code)
-        self.assertIn("后端通用配置", response.text)
+        self.assertIn("系统通用配置", response.text)
 
 
 if __name__ == "__main__":

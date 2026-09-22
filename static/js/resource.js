@@ -1114,7 +1114,7 @@ function initResourcePage() {
     // 初始加载
     loadResources();
     loadNetdiskCredentials();
-    setBatchResourceMode('import');
+    toggleBatchTransferOptions(false);
 
     // 监听分享链接输入以实时刷新转存识别提示
     const shareLinkEl = document.getElementById('resourceShareLink');

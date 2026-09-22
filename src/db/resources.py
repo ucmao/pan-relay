@@ -10,19 +10,26 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
     """
     插入一条资源记录，返回新记录的 ID。
     处理 pan_operator 传入的数据字段。
+    若链接或 file_id 已存在，则安全复用并更新记录。
     """
     file_id = record.get("file_id")
-    name = record.get("name")
+    name = record.get("name") or "未命名资源"
     share_link = record.get("share_link")
     cloud_name = record.get("cloud_name", "")
     resource_type = record.get("type", "")
     remarks = record.get("remarks", "")
+    is_replaced = record.get("is_replaced", 1)
+    health_status = record.get("health_status", "ok")
+
+    if not share_link:
+        logger.error("插入资源记录失败: share_link 为空")
+        return None
 
     sql = """
-    INSERT INTO resources (file_id, name, share_link, cloud_name, type, remarks)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO resources (file_id, name, share_link, cloud_name, type, remarks, is_replaced, health_status, checked_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     """
-    params = (file_id, name, share_link, cloud_name, resource_type, remarks)
+    params = (file_id, name, share_link, cloud_name, resource_type, remarks, is_replaced, health_status)
 
     conn = get_db_connection()
     if not conn:
@@ -36,8 +43,37 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
         logger.info(f"成功插入资源记录: {name}, ID: {new_id}")
         return new_id
     except Error as err:
-        logger.error(f"插入资源记录 {name} 失败: {err}")
+        logger.warning(f"插入资源记录 {name} 异常: {err}，尝试查找并更新已有记录")
         conn.rollback()
+        try:
+            cur = conn.cursor(as_dict=True)
+            existing = None
+            if share_link:
+                cur.execute("SELECT id FROM resources WHERE share_link = ?", (share_link,))
+                existing = cur.fetchone()
+            if not existing and file_id:
+                cur.execute("SELECT id FROM resources WHERE file_id = ?", (file_id,))
+                existing = cur.fetchone()
+
+            if existing:
+                res_id = existing["id"]
+                update_sql = """
+                UPDATE resources
+                SET name = ?, file_id = COALESCE(?, file_id), share_link = ?, cloud_name = ?,
+                    type = COALESCE(NULLIF(?, ''), type), remarks = COALESCE(NULLIF(?, ''), remarks),
+                    is_replaced = ?, health_status = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """
+                cur.execute(
+                    update_sql,
+                    (name, file_id, share_link, cloud_name, resource_type, remarks, is_replaced, health_status, res_id),
+                )
+                conn.commit()
+                logger.info(f"成功更新已有资源记录: ID={res_id}, 名称='{name}'")
+                return res_id
+        except Exception as update_err:
+            logger.error(f"更新已有资源记录失败: {update_err}")
+            conn.rollback()
         return None
     finally:
         cursor.close()
@@ -90,6 +126,21 @@ def delete_by_share_link(share_link: str) -> int:
             logger.info(f"成功删除分享链接 {share_link} 对应的记录")
         else:
             logger.warning(f"未找到分享链接 {share_link} 对应的记录，未执行删除操作")
+        return rows
+
+
+def delete_by_file_id(file_id: str) -> int:
+    """根据网盘 file_id 删除资源记录，返回受影响行数。"""
+    if not file_id:
+        return 0
+    sql = "DELETE FROM resources WHERE file_id = ?"
+    with db_cursor() as cursor:
+        if cursor is None:
+            return 0
+        cursor.execute(sql, (str(file_id),))
+        rows = cursor.rowcount
+        if rows > 0:
+            logger.info(f"成功根据 file_id={file_id} 删除资源记录 ({rows}行)")
         return rows
 
 

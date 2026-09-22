@@ -37,6 +37,9 @@ def cleanup_expired_resources(retention_days: int = 15, limit: int = 100) -> int
             del_success = del_share({"share_url": share_url, "file_id": file_id})
             # 无论网盘物理删除是否成功，都删除过期数据库记录，避免堆积
             delete_resource_by_id(resource_id)
+            # 联动将 temp_share 记录标记为已删除
+            from src.db.temp_shares import mark_temp_share_deleted_by_url_or_file
+            mark_temp_share_deleted_by_url_or_file(url=share_url, file_id=file_id)
             cleaned_count += 1
             logger.info(
                 f"成功清理过期资源: ID={resource_id}, 名称='{item.get('name')}', 网盘物理删除={del_success}"

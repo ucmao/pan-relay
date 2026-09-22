@@ -11,7 +11,13 @@ from src.clients import (
     UcPanClient,
     XunleiPanClient,
 )
-from src.db.resources import insert_resource, delete_by_share_link, update_share_link, get_resource_by_share_link
+from src.db.resources import (
+    insert_resource,
+    delete_by_share_link,
+    delete_by_file_id,
+    update_share_link,
+    get_resource_by_share_link,
+)
 from src.db.credentials import get_cookie_by_cloud_name
 from src.services.link_checker import check_link, STATE_BAD, STATE_LOCKED
 from src.utils.netdisk_utils import match_netdisk_link, extract_password_from_url
@@ -212,8 +218,14 @@ def create_share(share_data):
             # Double-check: 若无 id 的搜索发现场景，先检查内存缓存或数据库是否已被其他并发线程转存成功
             if not has_id:
                 if share_url in _TRANSFERRED_URL_CACHE:
-                    logger.info(f"并发防击穿: 资源已由其他线程转存完成 (命中内存缓存: {share_url})")
-                    return _TRANSFERRED_URL_CACHE[share_url]
+                    cached = _TRANSFERRED_URL_CACHE[share_url]
+                    target_link = cached.get("share_link") or cached.get("share_url")
+                    if target_link:
+                        existing = get_resource_by_share_link(target_link)
+                        if existing and existing.get("file_id"):
+                            logger.info(f"并发防击穿: 资源已由其他线程转存完成 (命中内存缓存: {share_url})")
+                            return cached
+                    _TRANSFERRED_URL_CACHE.pop(share_url, None)
 
                 existing = get_resource_by_share_link(share_url)
                 if existing and existing.get("file_id") and existing.get("share_link"):
@@ -256,25 +268,41 @@ def create_share(share_data):
             if has_id:
                 # 场景 A: 已有记录更新链接
                 update_share_link(share_id, new_share_url, new_file_id)
-                return None
+                updated_record = {
+                    'id': share_id,
+                    'file_id': _normalize_file_id(new_file_id),
+                    'name': share_data.get('name') or share_data.get('title') or file_name or title,
+                    'share_link': new_share_url,
+                    'share_url': new_share_url,
+                    'cloud_name': share_data.get('cloud_name') or netdisk_type,
+                    'is_replaced': 1,
+                }
+                _TRANSFERRED_URL_CACHE[share_url] = updated_record
+                return updated_record
             else:
-                # 场景 B: 搜索发现新资源，入库并返回新对象
-                if any(key in share_data for key in ['name', 'cloud_name']):
-                    new_record = {
-                        'file_id': new_file_id,
-                        'name': share_data.get('name', file_name or title),
-                        'share_link': new_share_url,
-                        'cloud_name': netdisk_type,
-                        'type': share_data.get('resource_type'),
-                        'remarks': share_data.get('remark')
-                    }
-                    new_record['file_id'] = _normalize_file_id(new_record['file_id'])
-                    insert_resource(new_record)
-                    _TRANSFERRED_URL_CACHE[share_url] = new_record
-                    return new_record
-                result_payload = {"share_url": new_share_url, "file_id": _normalize_file_id(new_file_id)}
-                _TRANSFERRED_URL_CACHE[share_url] = result_payload
-                return result_payload
+                # 场景 B: 转存新资源，统一持久化入库到 resources (我的资源管理)
+                record_name = share_data.get('name') or share_data.get('title') or file_name or title or "未命名资源"
+                record_cloud = share_data.get('cloud_name') or netdisk_type
+                record_type = share_data.get('resource_type') or share_data.get('type') or ""
+                record_remarks = share_data.get('remark') or share_data.get('remarks') or f"转存自: {share_url}"
+
+                new_record = {
+                    'file_id': _normalize_file_id(new_file_id),
+                    'name': record_name,
+                    'share_link': new_share_url,
+                    'share_url': new_share_url,
+                    'cloud_name': record_cloud,
+                    'type': record_type,
+                    'remarks': record_remarks,
+                    'is_replaced': 1,
+                    'health_status': 'ok',
+                }
+                new_id = insert_resource(new_record)
+                if new_id:
+                    new_record['id'] = new_id
+
+                _TRANSFERRED_URL_CACHE[share_url] = new_record
+                return new_record
 
     except Exception as e:
         logger.exception(f"create_share 运行异常: {e}")
@@ -290,13 +318,22 @@ def del_share(share_data):
         share_url = share_data.get('share_url')
         file_id = share_data.get('file_id')
 
-        if not share_url:
+        if not share_url and not file_id:
             return False
 
         # 1. 获取凭证
-        netdisk_type = match_netdisk_link(share_url)
-        client_credential = get_and_validate_credential(netdisk_type)
+        netdisk_type = match_netdisk_link(share_url or '') if share_url else ""
+        if not netdisk_type and share_data.get("cloud_name"):
+            netdisk_type = share_data.get("cloud_name")
+
+        client_credential = get_and_validate_credential(netdisk_type) if netdisk_type else None
         if not client_credential:
+            logger.warning(f"无法获取网盘凭证或未匹配到网盘类型: {netdisk_type} ({share_url})")
+            # 即使无网盘凭证，也尝试清理本地数据库关联记录
+            if share_url:
+                delete_by_share_link(share_url)
+            if file_id:
+                delete_by_file_id(_normalize_file_id(file_id))
             return False
 
         # 2. 执行物理删除
@@ -310,7 +347,12 @@ def del_share(share_data):
         client_class = client_map.get(netdisk_type)
         if not client_class:
             logger.warning(f"未支持删除操作的网盘类型: {netdisk_type}")
+            if share_url:
+                delete_by_share_link(share_url)
+            if file_id:
+                delete_by_file_id(_normalize_file_id(file_id))
             return False
+
         status = _handle_netdisk_operation(
             client_class=client_class,
             client_credential=client_credential,
@@ -319,10 +361,21 @@ def del_share(share_data):
             file_id=file_id
         )
 
-        # 3. 逻辑删除（数据库记录清理）
+        # 3. 逻辑删除（数据库记录清理：按 share_url 与 file_id 清理 resources 表）
         if status:
-            delete_by_share_link(share_url)
-            logger.info(f"成功清理 {netdisk_type} 资源及其数据库记录")
+            if share_url:
+                delete_by_share_link(share_url)
+            if file_id:
+                delete_by_file_id(_normalize_file_id(file_id))
+            with _TRANSFER_LOCKS_MUTEX:
+                keys_to_del = [
+                    k for k, v in _TRANSFERRED_URL_CACHE.items()
+                    if k == share_url
+                    or (isinstance(v, dict) and (v.get("share_link") == share_url or v.get("share_url") == share_url or (file_id and v.get("file_id") == file_id)))
+                ]
+                for k in keys_to_del:
+                    _TRANSFERRED_URL_CACHE.pop(k, None)
+            logger.info(f"成功清理 {netdisk_type} 资源及其数据库记录 (URL={share_url}, file_id={file_id})")
             return True
         
         return False

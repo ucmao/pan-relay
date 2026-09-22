@@ -141,3 +141,40 @@ def mark_temp_share_deleted(record_id: int) -> bool:
     finally:
         cursor.close()
         conn.close()
+
+
+def mark_temp_share_deleted_by_url_or_file(url: Optional[str] = None, file_id: Optional[str] = None) -> int:
+    """根据 temp_share_url、original_url 或 file_id 将有效临时分享记录标记为已删除"""
+    if not url and not file_id:
+        return 0
+
+    conn = get_db_connection()
+    if not conn:
+        return 0
+
+    try:
+        cursor = conn.cursor()
+        clauses = []
+        params = []
+        if url:
+            clauses.append("(temp_share_url = ? OR original_url = ?)")
+            params.extend([url, url])
+        if file_id:
+            clauses.append("file_id = ?")
+            params.append(str(file_id))
+
+        sql = f"""
+        UPDATE temp_share
+        SET status = 'deleted', deleted_at = datetime('now')
+        WHERE status = 'active' AND ({' OR '.join(clauses)})
+        """
+        cursor.execute(sql, params)
+        conn.commit()
+        return cursor.rowcount
+    except Error as err:
+        logger.error(f"按 URL/file_id 标记临时分享已删除失败: {err}")
+        conn.rollback()
+        return 0
+    finally:
+        cursor.close()
+        conn.close()

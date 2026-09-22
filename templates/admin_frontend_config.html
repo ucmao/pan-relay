@@ -19,14 +19,14 @@
 
 <div class="space-y-6">
 
-    <!-- 1. 前台页面与功能开关 -->
+    <!-- 1. 前台访问与出链策略 -->
     <section class="admin-panel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
-                    <i class="fas fa-desktop text-blue-600"></i> 前台 Web 功能控制
+                    <i class="fas fa-desktop text-blue-600"></i> 前台访问与出链策略
                 </h2>
-                <p class="admin-panel-desc">控制前台 Web 搜索端点与工具栏功能</p>
+                <p class="admin-panel-desc">控制前台 Web 搜索首页访问、链接提供方式与结果导出工具</p>
             </div>
         </div>
         <div class="admin-panel-body">
@@ -36,7 +36,6 @@
                     <div class="space-y-1 min-w-0 pr-4">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-semibold text-slate-800 text-sm">前台 Web 搜索界面</span>
-                            <!-- <code class="text-[11px] font-mono text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/50">GET /</code> -->
                             <span class="help-tooltip" data-tooltip="关闭后访客访问主页将自动重定向至后台管理登录页面 (/login)">
                                 <i class="far fa-circle-question text-xs"></i>
                             </span>
@@ -113,7 +112,22 @@
                         </label>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
 
+    <!-- 2. 链接测活与品质净化 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-heart-pulse text-emerald-600"></i> 链接测活与品质净化
+                </h2>
+                <p class="admin-panel-desc">控制前台 Web 实时免登录测活探测与失效空资源自动过滤</p>
+            </div>
+        </div>
+        <div class="admin-panel-body">
+            <div class="divide-y divide-slate-100">
                 <!-- 开关 4: 前台链接实时免登录测活 -->
                 <div class="setting-item-row">
                     <div class="space-y-1 min-w-0 pr-4">

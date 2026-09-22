@@ -1,6 +1,7 @@
 import logging
 from typing import Dict
 
+from src.db.resources import delete_by_file_id, delete_by_share_link
 from src.db.temp_shares import (
     create_temp_share_record,
     get_active_temp_share,
@@ -51,24 +52,32 @@ def resolve_view_url(title: str, original_url: str, netdisk_name: str = "") -> D
         {
             "share_url": original_url,
             "title": title,
+            "name": title,
+            "cloud_name": resolved_netdisk_name,
+            "remark": f"转存自: {original_url}",
             "save_to_netdisk": {save_to_key: True},
         }
     )
 
-    if not share_result or not share_result.get("share_url") or not share_result.get("file_id"):
+    if not share_result:
+        return fallback
+
+    new_share_url = share_result.get("share_url") or share_result.get("share_link")
+    file_id = share_result.get("file_id")
+    if not new_share_url or not file_id:
         return fallback
 
     create_temp_share_record(
         original_url=original_url,
         title=title,
         cloud_name=resolved_netdisk_name,
-        temp_share_url=share_result["share_url"],
-        file_id=share_result["file_id"],
+        temp_share_url=new_share_url,
+        file_id=file_id,
         expires_in_hours=TEMP_SHARE_EXPIRE_HOURS,
     )
 
     return {
-        "url": share_result["share_url"],
+        "url": new_share_url,
         "mode": "temp_share",
         "netdisk_name": resolved_netdisk_name,
     }
@@ -79,18 +88,27 @@ def cleanup_expired_temp_shares(limit: int = 50) -> int:
     cleaned_count = 0
 
     for record in expired_records:
-        deleted = del_share(
-            {
-                "share_url": record["temp_share_url"],
-                "file_id": record["file_id"],
-            }
-        )
-        if deleted:
-            mark_temp_share_deleted(record["id"])
-            cleaned_count += 1
-        else:
-            logger.warning(f"临时分享删除失败，等待下次重试: id={record['id']}")
+        temp_url = record.get("temp_share_url")
+        file_id = record.get("file_id")
+        try:
+            del_share(
+                {
+                    "share_url": temp_url,
+                    "file_id": file_id,
+                    "cloud_name": record.get("cloud_name"),
+                }
+            )
+        except Exception as exc:
+            logger.warning(f"删除物理网盘分享失败 (id={record['id']}): {exc}")
+
+        # 无论物理删除返回何种结果，均同步清理本地数据库过期记录（temp_share 与 resources）
+        mark_temp_share_deleted(record["id"])
+        if temp_url:
+            delete_by_share_link(temp_url)
+        if file_id:
+            delete_by_file_id(file_id)
+        cleaned_count += 1
 
     if cleaned_count:
-        logger.info(f"本次清理临时分享数量: {cleaned_count}")
+        logger.info(f"本次清理过期临时分享及关联资源数量: {cleaned_count}")
     return cleaned_count

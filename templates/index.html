@@ -16,7 +16,8 @@
             </div>
             <div class="search-area">
                 <div class="input-group input-group-custom">
-                    <input type="text" class="form-control" id="searchInput" placeholder="搜索资源 电影 电视剧 音乐 软件...">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜索资源 电影 电视剧 音乐 软件..."
+                        value="{{ request.args.get('keyword') or request.args.get('q') or request.args.get('kw') or '' }}">
                     <button class="btn" id="searchButton" aria-label="开始搜索">
                         <i class="fas fa-paper-plane"></i>
                     </button>

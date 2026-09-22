@@ -1319,3 +1319,21 @@ function applyAdvancedFilter() {
     // 筛选后重新判断是否需要滚动条
     toggleScrollbarBasedOnContent();
 }
+
+/**
+ * 页面加载时自动解析 URL 参数（如 ?keyword=... / ?q=... / ?kw=...）并填入搜索框（不自动触发检索，节省资源）
+ */
+function initSearchFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const kw = urlParams.get('keyword') || urlParams.get('q') || urlParams.get('kw') || urlParams.get('search');
+    if (kw && kw.trim() && searchInput) {
+        searchInput.value = kw.trim();
+        searchInput.focus();
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSearchFromUrl);
+} else {
+    initSearchFromUrl();
+}

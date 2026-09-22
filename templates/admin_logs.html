@@ -94,6 +94,73 @@
         pointer-events: auto;
         transform: translateX(-50%) translateY(0);
     }
+
+    /* Batch Select Dropdown */
+    .batch-select-dropdown {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .batch-select-dropdown .batch-dropdown-trigger {
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-left: 2px;
+        padding: 2px;
+        color: #94a3b8;
+        cursor: pointer;
+        background: transparent;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .batch-select-dropdown .batch-dropdown-trigger:hover {
+        color: #334155;
+    }
+
+    .batch-select-dropdown .batch-dropdown-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        min-width: 125px;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        z-index: 45;
+        padding: 4px;
+        white-space: nowrap;
+        text-align: left;
+    }
+
+    .batch-select-dropdown.open .batch-dropdown-menu {
+        display: block;
+    }
+
+    .batch-dropdown-item {
+        display: block;
+        width: 100%;
+        padding: 6px 10px;
+        font-size: 11px;
+        color: #475569;
+        background: none;
+        border: none;
+        border-radius: 6px;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.1s ease;
+    }
+
+    .batch-dropdown-item:hover {
+        background-color: #f1f5f9;
+        color: #0f172a;
+    }
 </style>
 {% endblock %}
 
@@ -108,36 +175,6 @@
             <p class="text-xs text-slate-500 mt-0.5">监控用户与 API 检索明细、搜索热词排行、网盘转存及后台全量运行审计</p>
         </div>
         <div class="flex items-center space-x-2">
-            <button type="button" onclick="exportCurrentLogsView()"
-                class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5"
-                title="导出日志为 CSV">
-                <i class="fas fa-file-export text-slate-400"></i>
-                <span>导出 CSV</span>
-            </button>
-            <div class="relative inline-block text-left" id="cleanupDropdownWrap">
-                <button type="button" onclick="toggleCleanupMenu()"
-                    class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs flex items-center gap-1.5">
-                    <i class="fas fa-broom text-slate-400"></i>
-                    <span>日志维护</span>
-                    <i class="fas fa-chevron-down text-[10px] text-slate-400 ml-0.5"></i>
-                </button>
-                <div id="cleanupMenu"
-                    class="hidden absolute right-0 mt-1.5 w-44 bg-white rounded-xl shadow-lg border border-slate-200/80 py-1 z-30 text-xs">
-                    <button type="button" onclick="cleanupLogs(7)"
-                        class="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                        <i class="fas fa-calendar-minus text-amber-500 w-3.5"></i> 清理 7 天前日志
-                    </button>
-                    <button type="button" onclick="cleanupLogs(30)"
-                        class="w-full text-left px-3.5 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                        <i class="fas fa-calendar-xmark text-amber-500 w-3.5"></i> 清理 30 天前日志
-                    </button>
-                    <div class="border-t border-slate-100 my-1"></div>
-                    <button type="button" onclick="confirmClearAllLogs()"
-                        class="w-full text-left px-3.5 py-2 text-rose-600 hover:bg-rose-50 flex items-center gap-2">
-                        <i class="fas fa-trash-can text-rose-500 w-3.5"></i> 清空全部日志
-                    </button>
-                </div>
-            </div>
             <button type="button" onclick="refreshActiveTab()"
                 class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition shadow-2xs flex items-center gap-1.5"
                 title="刷新最新数据">
@@ -278,6 +315,20 @@
                     <thead
                         class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider select-none">
                         <tr>
+                            <th class="w-10 px-3 py-3 text-center">
+                                <div class="batch-select-dropdown" id="searchBatchSelectDropdown">
+                                    <input type="checkbox" id="searchSelectAllCheckbox" onchange="toggleSearchSelectAll(this)"
+                                        class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
+                                        title="全选当前页">
+                                    <button type="button" class="batch-dropdown-trigger" onclick="toggleBatchDropdown('searchBatchSelectDropdown', event)" title="选择范围" aria-label="选择范围">
+                                        <i class="fas fa-chevron-down text-[9px]"></i>
+                                    </button>
+                                    <div class="batch-dropdown-menu">
+                                        <button type="button" class="batch-dropdown-item" onclick="selectCurrentPage('analytics')">选择当前页</button>
+                                        <button type="button" class="batch-dropdown-item" onclick="selectAllFiltered('analytics')">选择全部 (<span id="searchDropdownTotal">0</span> 条)</button>
+                                    </div>
+                                </div>
+                            </th>
                             <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-36"
                                 onclick="handleSearchSort('created_at')">
                                 搜索时间 <span id="searchSortIconCreatedAt" class="text-blue-600 font-bold ml-0.5">↓</span>
@@ -298,7 +349,7 @@
                     </thead>
                     <tbody id="searchLogsTableBody" class="divide-y divide-slate-100 text-slate-700 font-normal">
                         <tr>
-                            <td colspan="7" class="text-center py-16 text-slate-400">
+                            <td colspan="8" class="text-center py-16 text-slate-400">
                                 <i class="fas fa-spinner fa-spin text-lg text-blue-600 mb-2"></i>
                                 <p>正在加载搜索行为日志...</p>
                             </td>
@@ -459,9 +510,18 @@
                         class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider select-none">
                         <tr>
                             <th class="w-10 px-3 py-3 text-center">
-                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"
-                                    class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
-                                    title="全选当前页">
+                                <div class="batch-select-dropdown" id="auditBatchSelectDropdown">
+                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"
+                                        class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
+                                        title="全选当前页">
+                                    <button type="button" class="batch-dropdown-trigger" onclick="toggleBatchDropdown('auditBatchSelectDropdown', event)" title="选择范围" aria-label="选择范围">
+                                        <i class="fas fa-chevron-down text-[9px]"></i>
+                                    </button>
+                                    <div class="batch-dropdown-menu">
+                                        <button type="button" class="batch-dropdown-item" onclick="selectCurrentPage('audit')">选择当前页</button>
+                                        <button type="button" class="batch-dropdown-item" onclick="selectAllFiltered('audit')">选择全部 (<span id="auditDropdownTotal">0</span> 条)</button>
+                                    </div>
+                                </div>
                             </th>
                             <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-36"
                                 onclick="handleSort('created_at')">
@@ -518,27 +578,32 @@
     </div>
 </div>
 
-<!-- 批量操作悬浮条 (仅在审计 Tab 生效) -->
+<!-- 批量操作悬浮条 (支持 搜索运营视角 和 系统运维视角) -->
 <div class="batch-floating-toolbar" id="batchFloatingToolbar">
-    <div class="flex items-center gap-2 font-semibold text-slate-800">
+    <div class="flex items-center gap-2 font-semibold text-slate-800 text-xs">
         <i class="fas fa-check-double text-blue-600"></i>
-        <span>已选中 <strong id="selectedCountBadge" class="text-blue-600">0</strong> 条记录</span>
+        <span id="batchToolbarSummaryText">已选中 <strong id="selectedCountBadge" class="text-blue-600 font-bold">0</strong> 条记录</span>
+        <button type="button" id="batchSelectAllToggleBtn" onclick="toggleActiveSelectAllMode()"
+            class="text-blue-600 hover:text-blue-800 underline ml-1 font-medium cursor-pointer text-xs">
+            选择全部 (<span id="batchTotalCountSpan">0</span> 条)
+        </button>
     </div>
     <div class="h-3.5 w-px bg-slate-200"></div>
     <div class="flex items-center gap-2">
-        <button type="button" onclick="exportSelectedLogs()"
-            class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition flex items-center gap-1">
-            <i class="fas fa-download text-[10px]"></i>
-            <span>导出选中</span>
+        <button type="button" onclick="executeBatchExport()"
+            class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold transition flex items-center gap-1 shadow-2xs">
+            <i class="fas fa-file-export text-[10px]"></i>
+            <span>批量导出 CSV</span>
         </button>
-        <button type="button" onclick="deleteSelectedLogs()"
-            class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-medium transition flex items-center gap-1">
+        <button type="button" onclick="executeBatchDelete()"
+            class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold transition flex items-center gap-1 shadow-2xs">
             <i class="fas fa-trash-can text-[10px]"></i>
             <span>批量删除</span>
         </button>
-        <button type="button" onclick="clearSelection()"
-            class="px-2 py-1 text-slate-400 hover:text-slate-600 transition" title="取消选中">
+        <button type="button" onclick="clearActiveSelection()"
+            class="px-2 py-1 text-slate-400 hover:text-slate-600 transition text-xs flex items-center gap-0.5" title="取消选择">
             <i class="fas fa-xmark"></i>
+            <span>清空</span>
         </button>
     </div>
 </div>
@@ -649,6 +714,8 @@
         total: 0,
         totalPages: 1,
         items: [],
+        selectedIds: new Set(),
+        selectMode: 'page', // 'page' or 'all'
     };
 
     // 全量系统审计专属状态
@@ -666,6 +733,7 @@
         totalPages: 1,
         items: [],
         selectedIds: new Set(),
+        selectMode: 'page', // 'page' or 'all'
     };
 
     // --- TAB 切换逻辑 ---
@@ -688,6 +756,8 @@
             window.history.replaceState(null, '', newUrl.toString());
         }
 
+        updateBatchToolbar();
+
         if (activeLogTab === 'analytics') {
             loadSearchAnalytics();
             loadSearchLogs();
@@ -703,20 +773,6 @@
             loadSearchLogs();
         } else {
             refreshLogsData();
-        }
-    }
-
-    function exportCurrentLogsView() {
-        if (activeLogTab === 'analytics') {
-            const params = new URLSearchParams({
-                q: searchLogsState.q,
-                log_type: 'search',
-                start_date: searchLogsState.startDate,
-                end_date: searchLogsState.endDate,
-            });
-            window.location.href = `/admin/api/logs/export?${params.toString()}`;
-        } else {
-            exportLogs();
         }
     }
 
@@ -756,7 +812,7 @@
 
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center py-12 text-slate-400">
+                <td colspan="8" class="text-center py-12 text-slate-400">
                     <i class="fas fa-spinner fa-spin text-lg text-blue-600 mb-2"></i>
                     <p>正在拉取搜索记录...</p>
                 </td>
@@ -793,13 +849,21 @@
             document.getElementById('searchCurrentPageNum').textContent = searchLogsState.page;
             document.getElementById('searchTotalPageNum').textContent = searchLogsState.totalPages;
 
+            const dropdownTotal = document.getElementById('searchDropdownTotal');
+            if (dropdownTotal) dropdownTotal.textContent = searchLogsState.total;
+
+            if (searchLogsState.selectMode === 'all') {
+                searchLogsState.items.forEach(item => searchLogsState.selectedIds.add(item.id));
+            }
+
             renderSearchLogsTable(searchLogsState.items);
             renderSearchPagination();
+            updateBatchToolbar();
         } catch (err) {
             console.error('加载搜索日志失败:', err);
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center py-10 text-rose-500">
+                    <td colspan="8" class="text-center py-10 text-rose-500">
                         <i class="fas fa-triangle-exclamation text-lg mb-1"></i>
                         <p>加载失败: ${escapeHtml(err.message)}</p>
                     </td>
@@ -815,16 +879,27 @@
         if (!logs || logs.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center py-12 text-slate-400">
+                    <td colspan="8" class="text-center py-12 text-slate-400">
                         <i class="fas fa-magnifying-glass text-2xl mb-2 text-slate-300"></i>
                         <p>未找到符合条件的搜索记录</p>
                     </td>
                 </tr>
             `;
+            const chk = document.getElementById('searchSelectAllCheckbox');
+            if (chk) { chk.checked = false; chk.indeterminate = false; }
             return;
         }
 
+        const selectAllCheckbox = document.getElementById('searchSelectAllCheckbox');
+        if (selectAllCheckbox) {
+            const allCurrentSelected = logs.length > 0 && logs.every(item => searchLogsState.selectedIds.has(item.id));
+            const someSelected = logs.some(item => searchLogsState.selectedIds.has(item.id));
+            selectAllCheckbox.checked = allCurrentSelected;
+            selectAllCheckbox.indeterminate = someSelected && !allCurrentSelected;
+        }
+
         tbody.innerHTML = logs.map(log => {
+            const isSelected = searchLogsState.selectedIds.has(log.id);
             const isWeb = log.channel === 'web';
             const channelBadge = isWeb
                 ? '<span class="log-badge log-badge-search"><i class="fas fa-desktop text-[10px] mr-1"></i> Web 前台</span>'
@@ -843,7 +918,10 @@
             const cloudTag = log.cloud_name ? `<span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-100 text-slate-600 border border-slate-200">${escapeHtml(log.cloud_name)}</span>` : '';
 
             return `
-                <tr class="hover:bg-slate-50/80 transition">
+                <tr class="hover:bg-slate-50/80 transition ${isSelected ? 'bg-blue-50/30' : ''}">
+                    <td class="px-3 py-3 text-center">
+                        <input type="checkbox" onchange="toggleSelectSearchLog(${log.id}, this.checked)" ${isSelected ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer">
+                    </td>
                     <td class="px-3 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                         ${escapeHtml(log.created_at)}
                     </td>
@@ -920,6 +998,8 @@
         searchLogsState.startDate = document.getElementById('searchLogsStartDate').value;
         searchLogsState.endDate = document.getElementById('searchLogsEndDate').value;
         searchLogsState.page = 1;
+        searchLogsState.selectedIds.clear();
+        searchLogsState.selectMode = 'page';
         loadSearchLogs();
     }
 
@@ -935,6 +1015,8 @@
         searchLogsState.startDate = '';
         searchLogsState.endDate = '';
         searchLogsState.page = 1;
+        searchLogsState.selectedIds.clear();
+        searchLogsState.selectMode = 'page';
         loadSearchLogs();
     }
 
@@ -988,12 +1070,12 @@
             switchLogTab('analytics', false);
         }
 
-        // 点击外部关闭维护下拉菜单
+        // 点击外部关闭批量选择下拉菜单
         document.addEventListener('click', (e) => {
-            const wrap = document.getElementById('cleanupDropdownWrap');
-            const menu = document.getElementById('cleanupMenu');
-            if (wrap && menu && !wrap.contains(e.target)) {
-                menu.classList.add('hidden');
+            if (!e.target.closest('.batch-select-dropdown')) {
+                document.querySelectorAll('.batch-select-dropdown.open').forEach(dd => {
+                    dd.classList.remove('open');
+                });
             }
         });
     });
@@ -1061,6 +1143,13 @@
             document.getElementById('currentPageNum').textContent = currentLogsState.page;
             document.getElementById('totalPageNum').textContent = currentLogsState.totalPages;
 
+            const dropdownTotal = document.getElementById('auditDropdownTotal');
+            if (dropdownTotal) dropdownTotal.textContent = currentLogsState.total;
+
+            if (currentLogsState.selectMode === 'all') {
+                currentLogsState.items.forEach(item => currentLogsState.selectedIds.add(item.id));
+            }
+
             renderLogsTable(currentLogsState.items);
             renderPagination();
             updateBatchToolbar();
@@ -1090,12 +1179,18 @@
                     </td>
                 </tr>
             `;
+            const chk = document.getElementById('selectAllCheckbox');
+            if (chk) { chk.checked = false; chk.indeterminate = false; }
             return;
         }
 
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-        const allCurrentSelected = logs.length > 0 && logs.every(item => currentLogsState.selectedIds.has(item.id));
-        if (selectAllCheckbox) selectAllCheckbox.checked = allCurrentSelected;
+        if (selectAllCheckbox) {
+            const allCurrentSelected = logs.length > 0 && logs.every(item => currentLogsState.selectedIds.has(item.id));
+            const someSelected = logs.some(item => currentLogsState.selectedIds.has(item.id));
+            selectAllCheckbox.checked = allCurrentSelected;
+            selectAllCheckbox.indeterminate = someSelected && !allCurrentSelected;
+        }
 
         tbody.innerHTML = logs.map(log => {
             const isSelected = currentLogsState.selectedIds.has(log.id);
@@ -1201,6 +1296,8 @@
         currentLogsState.startDate = document.getElementById('logsStartDate').value;
         currentLogsState.endDate = document.getElementById('logsEndDate').value;
         currentLogsState.page = 1;
+        currentLogsState.selectedIds.clear();
+        currentLogsState.selectMode = 'page';
         loadLogs();
     }
 
@@ -1216,6 +1313,8 @@
         currentLogsState.startDate = '';
         currentLogsState.endDate = '';
         currentLogsState.page = 1;
+        currentLogsState.selectedIds.clear();
+        currentLogsState.selectMode = 'page';
         loadLogs();
     }
 
@@ -1263,8 +1362,72 @@
         loadLogs();
     }
 
+    // ==========================================
+    // 批量选择与悬浮工具栏交互
+    // ==========================================
+    function toggleBatchDropdown(dropdownId, e) {
+        if (e) e.stopPropagation();
+        const el = document.getElementById(dropdownId);
+        if (!el) return;
+        const wasOpen = el.classList.contains('open');
+        document.querySelectorAll('.batch-select-dropdown.open').forEach(dd => {
+            if (dd !== el) dd.classList.remove('open');
+        });
+        if (wasOpen) {
+            el.classList.remove('open');
+        } else {
+            el.classList.add('open');
+        }
+    }
+
+    function selectCurrentPage(tab) {
+        document.querySelectorAll('.batch-select-dropdown.open').forEach(dd => dd.classList.remove('open'));
+        const state = tab === 'analytics' ? searchLogsState : currentLogsState;
+        state.selectMode = 'page';
+        state.items.forEach(item => state.selectedIds.add(item.id));
+        if (tab === 'analytics') {
+            renderSearchLogsTable(state.items);
+        } else {
+            renderLogsTable(state.items);
+        }
+        updateBatchToolbar();
+    }
+
+    function selectAllFiltered(tab) {
+        document.querySelectorAll('.batch-select-dropdown.open').forEach(dd => dd.classList.remove('open'));
+        const state = tab === 'analytics' ? searchLogsState : currentLogsState;
+        state.selectMode = 'all';
+        state.items.forEach(item => state.selectedIds.add(item.id));
+        if (tab === 'analytics') {
+            renderSearchLogsTable(state.items);
+        } else {
+            renderLogsTable(state.items);
+        }
+        updateBatchToolbar();
+    }
+
+    function toggleSearchSelectAll(checkbox) {
+        const isChecked = checkbox.checked;
+        searchLogsState.selectMode = 'page';
+        searchLogsState.items.forEach(item => {
+            if (isChecked) searchLogsState.selectedIds.add(item.id);
+            else searchLogsState.selectedIds.delete(item.id);
+        });
+        renderSearchLogsTable(searchLogsState.items);
+        updateBatchToolbar();
+    }
+
+    function toggleSelectSearchLog(id, checked) {
+        searchLogsState.selectMode = 'page';
+        if (checked) searchLogsState.selectedIds.add(id);
+        else searchLogsState.selectedIds.delete(id);
+        renderSearchLogsTable(searchLogsState.items);
+        updateBatchToolbar();
+    }
+
     function toggleSelectAll(checkbox) {
         const isChecked = checkbox.checked;
+        currentLogsState.selectMode = 'page';
         currentLogsState.items.forEach(item => {
             if (isChecked) currentLogsState.selectedIds.add(item.id);
             else currentLogsState.selectedIds.delete(item.id);
@@ -1274,29 +1437,172 @@
     }
 
     function toggleSelectLog(id, checked) {
+        currentLogsState.selectMode = 'page';
         if (checked) currentLogsState.selectedIds.add(id);
         else currentLogsState.selectedIds.delete(id);
         renderLogsTable(currentLogsState.items);
         updateBatchToolbar();
     }
 
-    function clearSelection() {
-        currentLogsState.selectedIds.clear();
-        renderLogsTable(currentLogsState.items);
+    function toggleActiveSelectAllMode() {
+        const state = activeLogTab === 'analytics' ? searchLogsState : currentLogsState;
+        if (state.selectMode === 'all') {
+            state.selectMode = 'page';
+        } else {
+            state.selectMode = 'all';
+            state.items.forEach(item => state.selectedIds.add(item.id));
+        }
+        if (activeLogTab === 'analytics') {
+            renderSearchLogsTable(state.items);
+        } else {
+            renderLogsTable(state.items);
+        }
+        updateBatchToolbar();
+    }
+
+    function clearActiveSelection() {
+        const state = activeLogTab === 'analytics' ? searchLogsState : currentLogsState;
+        state.selectedIds.clear();
+        state.selectMode = 'page';
+        if (activeLogTab === 'analytics') {
+            renderSearchLogsTable(state.items);
+        } else {
+            renderLogsTable(state.items);
+        }
         updateBatchToolbar();
     }
 
     function updateBatchToolbar() {
         const toolbar = document.getElementById('batchFloatingToolbar');
-        const badge = document.getElementById('selectedCountBadge');
-        if (!toolbar || !badge) return;
+        if (!toolbar) return;
 
-        const count = currentLogsState.selectedIds.size;
-        badge.textContent = count;
-        if (count > 0) {
+        const state = activeLogTab === 'analytics' ? searchLogsState : currentLogsState;
+        const count = state.selectedIds.size;
+        const isAll = state.selectMode === 'all';
+        const total = state.total || 0;
+
+        const summaryText = document.getElementById('batchToolbarSummaryText');
+        const toggleBtn = document.getElementById('batchSelectAllToggleBtn');
+
+        const searchDropdownTotal = document.getElementById('searchDropdownTotal');
+        if (searchDropdownTotal) searchDropdownTotal.textContent = searchLogsState.total || 0;
+        const auditDropdownTotal = document.getElementById('auditDropdownTotal');
+        if (auditDropdownTotal) auditDropdownTotal.textContent = currentLogsState.total || 0;
+
+        if (count > 0 || isAll) {
             toolbar.classList.add('active');
+            if (isAll) {
+                summaryText.innerHTML = `已选择全部 <strong class="text-blue-600 font-bold">${total}</strong> 条记录`;
+                toggleBtn.textContent = `仅选当前页 (${count} 条)`;
+                toggleBtn.className = "text-slate-500 hover:text-slate-800 underline ml-1 font-normal cursor-pointer text-xs";
+                toggleBtn.style.display = 'inline-block';
+            } else {
+                summaryText.innerHTML = `已选中 <strong class="text-blue-600 font-bold">${count}</strong> 条记录`;
+                if (total > count) {
+                    toggleBtn.style.display = 'inline-block';
+                    toggleBtn.innerHTML = `选择全部 (共 <span id="batchTotalCountSpan">${total}</span> 条)`;
+                    toggleBtn.className = "text-blue-600 hover:text-blue-800 underline ml-1 font-semibold cursor-pointer text-xs";
+                } else {
+                    toggleBtn.style.display = 'none';
+                }
+            }
         } else {
             toolbar.classList.remove('active');
+        }
+    }
+
+    function executeBatchExport() {
+        const state = activeLogTab === 'analytics' ? searchLogsState : currentLogsState;
+        const isAll = state.selectMode === 'all';
+
+        if (isAll) {
+            let params;
+            if (activeLogTab === 'analytics') {
+                params = new URLSearchParams({
+                    q: searchLogsState.q,
+                    log_type: 'search',
+                    channel: searchLogsState.channel,
+                    result_filter: searchLogsState.resultFilter,
+                    start_date: searchLogsState.startDate,
+                    end_date: searchLogsState.endDate,
+                });
+            } else {
+                params = new URLSearchParams({
+                    q: currentLogsState.q,
+                    log_type: currentLogsState.logType,
+                    status: currentLogsState.status,
+                    start_date: currentLogsState.startDate,
+                    end_date: currentLogsState.endDate,
+                });
+            }
+            window.location.href = `/admin/api/logs/export?${params.toString()}`;
+        } else {
+            const ids = Array.from(state.selectedIds);
+            if (ids.length === 0) {
+                alert('请先勾选需要导出的日志记录');
+                return;
+            }
+            window.location.href = `/admin/api/logs/export?ids=${ids.join(',')}`;
+        }
+    }
+
+    async function executeBatchDelete() {
+        const state = activeLogTab === 'analytics' ? searchLogsState : currentLogsState;
+        const isAll = state.selectMode === 'all';
+        const ids = Array.from(state.selectedIds);
+
+        if (!isAll && ids.length === 0) {
+            alert('请先勾选需要删除的日志记录');
+            return;
+        }
+
+        const confirmMsg = isAll
+            ? `确定要删除符合当前筛选条件的全部 ${state.total} 条日志记录吗？此操作无法撤销。`
+            : `确定要删除选中的 ${ids.length} 条日志记录吗？此操作无法撤销。`;
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
+        try {
+            let payload;
+            if (isAll) {
+                payload = {
+                    select_mode: 'all',
+                    q: state.q,
+                    start_date: state.startDate,
+                    end_date: state.endDate,
+                };
+                if (activeLogTab === 'analytics') {
+                    payload.log_type = 'search';
+                    payload.channel = searchLogsState.channel;
+                    payload.result_filter = searchLogsState.resultFilter;
+                } else {
+                    payload.log_type = currentLogsState.logType;
+                    payload.status = currentLogsState.status;
+                }
+            } else {
+                payload = {
+                    select_mode: 'page',
+                    ids: ids,
+                };
+            }
+
+            const res = await fetch('/admin/api/logs/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`已成功删除 ${data.deleted_count || (isAll ? state.total : ids.length)} 条日志记录`);
+                clearActiveSelection();
+                refreshActiveTab();
+            } else {
+                alert(`删除失败: ${data.message || '未知错误'}`);
+            }
+        } catch (err) {
+            alert('删除请求发送失败，请稍后重试');
         }
     }
 
@@ -1345,98 +1651,6 @@
         }).catch(() => {
             alert('复制失败，请手动选取复制');
         });
-    }
-
-    function exportLogs() {
-        const params = new URLSearchParams({
-            q: currentLogsState.q,
-            log_type: currentLogsState.logType,
-            status: currentLogsState.status,
-            start_date: currentLogsState.startDate,
-            end_date: currentLogsState.endDate,
-        });
-        window.location.href = `/admin/api/logs/export?${params.toString()}`;
-    }
-
-    function exportSelectedLogs() {
-        const ids = Array.from(currentLogsState.selectedIds);
-        if (ids.length === 0) return;
-        window.location.href = `/admin/api/logs/export?ids=${ids.join(',')}`;
-    }
-
-    async function deleteSelectedLogs() {
-        const ids = Array.from(currentLogsState.selectedIds);
-        if (ids.length === 0) return;
-
-        if (!confirm(`确定要删除选中的 ${ids.length} 条日志吗？此操作无法撤销。`)) {
-            return;
-        }
-
-        try {
-            const res = await fetch('/admin/api/logs/delete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: ids }),
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert(`已成功删除 ${data.deleted_count || ids.length} 条日志记录`);
-                currentLogsState.selectedIds.clear();
-                refreshLogsData();
-            } else {
-                alert(`删除失败: ${data.message || '未知错误'}`);
-            }
-        } catch (err) {
-            alert('删除请求发送失败，请稍后重试');
-        }
-    }
-
-    async function cleanupLogs(days) {
-        document.getElementById('cleanupMenu').classList.add('hidden');
-        if (!confirm(`确定要清理 ${days} 天前的历史日志吗？`)) {
-            return;
-        }
-
-        try {
-            const res = await fetch('/admin/api/logs/cleanup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ days: days }),
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert(data.message || `已成功清理 ${days} 天前的日志`);
-                refreshLogsData();
-            } else {
-                alert(`清理失败: ${data.message || '未知错误'}`);
-            }
-        } catch (err) {
-            alert('请求发送失败');
-        }
-    }
-
-    async function confirmClearAllLogs() {
-        document.getElementById('cleanupMenu').classList.add('hidden');
-        if (!confirm('警告：此操作将彻底清空数据库中的全部日志，确定要继续吗？')) {
-            return;
-        }
-
-        try {
-            const res = await fetch('/admin/api/logs/clear', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-            });
-            const data = await res.json();
-            if (data.success) {
-                alert(data.message || '全部日志已清空');
-                currentLogsState.selectedIds.clear();
-                refreshLogsData();
-            } else {
-                alert(`清空失败: ${data.message || '未知错误'}`);
-            }
-        } catch (err) {
-            alert('清空请求发送失败');
-        }
     }
 
     function escapeHtml(str) {

@@ -171,8 +171,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-5 space-y-3">
                             <div class="flex items-center justify-between">
-                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800">步骤 1 ·
-                                    检索</span>
+                                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">步骤 1 · 检索</span>
                                 <code class="text-xs font-mono text-slate-500">GET /api/v1/search</code>
                             </div>
                             <h4 class="text-sm font-bold text-slate-800">查询全网或站长收益资源</h4>
@@ -187,8 +186,7 @@
 
                         <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-5 space-y-3">
                             <div class="flex items-center justify-between">
-                                <span class="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800">步骤
-                                    2 · 转存沉淀</span>
+                                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">步骤 2 · 转存沉淀</span>
                                 <code class="text-xs font-mono text-slate-400">POST /api/v1/transfer</code>
                             </div>
                             <h4 class="text-sm font-bold text-slate-800">替换为站长收益分享链接</h4>
@@ -199,13 +197,18 @@
                     </div>
 
                     <!-- 测活保障提示 -->
-                    <div class="p-4 bg-emerald-50/60 border border-emerald-200/80 rounded-xl text-xs text-emerald-900 flex items-start gap-3">
-                        <i class="fas fa-shield-halved text-emerald-600 text-sm mt-0.5"></i>
-                        <div class="space-y-1">
-                            <div class="font-bold">原生免登录网盘链接测活保障（覆盖 9 大主流网盘）</div>
-                            <div class="text-emerald-800 leading-relaxed">
-                                系统内置夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘的原生免登录探测引擎。步骤 1 搜索可开启 <code class="font-mono bg-white px-1 py-0.5 rounded border border-emerald-200">check_status=true</code> 实时识别失效与空链接；步骤 2 转存默认执行前置测活校验（空资源、违规或失效链接直接返回 HTTP 422 拒绝转存），杜绝死链入库。
+                    <div class="p-4 bg-slate-50/70 border border-slate-200/90 rounded-xl text-xs flex items-start gap-3">
+                        <div class="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <i class="fas fa-shield-halved text-xs"></i>
+                        </div>
+                        <div class="space-y-1 min-w-0">
+                            <div class="font-bold text-slate-800 flex items-center gap-1.5 flex-wrap">
+                                <span>原生免登录网盘链接测活保障</span>
+                                <span class="text-[11px] font-normal text-slate-400">（覆盖 9 大主流网盘）</span>
                             </div>
+                            <p class="text-slate-600 leading-relaxed">
+                                系统内置夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘的原生免登录探测引擎。步骤 1 搜索可开启 <code class="font-mono bg-white text-slate-700 px-1 py-0.5 rounded border border-slate-200">check_status=true</code> 实时识别失效与空链接；步骤 2 转存默认执行前置测活校验（空资源、违规或失效链接直接返回 HTTP 422 拒绝转存），杜绝死链入库。
+                            </p>
                         </div>
                     </div>
                 </section>
@@ -416,26 +419,29 @@
                             </div>
 
                             <!-- HTTP 422 前置拦截说明 -->
-                            <div class="rounded-lg bg-amber-50/70 border border-amber-200/80 p-3 space-y-2">
-                                <div class="flex items-center gap-2 text-amber-900 font-bold">
-                                    <i class="fas fa-triangle-exclamation text-amber-600"></i>
-                                    <span>前置测活校验拦截机制（HTTP 422 Unprocessable Entity）</span>
+                            <div class="rounded-xl bg-slate-50/70 border border-slate-200/90 p-3.5 space-y-2.5">
+                                <div class="flex items-center gap-2 text-slate-800 font-bold text-xs flex-wrap">
+                                    <i class="fas fa-shield-halved text-slate-400"></i>
+                                    <span>前置测活校验拦截机制</span>
+                                    <code class="text-[11px] font-mono text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200 font-normal">HTTP 422 Unprocessable Entity</code>
                                 </div>
-                                <p class="text-amber-800 leading-relaxed">
-                                    当未指定 <code class="font-mono">skip_check=true</code> 时，若源链接存在问题，接口将直接返回 422 状态码拒绝无意义转存，保护网盘转存配额：
+                                <p class="text-slate-600 leading-relaxed text-xs">
+                                    当未指定 <code class="font-mono text-slate-700 bg-white px-1 py-0.5 rounded border border-slate-200">skip_check=true</code> 时，若源链接存在问题，接口将直接返回 422 状态码拒绝无意义转存，保护网盘转存配额：
                                 </p>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
-                                    <div class="bg-white/80 p-2.5 rounded border border-amber-200 text-amber-950">
-                                        <div class="font-bold text-rose-700 mb-1 flex items-center gap-1.5">
-                                            <i class="fas fa-circle-xmark"></i> code: "LINK_INVALID"
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-0.5 text-xs">
+                                    <div class="bg-white p-2.5 rounded-lg border border-slate-200/80 space-y-1">
+                                        <div class="font-mono font-semibold text-slate-800 text-[11px] flex items-center gap-1.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                            <code>code: "LINK_INVALID"</code>
                                         </div>
-                                        <div>链接已失效、被封禁、下架或文件夹为空 (file_count = 0)</div>
+                                        <div class="text-[11px] text-slate-500 leading-relaxed">链接已失效、被封禁、下架或文件夹为空 (file_count = 0)</div>
                                     </div>
-                                    <div class="bg-white/80 p-2.5 rounded border border-amber-200 text-amber-950">
-                                        <div class="font-bold text-amber-700 mb-1 flex items-center gap-1.5">
-                                            <i class="fas fa-key"></i> code: "LINK_LOCKED"
+                                    <div class="bg-white p-2.5 rounded-lg border border-slate-200/80 space-y-1">
+                                        <div class="font-mono font-semibold text-slate-800 text-[11px] flex items-center gap-1.5">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                            <code>code: "LINK_LOCKED"</code>
                                         </div>
-                                        <div>链接需要提取码，请在 Body 中补充 password 字段重新提交</div>
+                                        <div class="text-[11px] text-slate-500 leading-relaxed">链接需要提取码，请在 Body 中补充 password 字段重新提交</div>
                                     </div>
                                 </div>
                             </div>

@@ -184,6 +184,167 @@ def delete_logs_by_ids(ids: List[int]) -> Tuple[bool, str, int]:
         conn.close()
 
 
+def delete_logs_by_filter(
+    ids: Optional[List[int]] = None,
+    q: str = "",
+    log_type: str = "",
+    status: str = "",
+    channel: str = "",
+    result_filter: str = "",
+    start_date: str = "",
+    end_date: str = "",
+) -> Tuple[bool, str, int]:
+    """
+    根据指定条件（或全选筛选条件）批量删除日志
+    """
+    conn = get_db_connection()
+    if not conn:
+        return False, "无法连接到数据库", 0
+
+    try:
+        where_clauses = ["1=1"]
+        params: List[Any] = []
+
+        if ids and len(ids) > 0:
+            placeholders = ",".join(["?"] * len(ids))
+            where_clauses.append(f"id IN ({placeholders})")
+            params.extend(ids)
+        else:
+            if log_type and log_type.strip():
+                where_clauses.append("log_type = ?")
+                params.append(log_type.strip())
+
+            if channel == "web":
+                where_clauses.append("action LIKE 'search.web%'")
+            elif channel == "api":
+                where_clauses.append("action LIKE 'search.api%'")
+
+            if result_filter == "has_results":
+                where_clauses.append("result_count > 0")
+            elif result_filter == "zero_results":
+                where_clauses.append("result_count = 0")
+
+            if q and q.strip():
+                kw = f"%{q.strip()}%"
+                where_clauses.append("(query_text LIKE ? OR action LIKE ? OR error_message LIKE ? OR client_ip LIKE ?)")
+                params.extend([kw, kw, kw, kw])
+
+            if status and status.strip():
+                st = status.strip().lower()
+                if st in ("200", "success", "ok"):
+                    where_clauses.append("status_code >= 200 AND status_code < 400")
+                elif st in ("error", "fail", "failed", "500"):
+                    where_clauses.append("status_code >= 400")
+                elif st.isdigit():
+                    where_clauses.append("status_code = ?")
+                    params.append(int(st))
+
+            if start_date and start_date.strip():
+                where_clauses.append("date(created_at) >= date(?)")
+                params.append(start_date.strip())
+            if end_date and end_date.strip():
+                where_clauses.append("date(created_at) <= date(?)")
+                params.append(end_date.strip())
+
+        where_sql = " AND ".join(where_clauses)
+        cursor = conn.cursor()
+        cursor.execute(f"DELETE FROM system_logs WHERE {where_sql}", tuple(params))
+        deleted_count = cursor.rowcount
+        conn.commit()
+        return True, f"成功删除 {deleted_count} 条日志记录", deleted_count
+    except Error as err:
+        logger.error(f"批量删除日志失败: {err}")
+        conn.rollback()
+        return False, f"删除失败: {str(err)}", 0
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def query_logs_for_export(
+    ids: Optional[List[int]] = None,
+    q: str = "",
+    log_type: str = "",
+    status: str = "",
+    channel: str = "",
+    result_filter: str = "",
+    start_date: str = "",
+    end_date: str = "",
+    limit: int = 20000,
+) -> List[Dict[str, Any]]:
+    """
+    查询用于导出 CSV 的日志数据（支持勾选 ID 或全量多维过滤）
+    """
+    conn = get_db_connection()
+    if not conn:
+        return []
+
+    try:
+        where_clauses = ["1=1"]
+        params: List[Any] = []
+
+        if ids and len(ids) > 0:
+            placeholders = ",".join(["?"] * len(ids))
+            where_clauses.append(f"id IN ({placeholders})")
+            params.extend(ids)
+        else:
+            if log_type and log_type.strip():
+                where_clauses.append("log_type = ?")
+                params.append(log_type.strip())
+
+            if channel == "web":
+                where_clauses.append("action LIKE 'search.web%'")
+            elif channel == "api":
+                where_clauses.append("action LIKE 'search.api%'")
+
+            if result_filter == "has_results":
+                where_clauses.append("result_count > 0")
+            elif result_filter == "zero_results":
+                where_clauses.append("result_count = 0")
+
+            if q and q.strip():
+                kw = f"%{q.strip()}%"
+                where_clauses.append("(query_text LIKE ? OR action LIKE ? OR error_message LIKE ? OR client_ip LIKE ?)")
+                params.extend([kw, kw, kw, kw])
+
+            if status and status.strip():
+                st = status.strip().lower()
+                if st in ("200", "success", "ok"):
+                    where_clauses.append("status_code >= 200 AND status_code < 400")
+                elif st in ("error", "fail", "failed", "500"):
+                    where_clauses.append("status_code >= 400")
+                elif st.isdigit():
+                    where_clauses.append("status_code = ?")
+                    params.append(int(st))
+
+            if start_date and start_date.strip():
+                where_clauses.append("date(created_at) >= date(?)")
+                params.append(start_date.strip())
+            if end_date and end_date.strip():
+                where_clauses.append("date(created_at) <= date(?)")
+                params.append(end_date.strip())
+
+        where_sql = " AND ".join(where_clauses)
+        dict_cursor = conn.cursor(as_dict=True)
+        dict_cursor.execute(
+            f"""
+            SELECT id, log_type, action, query_text, status_code, error_message,
+                   duration_ms, result_count, client_ip, created_at
+            FROM system_logs
+            WHERE {where_sql}
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            tuple(params + [limit]),
+        )
+        return dict_cursor.fetchall() or []
+    except Error as err:
+        logger.error(f"导出查询日志失败: {err}")
+        return []
+    finally:
+        conn.close()
+
+
 def clear_all_logs() -> Tuple[bool, str, int]:
     """
     清空全部系统日志

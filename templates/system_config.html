@@ -1,30 +1,14 @@
 {% extends "admin_layout.html" %}
 {% set active_page = active_page or 'config_system' %}
 
-{% block title %}后端通用配置 - Pan-Relay Console{% endblock %}
+{% block title %}系统通用配置 - Pan-Relay Console{% endblock %}
 
 {% block content %}
 <!-- Page Header (ucmao admin_modern style) -->
 <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
-        <h1 class="text-xl font-bold tracking-tight text-slate-900">后端通用配置</h1>
+        <h1 class="text-xl font-bold tracking-tight text-slate-900">系统通用配置</h1>
         <p class="text-xs text-slate-500 mt-0.5">管理网盘转存目录、引流植入、存储周期清理、敏感词风控与云盘自动转存凭证</p>
-    </div>
-    <div class="flex items-center space-x-2.5 flex-wrap">
-        <div class="stats-bar">
-            <div class="stat-item">
-                <span class="stat-label">出链策略</span>
-                <span class="stat-value" id="kpiDeliveryMode" style="font-size: 0.8125rem;">原始链接</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">API 运行模式</span>
-                <span class="stat-value" id="kpiApiMode" style="font-size: 0.8125rem;">标准 Web</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">公开 API</span>
-                <span class="stat-value" id="kpiPublicApiStatus" style="font-size: 0.8125rem;">已开启</span>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -202,112 +186,116 @@
     </div>
 
     <!-- TAB 2: 内容安全风控 -->
-    <div id="tab-pane-security" class="system-tab-pane space-y-6">
+    <div id="tab-pane-security" class="system-tab-pane">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
-        <!-- 1. 敏感词过滤与安全防护 -->
-        <section class="admin-panel">
-            <div class="admin-panel-header">
-                <div class="admin-panel-title-area">
-                    <h2 class="admin-panel-title">
-                        <i class="fas fa-shield-alt text-red-600"></i> 敏感词过滤与风控
-                    </h2>
-                    <p class="admin-panel-desc">实时阻断非法搜索关键词与剔除脏数据结果</p>
+            <!-- 1. 敏感词过滤与安全防护 (左侧) -->
+            <section class="admin-panel flex flex-col h-full mb-0">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-shield-alt text-red-600"></i> 敏感词过滤与风控
+                        </h2>
+                        <p class="admin-panel-desc">实时阻断非法搜索关键词与剔除脏数据结果</p>
+                    </div>
                 </div>
-            </div>
-            <div class="admin-panel-body space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-3 border-b border-slate-100">
-                    <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
-                        <div>
-                            <span class="font-bold text-slate-800 text-xs block">敏感词过滤引擎</span>
-                            <span class="text-[11px] text-slate-500">全局匹配总开关</span>
+                <div class="admin-panel-body space-y-4 flex-1 flex flex-col justify-between">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pb-3 border-b border-slate-100">
+                        <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                            <div>
+                                <span class="font-bold text-slate-800 text-xs block">总引擎</span>
+                                <span class="text-[10px] text-slate-500">全局匹配开关</span>
+                            </div>
+                            <label class="plugin-switch">
+                                <input type="checkbox" id="sensitiveWordsGlobalToggle" onchange="saveSensitiveWordsConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
                         </div>
-                        <label class="plugin-switch">
-                            <input type="checkbox" id="sensitiveWordsGlobalToggle" onchange="saveSensitiveWordsConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
-                        <div>
-                            <span class="font-bold text-slate-800 text-xs block">拦截搜索输入</span>
-                            <span class="text-[11px] text-slate-500">命中直接拒绝搜索</span>
+                        <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                            <div>
+                                <span class="font-bold text-slate-800 text-xs block">输入拦截</span>
+                                <span class="text-[10px] text-slate-500">拒绝搜索请求</span>
+                            </div>
+                            <label class="plugin-switch">
+                                <input type="checkbox" id="sensitiveWordsInputToggle" onchange="saveSensitiveWordsConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
                         </div>
-                        <label class="plugin-switch">
-                            <input type="checkbox" id="sensitiveWordsInputToggle" onchange="saveSensitiveWordsConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
-                    </div>
-                    <div class="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-200/60">
-                        <div>
-                            <span class="font-bold text-slate-800 text-xs block">净化输出结果</span>
-                            <span class="text-[11px] text-slate-500">命中自动剔除结果</span>
+                        <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                            <div>
+                                <span class="font-bold text-slate-800 text-xs block">输出净化</span>
+                                <span class="text-[10px] text-slate-500">自动剔除结果</span>
+                            </div>
+                            <label class="plugin-switch">
+                                <input type="checkbox" id="sensitiveWordsOutputToggle" onchange="saveSensitiveWordsConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
                         </div>
-                        <label class="plugin-switch">
-                            <input type="checkbox" id="sensitiveWordsOutputToggle" onchange="saveSensitiveWordsConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
+                    </div>
+
+                    <div class="pt-1 flex-1 flex flex-col">
+                        <div class="flex items-center justify-between mb-2">
+                            <label for="sensitiveWordsTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
+                                敏感词黑名单词库 (每行一个词)
+                            </label>
+                            <span class="text-xs text-slate-500">当前词数：<strong id="sensitiveWordsCount" class="text-blue-600">0</strong> 条</span>
+                        </div>
+                        <textarea class="form-control font-mono text-xs flex-1" id="sensitiveWordsTextarea" rows="6" placeholder="请输入敏感词，每行一个（例如：外挂、博彩、破解工具等）" onblur="saveSensitiveWordsConfig()"></textarea>
+                        <p class="text-[11px] text-slate-400 mt-1.5 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                     </div>
                 </div>
+            </section>
 
-                <div class="pt-1">
-                    <div class="flex items-center justify-between mb-2">
-                        <label for="sensitiveWordsTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
-                            敏感词黑名单词库 (每行一个词)
-                        </label>
-                        <span class="text-xs text-slate-500">当前词数：<strong id="sensitiveWordsCount" class="text-blue-600">0</strong> 条</span>
+            <!-- 2. 广告智能净化与搜索标题匹配 (右侧) -->
+            <section class="admin-panel flex flex-col h-full mb-0">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-broom text-emerald-600"></i> 广告智能净化与标题匹配
+                        </h2>
+                        <p class="admin-panel-desc">控制搜索结果标题的比对过滤模式及广告引流关键词剔除</p>
                     </div>
-                    <textarea class="form-control font-mono text-xs" id="sensitiveWordsTextarea" rows="4" placeholder="请输入敏感词，每行一个（例如：外挂、博彩、破解工具等）" onblur="saveSensitiveWordsConfig()"></textarea>
-                    <p class="text-[11px] text-slate-400 mt-1.5 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                 </div>
-            </div>
-        </section>
+                <div class="admin-panel-body space-y-4 flex-1 flex flex-col justify-between">
+                    <div class="space-y-2.5 pb-3 border-b border-slate-100">
+                        <!-- 标题匹配模式选择 -->
+                        <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                            <div>
+                                <span class="font-bold text-slate-800 text-xs block">标题匹配模式</span>
+                                <span class="text-[10px] text-slate-500">优化无空格复合词匹配</span>
+                            </div>
+                            <select id="titleFilterModeSelect" class="form-select form-select-sm text-xs font-semibold text-slate-700 rounded-lg border-slate-300 w-36 py-1" onchange="saveAdFilterConfig()">
+                                <option value="loose">智能匹配 (推荐)</option>
+                                <option value="off">关闭二次过滤</option>
+                            </select>
+                        </div>
 
-        <!-- 2. 广告智能净化与搜索标题匹配 -->
-        <section class="admin-panel">
-            <div class="admin-panel-header">
-                <div class="admin-panel-title-area">
-                    <h2 class="admin-panel-title">
-                        <i class="fas fa-broom text-emerald-600"></i> 广告智能净化与标题匹配
-                    </h2>
-                    <p class="admin-panel-desc">控制搜索结果标题的比对过滤模式及广告引流关键词剔除</p>
-                </div>
-            </div>
-            <div class="admin-panel-body space-y-4">
-                <!-- 标题匹配模式选择 -->
-                <div class="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
-                    <div>
-                        <span class="font-bold text-slate-800 text-xs block">搜索标题匹配模式</span>
-                        <span class="text-[11px] text-slate-500">解决无空格复合词（如“英语培训资料”）被误杀或结果过少的问题</span>
+                        <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                            <div>
+                                <span class="font-bold text-slate-800 text-xs block">广告智能净化</span>
+                                <span class="text-[10px] text-slate-500">转存时自动丢弃广告宣传文件</span>
+                            </div>
+                            <label class="plugin-switch">
+                                <input type="checkbox" id="adFilterGlobalToggle" onchange="saveAdFilterConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
+                        </div>
                     </div>
-                    <select id="titleFilterModeSelect" class="form-select form-select-sm text-xs font-semibold text-slate-700 rounded-lg border-slate-300 w-44" onchange="saveAdFilterConfig()">
-                        <option value="loose">智能标题匹配 (推荐)</option>
-                        <option value="off">关闭标题二次过滤</option>
-                    </select>
-                </div>
 
-                <div class="flex items-center justify-between p-3.5 bg-slate-50/80 rounded-xl border border-slate-200/60">
-                    <div>
-                        <span class="font-bold text-slate-800 text-xs block">启用广告智能净化</span>
-                        <span class="text-[11px] text-slate-500">转存时自动丢弃匹配广告关键词的非主体文件</span>
+                    <div class="pt-1 flex-1 flex flex-col">
+                        <div class="flex items-center justify-between mb-2">
+                            <label for="adFilterTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
+                                广告关键词过滤库 (每行一个词)
+                            </label>
+                            <span class="text-xs text-slate-500">当前词数：<strong id="adFilterWordsCount" class="text-emerald-600">0</strong> 条</span>
+                        </div>
+                        <textarea class="form-control font-mono text-xs flex-1" id="adFilterTextarea" rows="6" placeholder="请输入广告关键词，每行一个（例如：公众号、防失联、福利群、更新地址等）" onblur="saveAdFilterConfig()"></textarea>
+                        <p class="text-[11px] text-slate-400 mt-1.5 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                     </div>
-                    <label class="plugin-switch">
-                        <input type="checkbox" id="adFilterGlobalToggle" onchange="saveAdFilterConfig()">
-                        <span class="plugin-switch-slider"></span>
-                    </label>
                 </div>
+            </section>
 
-                <div class="pt-1">
-                    <div class="flex items-center justify-between mb-2">
-                        <label for="adFilterTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
-                            广告关键词过滤库 (每行一个词)
-                        </label>
-                        <span class="text-xs text-slate-500">当前词数：<strong id="adFilterWordsCount" class="text-emerald-600">0</strong> 条</span>
-                    </div>
-                    <textarea class="form-control font-mono text-xs" id="adFilterTextarea" rows="4" placeholder="请输入广告关键词，每行一个（例如：公众号、防失联、福利群、更新地址等）" onblur="saveAdFilterConfig()"></textarea>
-                    <p class="text-[11px] text-slate-400 mt-1.5 mb-0">离开输入框后系统将自动保存并即时生效。</p>
-                </div>
-            </div>
-        </section>
-
+        </div>
     </div>
 
     <!-- TAB 3: 云盘转存凭证 -->

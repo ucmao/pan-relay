@@ -5,6 +5,7 @@ from src.services.log_service import (
     cleanup_old_logs,
     clear_all_logs,
     delete_logs,
+    delete_logs_with_filter,
     export_logs_csv,
     get_logs_summary,
     get_search_analytics,
@@ -116,14 +117,35 @@ def get_logs_stats_api():
 @token_required
 def delete_logs_api():
     """
-    批量删除指定 ID 的日志记录
+    批量删除日志记录（支持指定 ID 列表或按当前筛选条件全量删除）
     """
     data = request.get_json(silent=True) or {}
+    select_mode = data.get("select_mode", "page")
     ids = data.get("ids", [])
-    if not ids or not isinstance(ids, list):
-        return jsonify({"success": False, "message": "请勾选待删除的日志记录"}), 400
 
-    success, message, deleted_count = delete_logs(ids)
+    if select_mode == "all":
+        q = data.get("q", "")
+        log_type = data.get("log_type", "")
+        status = data.get("status", "")
+        channel = data.get("channel", "")
+        result_filter = data.get("result_filter", "")
+        start_date = data.get("start_date", "")
+        end_date = data.get("end_date", "")
+
+        success, message, deleted_count = delete_logs_with_filter(
+            q=q,
+            log_type=log_type,
+            status=status,
+            channel=channel,
+            result_filter=result_filter,
+            start_date=start_date,
+            end_date=end_date,
+        )
+    else:
+        if not ids or not isinstance(ids, list):
+            return jsonify({"success": False, "message": "请勾选待删除的日志记录"}), 400
+        success, message, deleted_count = delete_logs(ids)
+
     if not success:
         return jsonify({"success": False, "message": message}), 500
     return jsonify({"success": True, "message": message, "deleted_count": deleted_count})
@@ -167,18 +189,24 @@ def export_logs_api():
     导出系统日志为 CSV 文件
     """
     ids = None
+    channel = ""
+    result_filter = ""
     if request.method == "POST":
         data = request.get_json(silent=True) or {}
         ids = data.get("ids")
         q = data.get("q", "")
         log_type = data.get("log_type", "")
         status = data.get("status", "")
+        channel = data.get("channel", "")
+        result_filter = data.get("result_filter", "")
         start_date = data.get("start_date", "")
         end_date = data.get("end_date", "")
     else:
         q = request.args.get("q", "")
         log_type = request.args.get("log_type", "")
         status = request.args.get("status", "")
+        channel = request.args.get("channel", "")
+        result_filter = request.args.get("result_filter", "")
         start_date = request.args.get("start_date", "")
         end_date = request.args.get("end_date", "")
         ids_str = request.args.get("ids", "")
@@ -190,6 +218,8 @@ def export_logs_api():
         q=q,
         log_type=log_type,
         status=status,
+        channel=channel,
+        result_filter=result_filter,
         start_date=start_date,
         end_date=end_date,
     )
