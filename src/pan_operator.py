@@ -10,6 +10,9 @@ from src.clients import (
     QuarkPanClient,
     UcPanClient,
     XunleiPanClient,
+    GuangyaPanClient,
+    WukongPanClient,
+    CaiyunPanClient,
 )
 from src.db.resources import (
     insert_resource,
@@ -77,8 +80,11 @@ def get_and_validate_credential(netdisk_type: str) -> Any:
         "百度网盘": 50,
         "UC网盘": 50,
         "阿里云盘": 20,
+        "光鸭云盘": 10,
+        "悟空网盘": 10,
+        "移动云盘": 10,
     }
-    min_length = min_length_map.get(netdisk_type, 20)
+    min_length = min_length_map.get(netdisk_type, 10)
 
     if len(credential) < min_length:
         logger.error(f"[{netdisk_type}] 操作失败：凭证长度不足({len(credential)})，可能已失效。")
@@ -139,10 +145,10 @@ def _handle_netdisk_operation(client_class, client_credential, share_url, to_pdi
                 return False
 
             parsed_file_id = _parse_file_id(file_id)
-            # 百度删除通常需要路径列表，阿里/UC 需要列表，夸克通常是单个 ID
+            # 百度删除通常需要路径列表，阿里/UC/迅雷/光鸭/悟空/移动通常是列表
             if client_class == BaiduPanClient:
                 target = [parsed_file_id] if isinstance(parsed_file_id, str) else parsed_file_id
-            elif client_class in (AliyunPanClient, UcPanClient, XunleiPanClient):
+            elif client_class in (AliyunPanClient, UcPanClient, XunleiPanClient, GuangyaPanClient, WukongPanClient, CaiyunPanClient):
                 target = parsed_file_id if isinstance(parsed_file_id, list) else [parsed_file_id]
             else:
                 target = parsed_file_id
@@ -198,6 +204,9 @@ def create_share(share_data):
             "阿里云盘": {"class": AliyunPanClient, "enabled": save_to_netdisk.get('aliyun', False)},
             "UC网盘": {"class": UcPanClient, "enabled": save_to_netdisk.get('uc', False)},
             "迅雷网盘": {"class": XunleiPanClient, "enabled": save_to_netdisk.get('xunlei', False)},
+            "光鸭云盘": {"class": GuangyaPanClient, "enabled": save_to_netdisk.get('guangya', False)},
+            "悟空网盘": {"class": WukongPanClient, "enabled": save_to_netdisk.get('wukong', False)},
+            "移动云盘": {"class": CaiyunPanClient, "enabled": save_to_netdisk.get('caiyun', False) or save_to_netdisk.get('mobile', False)},
         }
         
         conf = config_map.get(netdisk_type)
@@ -343,6 +352,9 @@ def del_share(share_data):
             "阿里云盘": AliyunPanClient,
             "UC网盘": UcPanClient,
             "迅雷网盘": XunleiPanClient,
+            "光鸭云盘": GuangyaPanClient,
+            "悟空网盘": WukongPanClient,
+            "移动云盘": CaiyunPanClient,
         }
         client_class = client_map.get(netdisk_type)
         if not client_class:

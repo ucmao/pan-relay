@@ -164,6 +164,9 @@ function renderDynamicTransferStatuses(statuses, summary) {
             '阿里云盘': 'aliyun',
             'UC网盘': 'uc',
             '迅雷网盘': 'xunlei',
+            '光鸭云盘': 'guangya',
+            '悟空网盘': 'wukong',
+            '移动云盘': 'caiyun',
         };
 
         gridEl.innerHTML = safeStatuses.map((item) => {
@@ -234,6 +237,9 @@ function renderDynamicTransferStatuses(statuses, summary) {
         '阿里云盘': { dotId: 'dot-aliyun', textId: 'aliyunStatusText' },
         'UC网盘': { dotId: 'dot-uc', textId: 'ucStatusText' },
         '迅雷网盘': { dotId: 'dot-xunlei', textId: 'xunleiStatusText' },
+        '光鸭云盘': { dotId: 'dot-guangya', textId: 'guangyaStatusText' },
+        '悟空网盘': { dotId: 'dot-wukong', textId: 'wukongStatusText' },
+        '移动云盘': { dotId: 'dot-caiyun', textId: 'caiyunStatusText' },
     };
 
     safeStatuses.forEach((item) => {
@@ -627,6 +633,12 @@ async function loadCookieConfig() {
         if (xunleiCaptchaSign) xunleiCaptchaSign.value = data.xunlei_captcha_sign || '';
         const xunleiUserId = document.getElementById('xunleiUserId');
         if (xunleiUserId) xunleiUserId.value = data.xunlei_user_id || '';
+        const guangyaToken = document.getElementById('guangyaToken');
+        if (guangyaToken) guangyaToken.value = data.guangya_token || '';
+        const wukongCookie = document.getElementById('wukongCookie');
+        if (wukongCookie) wukongCookie.value = data.wukong_cookie || '';
+        const caiyunToken = document.getElementById('caiyunToken');
+        if (caiyunToken) caiyunToken.value = data.caiyun_token || '';
         renderDynamicTransferStatuses(data.dynamic_transfer_statuses, data.dynamic_transfer_summary);
     } catch (error) {
         console.error('加载云盘凭证失败:', error);
@@ -636,13 +648,16 @@ async function loadCookieConfig() {
 async function saveCookieConfig() {
     const saveButton = document.getElementById('saveCookieConfigBtn');
     const payload = {
-        baidu_cookie: document.getElementById('baiduCookie').value.trim(),
-        quark_cookie: document.getElementById('quarkCookie').value.trim(),
-        aliyun_token: document.getElementById('aliyunToken').value.trim(),
-        uc_cookie: document.getElementById('ucCookie').value.trim(),
-        xunlei_refresh_token: document.getElementById('xunleiRefreshToken').value.trim(),
-        xunlei_captcha_sign: document.getElementById('xunleiCaptchaSign').value.trim(),
-        xunlei_user_id: document.getElementById('xunleiUserId').value.trim(),
+        baidu_cookie: document.getElementById('baiduCookie') ? document.getElementById('baiduCookie').value.trim() : '',
+        quark_cookie: document.getElementById('quarkCookie') ? document.getElementById('quarkCookie').value.trim() : '',
+        aliyun_token: document.getElementById('aliyunToken') ? document.getElementById('aliyunToken').value.trim() : '',
+        uc_cookie: document.getElementById('ucCookie') ? document.getElementById('ucCookie').value.trim() : '',
+        xunlei_refresh_token: document.getElementById('xunleiRefreshToken') ? document.getElementById('xunleiRefreshToken').value.trim() : '',
+        xunlei_captcha_sign: document.getElementById('xunleiCaptchaSign') ? document.getElementById('xunleiCaptchaSign').value.trim() : '',
+        xunlei_user_id: document.getElementById('xunleiUserId') ? document.getElementById('xunleiUserId').value.trim() : '',
+        guangya_token: document.getElementById('guangyaToken') ? document.getElementById('guangyaToken').value.trim() : '',
+        wukong_cookie: document.getElementById('wukongCookie') ? document.getElementById('wukongCookie').value.trim() : '',
+        caiyun_token: document.getElementById('caiyunToken') ? document.getElementById('caiyunToken').value.trim() : '',
     };
 
     if (saveButton) saveButton.disabled = true;

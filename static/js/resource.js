@@ -17,7 +17,10 @@ let netdiskCredentialsMap = {
     "百度网盘": { status: 'missing', title: '未配置', key: 'baidu' },
     "阿里云盘": { status: 'missing', title: '未配置', key: 'aliyun' },
     "迅雷网盘": { status: 'missing', title: '未配置', key: 'xunlei' },
-    "UC网盘": { status: 'missing', title: '未配置', key: 'uc' }
+    "UC网盘": { status: 'missing', title: '未配置', key: 'uc' },
+    "光鸭云盘": { status: 'missing', title: '未配置', key: 'guangya' },
+    "悟空网盘": { status: 'missing', title: '未配置', key: 'wukong' },
+    "移动云盘": { status: 'missing', title: '未配置', key: 'caiyun' }
 };
 
 // ==========================================
@@ -138,7 +141,10 @@ function renderBatchReadySummary() {
         { name: "百度网盘", key: "baidu", short: "百度" },
         { name: "阿里云盘", key: "aliyun", short: "阿里" },
         { name: "迅雷网盘", key: "xunlei", short: "迅雷" },
-        { name: "UC网盘", key: "uc", short: "UC" }
+        { name: "UC网盘", key: "uc", short: "UC" },
+        { name: "光鸭云盘", key: "guangya", short: "光鸭" },
+        { name: "悟空网盘", key: "wukong", short: "悟空" },
+        { name: "移动云盘", key: "caiyun", short: "移动" }
     ];
 
     const readyClouds = clouds.filter(c => netdiskCredentialsMap[c.name]?.status === 'enabled');
@@ -156,7 +162,7 @@ function renderBatchReadySummary() {
     const extraHint = invalidClouds.length > 0 ? `<span class="text-amber-600 text-[10px] ml-1">(${invalidClouds.map(c => c.short).join('、')}凭证失效)</span>` : '';
 
     summaryEl.innerHTML = `
-        <span class="text-slate-600 font-medium whitespace-nowrap">就绪转存平台 (${readyClouds.length}/5)：</span>
+        <span class="text-slate-600 font-medium whitespace-nowrap">就绪转存平台 (${readyClouds.length}/8)：</span>
         <div class="flex items-center gap-1 flex-wrap">${readyBadges}${extraHint}</div>
     `;
 }
@@ -656,6 +662,10 @@ function getActiveTransferNetdiskConfig() {
         aliyun: netdiskCredentialsMap["阿里云盘"]?.status === 'enabled',
         xunlei: netdiskCredentialsMap["迅雷网盘"]?.status === 'enabled',
         uc: netdiskCredentialsMap["UC网盘"]?.status === 'enabled',
+        guangya: netdiskCredentialsMap["光鸭云盘"]?.status === 'enabled',
+        wukong: netdiskCredentialsMap["悟空网盘"]?.status === 'enabled',
+        caiyun: netdiskCredentialsMap["移动云盘"]?.status === 'enabled',
+        mobile: netdiskCredentialsMap["移动云盘"]?.status === 'enabled',
     };
 }
 

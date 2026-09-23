@@ -12,7 +12,7 @@ sequenceDiagram
     actor User as 用户 (小程序/APP)
     participant Client as 第三方客户端/服务端
     participant Relay as pan-relay 后端 API
-    participant Netdisk as 云盘 API (夸克/百度/阿里/UC等)
+    participant Netdisk as 云盘 API (夸克/百度/阿里/UC/迅雷/光鸭/悟空/移动等)
 
     Note over User, Relay: 步骤 1: 搜索获取资源
     User->>Client: 搜关键词 (如 "黑神话")

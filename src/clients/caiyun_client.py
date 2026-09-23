@@ -1,0 +1,233 @@
+import json
+import logging
+import re
+import time
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import requests
+
+from src.clients.base_client import BasePanClient
+
+logger = logging.getLogger(__name__)
+
+
+class CaiyunPanClient(BasePanClient):
+    """
+    中国移动云盘 (和彩云 / 139云盘) 客户端实现
+    提供转存 (store)、创建新分享与文件删除 (del_file) 功能。
+    """
+    api_base = "https://api.caiyun.feixin.10086.cn"
+    orches_base = "https://orches.yun.139.com"
+
+    def __init__(self, credential: Union[str, Dict[str, Any]]) -> None:
+        self.raw_credential = credential
+        self.auth_token = ""
+        self.account = ""
+        self.cookie = ""
+
+        if isinstance(credential, dict):
+            self.auth_token = str(credential.get("auth_token") or credential.get("authorization") or credential.get("token") or "").strip()
+            self.account = str(credential.get("account") or credential.get("phone") or "").strip()
+            self.cookie = str(credential.get("cookie") or credential.get("Cookie") or "").strip()
+        elif isinstance(credential, str):
+            clean_cred = credential.strip()
+            if clean_cred.startswith("{") and clean_cred.endswith("}"):
+                try:
+                    data = json.loads(clean_cred)
+                    if isinstance(data, dict):
+                        self.auth_token = str(data.get("auth_token") or data.get("authorization") or data.get("token") or "").strip()
+                        self.account = str(data.get("account") or data.get("phone") or "").strip()
+                        self.cookie = str(data.get("cookie") or data.get("Cookie") or "").strip()
+                except Exception:
+                    self.auth_token = clean_cred
+            else:
+                self.auth_token = clean_cred
+
+        self.session = requests.Session()
+        headers = {
+            "Accept": "application/json, text/plain, */*",
+            "Content-Type": "application/json;charset=UTF-8",
+            "mcloud-client": "10701",
+            "mcloud-channel": "1000101",
+            "mcloud-sign": "PC",
+            "Origin": "https://yun.139.com",
+            "Referer": "https://yun.139.com/",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/139.0.0.0 Safari/537.36"
+            ),
+        }
+        if self.auth_token:
+            if not self.auth_token.lower().startswith("bearer ") and not self.auth_token.lower().startswith("basic "):
+                headers["Authorization"] = f"Bearer {self.auth_token}"
+            else:
+                headers["Authorization"] = self.auth_token
+        if self.cookie:
+            headers["Cookie"] = self.cookie
+        if self.account:
+            headers["mcloud-account"] = self.account
+
+        self.session.headers.update(headers)
+
+    def _parse_share_url(self, share_url: str) -> Tuple[Optional[str], Optional[str]]:
+        """从移动云盘分享链接中提取 share_id 与提取码"""
+        if not share_url:
+            return None, None
+
+        match = re.search(
+            r"(?:yun\.139\.com/shareweb/#/w/i/|caiyun\.139\.com/w/i/|caiyun\.139\.com/m/i\?|pan\.10086\.cn/s/|/w/i/)([a-zA-Z0-9_-]+)",
+            share_url,
+            re.IGNORECASE,
+        )
+        if not match:
+            # 兼容 query 参数 linkID
+            q_match = re.search(r"linkId=([a-zA-Z0-9_-]+)", share_url, re.IGNORECASE)
+            if q_match:
+                share_id = q_match.group(1)
+            else:
+                return None, None
+        else:
+            share_id = match.group(1)
+
+        pwd_match = re.search(r"(?:[?&]pwd=|提取码[:：=\s]*|密码[:：=\s]*)([a-zA-Z0-9]{4,6})", share_url, re.IGNORECASE)
+        pwd = pwd_match.group(1) if pwd_match else None
+        return share_id, pwd
+
+    def _request_api(
+        self,
+        method: str,
+        path: str,
+        params: Optional[Dict[str, Any]] = None,
+        payload: Optional[Dict[str, Any]] = None,
+        timeout: int = 15,
+    ) -> Optional[Dict[str, Any]]:
+        url = f"{self.api_base}{path}" if path.startswith("/") else path
+        try:
+            resp = self.session.request(
+                method=method,
+                url=url,
+                params=params,
+                json=payload,
+                timeout=timeout,
+            )
+            if resp.status_code in (200, 201):
+                return resp.json()
+            else:
+                logger.error(f"移动云盘 API 响应异常 [{resp.status_code}]: {resp.text}")
+                return None
+        except Exception as exc:
+            logger.error(f"移动云盘 API 请求错误: {exc}")
+            return None
+
+    def store(
+        self, share_url: str, to_pdir_path: str = "/"
+    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        """
+        转存移动云盘分享链接并生成新分享。
+        """
+        share_id, pwd = self._parse_share_url(share_url)
+        if not share_id:
+            logger.error(f"移动云盘链接解析失败: {share_url}")
+            return None, None, None
+
+        # 1. 获取分享内容信息
+        share_info = self._request_api(
+            "POST",
+            "/orchestration/personalCloud/share/v1.0/getShareInfo",
+            payload={
+                "linkID": share_id,
+                "password": pwd or "",
+            },
+        )
+        if not share_info or not share_info.get("success", False):
+            # 尝试备用或简单响应格式
+            if not share_info or share_info.get("code") not in ("0", 0, "0000", 200, None):
+                logger.error(f"移动云盘获取分享信息失败: {share_info}")
+                return None, None, None
+
+        data = share_info.get("data") or share_info
+        content_list = data.get("contentList") or data.get("fileList") or []
+        first_item = content_list[0] if content_list else {}
+        file_name = first_item.get("contentName") or data.get("shareTitle") or "移动云盘转存文件"
+        
+        content_ids = []
+        for item in content_list:
+            cid = item.get("contentID") or item.get("id") or item.get("caID")
+            if cid:
+                content_ids.append(cid)
+
+        # 2. 执行批量转存
+        target_dir = to_pdir_path if to_pdir_path not in ("/", "") else "root"
+        restore_res = self._request_api(
+            "POST",
+            "/orchestration/personalCloud/batch/v1.0/createBatch",
+            payload={
+                "action": "restore",
+                "linkID": share_id,
+                "contentIDs": content_ids,
+                "targetDirID": target_dir,
+            },
+        )
+        if not restore_res or not (restore_res.get("success", True) or restore_res.get("code") in ("0", 0, "0000")):
+            logger.error(f"移动云盘转存失败: {restore_res}")
+            return None, None, None
+
+        saved_data = restore_res.get("data") or restore_res
+        saved_file_ids = saved_data.get("contentIDs") or content_ids
+
+        # 3. 创建新分享链接
+        share_create_res = self._request_api(
+            "POST",
+            "/orchestration/personalCloud/share/v1.0/createShare",
+            payload={
+                "contentIDs": saved_file_ids,
+                "shareType": 1,
+                "period": 0,  # 永久
+                "shareTitle": file_name,
+            },
+        )
+        new_share_url = None
+        if share_create_res:
+            res_data = share_create_res.get("data") or share_create_res
+            new_share_url = res_data.get("shareUrl") or res_data.get("linkUrl")
+            new_link_id = res_data.get("linkID") or res_data.get("id")
+            if not new_share_url and new_link_id:
+                new_share_url = f"https://yun.139.com/shareweb/#/w/i/{new_link_id}"
+                new_pwd = res_data.get("password")
+                if new_pwd:
+                    new_share_url += f"?pwd={new_pwd}"
+
+        saved_file_id_str = json.dumps(saved_file_ids, ensure_ascii=False) if isinstance(saved_file_ids, list) else str(saved_file_ids)
+        return saved_file_id_str, file_name, new_share_url
+
+    def del_file(self, file_ids: Union[str, List[str]]) -> bool:
+        """从移动云盘中删除文件"""
+        if not file_ids:
+            return True
+
+        if isinstance(file_ids, str):
+            if file_ids.startswith("["):
+                try:
+                    targets = json.loads(file_ids)
+                except Exception:
+                    targets = [file_ids]
+            else:
+                targets = [file_ids]
+        else:
+            targets = list(file_ids)
+
+        res = self._request_api(
+            "POST",
+            "/orchestration/personalCloud/batch/v1.0/createBatch",
+            payload={
+                "action": "delete",
+                "contentIDs": targets,
+            },
+        )
+        if res and (res.get("success", False) or res.get("code") in ("0", 0, "0000", 200, None)):
+            logger.info(f"移动云盘删除文件成功: {targets}")
+            return True
+
+        logger.error(f"移动云盘删除文件失败: {res}")
+        return False

@@ -67,6 +67,7 @@ CANONICAL_ID_PATTERNS = [
     ("ctfile", re.compile(r"(?:ctfile|pipipan|400gb|t004)\.(?:com|cn)/(?:f|file)/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("pikpak", re.compile(r"(?:pikpak|mypikpak|pikpakdrive)\.com/s/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("lanzou", re.compile(r"(?:lanzou[uixys]*|lan[zs]o[ux])\.(?:com|net|org)/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
+    ("wukong", re.compile(r"(?:pan\.wkbrowser\.com|wkbrowser\.com)/(?:s/|share/)?([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("guangya", re.compile(r"guangyapan\.com/s/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("weiyun", re.compile(r"weiyun\.com/([a-zA-Z0-9_-]+)", re.IGNORECASE)),
     ("jianguoyun", re.compile(r"jianguoyun\.com/p/([a-zA-Z0-9_-]+)", re.IGNORECASE)),

@@ -354,6 +354,18 @@
                         <i class="fas fa-bolt-lightning text-sky-500"></i> 迅雷网盘
                         <span class="cred-status-dot missing" id="dot-xunlei"></span>
                     </button>
+                    <button class="credential-tab-btn" data-cred-target="guangya" type="button">
+                        <i class="fas fa-feather-pointed text-teal-500"></i> 光鸭云盘
+                        <span class="cred-status-dot missing" id="dot-guangya"></span>
+                    </button>
+                    <button class="credential-tab-btn" data-cred-target="wukong" type="button">
+                        <i class="fas fa-sun text-yellow-500"></i> 悟空网盘
+                        <span class="cred-status-dot missing" id="dot-wukong"></span>
+                    </button>
+                    <button class="credential-tab-btn" data-cred-target="caiyun" type="button">
+                        <i class="fas fa-mobile-screen-button text-cyan-500"></i> 移动云盘
+                        <span class="cred-status-dot missing" id="dot-caiyun"></span>
+                    </button>
                 </div>
 
                 <!-- Sub-Tab 1: 百度网盘 -->
@@ -445,6 +457,54 @@
                         <div>
                             <span class="font-semibold text-slate-700">说明：</span>
                             迅雷网盘需要同时配置 <code>refresh_token</code>、<code>captcha_sign</code> 和 <code>user_id</code> 三个凭证项方可生效。
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-Tab 6: 光鸭云盘 -->
+                <div id="cred-pane-guangya" class="credential-tab-pane space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label for="guangyaToken" class="form-label font-bold text-slate-800 text-xs mb-0">光鸭云盘 Token / Refresh Token</label>
+                        <span class="text-[11px] text-slate-400 font-medium" id="guangyaStatusText">未配置</span>
+                    </div>
+                    <textarea class="form-control font-mono" id="guangyaToken" rows="5" placeholder="请输入光鸭云盘 access_token 或包含 refresh_token 的凭证"></textarea>
+                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-teal-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-semibold text-slate-700">获取指引：</span>
+                            登录 <a href="https://www.guangyapan.com" target="_blank" class="text-blue-600 hover:underline">guangyapan.com</a>，在开发者工具网络请求标头中复制 <code>Authorization: Bearer &lt;token&gt;</code> 的 Token 字符串。
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-Tab 7: 悟空网盘 -->
+                <div id="cred-pane-wukong" class="credential-tab-pane space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label for="wukongCookie" class="form-label font-bold text-slate-800 text-xs mb-0">悟空网盘 Cookie / Token</label>
+                        <span class="text-[11px] text-slate-400 font-medium" id="wukongStatusText">未配置</span>
+                    </div>
+                    <textarea class="form-control font-mono" id="wukongCookie" rows="5" placeholder="请输入悟空网盘/悟空浏览器网页端 Cookie 或 Session Token"></textarea>
+                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-yellow-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-semibold text-slate-700">获取指引：</span>
+                            打开 <a href="https://pan.wkbrowser.com" target="_blank" class="text-blue-600 hover:underline">pan.wkbrowser.com</a>，在网络请求标头中复制 <code>Cookie</code> 或 Token 字符串。
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-Tab 8: 移动云盘 -->
+                <div id="cred-pane-caiyun" class="credential-tab-pane space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label for="caiyunToken" class="form-label font-bold text-slate-800 text-xs mb-0">中国移动云盘 Authorization / Token</label>
+                        <span class="text-[11px] text-slate-400 font-medium" id="caiyunStatusText">未配置</span>
+                    </div>
+                    <textarea class="form-control font-mono" id="caiyunToken" rows="5" placeholder="请输入移动云盘 (和彩云) 的 Authorization 或 jwtToken"></textarea>
+                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                        <i class="fas fa-info-circle text-cyan-500 mt-0.5"></i>
+                        <div>
+                            <span class="font-semibold text-slate-700">获取指引：</span>
+                            登录 <a href="https://yun.139.com" target="_blank" class="text-blue-600 hover:underline">yun.139.com</a>，在开发者工具网络请求标头中复制 <code>Authorization</code> 字段内容。
                         </div>
                     </div>
                 </div>

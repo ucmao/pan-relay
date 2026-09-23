@@ -69,6 +69,21 @@ DYNAMIC_TRANSFER_STATUS_CONFIGS = [
         "cloud_name": "迅雷网盘",
         "credential_type": "Refresh Token / Captcha Sign / User ID",
     },
+    {
+        "cloud_name": "光鸭云盘",
+        "credential_type": "Access Token / Refresh Token",
+        "min_length": 10,
+    },
+    {
+        "cloud_name": "悟空网盘",
+        "credential_type": "Cookie / Session Token",
+        "min_length": 10,
+    },
+    {
+        "cloud_name": "移动云盘",
+        "credential_type": "Authorization / Token",
+        "min_length": 10,
+    },
 ]
 
 
@@ -327,6 +342,9 @@ def get_credential_config():
     aliyun_token = get_cookie_by_cloud_name("阿里云盘")
     uc_cookie = get_cookie_by_cloud_name("UC网盘")
     xunlei_raw = get_cookie_by_cloud_name("迅雷网盘") or ""
+    guangya_token = get_cookie_by_cloud_name("光鸭云盘")
+    wukong_cookie = get_cookie_by_cloud_name("悟空网盘")
+    caiyun_token = get_cookie_by_cloud_name("移动云盘")
     try:
         xunlei_config = json.loads(xunlei_raw) if xunlei_raw else {}
     except json.JSONDecodeError:
@@ -341,6 +359,9 @@ def get_credential_config():
             "xunlei_refresh_token": xunlei_config.get("refresh_token", ""),
             "xunlei_captcha_sign": xunlei_config.get("captcha_sign", ""),
             "xunlei_user_id": xunlei_config.get("user_id", ""),
+            "guangya_token": guangya_token,
+            "wukong_cookie": wukong_cookie,
+            "caiyun_token": caiyun_token,
             "dynamic_transfer_statuses": dynamic_transfer_status["statuses"],
             "dynamic_transfer_summary": dynamic_transfer_status["summary"],
         }
@@ -358,12 +379,18 @@ def save_credential_config():
     xunlei_refresh_token = data.get("xunlei_refresh_token", "")
     xunlei_captcha_sign = data.get("xunlei_captcha_sign", "")
     xunlei_user_id = data.get("xunlei_user_id", "")
+    guangya_token = data.get("guangya_token", "")
+    wukong_cookie = data.get("wukong_cookie", "")
+    caiyun_token = data.get("caiyun_token", "")
 
     for cloud_name, credential in [
         ("百度网盘", baidu_cookie),
         ("夸克网盘", quark_cookie),
         ("阿里云盘", aliyun_token),
         ("UC网盘", uc_cookie),
+        ("光鸭云盘", guangya_token),
+        ("悟空网盘", wukong_cookie),
+        ("移动云盘", caiyun_token),
     ]:
         success, message = save_or_delete_credential(cloud_name, credential)
         if not success:
