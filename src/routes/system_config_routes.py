@@ -99,7 +99,7 @@ def _build_dynamic_transfer_statuses():
             "cloud_name": cloud_name,
             "credential_type": credential_type,
             "status": "missing",
-            "title": "未配置凭证",
+            "title": "未配置",
             "description": f"未填写 {credential_type}，动态转存时会回退原始链接。",
         }
 
@@ -118,7 +118,7 @@ def _build_dynamic_transfer_statuses():
                         "cloud_name": cloud_name,
                         "credential_type": credential_type,
                         "status": "enabled",
-                        "title": "已启用自动转存",
+                        "title": "已就绪",
                         "description": "已检测到完整凭证，动态查看时会优先生成临时分享链接。",
                     }
                     enabled_count += 1
@@ -140,7 +140,7 @@ def _build_dynamic_transfer_statuses():
                     "cloud_name": cloud_name,
                     "credential_type": credential_type,
                     "status": "enabled",
-                    "title": "已启用自动转存",
+                    "title": "已就绪",
                     "description": "已检测到可用凭证，动态查看时会优先生成临时分享链接。",
                 }
                 enabled_count += 1
@@ -708,18 +708,16 @@ def get_api_mode_config_api():
 @system_config_bp.route("/admin/api/api-mode-config", methods=["PUT", "POST"])
 @token_required
 def update_api_mode_config_api():
-    """更新 API_ONLY 模式及 UI 开关与安全转存 Key 配置"""
+    """更新 API 模式及前台 UI 开关与安全转存 Key 配置"""
     data = request.get_json() or {}
     api_only = data.get("api_only", False)
     enable_frontend = data.get("enable_frontend", True)
-    enable_admin_ui = data.get("enable_admin_ui", True)
     search_scope = data.get("search_scope", "own")
     transfer_api_key = data.get("transfer_api_key", "")
 
     success = save_api_mode_config(
         api_only=api_only,
         enable_frontend=enable_frontend,
-        enable_admin_ui=enable_admin_ui,
         search_scope=search_scope,
         transfer_api_key=transfer_api_key,
     )

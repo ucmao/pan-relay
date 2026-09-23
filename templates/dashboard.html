@@ -2,6 +2,96 @@
 
 {% block title %}仪表盘 - Pan-Relay Console{% endblock %}
 
+{% block head %}
+<style>
+/* SVG Charts & Tooltips */
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+.chart-guide-line {
+  pointer-events: none;
+}
+.chart-hover-dot {
+  pointer-events: none;
+}
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 30;
+  display: none;
+  opacity: 0;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.05);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  transition: left 0.06s ease, opacity 0.12s ease, transform 0.12s ease;
+  transform: translateY(4px);
+}
+.chart-tooltip.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+.chart-tooltip .tt-title {
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: #475569;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 4px;
+  font-size: 11.5px;
+}
+.chart-tooltip .tt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 3px;
+  color: #475569;
+  font-size: 12px;
+}
+.chart-tooltip .tt-row strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+.chart-tooltip .tt-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.pie-slice {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+  cursor: pointer;
+  transform-origin: 100px 100px;
+}
+.pie-slice:hover, .pie-slice.active {
+  transform: scale(1.04);
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+}
+.pie-pill-item {
+  transition: all 0.15s ease;
+}
+.pie-pill-item:hover,
+.pie-pill-item.active {
+  background-color: #f1f5f9;
+  color: #0f172a !important;
+  font-weight: 600;
+}
+.pie-pill-item.active span:first-child {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-6 animate-fade-in">
     <!-- =========================================================================
@@ -44,12 +134,12 @@
          第一层级：4 大核心量化 KPI 卡片 (Hero KPI Cards - 统一 3 行网格与状态语义)
          ========================================================================= -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- KPI 1: 私有资源库总量 (Primary Asset) -->
+        <!-- KPI 1: 私有资源储备 (Primary Asset) -->
         <div
             class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-slate-500 tracking-wider">私有资源库</span>
+                    <span class="text-xs font-semibold text-slate-500 tracking-wider">私有资源储备</span>
                     <div class="w-8 h-8 rounded-xl bg-blue-50/80 text-blue-600 flex items-center justify-center">
                         <i class="fas fa-layer-group text-xs"></i>
                     </div>
@@ -65,7 +155,7 @@
                 </div>
             </div>
             <div class="mt-4 pt-3 flex items-center justify-between text-xs text-slate-400 border-t border-slate-100">
-                <span>云盘覆盖: <strong class="text-slate-700 font-medium font-mono">{{
+                <span>云盘覆盖: <strong class="text-slate-700 font-medium font-mono" id="stat-resources-clouds">{{
                         summary.resources.cloud_distribution|length }}</strong> 种</span>
                 <a href="{{ url_for('resources.resources_page') }}"
                     class="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center group">
@@ -76,33 +166,29 @@
             </div>
         </div>
 
-        <!-- KPI 2: 今日请求与吞吐 (Primary Traffic) -->
+        <!-- KPI 2: 今日搜索活跃 (Primary Traffic) -->
         <div
             class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-slate-500 tracking-wider">今日总请求</span>
+                    <span class="text-xs font-semibold text-slate-500 tracking-wider">今日搜索活跃</span>
                     <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
                         <i class="fas fa-bolt text-xs"></i>
                     </div>
                 </div>
                 <div class="mt-3 flex items-baseline justify-between">
                     <span class="text-3xl font-extrabold text-slate-900 tracking-tight font-mono"
-                        id="stat-today-total">{{ summary.logs.today_total }}</span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium
-                        {% if summary.logs.today_success_rate >= 90 %}bg-emerald-50 text-emerald-700 border border-emerald-100/80
-                        {% elif summary.logs.today_success_rate >= 70 %}bg-amber-50 text-amber-700 border border-amber-100/80
-                        {% else %}bg-rose-50 text-rose-700 border border-rose-100/80{% endif %}" id="stat-today-rate">
-                        <span
-                            class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.logs.today_success_rate >= 90 %}bg-emerald-500{% elif summary.logs.today_success_rate >= 70 %}bg-amber-500{% else %}bg-rose-500{% endif %}"></span>
-                        {{ summary.logs.today_success_rate }}% 成功
+                        id="stat-today-search">{{ summary.logs.today_search }}</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200/60" id="stat-today-duration-badge">
+                        <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-blue-500"></span>
+                        均耗 <strong class="ml-1 font-mono font-bold" id="stat-today-avg-dur">{{ summary.logs.today_avg_duration_ms }}</strong> ms
                     </span>
                 </div>
             </div>
             <div class="mt-4 pt-3 flex items-center justify-between text-xs text-slate-400 border-t border-slate-100">
-                <span class="truncate max-w-[170px]">搜 {{ summary.logs.today_search }} · 存 {{
-                    summary.logs.today_transfer }} · 接口 {{ summary.logs.today_api }}</span>
-                <a href="{{ url_for('logs.logs_page') }}"
+                <span class="truncate max-w-[170px]" id="stat-search-channels">Web {{ summary.search_analytics.today_web_searches }} · API {{
+                    summary.search_analytics.today_api_searches }}</span>
+                <a href="{{ url_for('logs.logs_page', log_type='search') }}"
                     class="text-xs font-medium text-slate-600 hover:text-blue-600 flex items-center group flex-shrink-0">
                     <span>运行日志</span>
                     <i
@@ -111,74 +197,69 @@
             </div>
         </div>
 
-        <!-- KPI 3: 搜索源集群健康率 (Primary Health) -->
+        <!-- KPI 3: 搜索供给命中率 (Primary Supply Quality) -->
         <div
             class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-slate-500 tracking-wider">搜索源健康率</span>
+                    <span class="text-xs font-semibold text-slate-500 tracking-wider">搜索供给命中率</span>
                     <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
-                        <i class="fas fa-satellite-dish text-xs"></i>
+                        <i class="fas fa-bullseye text-xs"></i>
                     </div>
                 </div>
                 <div class="mt-3 flex items-baseline justify-between">
                     <span class="text-3xl font-extrabold text-slate-900 tracking-tight font-mono"
-                        id="stat-health-rate">{{ summary.sources.overall_health_rate }}%</span>
+                        id="stat-hit-rate">{{ summary.search_analytics.today_hit_rate }}%</span>
                     <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium
-                        {% if summary.sources.overall_health_rate >= 70 %}bg-emerald-50 text-emerald-700 border border-emerald-100/80
-                        {% elif summary.sources.overall_health_rate >= 30 %}bg-amber-50 text-amber-700 border border-amber-100/80
-                        {% else %}bg-rose-50 text-rose-700 border border-rose-100/80{% endif %}"
-                        id="stat-health-badge">
+                        {% if summary.search_analytics.today_zero_searches > 0 %}bg-rose-50 text-rose-700 border border-rose-100/80
+                        {% else %}bg-emerald-50 text-emerald-700 border border-emerald-100/80{% endif %}"
+                        id="stat-hit-badge">
                         <span
-                            class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.sources.overall_health_rate >= 70 %}bg-emerald-500{% elif summary.sources.overall_health_rate >= 30 %}bg-amber-500{% else %}bg-rose-500{% endif %}"></span>
-                        {% if summary.sources.overall_health_rate >= 70 %}集群健康
-                        {% elif summary.sources.overall_health_rate >= 30 %}部分异常
-                        {% else %}异常预警{% endif %}
+                            class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.search_analytics.today_zero_searches > 0 %}bg-rose-500{% else %}bg-emerald-500{% endif %}"></span>
+                        {% if summary.search_analytics.today_zero_searches > 0 %}搜空 {{ summary.search_analytics.today_zero_searches }} 次
+                        {% else %}供给充足{% endif %}
                     </span>
                 </div>
             </div>
             <div class="mt-4 pt-3 flex items-center justify-between text-xs text-slate-400 border-t border-slate-100">
-                <span class="truncate max-w-[160px]">API {{ summary.sources.api.enabled_count }} · 插件 {{
-                    summary.sources.plugins.enabled_count }} · TG {{ summary.sources.telegram.enabled_count }}</span>
-                <a href="{{ url_for('search_sources.sources_page') }}"
-                    class="text-xs font-medium text-slate-600 hover:text-blue-600 flex items-center group flex-shrink-0">
-                    <span>源调度</span>
+                <span class="truncate max-w-[160px]">有产搜索: <strong class="text-slate-700 font-medium font-mono" id="stat-hit-count">{{ summary.search_analytics.today_hit_searches }}</strong> 次</span>
+                <a href="javascript:void(0)" onclick="switchKeywordTab('zero'); document.getElementById('dashKeywordsCard')?.scrollIntoView({behavior: 'smooth'})"
+                    class="text-xs font-medium text-amber-700 hover:text-amber-800 flex items-center group flex-shrink-0">
+                    <span>补库指南</span>
                     <i
-                        class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform text-slate-400"></i>
+                        class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform text-amber-500"></i>
                 </a>
             </div>
         </div>
 
-        <!-- KPI 4: 转存引擎就绪度 (Primary Capability) -->
+        <!-- KPI 4: 今日转存转化 (Primary Conversion & Income) -->
         <div
             class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-slate-500 tracking-wider">转存引擎就绪度</span>
+                    <span class="text-xs font-semibold text-slate-500 tracking-wider">今日转存转化</span>
                     <div class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
-                        <i class="fas fa-key text-xs"></i>
+                        <i class="fas fa-rocket text-xs"></i>
                     </div>
                 </div>
                 <div class="mt-3 flex items-baseline justify-between">
                     <span class="text-3xl font-extrabold text-slate-900 tracking-tight font-mono"
-                        id="stat-credentials-ratio">{{ summary.credentials.summary.enabled_count }} <span
-                            class="text-base font-normal text-slate-400 font-sans">/ {{
-                            summary.credentials.summary.total_count }}</span></span>
+                        id="stat-transfer-total">{{ summary.logs.today_transfer }}</span>
                     <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium
-                        {% if summary.credentials.summary.enabled_count > 0 %}bg-emerald-50 text-emerald-700 border border-emerald-100/80
+                        {% if summary.logs.today_transfer > 0 %}bg-emerald-50 text-emerald-700 border border-emerald-100/80
                         {% else %}bg-slate-100 text-slate-500 border border-slate-200/60{% endif %}"
-                        id="stat-credentials-badge">
+                        id="stat-transfer-badge">
                         <span
-                            class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.credentials.summary.enabled_count > 0 %}bg-emerald-500{% else %}bg-slate-400{% endif %}"></span>
-                        {{ '已就绪' if summary.credentials.summary.enabled_count > 0 else '待配置' }}
+                            class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.logs.today_transfer > 0 %}bg-emerald-500{% else %}bg-slate-400{% endif %}"></span>
+                        {% if summary.logs.today_transfer > 0 %}{{ summary.logs.today_transfer_success_rate }}% 成功{% else %}专属换链{% endif %}
                     </span>
                 </div>
             </div>
             <div class="mt-4 pt-3 flex items-center justify-between text-xs text-slate-400 border-t border-slate-100">
-                <span>主流 5 大网盘接入</span>
-                <a href="{{ url_for('system_config.system_config_page', tab='credentials') }}"
+                <span class="truncate max-w-[170px]">转存成功: <strong class="text-slate-700 font-medium font-mono" id="stat-transfer-success-count">{{ summary.logs.today_transfer_success }}</strong> 次</span>
+                <a href="{{ url_for('logs.logs_page', log_type='transfer') }}"
                     class="text-xs font-medium text-slate-600 hover:text-blue-600 flex items-center group flex-shrink-0">
-                    <span>管理凭证</span>
+                    <span>转存日志</span>
                     <i
                         class="fas fa-chevron-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform text-slate-400"></i>
                 </a>
@@ -187,189 +268,282 @@
     </div>
 
     <!-- =========================================================================
-         第二层级：搜索运营大盘 (左右全屏全宽两栏 Top 10 - 轻量无边框表格化排版)
+         第二层级：动态周期筛选栏 (7天 / 30天 / 90天 / 180天 / 全周期)
          ========================================================================= -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="inline-flex rounded-xl bg-slate-200/70 p-1 border border-slate-200 text-xs font-semibold">
+            <a href="{{ url_for('dashboard.dashboard_page', days=7) }}" class="px-3 py-1.5 rounded-lg transition {{ 'bg-white text-slate-900 shadow-2xs font-bold' if current_days == 7 else 'text-slate-600 hover:text-slate-900' }}">近 7 天</a>
+            <a href="{{ url_for('dashboard.dashboard_page', days=30) }}" class="px-3 py-1.5 rounded-lg transition {{ 'bg-white text-slate-900 shadow-2xs font-bold' if current_days == 30 else 'text-slate-600 hover:text-slate-900' }}">近 30 天</a>
+            <a href="{{ url_for('dashboard.dashboard_page', days=90) }}" class="px-3 py-1.5 rounded-lg transition {{ 'bg-white text-slate-900 shadow-2xs font-bold' if current_days == 90 else 'text-slate-600 hover:text-slate-900' }}">近 90 天</a>
+            <a href="{{ url_for('dashboard.dashboard_page', days=180) }}" class="px-3 py-1.5 rounded-lg transition {{ 'bg-white text-slate-900 shadow-2xs font-bold' if current_days == 180 else 'text-slate-600 hover:text-slate-900' }}">近 180 天</a>
+            <a href="{{ url_for('dashboard.dashboard_page', days=0) }}" class="px-3 py-1.5 rounded-lg transition {{ 'bg-white text-slate-900 shadow-2xs font-bold' if current_days == 0 else 'text-slate-600 hover:text-slate-900' }}">全周期</a>
+        </div>
+        <div class="text-xs text-slate-400">
+            <span>当前统计范围: <strong class="text-slate-700 font-semibold font-mono">{% if current_days == 0 %}全部历史全周期{% else %}近 {{ current_days }} 天{% endif %}</strong></span>
+        </div>
+    </div>
 
-        <!-- 左侧：近 7 天热门搜索词 Top 10 -->
-        <div
-            class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between overflow-hidden">
-            <div class="p-4 sm:p-5 pb-1 flex-1">
-                <!-- Header -->
-                <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                    <div class="flex items-center space-x-2.5">
-                        <div class="w-7 h-7 rounded-lg bg-blue-50/80 flex items-center justify-center text-blue-600">
-                            <i class="fas fa-fire-flame-curved text-xs"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-sm font-bold text-slate-900 tracking-tight">近 7 天热门搜索词 (Top 10)</h2>
-                            <p class="text-[11px] text-slate-400 mt-0.5">高频检索热词排行与平均结果产出分析</p>
-                        </div>
-                    </div>
-                    <a href="{{ url_for('logs.logs_page', tab='analytics') }}"
-                        class="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1 group">
-                        <span>明细日志</span>
-                        <i
-                            class="fas fa-arrow-right text-[9px] ml-1 group-hover:translate-x-0.5 transition-transform text-blue-400"></i>
-                    </a>
-                </div>
-
-                <!-- Table Header -->
-                <div
-                    class="grid grid-cols-12 gap-2 text-[11px] font-semibold text-slate-400 py-1.5 border-b border-slate-100/80 select-none">
-                    <div class="col-span-1 text-center">#</div>
-                    <div class="col-span-6">搜索关键词</div>
-                    <div class="col-span-4 text-right">频次 / 均产</div>
-                    <div class="col-span-1 text-right pr-1">验证</div>
-                </div>
-
-                <!-- Table Body -->
-                <div class="divide-y divide-slate-100/70" id="dashTopKeywordsList">
-                    {% if summary.search_analytics.top_keywords %}
-                    {% for item in summary.search_analytics.top_keywords[:10] %}
-                    <div
-                        class="grid grid-cols-12 gap-2 items-center py-1.5 hover:bg-slate-50/70 -mx-2 px-2 rounded-lg transition text-xs">
-                        <div class="col-span-1 flex justify-center">
-                            <span class="w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center font-mono
-                                    {% if loop.index == 1 %}bg-slate-900 text-white
-                                    {% elif loop.index == 2 %}bg-slate-700 text-white
-                                    {% elif loop.index == 3 %}bg-slate-500 text-white
-                                    {% else %}text-slate-400 bg-slate-100{% endif %}">
-                                {{ loop.index }}
-                            </span>
-                        </div>
-                        <div class="col-span-6 min-w-0">
-                            <span
-                                class="font-medium text-slate-800 truncate block hover:text-blue-600 transition-colors"
-                                title="{{ item.keyword }}">{{ item.keyword }}</span>
-                        </div>
-                        <div
-                            class="col-span-4 text-right flex items-center justify-end gap-2 text-[11px] whitespace-nowrap">
-                            <span class="font-bold text-slate-800 font-mono">{{ item.count }} 次</span>
-                            <span class="text-emerald-600 font-medium">均产 {{ item.avg_results }} 条</span>
-                        </div>
-                        <div class="col-span-1 flex justify-end pr-1">
-                            <a href="/?keyword={{ item.keyword | urlencode }}" target="_blank"
-                                class="w-6 h-6 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center transition"
-                                title="前台验证搜索">
-                                <i class="fas fa-external-link-alt text-[9px]"></i>
-                            </a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="py-8 text-center text-xs text-slate-400">
-                        <i class="fas fa-magnifying-glass text-xl text-slate-300 mb-1.5 block"></i>
-                        近 7 天暂无搜索数据
-                    </div>
-                    {% endif %}
-                </div>
+    <!-- =========================================================================
+         第三层级：API 与 Web 搜索趋势折线图卡片 (平滑贝塞尔曲线 + 悬浮交互 Tooltip)
+         ========================================================================= -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs">
+        <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 tracking-tight">API 与 Web 搜索趋势</h2>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    {% if current_days == 0 %}全部历史每日 API 接口与 Web 前台实际搜索及命中趋势{% else %}近 {{ current_days }} 天每日 API 接口与 Web 前台实际搜索及命中趋势{% endif %}
+                </p>
             </div>
-
-            <!-- Unified Card Footer -->
-            <div
-                class="bg-slate-50/70 px-4 sm:px-5 py-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <div class="flex items-center gap-2">
-                    <span>平均响应耗时:</span>
-                    <strong class="text-slate-800 font-semibold font-mono" id="dash-log-avg-duration">{{
-                        summary.logs.today_avg_duration_ms }} ms</strong>
-                </div>
-                <div class="h-3 w-px bg-slate-200"></div>
-                <div class="flex items-center gap-2">
-                    <span>今日搜索总量:</span>
-                    <strong class="text-slate-800 font-semibold font-mono" id="dash-log-today-search">{{
-                        summary.logs.today_search }} 次</strong>
-                </div>
+            <div class="flex items-center gap-4 text-xs font-semibold text-slate-600">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#4f46e5]"></span>总搜索量</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>有效命中量</span>
             </div>
         </div>
 
-        <!-- 右侧：零结果搜索词 Top 10 (站长补库指南) -->
-        <div
-            class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between overflow-hidden">
-            <div class="p-4 sm:p-5 pb-1 flex-1">
-                <!-- Header -->
-                <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                    <div class="flex items-center space-x-2.5">
-                        <div class="w-7 h-7 rounded-lg bg-rose-50/80 flex items-center justify-center text-rose-500">
-                            <i class="fas fa-box-open text-xs"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-sm font-bold text-slate-900 tracking-tight">零结果搜索词 Top 10 (站长补库指南)</h2>
-                            <p class="text-[11px] text-slate-400 mt-0.5">高频搜空流失词榜与一键定向补录转化</p>
+        <div class="chart-container relative overflow-x-auto">
+            <div class="chart-tooltip pointer-events-none"></div>
+            <svg viewBox="0 0 720 230" class="w-full min-w-[550px] h-auto block font-sans">
+                <defs>
+                    <linearGradient id="callsGradDash" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.18" />
+                        <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.0" />
+                    </linearGradient>
+                    <linearGradient id="succGradDash" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#10b981" stop-opacity="0.18" />
+                        <stop offset="100%" stop-color="#10b981" stop-opacity="0.0" />
+                    </linearGradient>
+                </defs>
+
+                <!-- Y 轴网格辅助线与刻度 -->
+                {% for tick in chart_data.get('y_ticks', []) %}
+                <line x1="45" y1="{{ tick['y'] }}" x2="675" y2="{{ tick['y'] }}" stroke="#f1f5f9" stroke-width="0.8" stroke-dasharray="3 3" />
+                <text x="38" y="{{ tick['y'] + 3.5 }}" text-anchor="end" font-size="9.5" fill="#94a3b8">{{ tick['val'] }}</text>
+                {% endfor %}
+
+                <!-- X 轴基线 -->
+                <line x1="45" y1="180" x2="675" y2="180" stroke="#e2e8f0" stroke-width="0.9" />
+
+                <!-- 鼠标悬浮对齐线 -->
+                <line class="chart-guide-line" x1="0" y1="20" x2="0" y2="180" stroke="#818cf8" stroke-width="1" stroke-dasharray="3 3" style="display:none;pointer-events:none" />
+
+                <!-- 平滑渐变填充面 -->
+                {% if chart_data.get('calls_area_path') %}
+                <path d="{{ chart_data['calls_area_path'] }}" fill="url(#callsGradDash)" />
+                {% endif %}
+                {% if chart_data.get('successes_area_path') %}
+                <path d="{{ chart_data['successes_area_path'] }}" fill="url(#succGradDash)" />
+                {% endif %}
+
+                <!-- 趋势平滑贝塞尔曲线 -->
+                {% if chart_data.get('calls_path') %}
+                <path d="{{ chart_data['calls_path'] }}" fill="none" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                {% endif %}
+                {% if chart_data.get('successes_path') %}
+                <path d="{{ chart_data['successes_path'] }}" fill="none" stroke="#10b981" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+                {% endif %}
+
+                <!-- 动态悬停聚焦圆点 -->
+                <circle class="chart-hover-dot calls-dot" cx="0" cy="0" r="3.5" fill="#4f46e5" stroke="#ffffff" stroke-width="1.8" style="display:none;pointer-events:none" />
+                <circle class="chart-hover-dot succ-dot" cx="0" cy="0" r="3" fill="#10b981" stroke="#ffffff" stroke-width="1.6" style="display:none;pointer-events:none" />
+
+                <!-- X 轴刻度与交互节点 -->
+                {% for item in chart_data.get('trend', []) %}
+                {% if item.get('show_label') %}
+                <text x="{{ item['x'] }}" y="198" text-anchor="middle" font-size="9.5" font-weight="450" fill="#94a3b8">{{ item['short_date'] }}</text>
+                {% endif %}
+
+                <!-- 透明列触控矩形 -->
+                <rect class="chart-col-trigger" x="{{ item['x'] - 20 }}" y="15" width="40" height="170" fill="transparent" style="cursor:pointer" data-date="{{ item['date'] }}" data-calls="{{ item['calls'] }}" data-successes="{{ item['successes'] }}" data-failures="{{ item['failures'] }}" data-cx="{{ item['x'] }}" data-cy-calls="{{ item['y_calls'] }}" data-cy-succ="{{ item['y_successes'] }}" />
+                {% endfor %}
+            </svg>
+        </div>
+    </div>
+
+    <!-- =========================================================================
+         第四层级：搜索渠道与偏好分布（左） + 零结果搜索词 Top 10 (站长补库指南)（右）
+         ========================================================================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        <!-- 左侧：搜索来源渠道分布 (Donut Pie Chart) -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 tracking-tight">搜索来源渠道分布</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            {% if current_days == 0 %}全部历史 Web 前台与 API 开放接口调用构成占比{% else %}近 {{ current_days }} 天 Web 前台与 API 开放接口调用构成占比{% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                {% if not pie_data or pie_data.get('total_calls', 0) == 0 %}
+                <div class="text-center py-12 text-slate-400 text-xs">
+                    <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 8v4l3 3" />
+                    </svg>
+                    <div>当前时间范围内暂无搜索记录</div>
+                </div>
+                {% else %}
+                <div class="pie-wrapper" id="dash-platform-dist">
+                    <div class="pie-svg-box relative w-56 h-56 mx-auto">
+                        <svg viewBox="0 0 200 200" class="w-full h-full">
+                            {% for item in pie_data.get('items', []) %}
+                            <path d="{{ item['path_d'] }}" fill="{{ item['color'] }}" class="pie-slice transition-opacity hover:opacity-80 cursor-pointer" 
+                                  data-platform="{{ item['platform'] }}" 
+                                  data-calls="{{ item['calls_formatted'] }}" 
+                                  data-percent="{{ item['percentage'] }}%"
+                                  data-successes="{{ item['successes_formatted'] }}"
+                                  data-failures="{{ item['failures_formatted'] }}"
+                                  data-rate="{{ item['success_rate'] }}%"
+                                  data-color="{{ item['color'] }}">
+                            </path>
+                            {% endfor %}
+                        </svg>
+                        <div class="pie-center-text absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center select-none px-2">
+                            <div class="pie-center-lbl text-xs text-slate-500 font-medium truncate max-w-[140px] transition-colors duration-150" id="dash-pie-lbl">总搜索量</div>
+                            <div class="pie-center-val text-xl font-bold text-slate-900 mt-0.5 tracking-tight transition-all duration-150" id="dash-pie-val">{{ pie_data.get('total_calls_formatted', '0') }} 次</div>
+                            <div class="pie-center-sub text-[11px] text-slate-400 mt-0.5 min-h-[16px] font-medium transition-colors duration-150" id="dash-pie-sub"></div>
                         </div>
                     </div>
-                    <button type="button" onclick="openQuickAddModal()"
-                        class="text-xs font-medium text-rose-600 hover:text-rose-700 flex items-center gap-1 group">
-                        <i class="fas fa-plus text-[10px]"></i>
-                        <span>录入资源</span>
-                    </button>
-                </div>
 
-                <!-- Table Header -->
-                <div
-                    class="grid grid-cols-12 gap-2 text-[11px] font-semibold text-slate-400 py-1.5 border-b border-slate-100/80 select-none">
-                    <div class="col-span-1 text-center">#</div>
-                    <div class="col-span-7">搜空流失关键词</div>
-                    <div class="col-span-2 text-right">搜空频次</div>
-                    <div class="col-span-2 text-right pr-1">补录动作</div>
+                    <!-- 紧凑点状图例 -->
+                    <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 mt-5 pt-3 border-t border-slate-100">
+                        {% for item in pie_data.get('items', []) %}
+                        <div class="pie-pill-item inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-slate-100 cursor-pointer transition text-xs font-medium text-slate-600 hover:text-slate-900 select-none" 
+                             data-platform="{{ item['platform'] }}" 
+                             data-calls="{{ item['calls_formatted'] }}" 
+                             data-percent="{{ item['percentage'] }}%"
+                             data-successes="{{ item['successes_formatted'] }}"
+                             data-failures="{{ item['failures_formatted'] }}"
+                             data-rate="{{ item['success_rate'] }}%"
+                             data-color="{{ item['color'] }}">
+                            <span class="w-2 h-2 rounded-full shrink-0" style="background:{{ item['color'] }}"></span>
+                            <span class="truncate">{{ item['platform'] }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
+                {% endif %}
+            </div>
+        </div>
 
-                <!-- Table Body -->
-                <div class="divide-y divide-slate-100/70" id="dashTopZeroKeywordsList">
-                    {% if summary.search_analytics.top_zero_keywords %}
-                    {% for item in summary.search_analytics.top_zero_keywords[:10] %}
-                    <div
-                        class="grid grid-cols-12 gap-2 items-center py-1.5 hover:bg-slate-50/70 -mx-2 px-2 rounded-lg transition text-xs">
-                        <div class="col-span-1 flex justify-center">
-                            <span class="w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center font-mono
-                                    {% if loop.index <= 3 %}bg-rose-50 text-rose-700 border border-rose-200/60
-                                    {% else %}text-slate-400 bg-slate-100{% endif %}">
-                                {{ loop.index }}
-                            </span>
+        <!-- 右侧：热门搜索词 / 搜空待补库 Top 10 (双 Tab 切换) -->
+        <div id="dashKeywordsCard" class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs flex flex-col justify-between">
+            <div>
+                <!-- 卡片头部与 Tab 切换 -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-slate-100 gap-2">
+                    <div class="flex items-center space-x-2.5">
+                        <div id="tabKeywordIcon" class="w-7 h-7 rounded-lg bg-indigo-50/80 flex items-center justify-center text-indigo-600 transition-colors shrink-0">
+                            <i class="fas fa-fire text-xs"></i>
                         </div>
-                        <div class="col-span-7 min-w-0">
-                            <span
-                                class="font-medium text-slate-800 truncate block hover:text-rose-600 transition-colors"
-                                title="{{ item.keyword }}">{{ item.keyword }}</span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 id="tabKeywordTitle" class="text-sm font-bold text-slate-900 tracking-tight">热门搜索词 Top 10</h2>
+                                <span id="tabKeywordBadge" class="text-[10px] font-medium px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-100/60">真实检索</span>
+                            </div>
+                            <p id="tabKeywordSubtitle" class="text-[11px] text-slate-500 mt-0.5">
+                                {% if current_days == 0 %}全部历史全站真实高频检索关键词榜单与热度排行{% else %}近 {{ current_days }} 天全站真实高频检索关键词榜单与热度排行{% endif %}
+                            </p>
                         </div>
-                        <div class="col-span-2 text-right">
-                            <span class="text-rose-600 font-bold font-mono text-[11px]">{{ item.count }} 次</span>
-                        </div>
-                        <div class="col-span-2 flex justify-end pr-1">
-                            <button type="button" onclick="openQuickAddModal('{{ item.keyword | escape }}')"
-                                class="px-2.5 py-0.5 rounded-md bg-white hover:bg-rose-50 text-rose-700 font-medium text-[11px] transition border border-rose-200/70 shadow-2xs flex items-center gap-1"
-                                title="一键录入该资源到私有库">
-                                <i class="fas fa-plus text-[9px] text-rose-500"></i> 补库
+                    </div>
+
+                    <!-- Tab 切换按钮组 -->
+                    <div class="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                        <div class="inline-flex p-0.5 rounded-lg bg-slate-100 border border-slate-200/60 text-xs font-medium">
+                            <button type="button" id="tabBtnHotKeywords" onclick="switchKeywordTab('hot')"
+                                class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-white text-indigo-600 shadow-2xs transition">
+                                热门搜索
+                            </button>
+                            <button type="button" id="tabBtnZeroKeywords" onclick="switchKeywordTab('zero')"
+                                class="px-2.5 py-0.5 rounded-md text-xs font-semibold text-slate-500 hover:text-slate-700 transition">
+                                搜空补库
                             </button>
                         </div>
+                        <button type="button" id="btnQuickAddInCard" onclick="openQuickAddModal()" style="display: none;"
+                            class="px-2 py-0.5 rounded-lg text-xs font-medium bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 shadow-2xs transition flex items-center gap-1 shrink-0"
+                            title="录入新资源">
+                            <i class="fas fa-plus text-[9px]"></i>
+                            <span>录入</span>
+                        </button>
                     </div>
-                    {% endfor %}
+                </div>
+
+                <!-- Tab 1: 真实热门搜索词 Top 10 (默认展示) -->
+                <div id="tabHotKeywordsContent">
+                    {% if not top_hot_keywords %}
+                    <div class="text-center py-10 text-slate-400 text-xs">
+                        <i class="fas fa-magnifying-glass text-2xl text-slate-300 mb-2 block"></i>
+                        <div>当前周期内暂无搜索词记录</div>
+                    </div>
                     {% else %}
-                    <div class="py-8 text-center text-xs text-slate-500">
-                        <i class="fas fa-circle-check text-xl text-emerald-500 mb-1.5 block"></i>
-                        无搜空词，资源供给充沛！
+                    <div class="space-y-1" id="dashTopHotKeywordsProgressList">
+                        {% for item in top_hot_keywords %}
+                        <div class="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50/80 transition-colors text-xs">
+                            <span class="flex items-center gap-2 font-semibold text-slate-800 truncate min-w-0 pr-2">
+                                <span class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold font-mono shrink-0 {{ 'bg-amber-100 text-amber-800' if loop.index == 1 else ('bg-slate-200 text-slate-700' if loop.index <= 3 else 'bg-slate-100 text-slate-500') }}">
+                                    {{ loop.index }}
+                                </span>
+                                <a href="/?keyword={{ item.keyword | urlencode }}" target="_blank"
+                                   class="truncate hover:text-indigo-600 transition-colors" title="前台检索：{{ item.keyword }}">
+                                    {{ item.keyword }}
+                                </a>
+                            </span>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="font-bold text-slate-700 font-mono text-[11px]">{{ item.count }} 次</span>
+                                {% if item.avg_results > 0 %}
+                                <span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100 font-medium">均产 {{ item.avg_results }}</span>
+                                {% else %}
+                                <span class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-100 font-medium">无产出</span>
+                                {% endif %}
+                                <a href="/?keyword={{ item.keyword | urlencode }}" target="_blank"
+                                    class="w-4.5 h-4.5 rounded text-slate-400 hover:text-indigo-600 hover:bg-slate-100 flex items-center justify-center transition"
+                                    title="前台验证搜索">
+                                    <i class="fas fa-external-link-alt text-[8px]"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Tab 2: 零结果搜索词 Top 10 (站长补库指南) -->
+                <div id="tabZeroKeywordsContent" style="display: none;">
+                    {% if not top_zero_keywords %}
+                    <div class="text-center py-10 text-slate-400 text-xs">
+                        <i class="fas fa-circle-check text-2xl text-emerald-500 mb-2 block"></i>
+                        <div>无搜空词，资源供给充沛！</div>
+                    </div>
+                    {% else %}
+                    <div class="space-y-1" id="dashTopZeroKeywordsProgressList">
+                        {% for item in top_zero_keywords %}
+                        <div class="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50/80 transition-colors text-xs">
+                            <span class="flex items-center gap-2 font-semibold text-slate-800 truncate min-w-0 pr-2">
+                                <span class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold font-mono shrink-0 {{ 'bg-amber-100 text-amber-800' if loop.index == 1 else ('bg-slate-200 text-slate-700' if loop.index <= 3 else 'bg-slate-100 text-slate-500') }}">
+                                    {{ loop.index }}
+                                </span>
+                                <span class="truncate hover:text-amber-700 transition-colors cursor-pointer" title="{{ item.keyword }}" onclick="openQuickAddModal('{{ item.keyword | escape }}')">{{ item.keyword }}</span>
+                            </span>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="font-bold text-amber-700 font-mono text-[11px]">{{ item.count }} 次</span>
+                                <button type="button" onclick="openQuickAddModal('{{ item.keyword | escape }}')"
+                                    class="px-1.5 py-0.2 rounded bg-white hover:bg-amber-50 text-amber-800 font-medium text-[10px] transition border border-amber-200 shadow-2xs flex items-center gap-0.5"
+                                    title="一键录入该资源到私有库">
+                                    <i class="fas fa-plus text-[7px] text-amber-600"></i> 补库
+                                </button>
+                                <a href="/?keyword={{ item.keyword | urlencode }}" target="_blank"
+                                    class="w-4.5 h-4.5 rounded text-slate-400 hover:text-indigo-600 hover:bg-slate-100 flex items-center justify-center transition"
+                                    title="前台验证搜索">
+                                    <i class="fas fa-external-link-alt text-[8px]"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
                     {% endif %}
                 </div>
             </div>
-
-            <!-- Unified Card Footer -->
-            <div
-                class="bg-slate-50/70 px-4 sm:px-5 py-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                <div class="flex items-center gap-2">
-                    <span>今日搜空告警:</span>
-                    <strong class="text-rose-600 font-semibold font-mono" id="dash-log-today-zero">{{
-                        summary.search_analytics.today_zero_searches }} 次</strong>
-                </div>
-                <div class="h-3 w-px bg-slate-200"></div>
-                <div class="flex items-center gap-2">
-                    <span>全网搜索命中率:</span>
-                    <strong class="text-emerald-600 font-semibold font-mono" id="dash-log-today-hitrate">{{
-                        summary.search_analytics.today_hit_rate }}%</strong>
-                </div>
-            </div>
         </div>
-
     </div>
 
     <!-- =========================================================================
@@ -379,7 +553,7 @@
 
         <!-- 模块 1: 检索源通道集群 (4 cols) -->
         <div
-            class="lg:col-span-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between space-y-4">
+            class="lg:col-span-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col space-y-4">
             <div>
                 <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
                     <div class="flex items-center space-x-2.5">
@@ -473,19 +647,11 @@
                     </div>
                 </div>
             </div>
-
-            <div class="pt-2 text-xs text-slate-400 flex items-center justify-between border-t border-slate-100">
-                <span>综合健康率: <strong class="text-slate-800 font-semibold font-mono" id="stat-health-rate-bottom">{{
-                        summary.sources.overall_health_rate }}%</strong></span>
-                <span class="inline-flex items-center text-slate-500 text-[11px] font-medium">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>动态轮询中
-                </span>
-            </div>
         </div>
 
         <!-- 模块 2: 网盘转存与私有资产沉淀 (5 cols - 合并模块) -->
         <div
-            class="lg:col-span-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between space-y-4">
+            class="lg:col-span-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col space-y-4">
             <div>
                 <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
                     <div class="flex items-center space-x-2.5">
@@ -584,24 +750,11 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 底部操作与统计 -->
-            <div class="pt-2 text-xs text-slate-400 flex items-center justify-between border-t border-slate-100">
-                <span>就绪: <strong class="text-slate-800 font-semibold font-mono">{{
-                        summary.credentials.summary.enabled_count }}/{{ summary.credentials.summary.total_count
-                        }}</strong> 盘 · 累计: <strong class="text-slate-800 font-semibold font-mono">{{
-                        summary.resources.total_count }}</strong> 条</span>
-                <button type="button" onclick="openQuickAddModal()"
-                    class="text-blue-600 font-medium hover:text-blue-700 text-xs flex items-center gap-1">
-                    <i class="fas fa-plus text-[10px]"></i>
-                    <span>录入新资源</span>
-                </button>
-            </div>
         </div>
 
         <!-- 模块 3: 系统底座与状态概况 (3 cols - 扁平 Key-Value 列表与圆点微标) -->
         <div
-            class="lg:col-span-3 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between space-y-4">
+            class="lg:col-span-3 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col space-y-4">
             <div>
                 <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
                     <div class="flex items-center space-x-2.5">
@@ -637,10 +790,25 @@
                         </span>
                     </div>
 
-                    <!-- 统一转存保留时长 -->
+                    <!-- 存储保留时长 -->
                     <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
                         <span class="text-slate-500">存储保留时长</span>
-                        <span class="font-bold text-slate-800 font-mono">{{ summary.system.retention_display or '15 天' }}</span>
+                        <span class="font-bold font-mono {% if summary.system.storage_cleanup_enabled %}text-slate-800{% else %}text-slate-400{% endif %}">
+                            {{ summary.system.retention_display or '15 天' }}{% if not summary.system.storage_cleanup_enabled %} <span class="text-[10px] font-normal text-slate-400 font-sans">(未启用)</span>{% endif %}
+                        </span>
+                    </div>
+
+                    <!-- 定时清理周期 -->
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
+                        <span class="text-slate-500">定时清理周期</span>
+                        <span class="inline-flex items-center text-[11px] font-medium {% if summary.system.storage_cleanup_enabled %}text-slate-700{% else %}text-slate-400{% endif %}">
+                            <span class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.system.storage_cleanup_enabled %}bg-emerald-500{% else %}bg-slate-300{% endif %}"></span>
+                            {% if summary.system.storage_cleanup_enabled %}
+                            {{ summary.system.cleanup_interval_display or '每 12 小时' }}
+                            {% else %}
+                            已关闭
+                            {% endif %}
+                        </span>
                     </div>
 
                     <!-- 敏感词风控 -->
@@ -652,26 +820,15 @@
                         </span>
                     </div>
 
-                    <!-- 存储扫描周期 -->
-                    <div class="flex items-center justify-between pb-2 border-b border-slate-100/70">
-                        <span class="text-slate-500">存储扫描周期</span>
-                        <span class="font-bold text-slate-800 font-mono">{{ summary.system.cleanup_interval_display or '每 12 小时' }}</span>
-                    </div>
-
-                    <!-- 前台出链策略 -->
+                    <!-- 广告关键词过滤 -->
                     <div class="flex items-center justify-between">
-                        <span class="text-slate-500">前台出链策略</span>
-                        <span
-                            class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200/60">
-                            {{ '直接原盘' if summary.system.frontend_link_mode == 'direct' else '转存专属' }}
+                        <span class="text-slate-500">广告关键词过滤</span>
+                        <span class="inline-flex items-center text-[11px] font-medium text-slate-700">
+                            <span class="w-1.5 h-1.5 rounded-full mr-1.5 {% if summary.system.ad_filter_enabled %}bg-emerald-500{% else %}bg-slate-300{% endif %}"></span>
+                            {{ '已启用' if summary.system.ad_filter_enabled else '已关闭' }} ({{ summary.system.ad_keywords_count or 0 }}词)
                         </span>
                     </div>
                 </div>
-            </div>
-
-            <div class="pt-2 text-xs text-slate-400 flex items-center justify-between border-t border-slate-100">
-                <span>底座状态: <strong class="text-emerald-600 font-semibold">正常运行</strong></span>
-                <span class="text-slate-400 text-[11px]">配置实时生效</span>
             </div>
         </div>
 
@@ -915,39 +1072,199 @@
             });
     }
 
+    function initChartInteractions() {
+        document.querySelectorAll('.chart-container').forEach(container => {
+            const tooltip = container.querySelector('.chart-tooltip');
+            const guideLine = container.querySelector('.chart-guide-line');
+            const callsDot = container.querySelector('.calls-dot');
+            const succDot = container.querySelector('.succ-dot');
+            const svg = container.querySelector('svg');
+            if (!tooltip || !svg) return;
+
+            const triggers = container.querySelectorAll('.chart-col-trigger');
+
+            function showTooltip(el) {
+                const date = el.dataset.date;
+                const calls = el.dataset.calls;
+                const successes = el.dataset.successes;
+                const failures = el.dataset.failures;
+                const cx = parseFloat(el.dataset.cx);
+                const cyCalls = parseFloat(el.dataset.cyCalls);
+                const cySucc = parseFloat(el.dataset.cySucc);
+
+                if (guideLine) {
+                    guideLine.setAttribute('x1', cx);
+                    guideLine.setAttribute('x2', cx);
+                    guideLine.style.display = 'block';
+                }
+
+                if (callsDot && !isNaN(cyCalls)) {
+                    callsDot.setAttribute('cx', cx);
+                    callsDot.setAttribute('cy', cyCalls);
+                    callsDot.style.display = 'block';
+                }
+
+                if (succDot && !isNaN(cySucc)) {
+                    succDot.setAttribute('cx', cx);
+                    succDot.setAttribute('cy', cySucc);
+                    succDot.style.display = 'block';
+                }
+
+                const failCount = parseInt(failures) || 0;
+                tooltip.innerHTML = `
+                    <div class="tt-title">${date}</div>
+                    <div class="tt-row">
+                        <span style="display:flex;align-items:center;gap:6px"><i class="tt-dot" style="background:#4f46e5"></i>总搜索次数</span>
+                        <strong>${calls} 次</strong>
+                    </div>
+                    <div class="tt-row">
+                        <span style="display:flex;align-items:center;gap:6px"><i class="tt-dot" style="background:#10b981"></i>有效命中</span>
+                        <strong>${successes} 次</strong>
+                    </div>
+                    ${failCount > 0 ? `
+                    <div class="tt-row">
+                        <span style="display:flex;align-items:center;gap:6px"><i class="tt-dot" style="background:#ef4444"></i>搜空流失</span>
+                        <strong>${failCount} 次</strong>
+                    </div>` : ''}
+                `;
+                tooltip.classList.add('active');
+
+                const containerRect = container.getBoundingClientRect();
+                const svgRect = svg.getBoundingClientRect();
+                const scaleX = svgRect.width / 720;
+                const targetX = (cx * scaleX) + (svgRect.left - containerRect.left);
+
+                let tooltipWidth = tooltip.offsetWidth || 130;
+                let left = targetX - (tooltipWidth / 2);
+
+                if (left < 10) left = 10;
+                if (left + tooltipWidth > containerRect.width - 10) {
+                    left = containerRect.width - tooltipWidth - 10;
+                }
+
+                tooltip.style.left = left + 'px';
+                tooltip.style.top = '10px';
+            }
+
+            function hideTooltip() {
+                if (tooltip) tooltip.classList.remove('active');
+                if (guideLine) guideLine.style.display = 'none';
+                if (callsDot) callsDot.style.display = 'none';
+                if (succDot) succDot.style.display = 'none';
+            }
+
+            triggers.forEach(trig => {
+                ['mouseenter', 'mousemove', 'click', 'touchstart'].forEach(evt => {
+                    trig.addEventListener(evt, () => {
+                        showTooltip(trig);
+                    }, { passive: true });
+                });
+            });
+
+            container.addEventListener('mouseleave', hideTooltip);
+        });
+    }
+
+    function initDonutInteractions() {
+        document.querySelectorAll('.pie-wrapper').forEach(wrapper => {
+            const centerVal = wrapper.querySelector('.pie-center-val');
+            const centerLbl = wrapper.querySelector('.pie-center-lbl');
+            const centerSub = wrapper.querySelector('.pie-center-sub');
+            if (!centerVal || !centerLbl) return;
+
+            const defaultVal = centerVal.textContent;
+            const defaultLbl = centerLbl.textContent;
+            const defaultSub = centerSub ? centerSub.textContent : '';
+
+            const slices = wrapper.querySelectorAll('.pie-slice');
+            const pills = wrapper.querySelectorAll('.pie-pill-item');
+
+            function activate(el) {
+                const platform = el.dataset.platform;
+                const calls = el.dataset.calls || '0';
+                const percent = el.dataset.percent || '0%';
+                const rate = el.dataset.rate || '100.0%';
+                const color = el.dataset.color || '#4f46e5';
+
+                centerLbl.textContent = `${platform} (${percent})`;
+                centerLbl.style.fontWeight = '600';
+                centerLbl.style.color = color;
+
+                centerVal.textContent = `${calls} 次`;
+                centerVal.style.fontSize = calls.length > 7 ? '18px' : '20px';
+
+                if (centerSub) {
+                    centerSub.innerHTML = `<span style="color:#94a3b8;font-size:10.5px;font-weight:400">成功率</span> <span style="color:#475569;font-weight:600">${rate}</span>`;
+                }
+
+                slices.forEach(s => {
+                    if (s.dataset.platform === platform) s.classList.add('active');
+                    else s.classList.remove('active');
+                });
+                pills.forEach(p => {
+                    if (p.dataset.platform === platform) p.classList.add('active');
+                    else p.classList.remove('active');
+                });
+            }
+
+            function reset() {
+                centerLbl.textContent = defaultLbl;
+                centerLbl.style.fontWeight = '';
+                centerLbl.style.color = '';
+                centerVal.textContent = defaultVal;
+                centerVal.style.fontSize = '';
+
+                if (centerSub) {
+                    centerSub.innerHTML = defaultSub;
+                }
+
+                slices.forEach(s => s.classList.remove('active'));
+                pills.forEach(p => p.classList.remove('active'));
+            }
+
+            slices.forEach(slice => {
+                slice.addEventListener('mouseenter', () => activate(slice));
+                slice.addEventListener('mouseleave', reset);
+            });
+
+            pills.forEach(pill => {
+                pill.addEventListener('mouseenter', () => activate(pill));
+                pill.addEventListener('mouseleave', reset);
+            });
+
+            wrapper.addEventListener('mouseleave', reset);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initChartInteractions();
+        initDonutInteractions();
+    });
+
     function refreshDashboardStats() {
         const icon = document.getElementById('refresh-icon');
         if (icon) icon.classList.add('fa-spin');
 
-        fetch('/admin/api/dashboard/stats')
+        const params = new URLSearchParams(window.location.search);
+        const days = params.get('days') || '7';
+
+        fetch(`/admin/api/dashboard/stats?days=${days}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success && data.data) {
                     const s = data.data;
+                    // KPI 1: 私有资源储备
                     if (s.resources) {
                         const totalEl = document.getElementById('stat-resources-total');
                         if (totalEl) totalEl.textContent = s.resources.total_count || 0;
                         const repEl = document.getElementById('stat-resources-replaced');
                         if (repEl) repEl.textContent = s.resources.replaced_count || 0;
+                        const cloudsEl = document.getElementById('stat-resources-clouds');
+                        if (cloudsEl) cloudsEl.textContent = (s.resources.cloud_distribution || []).length;
                     }
-                    if (s.sources) {
-                        const rate = s.sources.overall_health_rate || 100;
-                        const hrEl = document.getElementById('stat-health-rate');
-                        if (hrEl) {
-                            hrEl.textContent = `${rate}%`;
-                            hrEl.className = `text-3xl font-extrabold tracking-tight font-mono ${rate >= 70 ? 'text-emerald-600' : rate >= 30 ? 'text-amber-600' : 'text-rose-600'}`;
-                        }
-                        const hrBadgeEl = document.getElementById('stat-health-badge');
-                        if (hrBadgeEl) {
-                            const badgeColor = rate >= 70 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : rate >= 30 ? 'bg-amber-50 text-amber-700 border border-amber-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60';
-                            const dotColor = rate >= 70 ? 'bg-emerald-500' : rate >= 30 ? 'bg-amber-500' : 'bg-rose-500';
-                            const badgeText = rate >= 70 ? '集群健康' : rate >= 30 ? '部分异常' : '异常预警';
-                            hrBadgeEl.className = `inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${badgeColor}`;
-                            hrBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full mr-1.5 ${dotColor}"></span>${badgeText}`;
-                        }
-                        const hrBottomEl = document.getElementById('stat-health-rate-bottom');
-                        if (hrBottomEl) hrBottomEl.textContent = `${rate}%`;
 
+                    // 检索源通道
+                    if (s.sources) {
                         const apiEl = document.getElementById('source-stat-api');
                         if (apiEl && s.sources.api) {
                             apiEl.innerHTML = `${s.sources.api.enabled_count} <span class="text-[10px] font-normal text-slate-400">/ ${s.sources.api.total_count} 启用</span>`;
@@ -961,102 +1278,115 @@
                             tgEl.innerHTML = `${s.sources.telegram.enabled_count} <span class="text-[10px] font-normal text-slate-400">/ ${s.sources.telegram.total_count} 关注</span>`;
                         }
                     }
-                    if (s.credentials && s.credentials.summary) {
-                        const credEl = document.getElementById('stat-credentials-ratio');
-                        if (credEl) credEl.innerHTML = `${s.credentials.summary.enabled_count} <span class="text-base font-normal text-slate-400 font-sans">/ ${s.credentials.summary.total_count}</span>`;
-                        const credBadgeEl = document.getElementById('stat-credentials-badge');
-                        if (credBadgeEl) {
-                            const isReady = s.credentials.summary.enabled_count > 0;
-                            credBadgeEl.className = `inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 ${isReady ? 'text-slate-700' : 'text-slate-400'} border border-slate-200/60`;
-                            credBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full mr-1.5 ${isReady ? 'bg-emerald-500' : 'bg-slate-400'}"></span>${isReady ? '已就绪' : '待配置'}`;
-                        }
-                    }
+
+                    // KPI 2: 今日搜索活跃 & KPI 4: 今日转存转化
                     if (s.logs) {
                         const l = s.logs;
-                        const topTodayTotal = document.getElementById('stat-today-total');
-                        if (topTodayTotal) topTodayTotal.textContent = l.today_total || 0;
-                        const topTodayRate = document.getElementById('stat-today-rate');
-                        if (topTodayRate) {
-                            const succRate = l.today_success_rate || 100;
-                            const dotColor = succRate >= 90 ? 'bg-emerald-500' : succRate >= 70 ? 'bg-amber-500' : 'bg-rose-500';
-                            topTodayRate.className = `inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200/60`;
-                            topTodayRate.innerHTML = `<span class="w-1.5 h-1.5 rounded-full mr-1.5 ${dotColor}"></span>${succRate}% 成功`;
-                        }
+                        const todaySearchEl = document.getElementById('stat-today-search');
+                        if (todaySearchEl) todaySearchEl.textContent = l.today_search || 0;
+                        const todayAvgDurEl = document.getElementById('stat-today-avg-dur');
+                        if (todayAvgDurEl) todayAvgDurEl.textContent = l.today_avg_duration_ms || 0;
 
-                        const todaySearchEl = document.getElementById('dash-log-today-search');
-                        if (todaySearchEl) todaySearchEl.textContent = `${l.today_search || 0} 次`;
-                        const durEl = document.getElementById('dash-log-avg-duration');
-                        if (durEl) durEl.textContent = `${l.today_avg_duration_ms || 0} ms`;
+                        const todayTransferEl = document.getElementById('stat-transfer-total');
+                        if (todayTransferEl) todayTransferEl.textContent = l.today_transfer || 0;
+                        const transferSuccCountEl = document.getElementById('stat-transfer-success-count');
+                        if (transferSuccCountEl) transferSuccCountEl.textContent = l.today_transfer_success || 0;
+
+                        const transferBadgeEl = document.getElementById('stat-transfer-badge');
+                        if (transferBadgeEl) {
+                            if ((l.today_transfer || 0) > 0) {
+                                transferBadgeEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100/80';
+                                transferBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-500"></span>${l.today_transfer_success_rate || 100}% 成功`;
+                            } else {
+                                transferBadgeEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200/60';
+                                transferBadgeEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-slate-400"></span>专属换链';
+                            }
+                        }
                     }
+
+                    // KPI 3: 搜索供给命中率
                     if (s.search_analytics) {
                         const sa = s.search_analytics;
-                        const todayZeroEl = document.getElementById('dash-log-today-zero');
-                        if (todayZeroEl) todayZeroEl.textContent = `${sa.today_zero_searches || 0} 次`;
-                        const todayHitrateEl = document.getElementById('dash-log-today-hitrate');
-                        if (todayHitrateEl) todayHitrateEl.textContent = `${sa.today_hit_rate || 100}%`;
+                        const hitRateEl = document.getElementById('stat-hit-rate');
+                        if (hitRateEl) hitRateEl.textContent = `${sa.today_hit_rate || 100}%`;
+                        const hitCountEl = document.getElementById('stat-hit-count');
+                        if (hitCountEl) hitCountEl.textContent = sa.today_hit_searches || 0;
 
-                        const kwList = document.getElementById('dashTopKeywordsList');
-                        if (kwList && Array.isArray(sa.top_keywords)) {
-                            if (sa.top_keywords.length > 0) {
-                                kwList.innerHTML = sa.top_keywords.slice(0, 10).map((item, idx) => {
-                                    const rankClass = idx === 0 ? 'bg-slate-900 text-white' : idx === 1 ? 'bg-slate-700 text-white' : idx === 2 ? 'bg-slate-500 text-white' : 'text-slate-400 bg-slate-100';
+                        const hitBadgeEl = document.getElementById('stat-hit-badge');
+                        if (hitBadgeEl) {
+                            if ((sa.today_zero_searches || 0) > 0) {
+                                hitBadgeEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-100/80';
+                                hitBadgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-rose-500"></span>搜空 ${sa.today_zero_searches} 次`;
+                            } else {
+                                hitBadgeEl.className = 'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100/80';
+                                hitBadgeEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-emerald-500"></span>供给充足';
+                            }
+                        }
+
+                        const searchChannelsEl = document.getElementById('stat-search-channels');
+                        if (searchChannelsEl) searchChannelsEl.textContent = `Web ${sa.today_web_searches || 0} · API ${sa.today_api_searches || 0}`;
+                    }
+
+                    // Top 热门搜索词与零结果搜索词榜单动态更新
+                    if (s.top_hot_keywords && Array.isArray(s.top_hot_keywords)) {
+                        const hotListEl = document.getElementById('dashTopHotKeywordsProgressList');
+                        if (hotListEl) {
+                            if (s.top_hot_keywords.length > 0) {
+                                hotListEl.innerHTML = s.top_hot_keywords.map((item, idx) => {
+                                    const rankClass = idx === 0 ? 'bg-amber-100 text-amber-800' : (idx < 3 ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500');
                                     const safeKw = escapeHtml(item.keyword);
-                                    const avgRes = item.avg_results !== undefined ? item.avg_results : 0;
+                                    const avgBadge = item.avg_results > 0 
+                                        ? `<span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-100 font-medium">均产 ${item.avg_results}</span>`
+                                        : `<span class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-100 font-medium">无产出</span>`;
                                     return `
-                                        <div class="grid grid-cols-12 gap-2 items-center py-1.5 hover:bg-slate-50/70 -mx-2 px-2 rounded-lg transition text-xs">
-                                            <div class="col-span-1 flex justify-center">
-                                                <span class="w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center font-mono ${rankClass}">${idx + 1}</span>
-                                            </div>
-                                            <div class="col-span-6 min-w-0">
-                                                <span class="font-medium text-slate-800 truncate block hover:text-blue-600 transition-colors" title="${safeKw}">${safeKw}</span>
-                                            </div>
-                                            <div class="col-span-4 text-right flex items-center justify-end gap-2 text-[11px] whitespace-nowrap">
-                                                <span class="font-bold text-slate-800 font-mono">${item.count} 次</span>
-                                                <span class="text-slate-500 font-medium">均产 ${avgRes} 条</span>
-                                            </div>
-                                            <div class="col-span-1 flex justify-end pr-1">
-                                                <a href="/?keyword=${encodeURIComponent(item.keyword)}" target="_blank" class="w-6 h-6 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition" title="前台验证搜索">
-                                                    <i class="fas fa-external-link-alt text-[9px]"></i>
+                                        <div class="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50/80 transition-colors text-xs">
+                                            <span class="flex items-center gap-2 font-semibold text-slate-800 truncate min-w-0 pr-2">
+                                                <span class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold font-mono shrink-0 ${rankClass}">${idx + 1}</span>
+                                                <a href="/?keyword=${encodeURIComponent(item.keyword)}" target="_blank" class="truncate hover:text-indigo-600 transition-colors" title="前台检索：${safeKw}">${safeKw}</a>
+                                            </span>
+                                            <div class="flex items-center gap-2 shrink-0">
+                                                <span class="font-bold text-slate-700 font-mono text-[11px]">${item.count} 次</span>
+                                                ${avgBadge}
+                                                <a href="/?keyword=${encodeURIComponent(item.keyword)}" target="_blank" class="w-4.5 h-4.5 rounded text-slate-400 hover:text-indigo-600 hover:bg-slate-100 flex items-center justify-center transition" title="前台验证搜索">
+                                                    <i class="fas fa-external-link-alt text-[8px]"></i>
                                                 </a>
                                             </div>
                                         </div>
                                     `;
                                 }).join('');
-                            } else {
-                                kwList.innerHTML = '<div class="py-8 text-center text-xs text-slate-400"><i class="fas fa-magnifying-glass text-xl text-slate-300 mb-1.5 block"></i>近 7 天暂无搜索数据</div>';
                             }
                         }
+                    }
 
-                        const zeroList = document.getElementById('dashTopZeroKeywordsList');
-                        if (zeroList && Array.isArray(sa.top_zero_keywords)) {
-                            if (sa.top_zero_keywords.length > 0) {
-                                zeroList.innerHTML = sa.top_zero_keywords.slice(0, 10).map((item, idx) => {
+                    if (s.top_zero_keywords && Array.isArray(s.top_zero_keywords)) {
+                        const zeroListEl = document.getElementById('dashTopZeroKeywordsProgressList');
+                        if (zeroListEl) {
+                            if (s.top_zero_keywords.length > 0) {
+                                zeroListEl.innerHTML = s.top_zero_keywords.map((item, idx) => {
+                                    const rankClass = idx === 0 ? 'bg-amber-100 text-amber-800' : (idx < 3 ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500');
                                     const safeKw = escapeHtml(item.keyword);
-                                    const rankClass = idx < 3 ? 'bg-rose-50 text-rose-700 border border-rose-200/60' : 'text-slate-400 bg-slate-100';
                                     return `
-                                        <div class="grid grid-cols-12 gap-2 items-center py-1.5 hover:bg-slate-50/70 -mx-2 px-2 rounded-lg transition text-xs">
-                                            <div class="col-span-1 flex justify-center">
-                                                <span class="w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center font-mono ${rankClass}">${idx + 1}</span>
-                                            </div>
-                                            <div class="col-span-7 min-w-0">
-                                                <span class="font-medium text-slate-800 truncate block hover:text-rose-600 transition-colors" title="${safeKw}">${safeKw}</span>
-                                            </div>
-                                            <div class="col-span-2 text-right">
-                                                <span class="text-rose-600 font-bold font-mono text-[11px]">${item.count} 次</span>
-                                            </div>
-                                            <div class="col-span-2 flex justify-end pr-1">
-                                                <button type="button" onclick="openQuickAddModal('${safeKw}')" class="px-2.5 py-0.5 rounded-md bg-white hover:bg-rose-50 text-rose-700 font-medium text-[11px] transition border border-rose-200/70 shadow-2xs flex items-center gap-1" title="一键录入该资源到私有库">
-                                                    <i class="fas fa-plus text-[9px] text-rose-500"></i> 补库
+                                        <div class="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50/80 transition-colors text-xs">
+                                            <span class="flex items-center gap-2 font-semibold text-slate-800 truncate min-w-0 pr-2">
+                                                <span class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold font-mono shrink-0 ${rankClass}">${idx + 1}</span>
+                                                <span class="truncate hover:text-amber-700 transition-colors cursor-pointer" title="${safeKw}" onclick="openQuickAddModal('${safeKw}')">${safeKw}</span>
+                                            </span>
+                                            <div class="flex items-center gap-2 shrink-0">
+                                                <span class="font-bold text-amber-700 font-mono text-[11px]">${item.count} 次</span>
+                                                <button type="button" onclick="openQuickAddModal('${safeKw}')" class="px-1.5 py-0.2 rounded bg-white hover:bg-amber-50 text-amber-800 font-medium text-[10px] transition border border-amber-200 shadow-2xs flex items-center gap-0.5" title="一键录入该资源到私有库">
+                                                    <i class="fas fa-plus text-[7px] text-amber-600"></i> 补库
                                                 </button>
+                                                <a href="/?keyword=${encodeURIComponent(item.keyword)}" target="_blank" class="w-4.5 h-4.5 rounded text-slate-400 hover:text-indigo-600 hover:bg-slate-100 flex items-center justify-center transition" title="前台验证搜索">
+                                                    <i class="fas fa-external-link-alt text-[8px]"></i>
+                                                </a>
                                             </div>
                                         </div>
                                     `;
                                 }).join('');
-                            } else {
-                                zeroList.innerHTML = '<div class="py-8 text-center text-xs text-slate-500"><i class="fas fa-circle-check text-xl text-emerald-500 mb-1.5 block"></i>无搜空词，资源供给充沛！</div>';
                             }
                         }
                     }
+
                     if (s.system) {
                         const webBadge = document.getElementById('dash-header-web-badge');
                         if (webBadge) {
@@ -1085,6 +1415,57 @@
             .finally(() => {
                 if (icon) icon.classList.remove('fa-spin');
             });
+    }
+
+    function switchKeywordTab(tab) {
+        const btnHot = document.getElementById('tabBtnHotKeywords');
+        const btnZero = document.getElementById('tabBtnZeroKeywords');
+        const contentHot = document.getElementById('tabHotKeywordsContent');
+        const contentZero = document.getElementById('tabZeroKeywordsContent');
+        const iconEl = document.getElementById('tabKeywordIcon');
+        const titleEl = document.getElementById('tabKeywordTitle');
+        const badgeEl = document.getElementById('tabKeywordBadge');
+        const subtitleEl = document.getElementById('tabKeywordSubtitle');
+        const quickAddBtn = document.getElementById('btnQuickAddInCard');
+
+        const currentDays = parseInt('{{ current_days }}', 10) || 7;
+        const periodText = currentDays === 0 ? '全部历史' : `近 ${currentDays} 天`;
+
+        if (tab === 'zero') {
+            if (btnHot) btnHot.className = 'px-2.5 py-1 rounded-md text-xs font-semibold text-slate-500 hover:text-slate-700 transition';
+            if (btnZero) btnZero.className = 'px-2.5 py-1 rounded-md text-xs font-semibold bg-white text-amber-700 shadow-2xs transition';
+            if (contentHot) contentHot.style.display = 'none';
+            if (contentZero) contentZero.style.display = 'block';
+
+            if (iconEl) {
+                iconEl.className = 'w-7 h-7 rounded-lg bg-amber-50/80 flex items-center justify-center text-amber-700 transition-colors';
+                iconEl.innerHTML = '<i class="fas fa-box-open text-xs"></i>';
+            }
+            if (titleEl) titleEl.textContent = '搜空待补库 Top 10';
+            if (badgeEl) {
+                badgeEl.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/60';
+                badgeEl.textContent = '补库指南';
+            }
+            if (subtitleEl) subtitleEl.textContent = `${periodText}搜空流失词榜与一键定向录入转化`;
+            if (quickAddBtn) quickAddBtn.style.display = 'flex';
+        } else {
+            if (btnHot) btnHot.className = 'px-2.5 py-1 rounded-md text-xs font-semibold bg-white text-indigo-600 shadow-2xs transition';
+            if (btnZero) btnZero.className = 'px-2.5 py-1 rounded-md text-xs font-semibold text-slate-500 hover:text-slate-700 transition';
+            if (contentHot) contentHot.style.display = 'block';
+            if (contentZero) contentZero.style.display = 'none';
+
+            if (iconEl) {
+                iconEl.className = 'w-7 h-7 rounded-lg bg-indigo-50/80 flex items-center justify-center text-indigo-600 transition-colors';
+                iconEl.innerHTML = '<i class="fas fa-fire text-xs"></i>';
+            }
+            if (titleEl) titleEl.textContent = '热门搜索词 Top 10';
+            if (badgeEl) {
+                badgeEl.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100/60';
+                badgeEl.textContent = '真实检索';
+            }
+            if (subtitleEl) subtitleEl.textContent = `${periodText}全站真实高频检索关键词榜单与热度排行`;
+            if (quickAddBtn) quickAddBtn.style.display = 'none';
+        }
     }
 
     function escapeHtml(str) {

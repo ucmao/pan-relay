@@ -28,20 +28,19 @@ Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化�
 ## 💎 核心业务逻辑
 
 * **自动化链接洗白**：已接入 **夸克网盘、百度网盘、阿里云盘、UC 网盘、迅雷网盘**。选择批量转存入库后，系统自动执行“转存至个人盘 -> 生成个人分享链 -> 替换入库”，将外部链接转化为自己的收益链接。
-* **私有收益资源库**：资源统一存入本地 SQLite 数据库，支持后台批量导入、转存、增删改查、类型标注、关键词检索和导出，方便持续维护与全网分发。
+* **私有收益资源库**：资源统一存入本地SQLite数据库，支持后台批量导入、转存、增删改查、类型标注、关键词检索和导出，方便持续维护与全网分发。
 * **多渠道聚合搜索**：
-  * **前台搜索**：优先展示私有资源库中的收益链接，再并发聚合第三方 API、Telegram 公开频道和搜索插件的结果。
+  * **前台搜索**：优先展示私有资源库中的收益链接，再并发聚合第三方API、Telegram公开频道和搜索插件的结果。
   * **动态收益出链**：外部搜索结果可在用户访问时按需转存，生成临时个人分享链；转存失败时自动回退原链接，过期分享由系统定时清理。
-  * **两步走 REST API**：提供规范的 `/api/v1` REST 接口（步骤 1 聚合查询 -> 步骤 2 自动转存替换），便于无缝对接微信小程序、Flutter/React Native APP、Telegram 机器人或资源导航站。
+  * **两步走 REST API**：提供规范的 `/api/v1` REST接口（步骤 1 聚合查询 -> 步骤 2 自动转存替换），便于无缝对接微信小程序、Flutter/React Native APP、Telegram机器人或资源导航站。
 
 ## ✨ 项目特点
 
-* **无需外部数据库**：内置 SQLite 与 WAL 模式，无需安装配置 MySQL 等数据库服务。
-* **开放 REST API 与独立开关**：前台搜索界面与开放 API 服务完全解耦，可按需独立启闭，支持作为纯后端中转服务运行。
-* **开箱即用**：启动时自动初始化表结构及预置 API、TG 频道和插件搜索源，支持源码与 Docker 部署。
-* **免凭证TG搜索**：直接抓取 Telegram 公开频道，无需 Bot Token，并自动提取网盘链接与提取码。
-* **搜索源可扩展**：后台统一管理 API、TG 频道和 Python 搜索插件，支持启停、测试与调度配置。
-* **容器化部署**：提供 Dockerfile 与 Docker Compose，支持数据持久化和健康检查。
+* **REST API独立开关**：前台搜索界面与开放API服务完全解耦，可按需独立启闭，支持作为纯后端中转服务运行。
+* **开箱即用**：启动时自动初始化表结构及预置API、TG频道和插件搜索源，支持源码与 Docker 部署。
+* **免凭证TG搜索**：直接抓取Telegram公开频道，无需Bot Token，并自动提取网盘链接与提取码。
+* **搜索源可扩展**：后台统一管理API、TG频道和Python搜索插件，支持启停、测试与调度配置。
+* **容器化部署**：提供Dockerfile与Docker Compose，支持数据持久化和健康检查。
 
 ---
 
@@ -107,18 +106,17 @@ python app.py
 
 ## 🔌 开放 REST API 与无头部署
  
-针对需要接入自定义微信小程序、Mobile APP 或使用无头 (Headless) 模式的开发者，`pan-relay` 提供了完善的环境变量开关与标准化 `/api/v1` REST API。
+针对需要接入自定义微信小程序、Mobile APP 或使用无头 (Headless) 模式的开发者，`pan-relay` 提供了完善的管理后台开关与标准化 `/api/v1` REST API。
 
-### 1. 通道与环境变量配置
+### 1. 通道与 API 开关控制
 
-可以通过环境变量控制前后台 UI 开关（可写在 `.env` 或 Docker 环境中）：
+可在管理后台（**系统设置 → API 与通道配置**）中进行热配置（即时生效，无需重启）：
 
-| 环境变量 | 示例 | 说明 |
+| 配置项 | 可选值 | 说明 |
 | :--- | :--- | :--- |
-| `ENABLE_FRONTEND` | `false` / `0` | 独立禁用前台 Web 搜索界面 (访客访问 `GET /` 自动重定向至后台管理登录页面 `/login`) |
-| `ENABLE_ADMIN_UI` | `false` / `0` | 独立禁用后台 Web 管理界面 (`/admin/*`) |
-| `SEARCH_API_SCOPE` | `own` / `all` | API 搜索默认检索作用域 (`own`: 仅站长收益库 / `all`: 全网并发) |
-| `TRANSFER_API_KEY` | `your_key` | API 转存鉴权密钥 (留空表示公开允许转存，设置后客户端请求需携带 `X-API-Key`) |
+| **前台搜索开关** | 开启 / 关闭 | 独立禁用前台 Web 搜索界面 (访客访问 `GET /` 自动重定向至后台管理登录页面 `/login`) |
+| **API默认搜索作用域** | `own` / `all` | API 搜索默认检索作用域 (`own`: 仅站长收益库 / `all`: 全网并发) |
+| **转存API鉴权密钥** | 字符串 / 留空 | API 转存鉴权密钥 (留空表示公开允许转存，设置后客户端请求需携带 `X-API-Key` 或 Bearer Token) |
 
 *注：即使前台 Web 完全关闭，系统后台的开放 API、管理后台及定时清理 Worker（`storage_cleanup_service`）依然会独立正常运行。*
 
@@ -127,17 +125,19 @@ python app.py
 ### 2. 标准两步走 API 交互流程
 
 ```bash
-# 步骤 1：查询全网与库内聚合资源
-GET /api/v1/search?keyword={关键词}&cloud_name={可选网盘}
+# 步骤 1：查询全网与库内聚合资源 (支持开启原生免登录测活与死链剔除)
+GET /api/v1/search?keyword={关键词}&scope=own&check_status=true&filter_bad=true
 
-# 步骤 2：转存并替换为专属网盘链接
+# 步骤 2：转存并替换为专属网盘链接 (内置前置免登录测活校验，若链接失效/空文件夹返回 422 拦截)
 POST /api/v1/transfer
 Content-Type: application/json
+X-API-Key: your_transfer_key
 
 {
   "url": "https://pan.quark.cn/s/raw_public_link",
   "title": "电影标题",
-  "netdisk_name": "夸克网盘"
+  "netdisk_name": "夸克网盘",
+  "skip_check": false
 }
 ```
 
@@ -154,7 +154,7 @@ Content-Type: application/json
 }
 ```
 
-📖 完整的开发者 API 接口参数、流式 SSE 搜索及响应 Payload 说明，请参阅 [docs/api_v1_docs.md](docs/api_v1_docs.md)。
+📖 完整的开发者 API 接口参数、流式 SSE 搜索、9 大网盘免登录测活及响应 Payload 说明，请参阅 [docs/api_v1_docs.md](docs/api_v1_docs.md)。
 
 ---
 

@@ -12,7 +12,6 @@ from src.services.system_config_service import (
     save_transfer_api_key,
     is_api_only_enabled,
     is_frontend_enabled,
-    is_admin_ui_enabled,
 )
 from src.utils.auth_utils import create_jwt_token
 
@@ -25,43 +24,41 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
 
     def tearDown(self):
         # 恢复默认系统配置
-        save_api_mode_config(api_only=False, enable_frontend=True, enable_admin_ui=True, search_scope="own", transfer_api_key="")
+        save_api_mode_config(api_only=False, enable_frontend=True, search_scope="own", transfer_api_key="")
         save_public_search_api_config(True)
         os.environ.pop("API_ONLY", None)
         os.environ.pop("PAN_RELAY_API_ONLY", None)
         os.environ.pop("ENABLE_FRONTEND", None)
-        os.environ.pop("ENABLE_ADMIN_UI", None)
         os.environ.pop("SEARCH_API_SCOPE", None)
         os.environ.pop("TRANSFER_API_KEY", None)
 
     # --- 1. 系统配置与环境变量测试 ---
 
     def test_api_mode_config_defaults_and_saving(self):
-        save_api_mode_config(api_only=False, enable_frontend=True, enable_admin_ui=True, search_scope="own", transfer_api_key="secret123")
+        save_api_mode_config(api_only=False, enable_frontend=True, search_scope="own", transfer_api_key="secret123")
         config = get_api_mode_config()
         self.assertFalse(config["api_only"])
         self.assertTrue(config["enable_frontend"])
-        self.assertTrue(config["enable_admin_ui"])
         self.assertEqual("own", config["search_scope"])
         self.assertEqual("secret123", config["transfer_api_key"])
 
-        save_api_mode_config(api_only=False, enable_frontend=False, enable_admin_ui=False, search_scope="all", transfer_api_key="")
+        save_api_mode_config(api_only=False, enable_frontend=False, search_scope="all", transfer_api_key="")
         config = get_api_mode_config()
         self.assertFalse(config["enable_frontend"])
-        self.assertFalse(config["enable_admin_ui"])
         self.assertEqual("all", config["search_scope"])
 
-    def test_api_mode_config_environment_variables(self):
-        os.environ["API_ONLY"] = "1"
+    def test_api_mode_config_flags(self):
+        save_api_mode_config(api_only=True, enable_frontend=True)
         self.assertTrue(is_api_only_enabled())
         self.assertFalse(is_frontend_enabled())
 
-        os.environ.pop("API_ONLY")
-        os.environ["ENABLE_FRONTEND"] = "false"
+        save_api_mode_config(api_only=False, enable_frontend=False)
+        self.assertFalse(is_api_only_enabled())
         self.assertFalse(is_frontend_enabled())
 
-        os.environ["ENABLE_ADMIN_UI"] = "0"
-        self.assertFalse(is_admin_ui_enabled())
+        save_api_mode_config(api_only=False, enable_frontend=True)
+        self.assertFalse(is_api_only_enabled())
+        self.assertTrue(is_frontend_enabled())
 
     # --- 2. REST API v1 节点与作用域/密钥测试 ---
 
@@ -172,15 +169,6 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
         self.assertEqual(302, resp.status_code)
         self.assertIn(resp.headers.get("Location", ""), ["/admin", "/login"])
 
-    def test_admin_ui_disabled_interception(self):
-        # 关闭后台 UI
-        os.environ["ENABLE_ADMIN_UI"] = "0"
-        resp = self.client.get("/admin/resources", headers={"Authorization": f"Bearer {self.token}"})
-        self.assertEqual(403, resp.status_code)
-        data = resp.get_json()
-        self.assertFalse(data["success"])
-        self.assertIn("后台管理 UI 当前已被禁用", data["message"])
-
     # --- 4. 管理后台 API 模式配置 CRUD 接口测试 ---
 
     def test_admin_api_mode_config_endpoints(self):
@@ -194,7 +182,6 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
         payload = {
             "api_only": True,
             "enable_frontend": False,
-            "enable_admin_ui": True,
             "search_scope": "own",
             "transfer_api_key": "newkey123",
         }

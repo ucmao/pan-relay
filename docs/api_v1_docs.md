@@ -31,16 +31,15 @@ sequenceDiagram
 
 ---
 
-## 全局环境变量与通道控制
+## 全局服务通道与 UI 控制
 
-系统支持在后台或环境变量中独立控制服务通道与 UI 开关：
+系统支持在管理后台（**系统设置 → API 与通道配置**）中独立控制服务通道与 UI 开关：
 
-| 环境变量 | 可选值 | 说明 |
+| 配置项 | 可选值 | 说明 |
 | :--- | :--- | :--- |
-| `ENABLE_FRONTEND` | `1`, `true`, `0`, `false` | 控制是否开放前台 Web 搜索界面 (关闭时访问根路径 `GET /` 自动重定向至后台管理登录页面 `/login`) |
-| `ENABLE_ADMIN_UI` | `1`, `true`, `0`, `false` | 控制是否开放后台 Web 管理界面 (`/admin/*`) |
-| `SEARCH_API_SCOPE` | `own`, `all` | API 搜索默认检索作用域 (`own`: 仅站长收益库 / `all`: 全网并发) |
-| `TRANSFER_API_KEY` | 字符串 | API 转存鉴权密钥 (留空表示公开，设置后客户端请求需携带 `X-API-Key`) |
+| **前台搜索开关** | 开启 / 关闭 | 控制是否开放前台 Web 搜索界面 (关闭时访问根路径 `GET /` 自动重定向至后台管理登录页面 `/login`) |
+| **API 默认搜索作用域** | `own`, `all` | API 搜索默认检索作用域 (`own`: 仅站长收益库 / `all`: 全网并发) |
+| **转存 API 鉴权密钥** | 字符串 / 留空 | API 转存鉴权密钥 (留空表示公开，设置后客户端请求需携带 `X-API-Key` 或 Bearer Token) |
 
 ---
 
@@ -49,7 +48,7 @@ sequenceDiagram
 ### 1. 服务健康状态与 API 概览
 
 - **接口地址**: `GET /api/v1/status`
-- **说明**: 检查后端服务是否可用，并获取当前开启的服务模式。
+- **说明**: 检查后端服务是否可用，并获取当前开启的服务模式及可用端点。
 
 **响应示例**:
 ```json
@@ -59,9 +58,19 @@ sequenceDiagram
   "version": "1.0.0",
   "status": "healthy",
   "api_mode": {
+    "api_only": false,
     "enable_frontend": true,
-    "enable_admin_ui": true,
-    "search_scope": "own"
+    "search_scope": "own",
+    "transfer_api_key": ""
+  },
+  "endpoints": {
+    "status": "/api/v1/status",
+    "search": "/api/v1/search",
+    "search_stream": "/api/v1/search/stream",
+    "transfer": "/api/v1/transfer",
+    "link_check": "/api/v1/link/check",
+    "resources": "/api/v1/resources",
+    "docs": "/api/v1/docs"
   }
 }
 ```
@@ -75,8 +84,8 @@ sequenceDiagram
   - `keyword` (string, **必填**): 搜索关键词，例如 `黑神话`
   - `cloud_name` / `cloud_names` (string, **可选**): 指定筛选网盘类型，支持单个网盘或逗号分隔多个网盘，如 `夸克网盘,百度网盘` 或 `cloud_name=夸克网盘&cloud_name=阿里云盘`
   - `limit` (int, **可选**): 限制最大返回结果条数，默认 `100`
-  - `scope` (string, **可选**): 查询作用域 (`own` 仅自有库, `all` 全网聚合)
-  - `check_status` (bool, **可选**): 是否对搜索结果实时测活，默认 `false`。开启后每条结果将注入 `health_state` (`ok` / `bad` / `locked` / `uncertain`) 与 `health_summary`
+  - `scope` (string, **可选**): 查询作用域 (`own` 仅自有库, `all` 全网聚合，默认按后台配置)
+  - `check_status` (bool, **可选**): 是否对搜索结果实时测活，默认 `false`。开启后每条结果将注入 `health_state` (`ok` / `bad` / `locked` / `uncertain`) 与 `health_summary`、`file_count`
   - `filter_bad` (bool, **可选**): 是否自动在服务端剔除已失效、违规或空文件的链接，默认 `false`
 
 **响应示例 (开启 `check_status=true`)**:
@@ -110,20 +119,39 @@ sequenceDiagram
 }
 ```
 
-*注：若要实现打字机效果的实时推送，可使用 SSE 流式接口 `GET /api/v1/search/stream?keyword=黑神话`*
+---
+
+### 3. 步骤 1 (流式): SSE 实时流式搜索接口
+
+- **接口地址**: `GET /api/v1/search/stream`
+- **请求参数**:
+  - `keyword` (string, **必填**): 搜索关键词，例如 `黑神话`
+- **说明**: 返回 `text/event-stream` 格式的 Server-Sent Events，支持前端/小程序实现打字机式流式加载。
+- **事件结构**:
+  ```text
+  data: {"type": "start", "keyword": "黑神话"}
+
+  data: {"type": "item", "data": {"title": "黑神话：悟空", "share_link": "...", "cloud_name": "夸克网盘", "source": "db"}}
+
+  data: {"type": "done", "total": 12}
+  ```
 
 ---
 
-### 3. 步骤 2: 资源转存与替换接口
+### 4. 步骤 2: 资源转存与替换接口 (内置测活防护)
 
 - **接口地址**: `POST /api/v1/transfer`
 - **请求 Content-Type**: `application/json`
+- **请求头鉴权**:
+  - `X-API-Key`: `<YOUR_API_KEY>` (推荐)
+  - `Authorization: Bearer <YOUR_API_KEY>`
 - **请求参数**:
   - `url` (string, **必填**): 步骤 1 获取到的原始网盘链接 (`share_link`)
   - `title` (string, **可选**): 资源标题，默认 `未命名资源`
-  - `netdisk_name` (string, **可选**): 网盘类型，如 `夸克网盘`
+  - `netdisk_name` (string, **可选**): 网盘类型，如 `夸克网盘`（留空则智能推断）
   - `password` (string, **可选**): 原始链接提取码 (若有)
-  - `skip_check` (bool, **可选**): 是否跳过前置免登录测活检查，默认 `false`
+  - `skip_check` (bool, **可选**): 是否跳过前置免登录测活检查，默认 `false`。保持 false 时，系统自动核验链接有效性与非空状态，异常时返回 HTTP 422 拦截拒绝转存
+  - `api_key` (string, **可选**): 鉴权密钥 (当无法自定义 Header 时的 fallback)
 
 **请求示例**:
 ```json
@@ -179,18 +207,38 @@ sequenceDiagram
 
 ---
 
-### 4. 网盘链接测活接口
+### 5. 网盘链接免登录测活接口
 
 - **接口地址**: `POST /api/v1/link/check`
-- **单条测活请求**:
+- **说明**: 原生免登录探测 9 大主流网盘（夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘），实时返回有效性、提取码要求及文件数量。
+
+**单条测活请求**:
 ```json
 {
-  "url": "https://pan.quark.cn/s/xxx",
+  "url": "https://pan.quark.cn/s/raw_public_link_123",
   "password": "ABCD",
-  "disk_type": "夸克网盘"
+  "disk_type": "夸克网盘",
+  "refresh": false
 }
 ```
-- **批量测活请求**:
+
+**单条测活响应**:
+```json
+{
+  "success": true,
+  "mode": "single",
+  "data": {
+    "url": "https://pan.quark.cn/s/raw_public_link_123",
+    "state": "ok",
+    "summary": "链接有效",
+    "file_count": 5,
+    "disk_type": "夸克网盘",
+    "requires_pwd": false
+  }
+}
+```
+
+**批量测活请求**:
 ```json
 {
   "items": [
@@ -200,25 +248,66 @@ sequenceDiagram
 }
 ```
 
+**批量测活响应**:
+```json
+{
+  "success": true,
+  "mode": "batch",
+  "total": 2,
+  "results": [
+    {
+      "url": "https://pan.quark.cn/s/xxx1",
+      "state": "ok",
+      "summary": "链接有效",
+      "file_count": 3,
+      "disk_type": "夸克网盘"
+    },
+    {
+      "url": "https://pan.quark.cn/s/xxx2",
+      "state": "locked",
+      "summary": "需要提取码",
+      "file_count": 0,
+      "disk_type": "夸克网盘"
+    }
+  ]
+}
+```
+
 ---
 
-### 5. 查询本地资源库
+### 6. 查询本地收益资源库
 
 - **接口地址**: `GET /api/v1/resources`
 - **请求参数**:
   - `page` (int, 默认 1): 当前页码
   - `page_size` (int, 默认 10): 每页数量
-  - `search` (string): 筛选关键词
+  - `search` (string, 可选): 标题或链接关键字筛选
 
 **响应示例**:
 ```json
 {
   "success": true,
   "data": {
-    "items": [...],
+    "items": [
+      {
+        "id": 1,
+        "title": "黑神话：悟空 高清原画",
+        "cloud_name": "夸克网盘",
+        "share_link": "https://pan.quark.cn/s/my_relay_link_123",
+        "password": "",
+        "created_at": "2026-09-23 00:00:00"
+      }
+    ],
     "page": 1,
     "page_size": 10,
-    "total": 42
+    "total": 1
   }
 }
 ```
+
+---
+
+### 7. 开发者 API 规范与文档接口
+
+- **接口地址**: `GET /api/v1/docs`
+- **说明**: 浏览器访问直接展示交互式开发者文档 UI；当请求头携带 `Accept: application/json` 或传参 `?format=json` 时返回 JSON 格式的 OpenAPI 规范元数据。

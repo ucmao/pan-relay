@@ -744,25 +744,17 @@ def init_default_search_sources():
             logger.warning(f"初始化插件配置失败: {e}")
 
 
-def get_api_mode_config() -> Dict[str, bool]:
+def get_api_mode_config() -> Dict[str, Any]:
     """
     获取 API 模式与 UI 开关配置。
-    优先判断环境变量 (API_ONLY, PAN_RELAY_API_ONLY, ENABLE_FRONTEND, ENABLE_ADMIN_UI)；
-    若未设置环境变量，则从数据库系统配置中读取。
+    从数据库系统配置中读取。
     """
-    import os
-    env_api_only = os.getenv("API_ONLY") or os.getenv("PAN_RELAY_API_ONLY")
-    env_frontend = os.getenv("ENABLE_FRONTEND")
-    env_admin_ui = os.getenv("ENABLE_ADMIN_UI")
-
     default_config = {
         "api_only": False,
         "enable_frontend": True,
-        "enable_admin_ui": True,
         "search_scope": get_search_api_scope(),
         "transfer_api_key": get_transfer_api_key(),
     }
-
 
     raw_value = get_config_value(API_MODE_CONFIG_KEY)
     if raw_value:
@@ -771,22 +763,8 @@ def get_api_mode_config() -> Dict[str, bool]:
             if isinstance(parsed, dict):
                 default_config["api_only"] = bool(parsed.get("api_only", False))
                 default_config["enable_frontend"] = bool(parsed.get("enable_frontend", True))
-                default_config["enable_admin_ui"] = bool(parsed.get("enable_admin_ui", True))
         except (TypeError, json.JSONDecodeError):
             logger.warning("API 模式配置格式无效，使用默认配置")
-
-    # 环境变量显式配置覆盖
-    if env_api_only is not None:
-        val = env_api_only.lower() in ("1", "true", "yes", "on")
-        default_config["api_only"] = val
-        if val:
-            default_config["enable_frontend"] = False
-
-    if env_frontend is not None:
-        default_config["enable_frontend"] = env_frontend.lower() in ("1", "true", "yes", "on")
-
-    if env_admin_ui is not None:
-        default_config["enable_admin_ui"] = env_admin_ui.lower() in ("1", "true", "yes", "on")
 
     if default_config["api_only"]:
         default_config["enable_frontend"] = False
@@ -802,15 +780,10 @@ def is_frontend_enabled() -> bool:
     return get_api_mode_config()["enable_frontend"]
 
 
-def is_admin_ui_enabled() -> bool:
-    return get_api_mode_config()["enable_admin_ui"]
-
-
-def save_api_mode_config(api_only: bool = False, enable_frontend: bool = True, enable_admin_ui: bool = True, search_scope: str = "own", transfer_api_key: str = "") -> bool:
+def save_api_mode_config(api_only: bool = False, enable_frontend: bool = True, search_scope: str = "own", transfer_api_key: str = "", **kwargs) -> bool:
     config = {
         "api_only": bool(api_only),
         "enable_frontend": bool(enable_frontend),
-        "enable_admin_ui": bool(enable_admin_ui),
         "search_scope": "own" if str(search_scope).strip().lower() in ("own", "local") else "all",
         "transfer_api_key": str(transfer_api_key or "").strip(),
     }
@@ -822,17 +795,7 @@ def save_api_mode_config(api_only: bool = False, enable_frontend: bool = True, e
 def get_search_api_scope() -> str:
     """
     获取 API 搜索默认作用域 (own: 仅站长收益库; all: 全网并发聚合)。
-    支持环境变量 SEARCH_API_SCOPE 或 DEFAULT_SEARCH_SCOPE 覆盖。
     """
-    import os
-    env_scope = os.getenv("SEARCH_API_SCOPE") or os.getenv("DEFAULT_SEARCH_SCOPE")
-    if env_scope:
-        clean_env = env_scope.strip().lower()
-        if clean_env in ("own", "local"):
-            return "own"
-        elif clean_env == "all":
-            return "all"
-
     raw_value = get_config_value(SEARCH_API_SCOPE_KEY)
     if not raw_value:
         return "own"
@@ -853,13 +816,7 @@ def save_search_api_scope(scope: str) -> bool:
 def get_transfer_api_key() -> str:
     """
     获取转存 API 校验 Key (若为空则表示公开不需要 Key)。
-    支持环境变量 TRANSFER_API_KEY 或 RELAY_API_KEY 覆盖。
     """
-    import os
-    env_key = os.getenv("TRANSFER_API_KEY") or os.getenv("RELAY_API_KEY")
-    if env_key is not None:
-        return env_key.strip()
-
     raw_value = get_config_value(TRANSFER_API_KEY_KEY)
     if not raw_value:
         return ""

@@ -37,12 +37,14 @@
                 <a href="#sec-workflow" class="hover:text-blue-600 transition-colors">两步走流程</a>
                 <a href="#sec-auth" class="hover:text-blue-600 transition-colors">安全鉴权</a>
                 <a href="#sec-endpoints" class="hover:text-blue-600 transition-colors">接口规范</a>
+                <a href="#sec-schema" class="hover:text-blue-600 transition-colors">数据字典</a>
+                <a href="#sec-snippets" class="hover:text-blue-600 transition-colors">代码示例</a>
                 <a href="#sec-playground" class="hover:text-blue-600 transition-colors">在线测试</a>
             </nav>
 
             <div class="flex items-center space-x-3">
-                <a href="/admin" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
-                    <i class="fas fa-sliders-h mr-1.5"></i> 管理后台
+                <a href="/admin/api-config?tab=docs" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors">
+                    <i class="fas fa-sliders-h mr-1.5"></i> 管理后台配置
                 </a>
             </div>
         </div>
@@ -63,11 +65,12 @@
                 </div>
                 <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Pan-Relay 开发者 API 接口指南</h1>
                 <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-                    提供两步走中转逻辑：从资源检索 (包含纯站长收益库 `scope=own`) 到自动化转存替换专属链接 (`POST /api/v1/transfer`)，帮助第三方无缝集成并持续沉淀私有收益资产。
+                    提供两步走中转逻辑：从资源检索 (包含纯站长收益库 <code class="text-blue-300 bg-white/10 px-1 py-0.5 rounded">scope=own</code> 与全网聚合) 到自动化转存替换专属链接 (<code class="text-emerald-300 bg-white/10 px-1 py-0.5 rounded">POST /api/v1/transfer</code>)，并内置原生 9 大网盘免登录测活与防空链拦截。
                 </p>
                 <div class="pt-2 flex flex-wrap gap-3 text-xs font-mono">
                     <span class="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">Base URL: <span class="text-blue-300">/api/v1</span></span>
                     <span class="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">Auth: <span class="text-emerald-300">X-API-Key</span></span>
+                    <span class="bg-white/10 px-3 py-1.5 rounded-lg border border-white/10">OpenAPI Spec: <a href="/api/v1/docs?format=json" target="_blank" class="text-amber-300 underline hover:text-amber-200">GET /api/v1/docs?format=json</a></span>
                 </div>
             </div>
         </div>
@@ -85,9 +88,9 @@
                             <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">步骤 1 · 检索</span>
                             <span class="text-xs font-mono text-slate-400">GET /api/v1/search</span>
                         </div>
-                        <h3 class="text-base font-bold text-slate-800">查询资源信息</h3>
+                        <h3 class="text-base font-bold text-slate-800">查询全网或站长收益资源</h3>
                         <p class="text-xs text-slate-600 leading-relaxed">
-                            支持指定 <code class="bg-slate-100 text-blue-700 px-1.5 py-0.5 rounded border border-slate-200">scope=own</code> 仅检索站长已有收益库（0 服务器开销、毫秒级响应、结果均为站长专属收益链），或 <code class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">scope=all</code> 全网聚合检索。
+                            支持指定 <code class="bg-slate-100 text-blue-700 px-1.5 py-0.5 rounded border border-slate-200">scope=own</code> 仅检索站长已有收益库（0 服务器开销、毫秒级响应、结果均为站长专属收益链），或 <code class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">scope=all</code> 全网聚合检索。支持开启 <code class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">check_status=true</code> 实时测活并过滤死链。
                         </p>
                     </div>
                     <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 font-mono flex items-center justify-between">
@@ -100,18 +103,34 @@
                 <div class="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs relative flex flex-col justify-between">
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">步骤 2 · 转存</span>
+                            <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">步骤 2 · 转存沉淀</span>
                             <span class="text-xs font-mono text-slate-400">POST /api/v1/transfer</span>
                         </div>
-                        <h3 class="text-base font-bold text-slate-800">替换为专属网盘收益链接</h3>
+                        <h3 class="text-base font-bold text-slate-800">替换为站长专属网盘收益链接</h3>
                         <p class="text-xs text-slate-600 leading-relaxed">
-                            用户点击获取资源时，将原始链接提交给转存接口。后端自动把全网资源保存到站长云盘，生成站长专属分享链接，并自动沉淀为本地收益资产。
+                            用户点击获取资源时，将原始链接提交给转存接口。系统默认执行前置免登录测活检查，自动将有效资源保存到站长云盘并生成站长专属分享链接，杜绝死链与空链接入库。
                         </p>
                     </div>
                     <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 font-mono flex items-center justify-between">
                         <span>输入: 原始 url + 密钥</span>
                         <i class="fas fa-check-circle text-emerald-500"></i>
                     </div>
+                </div>
+            </div>
+
+            <!-- 测活保障卡片 -->
+            <div class="p-4 bg-white border border-slate-200/80 rounded-xl text-xs flex items-start gap-3 shadow-xs">
+                <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <i class="fas fa-shield-halved text-xs"></i>
+                </div>
+                <div class="space-y-1 min-w-0">
+                    <div class="font-bold text-slate-800 flex items-center gap-1.5 flex-wrap">
+                        <span>原生免登录网盘链接测活保障</span>
+                        <span class="text-[11px] font-normal text-slate-400">（覆盖夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘 9 大主流网盘）</span>
+                    </div>
+                    <p class="text-slate-600 leading-relaxed">
+                        无需登录第三方网盘即可快速检测分享链接的真实有效性、是否需要提取码、以及内部包含的文件总数。步骤 1 支持 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded">filter_bad=true</code> 自动过滤失效与空链接，步骤 2 转存默认自动拦截问题链接并返回 HTTP 422 状态码，有效保护网盘转存配额。
+                    </p>
                 </div>
             </div>
         </section>
@@ -122,7 +141,7 @@
                 <i class="fas fa-key text-amber-500"></i> 2. 接口安全鉴权 (`X-API-Key`)
             </h2>
             <p class="text-xs sm:text-sm text-slate-600">
-                为了保证网盘空间不被恶意刷爆，转存接口支持后台设置 API Key。当管理员配置了 Key 时，需要在 HTTP Header 中带上凭证：
+                为了保证网盘空间不被恶意刷爆，转存接口支持后台设置 API Key。当管理员配置了 Key 时，需要在 HTTP Header 或参数中带上凭证：
             </p>
             <div class="overflow-x-auto rounded-lg border border-slate-200">
                 <table class="w-full text-left text-xs">
@@ -152,7 +171,7 @@
                     </tbody>
                 </table>
             </div>
-            <p class="text-xs text-slate-500 italic">* 注：若管理后台“转存 API 密钥”未设置（保持留空），转存接口默认为公开可调状态。*</p>
+            <p class="text-xs text-slate-500 italic">* 注：若管理后台“转存 API 鉴权密钥”未设置（保持留空），转存接口默认为公开可调状态。*</p>
         </section>
 
         <!-- 3. API 节点列表 -->
@@ -161,6 +180,44 @@
                 <i class="fas fa-code text-indigo-600"></i> 3. API 核心节点规范
             </h2>
 
+            <!-- Endpoint 0: GET /api/v1/status -->
+            <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="method-badge-get px-2.5 py-1 rounded-md text-xs font-bold font-mono">GET</span>
+                        <code class="text-sm font-bold text-slate-900">/api/v1/status</code>
+                    </div>
+                    <span class="text-xs text-slate-500 font-medium">基础概览 · 服务运行状态与 API 模式</span>
+                </div>
+                <div class="p-6 space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-600">检查后端服务连通性，并获取当前开启的服务模式及可用端点列表。无需鉴权。</p>
+                    <div class="rounded-xl overflow-hidden bg-slate-50/70 border border-slate-200">
+                        <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">Response Example (JSON):</div>
+                        <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">{
+  "success": true,
+  "service": "pan-relay",
+  "version": "1.0.0",
+  "status": "healthy",
+  "api_mode": {
+    "api_only": false,
+    "enable_frontend": true,
+    "search_scope": "own",
+    "transfer_api_key": ""
+  },
+  "endpoints": {
+    "status": "/api/v1/status",
+    "search": "/api/v1/search",
+    "search_stream": "/api/v1/search/stream",
+    "transfer": "/api/v1/transfer",
+    "link_check": "/api/v1/link/check",
+    "resources": "/api/v1/resources",
+    "docs": "/api/v1/docs"
+  }
+}</pre>
+                    </div>
+                </div>
+            </div>
+
             <!-- Endpoint 1: GET /api/v1/search -->
             <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
                 <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
@@ -168,10 +225,10 @@
                         <span class="method-badge-get px-2.5 py-1 rounded-md text-xs font-bold font-mono">GET</span>
                         <code class="text-sm font-bold text-slate-900">/api/v1/search</code>
                     </div>
-                    <span class="text-xs text-slate-500 font-medium">步骤 1 · 资源聚合搜索</span>
+                    <span class="text-xs text-slate-500 font-medium">步骤 1 · 聚合资源搜索 (支持原生测活)</span>
                 </div>
                 <div class="p-6 space-y-4">
-                    <p class="text-xs sm:text-sm text-slate-600">根据关键词搜索库内或全网网盘资源。</p>
+                    <p class="text-xs sm:text-sm text-slate-600">根据关键词搜索库内收益资源或全网聚合资源。</p>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">
@@ -207,6 +264,18 @@
                                     <td class="px-3 py-2 text-slate-400">否</td>
                                     <td class="px-3 py-2">返回结果条数限制，默认 100</td>
                                 </tr>
+                                <tr>
+                                    <td class="px-3 py-2 font-mono font-bold text-slate-800">check_status</td>
+                                    <td class="px-3 py-2 font-mono">bool</td>
+                                    <td class="px-3 py-2 text-slate-400">否</td>
+                                    <td class="px-3 py-2">是否对结果进行免登录实时测活，默认 false。开启后每条结果注入 health_state、health_summary、file_count</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-2 font-mono font-bold text-slate-800">filter_bad</td>
+                                    <td class="px-3 py-2 font-mono">bool</td>
+                                    <td class="px-3 py-2 text-slate-400">否</td>
+                                    <td class="px-3 py-2">是否在服务端自动剔除已失效、违规或内容为空的死链，默认 false</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -214,18 +283,43 @@
                         <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">Response Example (JSON):</div>
                         <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">{
   "success": true,
-  "scope": "own",
+  "scope": "all",
   "total": 1,
   "results": [
     {
-      "title": "黑神话：悟空 高清合集",
-      "share_link": "https://pan.quark.cn/s/my_relay_link_123",
+      "title": "黑神话：悟空 高清原画合集",
+      "share_link": "https://pan.quark.cn/s/raw_sample_123",
       "cloud_name": "夸克网盘",
       "password": "",
-      "source": "hot"
+      "source": "hot",
+      "health_state": "ok",
+      "health_summary": "链接有效",
+      "file_count": 5
     }
   ]
 }</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Endpoint 1.5: GET /api/v1/search/stream (SSE) -->
+            <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="method-badge-get px-2.5 py-1 rounded-md text-xs font-bold font-mono">GET</span>
+                        <code class="text-sm font-bold text-slate-900">/api/v1/search/stream</code>
+                    </div>
+                    <span class="text-xs text-slate-500 font-medium">步骤 1 (SSE) · 实时流式打字机推送</span>
+                </div>
+                <div class="p-6 space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-600">使用 Server-Sent Events 协议实时流式返回搜索结果。参数包含 <code class="font-mono">keyword</code> (必填)。</p>
+                    <div class="rounded-xl overflow-hidden bg-slate-50/70 border border-slate-200">
+                        <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">SSE Stream Format:</div>
+                        <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">data: {"type": "start", "keyword": "黑神话"}
+
+data: {"type": "item", "data": {"title": "黑神话：悟空", "share_link": "https://pan.quark.cn/s/...", "cloud_name": "夸克网盘", "source": "db"}}
+
+data: {"type": "done", "total": 1}</pre>
                     </div>
                 </div>
             </div>
@@ -237,10 +331,10 @@
                         <span class="method-badge-post px-2.5 py-1 rounded-md text-xs font-bold font-mono">POST</span>
                         <code class="text-sm font-bold text-slate-900">/api/v1/transfer</code>
                     </div>
-                    <span class="text-xs text-slate-500 font-medium">步骤 2 · 替换为站长收益链接</span>
+                    <span class="text-xs text-slate-500 font-medium">步骤 2 · 替换为站长收益链接 (前置测活防护)</span>
                 </div>
                 <div class="p-6 space-y-4">
-                    <p class="text-xs sm:text-sm text-slate-600">将原始分享链接转存至站长云盘，生成站长专属收益链接。</p>
+                    <p class="text-xs sm:text-sm text-slate-600">将原始分享链接转存至站长云盘，生成站长专属收益链接。默认前置测活校验（空资源、违规或失效链接直接返回 HTTP 422 拒绝转存）。</p>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">
@@ -268,7 +362,19 @@
                                     <td class="px-3 py-2 font-mono font-bold text-slate-800">netdisk_name</td>
                                     <td class="px-3 py-2 font-mono">string</td>
                                     <td class="px-3 py-2 text-slate-400">否</td>
-                                    <td class="px-3 py-2">网盘名称 (如：夸克网盘、百度网盘)</td>
+                                    <td class="px-3 py-2">网盘名称 (如：夸克网盘、百度网盘，留空智能推断)</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-2 font-mono font-bold text-slate-800">password</td>
+                                    <td class="px-3 py-2 font-mono">string</td>
+                                    <td class="px-3 py-2 text-slate-400">否</td>
+                                    <td class="px-3 py-2">原始链接提取码 (若有)</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-2 font-mono font-bold text-slate-800">skip_check</td>
+                                    <td class="px-3 py-2 font-mono">bool</td>
+                                    <td class="px-3 py-2 text-slate-400">否</td>
+                                    <td class="px-3 py-2">是否跳过前置免登录测活检查，默认 false。保持 false 时异常链接返回 HTTP 422 拦截</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -297,13 +403,170 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Endpoint 3: POST /api/v1/link/check -->
+            <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="method-badge-post px-2.5 py-1 rounded-md text-xs font-bold font-mono">POST</span>
+                        <code class="text-sm font-bold text-slate-900">/api/v1/link/check</code>
+                    </div>
+                    <span class="text-xs text-slate-500 font-medium">实用工具 · 网盘免登录测活 (单条/批量)</span>
+                </div>
+                <div class="p-6 space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-600">原生探测 9 大主流网盘（夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘），免登录实时解析资源有效性、提取码状态、以及内部文件数量。</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                        <div class="rounded-xl overflow-hidden bg-slate-50/70 border border-slate-200">
+                            <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">Single Check Request:</div>
+                            <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">{
+  "url": "https://pan.quark.cn/s/raw_public_123",
+  "password": "",
+  "disk_type": "夸克网盘",
+  "refresh": false
+}</pre>
+                        </div>
+                        <div class="rounded-xl overflow-hidden bg-slate-50/70 border border-slate-200">
+                            <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">Single Check Response:</div>
+                            <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">{
+  "success": true,
+  "mode": "single",
+  "data": {
+    "url": "https://pan.quark.cn/s/raw_public_123",
+    "state": "ok",
+    "summary": "链接有效",
+    "file_count": 5,
+    "disk_type": "夸克网盘"
+  }
+}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Endpoint 4: GET /api/v1/resources -->
+            <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center space-x-3">
+                        <span class="method-badge-get px-2.5 py-1 rounded-md text-xs font-bold font-mono">GET</span>
+                        <code class="text-sm font-bold text-slate-900">/api/v1/resources</code>
+                    </div>
+                    <span class="text-xs text-slate-500 font-medium">资产管理 · 收益资源库列表</span>
+                </div>
+                <div class="p-6 space-y-4">
+                    <p class="text-xs sm:text-sm text-slate-600">分页查询库内已保存的收益资产列表。支持参数：<code class="font-mono">page</code> (默认 1)、<code class="font-mono">page_size</code> (默认 10)、<code class="font-mono">search</code> (可选搜索词)。</p>
+                    <div class="rounded-xl overflow-hidden bg-slate-50/70 border border-slate-200">
+                        <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">Response Example (JSON):</div>
+                        <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": 1,
+        "title": "黑神话：悟空 高清原画",
+        "cloud_name": "夸克网盘",
+        "share_link": "https://pan.quark.cn/s/my_relay_link_123",
+        "created_at": "2026-09-23 00:00:00"
+      }
+    ],
+    "page": 1,
+    "page_size": 10,
+    "total": 1
+  }
+}</pre>
+                    </div>
+                </div>
+            </div>
         </section>
 
-        <!-- 4. 在线体验与调试测试 Drawer / Panel -->
+        <!-- 4. 返回 JSON 数据字典 -->
+        <section id="sec-schema" class="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <i class="fas fa-database text-teal-600"></i> 4. 返回 JSON 数据字典
+            </h2>
+            <div class="overflow-x-auto rounded-lg border border-slate-200">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">
+                        <tr>
+                            <th class="px-3.5 py-3" style="width:160px">字段名</th>
+                            <th class="px-3.5 py-3" style="width:120px">类型</th>
+                            <th class="px-3.5 py-3">含义与说明</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-600">
+                        <tr>
+                            <td class="px-3.5 py-2.5 font-mono font-bold text-slate-800">success</td>
+                            <td class="px-3.5 py-2.5 text-slate-500 font-mono">Boolean</td>
+                            <td class="px-3.5 py-2.5"><code class="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded font-mono">true</code> 成功；<code class="text-rose-700 bg-rose-50 px-1 py-0.5 rounded font-mono">false</code> 失败。</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3.5 py-2.5 font-mono font-bold text-slate-800">scope</td>
+                            <td class="px-3.5 py-2.5 text-slate-500 font-mono">String</td>
+                            <td class="px-3.5 py-2.5">搜索返回作用域：<code class="font-mono">own</code> (站长收益库) 或 <code class="font-mono">all</code> (全网并发)。</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3.5 py-2.5 font-mono font-bold text-slate-800">health_state</td>
+                            <td class="px-3.5 py-2.5 text-slate-500 font-mono">String</td>
+                            <td class="px-3.5 py-2.5">
+                                资源健康状态枚举：
+                                <span class="inline-block mr-2"><code class="font-mono text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded">ok</code> 正常有效</span>
+                                <span class="inline-block mr-2"><code class="font-mono text-rose-700 bg-rose-50 px-1 py-0.5 rounded">bad</code> 失效/违规/空文件</span>
+                                <span class="inline-block mr-2"><code class="font-mono text-amber-700 bg-amber-50 px-1 py-0.5 rounded">locked</code> 需提取码</span>
+                                <span class="inline-block"><code class="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded">uncertain</code> 探测超时或未知</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-3.5 py-2.5 font-mono font-bold text-slate-800">health_summary</td>
+                            <td class="px-3.5 py-2.5 text-slate-500 font-mono">String</td>
+                            <td class="px-3.5 py-2.5">测活中文摘要，如“<span class="text-emerald-700 font-medium">链接有效</span>”、“<span class="text-rose-700 font-medium">分享链接无效：文件列表为空</span>”。</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3.5 py-2.5 font-mono font-bold text-slate-800">file_count</td>
+                            <td class="px-3.5 py-2.5 text-slate-500 font-mono">Integer</td>
+                            <td class="px-3.5 py-2.5">分享链接内包含的文件总数。若为 <code class="font-mono text-rose-600 font-bold">0</code> 则判定为空资源下架。</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3.5 py-2.5 font-mono font-bold text-slate-800">code</td>
+                            <td class="px-3.5 py-2.5 text-slate-500 font-mono">String</td>
+                            <td class="px-3.5 py-2.5">错误状态码标识：<code class="font-mono text-rose-700 bg-rose-50 px-1 py-0.5 rounded">LINK_INVALID</code> (422)、<code class="font-mono text-amber-700 bg-amber-50 px-1 py-0.5 rounded">LINK_LOCKED</code> (422)、<code class="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded">INVALID_API_KEY</code> (401)。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. 多语言对接示例 -->
+        <section id="sec-snippets" class="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <i class="fas fa-terminal text-slate-700"></i> 5. 多语言对接代码示例
+            </h2>
+            <div class="rounded-xl overflow-hidden bg-slate-50/70 border border-slate-200 shadow-2xs">
+                <div class="flex items-center justify-between px-4 py-2.5 bg-slate-100/70 border-b border-slate-200/80">
+                    <div class="flex items-center gap-1.5" id="snippet-tabs">
+                        <button type="button" onclick="switchSnippet('curl')"
+                            class="snippet-tab active px-2.5 py-1 text-xs font-mono font-bold rounded bg-white text-slate-800 border border-slate-200 shadow-2xs">cURL</button>
+                        <button type="button" onclick="switchSnippet('python')"
+                            class="snippet-tab px-2.5 py-1 text-xs font-mono font-medium rounded text-slate-500 hover:text-slate-800">Python</button>
+                        <button type="button" onclick="switchSnippet('js')"
+                            class="snippet-tab px-2.5 py-1 text-xs font-mono font-medium rounded text-slate-500 hover:text-slate-800">Node.js</button>
+                    </div>
+                </div>
+                <pre id="snippet-code"
+                    class="p-4 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed"># 步骤 1: 聚合搜索并过滤失效链接
+curl -X GET "http://localhost:5004/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
+
+# 步骤 2: 发起转存替换 (默认前置测活校验，若链接失效/空文件夹则返回 422 拦截)
+curl -X POST "http://localhost:5004/api/v1/transfer" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{"url": "https://pan.quark.cn/s/raw123", "title": "黑神话", "skip_check": false}'</pre>
+            </div>
+        </section>
+
+        <!-- 6. 在线体验与调试测试 Drawer / Panel -->
         <section id="sec-playground" class="bg-white rounded-xl border border-slate-200/80 p-6 shadow-xs space-y-6">
             <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                 <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-                    <i class="fas fa-flask text-emerald-600"></i> 4. 极简在线接口测试
+                    <i class="fas fa-flask text-emerald-600"></i> 6. 极简在线接口测试
                 </h2>
                 <span class="text-xs text-slate-400 font-mono">Playground Console</span>
             </div>
@@ -314,15 +577,17 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">测试接口</label>
                         <select id="pg-endpoint" class="w-full text-xs rounded-lg border border-slate-300 p-2.5 bg-slate-50 focus:bg-white font-mono">
-                            <option value="status">GET /api/v1/status (服务状态)</option>
-                            <option value="search_own">GET /api/v1/search (搜索: scope=own)</option>
-                            <option value="search_all">GET /api/v1/search (搜索: scope=all)</option>
-                            <option value="transfer">POST /api/v1/transfer (测试转存)</option>
+                            <option value="status">GET /api/v1/status (系统运行状态)</option>
+                            <option value="search_own">GET /api/v1/search (搜索: scope=own 仅收益库)</option>
+                            <option value="search_all">GET /api/v1/search (搜索: scope=all 全网聚合)</option>
+                            <option value="search_check">GET /api/v1/search (实时测活+过滤死链)</option>
+                            <option value="transfer">POST /api/v1/transfer (测试转存替换/前置拦截)</option>
+                            <option value="link_check">POST /api/v1/link/check (单条链接免登录测活)</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">搜索关键词 / 转存链接</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">搜索关键词 / 转存/测活链接</label>
                         <input type="text" id="pg-param" value="黑神话" class="w-full text-xs rounded-lg border border-slate-300 p-2.5 focus:border-blue-500 font-mono" placeholder="输入关键词或网盘 URL">
                     </div>
 
@@ -363,14 +628,93 @@
         <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>&copy; 2026 Pan-Relay. 基于 Python Flask & SQLite 开发。</div>
             <div class="flex items-center space-x-4">
-                <a href="/admin" class="hover:text-slate-800 transition-colors">管理后台</a>
+                <a href="/admin/api-config" class="hover:text-slate-800 transition-colors">管理后台</a>
                 <a href="/" class="hover:text-slate-800 transition-colors">前台搜索</a>
             </div>
         </div>
     </footer>
 
-    <!-- Simple Playground JS -->
+    <!-- Snippets and Playground JS -->
     <script>
+        const snippets = {
+            curl: `# 步骤 1: 聚合搜索并过滤失效链接
+curl -X GET "http://localhost:5004/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
+
+# 步骤 2: 发起转存替换 (默认前置测活校验，若链接失效/空文件夹则返回 422 拦截)
+curl -X POST "http://localhost:5004/api/v1/transfer" \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: YOUR_API_KEY" \\
+  -d '{"url": "https://pan.quark.cn/s/raw123", "title": "黑神话", "skip_check": false}'`,
+
+            python: `import requests
+
+BASE_URL = "http://localhost:5004/api/v1"
+API_KEY = "YOUR_API_KEY" # 若后台未配置则留空
+
+# 步骤 1: 聚合搜索
+search_res = requests.get(f"{BASE_URL}/search", params={
+    "keyword": "黑神话",
+    "check_status": "true",
+    "filter_bad": "true"
+}).json()
+
+if search_res.get("results"):
+    target = search_res["results"][0]
+    print(f"找到有效资源: {target['title']} -> {target['share_link']}")
+
+    # 步骤 2: 替换为专属网盘收益链接
+    headers = {"X-API-Key": API_KEY} if API_KEY else {}
+    transfer_res = requests.post(f"{BASE_URL}/transfer", json={
+        "url": target["share_link"],
+        "title": target["title"],
+        "netdisk_name": target.get("cloud_name", "夸克网盘"),
+        "skip_check": False
+    }, headers=headers)
+
+    print("转存出链结果:", transfer_res.json())`,
+
+            js: `// Node.js (Fetch API)
+const BASE_URL = 'http://localhost:5004/api/v1';
+const API_KEY = 'YOUR_API_KEY';
+
+async function main() {
+  // 步骤 1: 聚合搜索
+  const searchRes = await fetch(\`\${BASE_URL}/search?keyword=黑神话&check_status=true&filter_bad=true\`);
+  const searchData = await searchRes.json();
+
+  if (searchData.results && searchData.results.length > 0) {
+    const item = searchData.results[0];
+
+    // 步骤 2: 转存并替换
+    const transferRes = await fetch(\`\${BASE_URL}/transfer\`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(API_KEY ? { 'X-API-Key': API_KEY } : {})
+      },
+      body: JSON.stringify({
+        url: item.share_link,
+        title: item.title,
+        netdisk_name: item.cloud_name,
+        skip_check: false
+      })
+    });
+
+    const transferData = await transferRes.json();
+    console.log('专属网盘链接:', transferData);
+  }
+}
+main();`
+        };
+
+        function switchSnippet(lang) {
+            document.getElementById('snippet-code').textContent = snippets[lang];
+            document.querySelectorAll('.snippet-tab').forEach(btn => {
+                btn.className = 'snippet-tab px-2.5 py-1 text-xs font-mono font-medium rounded text-slate-500 hover:text-slate-800';
+            });
+            event.target.className = 'snippet-tab active px-2.5 py-1 text-xs font-mono font-bold rounded bg-white text-slate-800 border border-slate-200 shadow-2xs';
+        }
+
         async function runPlaygroundTest() {
             const endpoint = document.getElementById('pg-endpoint').value;
             const param = document.getElementById('pg-param').value.trim();
@@ -397,14 +741,25 @@
                 url = `/api/v1/search?keyword=${encodeURIComponent(param || "黑神话")}&scope=own`;
             } else if (endpoint === "search_all") {
                 url = `/api/v1/search?keyword=${encodeURIComponent(param || "黑神话")}&scope=all`;
+            } else if (endpoint === "search_check") {
+                url = `/api/v1/search?keyword=${encodeURIComponent(param || "黑神话")}&check_status=true&filter_bad=true`;
             } else if (endpoint === "transfer") {
                 url = "/api/v1/transfer";
                 method = "POST";
                 headers["Content-Type"] = "application/json";
                 body = JSON.stringify({
-                    url: param || "https://pan.quark.cn/s/sample_link",
+                    url: param.startsWith("http") ? param : "https://pan.quark.cn/s/sample_link",
                     title: "测试资源",
-                    netdisk_name: "夸克网盘"
+                    netdisk_name: "夸克网盘",
+                    skip_check: false
+                });
+            } else if (endpoint === "link_check") {
+                url = "/api/v1/link/check";
+                method = "POST";
+                headers["Content-Type"] = "application/json";
+                body = JSON.stringify({
+                    url: param.startsWith("http") ? param : "https://pan.quark.cn/s/sample_link",
+                    refresh: true
                 });
             }
 

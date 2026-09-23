@@ -8,6 +8,7 @@ from src.db.connection import db_cursor
 from src.services.plugin_manager import plugin_manager
 from src.routes.system_config_routes import _build_dynamic_transfer_statuses
 from src.services.system_config_service import (
+    get_ad_filter_config,
     get_allow_excel_download_config,
     get_frontend_link_mode,
     get_public_search_api_config,
@@ -20,11 +21,15 @@ from src.services.system_config_service import (
 logger = logging.getLogger(__name__)
 
 
-def get_dashboard_summary() -> Dict[str, Any]:
+def get_dashboard_summary(days: int = 7) -> Dict[str, Any]:
     """
-    获取后台工作台仪表盘所需的所有统计指标与系统快照数据
+    获取后台工作台仪表盘所需的所有统计指标、趋势折线图、分布饼图与系统快照数据
     """
-    summary = {
+    if days not in (7, 30, 90, 180, 0):
+        days = 7
+
+    summary: Dict[str, Any] = {
+        "current_days": days,
         "resources": {
             "total_count": 0,
             "replaced_count": 0,
@@ -77,6 +82,10 @@ def get_dashboard_summary() -> Dict[str, Any]:
             "today_avg_duration_ms": 0,
             "total_logs_count": 0,
         },
+        "chart_data": {},
+        "pie_data": {},
+        "top_zero_keywords": [],
+        "top_hot_keywords": [],
     }
 
     # 1. 资源库统计
@@ -211,6 +220,10 @@ def get_dashboard_summary() -> Dict[str, Any]:
         summary["system"]["sensitive_words_enabled"] = sens_cfg.get("enabled", True)
         summary["system"]["sensitive_words_count"] = len(sens_cfg.get("words", []))
 
+        ad_cfg = get_ad_filter_config()
+        summary["system"]["ad_filter_enabled"] = ad_cfg.get("enabled", True)
+        summary["system"]["ad_keywords_count"] = len(ad_cfg.get("keywords", []))
+
         if os.path.exists(SQLITE_DB_PATH):
             db_size_bytes = os.path.getsize(SQLITE_DB_PATH)
             summary["system"]["db_size_mb"] = round(db_size_bytes / (1024 * 1024), 2)
@@ -241,5 +254,47 @@ def get_dashboard_summary() -> Dict[str, Any]:
             "top_keywords": [],
             "top_zero_keywords": [],
         }
+
+    # 8. 周期趋势折线图、平台分布饼图与 Top 10 榜单 (根据所选 days 周期动态计算)
+    try:
+        from src.db.logs import (
+            get_platform_distribution,
+            get_top_hot_keywords,
+            get_top_zero_keywords,
+            get_usage_trend,
+        )
+        summary["chart_data"] = get_usage_trend(days=days)
+        summary["pie_data"] = get_platform_distribution(days=days)
+        summary["top_zero_keywords"] = get_top_zero_keywords(days=days, limit=10)
+        summary["top_hot_keywords"] = get_top_hot_keywords(days=days, limit=10)
+    except Exception as e:
+        logger.error(f"仪表盘获取趋势折线图及分布数据失败: {e}")
+        summary["chart_data"] = {
+            "trend": [],
+            "max_val": 0,
+            "y_max": 10,
+            "calls_path": "",
+            "successes_path": "",
+            "calls_area_path": "",
+            "successes_area_path": "",
+            "calls_line": "",
+            "successes_line": "",
+            "calls_area": "",
+            "successes_area": "",
+            "y_ticks": [],
+        }
+        summary["pie_data"] = {
+            "total_calls": 0,
+            "total_calls_formatted": "0",
+            "total_successes": 0,
+            "total_successes_formatted": "0",
+            "total_failures": 0,
+            "total_failures_formatted": "0",
+            "total_success_rate": 100.0,
+            "platform_count": 0,
+            "items": [],
+        }
+        summary["top_zero_keywords"] = []
+        summary["top_hot_keywords"] = []
 
     return summary

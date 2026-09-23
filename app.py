@@ -23,7 +23,6 @@ from src.services.system_config_service import (
     get_frontend_link_check_config,
     is_excel_download_enabled,
     is_frontend_enabled,
-    is_admin_ui_enabled,
     is_api_only_enabled,
 )
 
@@ -69,13 +68,6 @@ def check_ui_access():
     # 若试图访问前台根路径但前台 UI 已关闭，自动重定向至后台管理登录页
     if path == "/" and not is_frontend_enabled():
         return redirect(url_for('auth.login'))
-
-    # 若试图访问后台 HTML 页面但后台 UI 已关闭
-    if path.startswith("/admin") and not path.startswith("/admin/api") and not is_admin_ui_enabled():
-        return jsonify({
-            "success": False,
-            "message": "后台管理 UI 当前已被禁用",
-        }), 403
 
 
 # 首页，返回 HTML 文件或重定向

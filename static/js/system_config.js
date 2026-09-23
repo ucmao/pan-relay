@@ -1152,8 +1152,6 @@ async function loadApiModeConfig() {
         const apiOnlyBadge = document.getElementById('apiOnlyBadge');
         const enableFrontendToggle = document.getElementById('enableFrontendToggle');
         const enableFrontendBadge = document.getElementById('enableFrontendBadge');
-        const enableAdminUiToggle = document.getElementById('enableAdminUiToggle');
-        const enableAdminUiBadge = document.getElementById('enableAdminUiBadge');
         const searchScopeSelect = document.getElementById('searchScopeSelect');
         const searchScopeBadge = document.getElementById('searchScopeBadge');
         const transferApiKeyInput = document.getElementById('transferApiKeyInput');
@@ -1170,12 +1168,6 @@ async function loadApiModeConfig() {
         if (enableFrontendBadge) {
             enableFrontendBadge.textContent = cfg.enable_frontend ? '已开启' : '已禁用';
             enableFrontendBadge.className = cfg.enable_frontend ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
-        }
-
-        if (enableAdminUiToggle) enableAdminUiToggle.checked = Boolean(cfg.enable_admin_ui);
-        if (enableAdminUiBadge) {
-            enableAdminUiBadge.textContent = cfg.enable_admin_ui ? '已开启' : '已禁用';
-            enableAdminUiBadge.className = cfg.enable_admin_ui ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
         }
 
         if (searchScopeSelect) searchScopeSelect.value = cfg.search_scope || 'own';
@@ -1203,14 +1195,12 @@ async function loadApiModeConfig() {
 async function saveApiModeConfig() {
     const apiOnlyToggle = document.getElementById('apiOnlyToggle');
     const enableFrontendToggle = document.getElementById('enableFrontendToggle');
-    const enableAdminUiToggle = document.getElementById('enableAdminUiToggle');
     const searchScopeSelect = document.getElementById('searchScopeSelect');
     const transferApiKeyInput = document.getElementById('transferApiKeyInput');
 
     const payload = {
         api_only: apiOnlyToggle ? apiOnlyToggle.checked : false,
         enable_frontend: enableFrontendToggle ? enableFrontendToggle.checked : true,
-        enable_admin_ui: enableAdminUiToggle ? enableAdminUiToggle.checked : true,
         search_scope: searchScopeSelect ? searchScopeSelect.value : 'own',
         transfer_api_key: transferApiKeyInput ? transferApiKeyInput.value.trim() : '',
     };

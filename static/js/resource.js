@@ -13,11 +13,11 @@ const selectedResourceMap = new Map();
 
 // 网盘凭证配置就绪状态
 let netdiskCredentialsMap = {
-    "夸克网盘": { status: 'missing', title: '未配置凭证', key: 'quark' },
-    "百度网盘": { status: 'missing', title: '未配置凭证', key: 'baidu' },
-    "阿里云盘": { status: 'missing', title: '未配置凭证', key: 'aliyun' },
-    "迅雷网盘": { status: 'missing', title: '未配置凭证', key: 'xunlei' },
-    "UC网盘": { status: 'missing', title: '未配置凭证', key: 'uc' }
+    "夸克网盘": { status: 'missing', title: '未配置', key: 'quark' },
+    "百度网盘": { status: 'missing', title: '未配置', key: 'baidu' },
+    "阿里云盘": { status: 'missing', title: '未配置', key: 'aliyun' },
+    "迅雷网盘": { status: 'missing', title: '未配置', key: 'xunlei' },
+    "UC网盘": { status: 'missing', title: '未配置', key: 'uc' }
 };
 
 // ==========================================
@@ -117,7 +117,7 @@ async function loadNetdiskCredentials() {
             data.dynamic_transfer_statuses.forEach(item => {
                 if (netdiskCredentialsMap[item.cloud_name]) {
                     netdiskCredentialsMap[item.cloud_name].status = item.status || 'missing';
-                    netdiskCredentialsMap[item.cloud_name].title = item.title || '未配置凭证';
+                    netdiskCredentialsMap[item.cloud_name].title = item.title || '未配置';
                 }
             });
         }
