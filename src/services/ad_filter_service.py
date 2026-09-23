@@ -21,7 +21,7 @@ def is_ad_filename(filename: str, extra_keywords: Optional[List[str]] = None) ->
         return False
 
     config = get_ad_filter_config()
-    if not config.get("enabled", True):
+    if not config.get("enabled", False):
         return False
 
     keywords = set(config.get("keywords", []))

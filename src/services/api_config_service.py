@@ -274,7 +274,7 @@ def test_all_apis_and_update_status():
     """测试所有API配置并更新其状态"""
     api_configs = read_api_configs_from_db()
     if not api_configs:
-        return True, "暂无可检测的 API 检索源", {
+        return True, "暂无可检测的 API 搜索源", {
             "total": 0,
             "healthy_count": 0,
             "failed_count": 0,

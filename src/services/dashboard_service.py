@@ -120,11 +120,11 @@ def get_dashboard_summary(days: int = 7) -> Dict[str, Any]:
             except Exception as e:
                 logger.error(f"仪表盘获取资源库数据失败: {e}")
 
-    # 2. 检索源统计 (API 接口 + Telegram 频道)
+    # 2. 搜索源统计 (API 接口 + Telegram 频道)
     with db_cursor(as_dict=True) as cursor:
         if cursor:
             try:
-                # API 检索源
+                # API 搜索源
                 cursor.execute("SELECT COUNT(*) AS total FROM api_config")
                 summary["sources"]["api"]["total_count"] = cursor.fetchone()["total"]
 
@@ -156,7 +156,7 @@ def get_dashboard_summary(days: int = 7) -> Dict[str, Any]:
                 summary["sources"]["telegram"]["healthy_count"] = cursor.fetchone()["healthy"]
 
             except Exception as e:
-                logger.error(f"仪表盘获取检索源数据失败: {e}")
+                logger.error(f"仪表盘获取搜索源数据失败: {e}")
 
     # 3. 插件统计
     all_plugins = plugin_manager.get_all_plugins()
@@ -173,7 +173,7 @@ def get_dashboard_summary(days: int = 7) -> Dict[str, Any]:
         for p in all_plugins
     ]
 
-    # 计算整体检索源健康率 (%)
+    # 计算整体搜索源健康率 (%)
     total_active_sources = (
         summary["sources"]["api"]["enabled_count"]
         + summary["sources"]["plugins"]["enabled_count"]
@@ -221,7 +221,7 @@ def get_dashboard_summary(days: int = 7) -> Dict[str, Any]:
         summary["system"]["sensitive_words_count"] = len(sens_cfg.get("words", []))
 
         ad_cfg = get_ad_filter_config()
-        summary["system"]["ad_filter_enabled"] = ad_cfg.get("enabled", True)
+        summary["system"]["ad_filter_enabled"] = ad_cfg.get("enabled", False)
         summary["system"]["ad_keywords_count"] = len(ad_cfg.get("keywords", []))
 
         if os.path.exists(SQLITE_DB_PATH):

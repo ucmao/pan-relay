@@ -40,7 +40,7 @@ from src.services.telegram_channel_service import (
 )
 from src.services.telegram_search_service import test_telegram_connection
 from src.utils.auth_utils import token_required
-from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
+from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS, LINK_CHECK_NETDISK_OPTIONS
 
 system_config_bp = Blueprint("system_config", __name__)
 
@@ -196,6 +196,7 @@ def frontend_config_page():
     return render_template(
         "admin_frontend_config.html",
         frontend_netdisk_options=FRONTEND_DISPLAY_NETDISK_OPTIONS,
+        link_check_netdisk_options=LINK_CHECK_NETDISK_OPTIONS,
         active_page="config_frontend",
     )
 
@@ -310,7 +311,7 @@ def get_frontend_link_check_route():
     return jsonify({
         "success": True,
         "enable_link_check": config["enable_link_check"],
-        "default_hide_dead_links": config["default_hide_dead_links"],
+        "enabled_check_pans": config.get("enabled_check_pans", LINK_CHECK_NETDISK_OPTIONS),
     })
 
 
@@ -319,17 +320,18 @@ def get_frontend_link_check_route():
 def update_frontend_link_check_route():
     data = request.get_json() or {}
     enable_link_check = bool(data.get("enable_link_check", True))
-    default_hide_dead_links = bool(data.get("default_hide_dead_links", False))
+    enabled_check_pans = data.get("enabled_check_pans")
 
-    if not save_frontend_link_check_config(enable_link_check, default_hide_dead_links):
+    if not save_frontend_link_check_config(enable_link_check, enabled_check_pans):
         return jsonify({"success": False, "message": "前台测活配置保存失败"}), 400
 
+    saved_config = get_frontend_link_check_config()
     return jsonify({
         "success": True,
         "message": "前台测活与过滤配置保存成功",
         "data": {
-            "enable_link_check": enable_link_check,
-            "default_hide_dead_links": default_hide_dead_links,
+            "enable_link_check": saved_config["enable_link_check"],
+            "enabled_check_pans": saved_config["enabled_check_pans"],
         }
     })
 
@@ -739,7 +741,7 @@ def update_api_mode_config_api():
     data = request.get_json() or {}
     api_only = data.get("api_only", False)
     enable_frontend = data.get("enable_frontend", True)
-    search_scope = data.get("search_scope", "own")
+    search_scope = data.get("search_scope", "all")
     transfer_api_key = data.get("transfer_api_key", "")
 
     success = save_api_mode_config(

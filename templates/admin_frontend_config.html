@@ -128,44 +128,60 @@
         <div class="admin-panel-body">
             <div class="divide-y divide-slate-100">
                 <!-- 开关 4: 前台链接实时测活 -->
-                <div class="setting-item-row">
-                    <div class="space-y-1 min-w-0 pr-4">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-semibold text-slate-800 text-sm">前台链接实时测活</span>
-                            <span class="help-tooltip"
-                                data-tooltip="控制前台 Web 搜索结果是否在后台异步发起免登录测活并显示健康徽章。关闭后可大幅节省服务器请求并避免网盘风控">
-                                <i class="far fa-circle-question text-xs"></i>
-                            </span>
+                <div class="setting-item-row flex-col items-stretch">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1 min-w-0 pr-4">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-semibold text-slate-800 text-sm">前台链接实时测活</span>
+                                <span class="help-tooltip"
+                                    data-tooltip="控制前台 Web 搜索结果是否在后台异步发起免登录测活并显示健康徽章。关闭后可大幅节省服务器请求并避免网盘风控">
+                                    <i class="far fa-circle-question text-xs"></i>
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500">搜索结果自动检测链接有效性、文件数量与失效违规状态</p>
                         </div>
-                        <p class="text-xs text-slate-500">搜索结果自动检测链接有效性、文件数量与失效违规状态</p>
+                        <div class="flex items-center flex-shrink-0">
+                            <label class="plugin-switch" title="切换前台链接实时测活">
+                                <input type="checkbox" id="enableFrontendLinkCheckToggle"
+                                    onchange="saveFrontendLinkCheckConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
+                        </div>
                     </div>
-                    <div class="flex items-center flex-shrink-0">
-                        <label class="plugin-switch" title="切换前台链接实时测活">
-                            <input type="checkbox" id="enableFrontendLinkCheckToggle"
-                                onchange="saveFrontendLinkCheckConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
-                    </div>
-                </div>
 
-                <!-- 开关 5: 默认过滤失效与空资源 -->
-                <div class="setting-item-row">
-                    <div class="space-y-1 min-w-0 pr-4">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-semibold text-slate-800 text-sm">前台默认过滤失效资源</span>
-                            <span class="help-tooltip"
-                                data-tooltip="开启后，访客在前台搜索结果列表将默认激活“已过滤失效”，自动隐藏已失效或文件为空的链接，无需访客手动点击">
-                                <i class="far fa-circle-question text-xs"></i>
-                            </span>
+                    <!-- 测活生效网盘范围微型面板 (仅在前台测活开启时展示) -->
+                    <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 d-none transition-all duration-200"
+                        id="linkCheckNetdisksWrapper">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 flex-wrap text-xs">
+                                <div class="flex items-center gap-1.5 font-semibold text-slate-700 flex-shrink-0">
+                                    <i class="fas fa-heart-pulse text-emerald-500 text-[11px]"></i>
+                                    <span>测活生效网盘范围:</span>
+                                </div>
+                                <span class="text-slate-500 text-[11px]">仅对勾选网盘发起实时探测，已选 <span id="enabledCheckPansCount" class="font-bold text-emerald-600">0</span> / {{ link_check_netdisk_options|length }}</span>
+                            </div>
+                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                <button class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-xs" type="button" onclick="selectMainstreamLinkCheckNetdisks()">
+                                    <i class="fas fa-star text-amber-500 text-[10px] mr-1"></i>主流网盘
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-xs" id="toggleAllLinkCheckNetdisksButton" type="button" onclick="toggleAllLinkCheckNetdisks()">
+                                    全选 / 反选
+                                </button>
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-500">搜索默认屏蔽失效、空资源，提供纯净资源浏览体验</p>
-                    </div>
-                    <div class="flex items-center flex-shrink-0">
-                        <label class="plugin-switch" title="切换默认过滤失效资源">
-                            <input type="checkbox" id="defaultHideDeadLinksToggle"
-                                onchange="saveFrontendLinkCheckConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
+                        <div class="frontend-netdisk-grid" id="linkCheckNetdisksGroup">
+                            {% for netdisk_name in link_check_netdisk_options %}
+                            <label class="link-check-netdisk-card" for="linkCheckNetdisk{{ loop.index }}">
+                                <input class="link-check-netdisk-checkbox" type="checkbox"
+                                    id="linkCheckNetdisk{{ loop.index }}" value="{{ netdisk_name }}"
+                                    onchange="saveFrontendLinkCheckConfig()">
+                                <span class="frontend-netdisk-card-name truncate">{{ netdisk_name }}</span>
+                                <span class="link-check-netdisk-card-check-box">
+                                    <i class="fas fa-check"></i>
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -402,25 +402,75 @@ async function loadFrontendLinkCheckConfig() {
 
         const data = await response.json();
         const checkToggle = document.getElementById('enableFrontendLinkCheckToggle');
-        const hideToggle = document.getElementById('defaultHideDeadLinksToggle');
         if (checkToggle) {
             checkToggle.checked = Boolean(data.enable_link_check !== false);
         }
-        if (hideToggle) {
-            hideToggle.checked = Boolean(data.default_hide_dead_links);
-        }
+
+        const enabledPans = Array.isArray(data.enabled_check_pans) ? data.enabled_check_pans : [];
+        const checkBoxes = document.querySelectorAll('.link-check-netdisk-checkbox');
+        checkBoxes.forEach(cb => {
+            cb.checked = enabledPans.includes(cb.value);
+        });
+        updateEnabledCheckPansCount();
     } catch (error) {
         console.error('加载前台测活配置失败:', error);
         showToast('加载前台测活配置失败，请检查后端日志。', 'danger');
     }
 }
 
+function updateLinkCheckPanelState() {
+    const checkToggle = document.getElementById('enableFrontendLinkCheckToggle');
+    const wrapper = document.getElementById('linkCheckNetdisksWrapper');
+    if (!wrapper || !checkToggle) return;
+
+    if (checkToggle.checked) {
+        wrapper.classList.remove('d-none');
+    } else {
+        wrapper.classList.add('d-none');
+    }
+}
+
+function updateEnabledCheckPansCount() {
+    const countEl = document.getElementById('enabledCheckPansCount');
+    const toggleBtn = document.getElementById('toggleAllLinkCheckNetdisksButton');
+    const checkBoxes = Array.from(document.querySelectorAll('.link-check-netdisk-checkbox'));
+    const checkedCount = checkBoxes.filter(cb => cb.checked).length;
+
+    if (countEl) {
+        countEl.textContent = checkedCount;
+    }
+    if (toggleBtn) {
+        toggleBtn.textContent = (checkBoxes.length > 0 && checkedCount === checkBoxes.length) ? '取消全选' : '全选';
+    }
+    updateLinkCheckPanelState();
+}
+
+async function selectMainstreamLinkCheckNetdisks() {
+    const mainstreamList = ['百度网盘', '夸克网盘', '阿里云盘', 'UC网盘', '迅雷网盘', '光鸭云盘', '悟空网盘', '移动云盘'];
+    const mainstreamSet = new Set(mainstreamList);
+    const checkBoxes = document.querySelectorAll('.link-check-netdisk-checkbox');
+    checkBoxes.forEach(cb => {
+        cb.checked = mainstreamSet.has(cb.value);
+    });
+    await saveFrontendLinkCheckConfig();
+}
+
+async function toggleAllLinkCheckNetdisks() {
+    const checkBoxes = Array.from(document.querySelectorAll('.link-check-netdisk-checkbox'));
+    if (!checkBoxes.length) return;
+    const allChecked = checkBoxes.every(cb => cb.checked);
+    checkBoxes.forEach(cb => {
+        cb.checked = !allChecked;
+    });
+    await saveFrontendLinkCheckConfig();
+}
+
 async function saveFrontendLinkCheckConfig() {
     const checkToggle = document.getElementById('enableFrontendLinkCheckToggle');
-    const hideToggle = document.getElementById('defaultHideDeadLinksToggle');
-
     const enable_link_check = checkToggle ? checkToggle.checked : true;
-    const default_hide_dead_links = hideToggle ? hideToggle.checked : false;
+
+    const enabled_check_pans = Array.from(document.querySelectorAll('.link-check-netdisk-checkbox:checked')).map(cb => cb.value);
+    updateEnabledCheckPansCount();
 
     try {
         const response = await fetch('/admin/api/frontend-link-check-config', {
@@ -428,7 +478,7 @@ async function saveFrontendLinkCheckConfig() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 enable_link_check,
-                default_hide_dead_links
+                enabled_check_pans,
             })
         });
 
@@ -438,7 +488,13 @@ async function saveFrontendLinkCheckConfig() {
         }
 
         showToast(data.message || '前台测活与过滤配置保存成功', 'success');
-        await loadFrontendLinkCheckConfig();
+        if (data.data && Array.isArray(data.data.enabled_check_pans)) {
+            const checkBoxes = document.querySelectorAll('.link-check-netdisk-checkbox');
+            checkBoxes.forEach(cb => {
+                cb.checked = data.data.enabled_check_pans.includes(cb.value);
+            });
+            updateEnabledCheckPansCount();
+        }
     } catch (error) {
         console.error('保存前台测活配置失败:', error);
         showToast(`保存前台测活配置失败: ${error.message}`, 'danger');
@@ -496,7 +552,7 @@ async function saveTransferTargetDirConfig() {
 }
 
 async function selectMainstreamFrontendNetdisks() {
-    const mainstreamList = ['百度网盘', '夸克网盘', '阿里云盘', '迅雷网盘', 'UC网盘', '115网盘', '123云盘', '天翼云盘', '移动云盘'];
+    const mainstreamList = ['百度网盘', '夸克网盘', '阿里云盘', 'UC网盘', '迅雷网盘', '光鸭云盘', '悟空网盘', '移动云盘'];
     const mainstreamSet = new Set(mainstreamList);
     const checkboxes = getFrontendDisplayNetdiskCheckboxes();
     checkboxes.forEach((checkbox) => {
@@ -791,10 +847,10 @@ async function loadAdFilterConfig() {
         const textarea = document.getElementById('adFilterTextarea');
         const countEl = document.getElementById('adFilterWordsCount');
 
-        if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? true);
+        if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? false);
         if (modeSelect) modeSelect.value = config.title_filter_mode || 'loose';
 
-        updateAdFilterBodyUiState(Boolean(config.enabled ?? true));
+        updateAdFilterBodyUiState(Boolean(config.enabled ?? false));
 
         const keywords = Array.isArray(config.keywords) ? config.keywords : [];
         if (textarea) {
@@ -821,7 +877,7 @@ async function saveAdFilterConfig() {
         .filter(Boolean);
 
     const titleFilterMode = modeSelect ? modeSelect.value : 'loose';
-    const isAdFilterEnabled = globalToggle ? globalToggle.checked : true;
+    const isAdFilterEnabled = globalToggle ? globalToggle.checked : false;
 
     updateAdFilterBodyUiState(isAdFilterEnabled);
 
@@ -1266,7 +1322,7 @@ async function loadApiModeConfig() {
             enableFrontendBadge.className = cfg.enable_frontend ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
         }
 
-        if (searchScopeSelect) searchScopeSelect.value = cfg.search_scope || 'own';
+        if (searchScopeSelect) searchScopeSelect.value = cfg.search_scope || 'all';
         if (searchScopeBadge) {
             searchScopeBadge.textContent = (cfg.search_scope === 'all') ? '全网并发聚合' : '仅站长收益库';
             searchScopeBadge.className = (cfg.search_scope === 'all') ? 'badge badge-warning text-[10px]' : 'badge badge-info text-[10px]';
@@ -1297,7 +1353,7 @@ async function saveApiModeConfig() {
     const payload = {
         api_only: apiOnlyToggle ? apiOnlyToggle.checked : false,
         enable_frontend: enableFrontendToggle ? enableFrontendToggle.checked : true,
-        search_scope: searchScopeSelect ? searchScopeSelect.value : 'own',
+        search_scope: searchScopeSelect ? searchScopeSelect.value : 'all',
         transfer_api_key: transferApiKeyInput ? transferApiKeyInput.value.trim() : '',
     };
 

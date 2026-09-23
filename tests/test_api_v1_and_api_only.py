@@ -24,7 +24,7 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
 
     def tearDown(self):
         # 恢复默认系统配置
-        save_api_mode_config(api_only=False, enable_frontend=True, search_scope="own", transfer_api_key="")
+        save_api_mode_config(api_only=False, enable_frontend=True, search_scope="all", transfer_api_key="")
         save_public_search_api_config(True)
         os.environ.pop("API_ONLY", None)
         os.environ.pop("PAN_RELAY_API_ONLY", None)
@@ -35,6 +35,10 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
     # --- 1. 系统配置与环境变量测试 ---
 
     def test_api_mode_config_defaults_and_saving(self):
+        # 测试默认配置下 search_scope 为 all
+        config = get_api_mode_config()
+        self.assertEqual("all", config["search_scope"])
+
         save_api_mode_config(api_only=False, enable_frontend=True, search_scope="own", transfer_api_key="secret123")
         config = get_api_mode_config()
         self.assertFalse(config["api_only"])
@@ -91,6 +95,17 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
 
         # 2. 明确指定 scope=all 全网聚合查询
         resp = self.client.get("/api/v1/search?keyword=黑神话&scope=all")
+        self.assertEqual(200, resp.status_code)
+        data = resp.get_json()
+        self.assertTrue(data["success"])
+        self.assertEqual("all", data["scope"])
+        mock_public_search.assert_called_once()
+
+        mock_db_search.reset_mock()
+        mock_public_search.reset_mock()
+
+        # 3. 未传 scope 时，默认全网聚合查询 (all)
+        resp = self.client.get("/api/v1/search?keyword=黑神话")
         self.assertEqual(200, resp.status_code)
         data = resp.get_json()
         self.assertTrue(data["success"])

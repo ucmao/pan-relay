@@ -170,12 +170,13 @@ def save_allow_excel_download_config(enabled: bool) -> bool:
     )
 
 
-def get_frontend_link_check_config() -> Dict[str, bool]:
-    """获取前台测活与过滤失效配置"""
+def get_frontend_link_check_config() -> Dict[str, Any]:
+    """获取前台测活配置"""
+    from src.utils.netdisk_utils import LINK_CHECK_NETDISK_OPTIONS
     raw_value = get_config_value(FRONTEND_LINK_CHECK_CONFIG_KEY)
     default_config = {
         "enable_link_check": True,
-        "default_hide_dead_links": False,
+        "enabled_check_pans": LINK_CHECK_NETDISK_OPTIONS.copy(),
     }
     if not raw_value:
         return default_config
@@ -184,32 +185,41 @@ def get_frontend_link_check_config() -> Dict[str, bool]:
         parsed = json.loads(raw_value)
         if not isinstance(parsed, dict):
             return default_config
+        enabled_pans = parsed.get("enabled_check_pans")
+        if not isinstance(enabled_pans, list):
+            enabled_pans = LINK_CHECK_NETDISK_OPTIONS.copy()
+
         return {
             "enable_link_check": bool(parsed.get("enable_link_check", True)),
-            "default_hide_dead_links": bool(parsed.get("default_hide_dead_links", False)),
+            "enabled_check_pans": enabled_pans,
         }
     except (TypeError, json.JSONDecodeError):
         logger.warning("前台测活配置格式无效，已回退到默认值")
         return default_config
 
 
-def save_frontend_link_check_config(enable_link_check: bool = True, default_hide_dead_links: bool = False) -> bool:
-    """保存前台测活与过滤失效配置"""
+def save_frontend_link_check_config(
+    enable_link_check: bool = True,
+    enabled_check_pans: Any = None,
+) -> bool:
+    """保存前台测活配置"""
+    from src.utils.netdisk_utils import LINK_CHECK_NETDISK_OPTIONS
+    if enabled_check_pans is None:
+        enabled_check_pans = LINK_CHECK_NETDISK_OPTIONS.copy()
+
+    valid_pans = [str(name) for name in enabled_check_pans if isinstance(name, str)]
+
     return set_config_value(
         FRONTEND_LINK_CHECK_CONFIG_KEY,
         {
             "enable_link_check": bool(enable_link_check),
-            "default_hide_dead_links": bool(default_hide_dead_links),
+            "enabled_check_pans": valid_pans,
         },
     )
 
 
 def is_frontend_link_check_enabled() -> bool:
     return get_frontend_link_check_config()["enable_link_check"]
-
-
-def is_default_hide_dead_links_enabled() -> bool:
-    return get_frontend_link_check_config()["default_hide_dead_links"]
 
 
 SENSITIVE_WORDS_CONFIG_KEY = "sensitive_words_config"
@@ -296,7 +306,7 @@ DEFAULT_AD_KEYWORDS = [
 def get_ad_filter_config() -> Dict[str, Any]:
     """获取广告过滤与标题匹配模式配置与关键词库"""
     default_config = {
-        "enabled": True,
+        "enabled": False,
         "keywords": DEFAULT_AD_KEYWORDS.copy(),
         "title_filter_mode": "loose",
     }
@@ -318,7 +328,7 @@ def get_ad_filter_config() -> Dict[str, Any]:
             title_filter_mode = "loose"
 
         return {
-            "enabled": bool(parsed.get("enabled", True)),
+            "enabled": bool(parsed.get("enabled", False)),
             "keywords": [str(w).strip().lower() for w in keywords if str(w).strip()],
             "title_filter_mode": title_filter_mode,
         }
@@ -654,7 +664,7 @@ PLUGIN_SETTINGS_KEY = "plugin_settings"
 
 
 def get_search_scheduler_config() -> Dict[str, Any]:
-    """获取三类检索源的调度参数。"""
+    """获取三类搜索源的调度参数。"""
     from src.configs.app_config import (
         API_SEARCH_MAX_WORKERS,
         API_SEARCH_TIMEOUT,
@@ -687,7 +697,7 @@ def get_search_scheduler_config() -> Dict[str, Any]:
 
 
 def save_search_scheduler_config(data: Dict[str, Any]) -> bool:
-    """保存三类检索源的调度参数。"""
+    """保存三类搜索源的调度参数。"""
     if not isinstance(data, dict):
         return False
     return set_config_value(SEARCH_SCHEDULER_CONFIG_KEY, data)
@@ -846,7 +856,7 @@ def is_frontend_enabled() -> bool:
     return get_api_mode_config()["enable_frontend"]
 
 
-def save_api_mode_config(api_only: bool = False, enable_frontend: bool = True, search_scope: str = "own", transfer_api_key: str = "", **kwargs) -> bool:
+def save_api_mode_config(api_only: bool = False, enable_frontend: bool = True, search_scope: str = "all", transfer_api_key: str = "", **kwargs) -> bool:
     config = {
         "api_only": bool(api_only),
         "enable_frontend": bool(enable_frontend),
@@ -864,14 +874,14 @@ def get_search_api_scope() -> str:
     """
     raw_value = get_config_value(SEARCH_API_SCOPE_KEY)
     if not raw_value:
-        return "own"
+        return "all"
 
     try:
         parsed = json.loads(raw_value)
-        scope = str(parsed.get("scope", "own")).strip().lower()
+        scope = str(parsed.get("scope", "all")).strip().lower()
         return "own" if scope in ("own", "local") else "all"
     except (TypeError, json.JSONDecodeError):
-        return "own"
+        return "all"
 
 
 def save_search_api_scope(scope: str) -> bool:

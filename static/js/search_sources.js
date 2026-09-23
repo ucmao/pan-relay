@@ -1,5 +1,5 @@
 /**
- * 统一检索源管理工作区：Tab 切换、Telegram 全局配置与频道列表治理。
+ * 统一搜索源管理工作区：Tab 切换、Telegram 全局配置与频道列表治理。
  */
 (function () {
     let tgChannels = [];

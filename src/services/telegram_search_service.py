@@ -232,6 +232,11 @@ TITLE_PREFIX_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+DESCRIPTION_LINE_PATTERN = re.compile(
+    r"^(?:【|\(|\[|#)?(?:描述|简介|剧情简介|内容简介|剧情|内容|说明|备注)(?:】|\)|\])?[\s:：]+",
+    re.IGNORECASE,
+)
+
 EMOJI_PATTERN = re.compile(
     r"[\U00010000-\U0010ffff\u2600-\u27bf\u2300-\u23ff\u2b50\u2b55\u200d\ufe0f]"
 )
@@ -242,8 +247,16 @@ CHANNEL_WATERMARK_PATTERN = re.compile(
 )
 
 
+def is_description_line(text: str) -> bool:
+    """判断一行文本是否为描述/简介信息行（防止误作为作品标题）。"""
+    if not text:
+        return False
+    text = text.strip()
+    return bool(DESCRIPTION_LINE_PATTERN.search(text))
+
+
 def clean_telegram_title(title: str) -> str:
-    """清理标题，去除片名前缀、标签、表情符号及推广水印。"""
+    """清理标题，去除片名前缀、标签、表情符号、描述后缀及推广水印。"""
     if not title:
         return ""
     text = title.strip()
@@ -254,16 +267,19 @@ def clean_telegram_title(title: str) -> str:
     # 2. 移除常见前缀标签（如【片名】：、剧名：等）
     text = TITLE_PREFIX_PATTERN.sub("", text).strip()
 
-    # 3. 移除行末连续的 hashtag（如 #4K #合集）
+    # 3. 若同行的标题后面跟有 "描述：" / "简介：" 及其内容，剔除描述及其后续部分
+    text = re.sub(r"(?:\[?(?:描述|简介|剧情简介|内容简介|介绍)\]?)\s*[：:]\s*.*?$", "", text).strip()
+
+    # 4. 移除行末连续的 hashtag（如 #4K #合集）
     parts = text.split()
     while parts and parts[-1].startswith("#"):
         parts.pop()
     text = " ".join(parts).strip()
 
-    # 4. 移除频道推广水印后缀（如 | @tgsearchers 或 | 关注频道 @pansearch）
+    # 5. 移除频道推广水印后缀（如 | @tgsearchers 或 | 关注频道 @pansearch）
     text = CHANNEL_WATERMARK_PATTERN.sub("", text).strip()
 
-    # 5. 移除残留修饰符号
+    # 6. 移除残留修饰符号
     text = text.strip("-—:：|~ ")
     return text[:255]
 
@@ -279,17 +295,20 @@ def is_cloud_disk_label(text: str) -> bool:
 def extract_title_from_link_line(line: str) -> Optional[str]:
     """
     从形如 '作品名：https://...' 或 '作品名 https://...' 的单行中提取作品标题。
-    若行前缀只是网盘名称（如 '夸克网盘：'、'百度：'），则返回 None，交由上下文标题处理。
+    若行前缀只是网盘名称（如 '夸克网盘：'、'百度：'）或描述前缀，则返回 None，交由上下文标题处理。
     """
     url_match = URL_PATTERN.search(line)
     if not url_match or url_match.start() == 0:
         return None
 
     prefix = line[: url_match.start()].strip()
+    if is_description_line(prefix):
+        return None
+
     for sep in ["：", ":"]:
         if sep in prefix:
             candidate = prefix.split(sep)[0].strip()
-            if is_cloud_disk_label(candidate):
+            if is_cloud_disk_label(candidate) or is_description_line(candidate):
                 return None
             cleaned = clean_telegram_title(candidate)
             if cleaned and not is_cloud_disk_label(cleaned):
@@ -332,7 +351,7 @@ def extract_items_from_message_element(message_element, dt: Optional[str] = None
     # 寻找全局候选标题作为最终保底
     global_fallback_title = None
     for line in lines:
-        if not URL_PATTERN.search(line) and not line.startswith("#"):
+        if not URL_PATTERN.search(line) and not line.startswith("#") and not is_description_line(line):
             cleaned = clean_telegram_title(line)
             if cleaned and not is_cloud_disk_label(cleaned):
                 global_fallback_title = cleaned
@@ -353,6 +372,8 @@ def extract_items_from_message_element(message_element, dt: Optional[str] = None
             if any(ad in line for ad in ["关注频道", "入群交流", "永久发布页", "版权归原作者", "防走丢"]):
                 continue
             if PASSWORD_PATTERN.search(line) and len(line) <= 15:
+                continue
+            if is_description_line(line):
                 continue
 
             cleaned = clean_telegram_title(line)
@@ -411,12 +432,18 @@ def _extract_title(message_element):
         return "Telegram 频道资源"
 
     for line in lines:
-        if not line.startswith("#") and not URL_PATTERN.search(line):
+        if not line.startswith("#") and not URL_PATTERN.search(line) and not is_description_line(line):
             cleaned = clean_telegram_title(line)
             if cleaned and not is_cloud_disk_label(cleaned):
                 return cleaned
 
-    return clean_telegram_title(lines[0]) or "Telegram 频道资源"
+    for line in lines:
+        if not is_description_line(line):
+            cleaned = clean_telegram_title(line)
+            if cleaned:
+                return cleaned
+
+    return "Telegram 频道资源"
 
 
 def parse_telegram_search_html(html, channel):

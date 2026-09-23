@@ -19,7 +19,7 @@ try {
     if (raw !== null) savedHideDeadLinks = (raw === 'true');
 } catch (e) {}
 
-let isHideDeadLinks = isLinkCheckEnabled && (savedHideDeadLinks !== null ? savedHideDeadLinks : Boolean(window.DEFAULT_HIDE_DEAD_LINKS));
+let isHideDeadLinks = isLinkCheckEnabled && (savedHideDeadLinks !== null ? savedHideDeadLinks : true);
 const linkHealthCache = new Map();
 const pendingCheckKeys = new Set();
 let checkQueue = [];
@@ -781,7 +781,7 @@ function renderResults(reset = false) {
                 } else if (health.state === 'uncertain') {
                     healthBadgeHtml = `<span class="link-health-badge badge-uncertain" title="${escapeHtml(health.summary || '探测超时或未知')}"><i class="fas fa-question-circle"></i> 未知</span>`;
                 }
-            } else if (urlLink && !urlLink.startsWith('magnet:') && !urlLink.startsWith('ed2k:') && !urlLink.startsWith('thunder:')) {
+            } else if (urlLink && !urlLink.startsWith('magnet:') && !urlLink.startsWith('ed2k:') && !urlLink.startsWith('thunder:') && isNetdiskCheckEnabled(netdiskName)) {
                 healthBadgeHtml = `<span class="link-health-badge badge-checking" title="正在探测网盘链接有效性..."><span class="spinner-border spinner-border-sm" style="width: 0.65rem; height: 0.65rem; border-width: 0.1em;"></span> 测活中</span>`;
             }
         }
@@ -887,6 +887,20 @@ function safeEscapeCss(str) {
 }
 
 /**
+ * 判断指定网盘类型是否在前台允许测活的名单中
+ */
+function isNetdiskCheckEnabled(diskType) {
+    if (!window.ENABLED_CHECK_PANS || !Array.isArray(window.ENABLED_CHECK_PANS)) return true;
+    if (!diskType) return false;
+    const normalize = s => s.replace(/(网盘|云盘)$/, '');
+    const targetNorm = normalize(diskType);
+    return window.ENABLED_CHECK_PANS.some(pan => {
+        if (pan === diskType) return true;
+        return normalize(pan) === targetNorm;
+    });
+}
+
+/**
  * 将待测活链接入队并触发后台异步并发检测
  */
 function queueLinksForVerification(items) {
@@ -896,6 +910,10 @@ function queueLinksForVerification(items) {
         const url = item[2] || '';
         const diskType = item[3] || '';
         if (!url || url.startsWith('magnet:') || url.startsWith('ed2k:') || url.startsWith('thunder:')) {
+            continue;
+        }
+
+        if (!isNetdiskCheckEnabled(diskType)) {
             continue;
         }
 

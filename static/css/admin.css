@@ -435,11 +435,11 @@ body.admin-body::before {
     bottom: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%) translateY(4px);
-    background: #ffffff;
-    color: #334155;
-    padding: 6px 10px;
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 7px 11px;
     border-radius: 8px;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 400;
     line-height: 1.45;
     white-space: normal;
@@ -447,8 +447,8 @@ body.admin-body::before {
     max-width: 260px;
     text-align: left;
     z-index: 1050;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.25), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease, transform 0.15s ease;
@@ -461,7 +461,7 @@ body.admin-body::before {
     left: 50%;
     transform: translateX(-50%) translateY(4px);
     border: 5px solid transparent;
-    border-top-color: #e2e8f0;
+    border-top-color: #0f172a;
     z-index: 1050;
     opacity: 0;
     pointer-events: none;
@@ -1111,7 +1111,8 @@ textarea.form-control.font-mono {
     box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
 }
 
-.frontend-display-netdisk-checkbox {
+.frontend-display-netdisk-checkbox,
+.link-check-netdisk-checkbox {
     display: none;
 }
 
@@ -1133,6 +1134,58 @@ textarea.form-control.font-mono {
 .frontend-netdisk-card:has(input:checked) .frontend-netdisk-card-check-box {
     background: #2563eb;
     border-color: #2563eb;
+    color: #ffffff;
+}
+
+/* 测活生效网盘范围 (较弱淡雅绿/灰样式) */
+.link-check-netdisk-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 5px 9px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 450;
+    color: #64748b;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.link-check-netdisk-card:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+}
+
+.link-check-netdisk-card:has(input:checked) {
+    background: #f0fdf4;
+    border-color: #a7f3d0;
+    color: #166534;
+    font-weight: 500;
+}
+
+.link-check-netdisk-card-check-box {
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    border: 1px solid #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    background: #ffffff;
+    color: transparent;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.link-check-netdisk-card:has(input:checked) .link-check-netdisk-card-check-box {
+    background: #10b981;
+    border-color: #10b981;
     color: #ffffff;
 }
 

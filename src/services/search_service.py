@@ -375,7 +375,7 @@ def process_config(config, keyword, timeout=10):
 
 
 def _search_plugin(plugin, keyword):
-    """执行单个插件搜索，避免一个插件失败中断其他检索源。"""
+    """执行单个插件搜索，避免一个插件失败中断其他搜索源。"""
     try:
         logger.info("插件 [%s] 开始搜索: %s", plugin.name, keyword)
         results = plugin.search(keyword)

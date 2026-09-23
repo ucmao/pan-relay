@@ -25,13 +25,13 @@
     <div class="source-tabs-header">
         <button class="source-tab-btn {{ 'is-active' if current_tab != 'docs' else '' }}" data-api-tab-target="config"
             onclick="switchApiTab('config')" type="button">
-            <i class="fas fa-sliders-h text-purple-600"></i> API 服务配置
+            <i class="fas fa-sliders-h"></i> API 服务配置
         </button>
-    <button class="source-tab-btn {{ 'is-active' if current_tab == 'docs' else '' }}" data-api-tab-target="docs"
-        onclick="switchApiTab('docs')" type="button">
-        <i class="fas fa-book-bookmark text-blue-600"></i> 开发者 API 指南
-    </button>
-</div>
+        <button class="source-tab-btn {{ 'is-active' if current_tab == 'docs' else '' }}" data-api-tab-target="docs"
+            onclick="switchApiTab('docs')" type="button">
+            <i class="fas fa-book-bookmark"></i> 开发者 API 指南
+        </button>
+    </div>
 
 <!-- TAB 1: API 服务配置 -->
 <div id="tab-pane-config" class="api-tab-pane {{ '' if current_tab != 'docs' else 'hidden' }} space-y-6">
@@ -98,8 +98,8 @@
                     <div class="flex items-center space-x-3 flex-shrink-0">
                         <select id="searchScopeSelect" class="form-select form-select-sm" onchange="saveApiModeConfig()"
                             style="min-width: 170px;">
-                            <option value="own">仅站长收益库 (own)</option>
                             <option value="all">全网并发聚合 (all)</option>
+                            <option value="own">仅站长收益库 (own)</option>
                         </select>
                     </div>
                 </div>

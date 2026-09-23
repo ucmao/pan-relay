@@ -2,26 +2,25 @@ import re
 from typing import Optional
 
 NETDISK_RULES = [
-    # 国内主流网盘
+    # 国内主流网盘（前 8 位优先排在前列）
     ("百度网盘", r"(?:https?://)?(?:pan\.baidu\.com|bdpan\.com|baiduyun\.com)/"),
     ("夸克网盘", r"(?:https?://)?pan\.quark\.cn/"),
     ("阿里云盘", r"(?:https?://)?(?:drive\.aliyun\.com|aliyundrive\.com|alipan\.com)/"),
-    ("迅雷网盘", r"(?:https?://)?pan\.xunlei\.com/"),
     ("UC网盘", r"(?:https?://)?(?:pan\.uc\.cn|drive\.uc\.cn)/"),
+    ("迅雷网盘", r"(?:https?://)?pan\.xunlei\.com/"),
+    ("光鸭云盘", r"(?:https?://)?(?:www\.)?guangyapan\.com/"),
+    ("悟空网盘", r"(?:https?://)?pan\.wkbrowser\.com/"),
+    ("移动云盘", r"(?:https?://)?(?:pan\.10086\.cn|caiyun\.139\.com|yun\.139\.com|caiyun\.feixin\.10086\.cn)/"),
+    # 其他国内与特色网盘
     ("123云盘", r"(?:https?://)?(?:123pan\.(?:com|cn)|123\d{3}\.(?:com|cn))/"),
     ("115网盘", r"(?:https?://)?(?:115\.com|115pan\.com|115cdn\.com|anxia\.com)/"),
-    # 运营商云盘
     ("天翼云盘", r"(?:https?://)?cloud\.189\.cn/"),
-    ("移动云盘", r"(?:https?://)?(?:pan\.10086\.cn|caiyun\.139\.com|yun\.139\.com|caiyun\.feixin\.10086\.cn)/"),
     ("联通云盘", r"(?:https?://)?pan\.wo\.cn/"),
-    # 国内特色/小众网盘
     ("蓝奏云", r"(?:https?://)?(?:www\.)?(?:lanzou[uixys]*|lan[zs]o[ux])\.(?:com|net|org)/"),
     ("城通网盘", r"(?:https?://)?(?:www\.)?(?:ctfile|pipipan|400gb|t004)\.(?:com|cn)/"),
     ("腾讯微云", r"(?:https?://)?(?:www\.)?weiyun\.com/"),
     ("坚果云", r"(?:https?://)?(?:www\.)?jianguoyun\.com/"),
-    ("悟空网盘", r"(?:https?://)?pan\.wkbrowser\.com/"),
     ("快兔网盘", r"(?:https?://)?(?:diskyun\.com|www\.diskyun\.com)/"),
-    ("光鸭云盘", r"(?:https?://)?(?:www\.)?guangyapan\.com/"),
     # 海外及跨境网盘
     ("TeraBox", r"(?:https?://)?(?:www\.)?(?:terabox|teraboxapp|1024tera|freeterabox)\.(?:com|app)/"),
     ("Google Drive", r"(?:https?://)?(?:drive|docs)\.google\.com/"),
@@ -36,6 +35,11 @@ NETDISK_RULES = [
 ]
 
 FRONTEND_DISPLAY_NETDISK_OPTIONS = [name for name, _ in NETDISK_RULES] + ["其他"]
+
+LINK_CHECK_NETDISK_OPTIONS = [
+    "百度网盘", "夸克网盘", "阿里云盘", "UC网盘", "迅雷网盘", "光鸭云盘", "悟空网盘", "移动云盘",
+    "123云盘", "115网盘", "天翼云盘", "联通云盘"
+]
 
 
 def match_netdisk_link(link: str) -> str:

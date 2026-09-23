@@ -631,7 +631,7 @@
                         </div>
                         <div>
                             <h2 class="text-sm font-bold text-slate-900 tracking-tight">最新收录私有库</h2>
-                            <p class="text-[11px] text-slate-400">私有云盘分布占比与最新入库</p>
+                            <p class="text-[11px] text-slate-400">最新收录的私有库资源</p>
                         </div>
                     </div>
                     <a href="{{ url_for('resources.resources_page') }}"
@@ -642,65 +642,44 @@
                     </a>
                 </div>
 
-                <!-- 云盘分布标签胶囊与最新入库 -->
+                <!-- 最新入库资源条目 -->
                 <div class="mt-3.5">
                     <div class="text-[11px] font-semibold text-slate-500 mb-2 flex items-center justify-between">
-                        <span>云盘占比分布</span>
+                        <span>最新入库资源</span>
                         <span class="text-slate-400 font-mono text-[10px]">共 {{ summary.resources.total_count }}
                             条</span>
                     </div>
-
-                    {% if summary.resources.cloud_distribution %}
-                    <div class="flex flex-wrap gap-1.5 mb-3">
-                        {% for cd in summary.resources.cloud_distribution %}
-                        <span
-                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-slate-50 border border-slate-200/70 font-medium text-slate-700">
-                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                            <span>{{ cd.cloud_name or '通用' }}</span>
-                            <strong class="text-slate-900 font-mono ml-0.5">{{ cd.count }}</strong>
-                        </span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    <!-- 最新收录资源条目 (4 条) -->
-                    <div class="pt-3 border-t border-slate-100">
-                        <div class="text-[11px] font-semibold text-slate-500 mb-2">
-                            <span>最新入库资源</span>
-                        </div>
-                        <div class="divide-y divide-slate-100">
-                            {% if summary.resources.recent_items %}
-                            {% for res in summary.resources.recent_items[:4] %}
-                            <div
-                                class="py-1.5 group flex items-center justify-between gap-2 hover:bg-slate-50/70 -mx-1 px-1 rounded-lg transition-colors">
-                                <div class="min-w-0 flex-1">
-                                    <div class="font-medium text-xs text-slate-800 truncate" title="{{ res.name }}">
-                                        {{ res.name }}
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-1.5 text-[10px] text-slate-400 flex-shrink-0">
-                                    <span
-                                        class="inline-flex items-center px-1.5 py-0.2 rounded font-medium bg-slate-100 text-slate-600">
-                                        {{ res.cloud_name or '通用' }}
-                                    </span>
-                                    <a href="{{ res.share_link }}" target="_blank"
-                                        class="text-slate-400 hover:text-blue-600 p-0.5 transition-colors"
-                                        title="打开原始链接">
-                                        <i class="fas fa-external-link-alt text-[9px]"></i>
-                                    </a>
+                    <div class="divide-y divide-slate-100">
+                        {% if summary.resources.recent_items %}
+                        {% for res in summary.resources.recent_items[:5] %}
+                        <div
+                            class="py-1.5 group flex items-center justify-between gap-2 hover:bg-slate-50/70 -mx-1 px-1 rounded-lg transition-colors">
+                            <div class="min-w-0 flex-1">
+                                <div class="font-medium text-xs text-slate-800 truncate" title="{{ res.name }}">
+                                    {{ res.name }}
                                 </div>
                             </div>
-                            {% endfor %}
-                            {% else %}
-                            <div class="py-3 text-center text-xs text-slate-400">暂无入库资源</div>
-                            {% endif %}
+                            <div class="flex items-center gap-1.5 text-[10px] text-slate-400 flex-shrink-0">
+                                <span
+                                    class="inline-flex items-center px-1.5 py-0.2 rounded font-medium bg-slate-100 text-slate-600">
+                                    {{ res.cloud_name or '通用' }}
+                                </span>
+                                <a href="{{ res.share_link }}" target="_blank"
+                                    class="text-slate-400 hover:text-blue-600 p-0.5 transition-colors" title="打开原始链接">
+                                    <i class="fas fa-external-link-alt text-[9px]"></i>
+                                </a>
+                            </div>
                         </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="py-3 text-center text-xs text-slate-400">暂无入库资源</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 模块 2: 检索通道与网盘转存 (5 cols - 合并/Tab 切换模块) -->
+        <!-- 模块 2: 搜索通道与网盘转存 (5 cols - 合并/Tab 切换模块) -->
         <div
             class="lg:col-span-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between space-y-4">
             <div>
@@ -711,7 +690,7 @@
                             <i class="fas fa-network-wired text-xs"></i>
                         </div>
                         <div>
-                            <h2 id="tabEngineTitle" class="text-sm font-bold text-slate-900 tracking-tight">检索源通道集群</h2>
+                            <h2 id="tabEngineTitle" class="text-sm font-bold text-slate-900 tracking-tight">搜索源通道集群</h2>
                             <p id="tabEngineSubtitle" class="text-[11px] text-slate-400">API、插件与 Telegram 抓取网络</p>
                         </div>
                     </div>
@@ -721,7 +700,7 @@
                             class="inline-flex p-0.5 rounded-lg bg-slate-100 border border-slate-200/60 text-xs font-medium shrink-0">
                             <button type="button" id="tabBtnEngineChannels" onclick="switchEngineTab('channels')"
                                 class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-white text-blue-600 shadow-2xs transition">
-                                检索通道
+                                搜索通道
                             </button>
                             <button type="button" id="tabBtnEngineCredentials" onclick="switchEngineTab('credentials')"
                                 class="px-2.5 py-0.5 rounded-md text-xs font-semibold text-slate-500 hover:text-slate-700 transition">
@@ -731,7 +710,7 @@
                     </div>
                 </div>
 
-                <!-- Tab 1: 检索源通道集群 -->
+                <!-- Tab 1: 搜索源通道集群 -->
                 <div id="tabEngineChannelsContent" class="mt-4 space-y-2.5">
                     <!-- API 接口源 -->
                     <div
@@ -808,7 +787,7 @@
                     <div class="pt-2 flex items-center justify-end">
                         <a href="{{ url_for('search_sources.sources_page') }}"
                             class="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center group">
-                            <span>前往检索源调度管理</span>
+                            <span>前往搜索源管理</span>
                             <i
                                 class="fas fa-arrow-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform text-blue-400"></i>
                         </a>
@@ -1380,7 +1359,7 @@
                         if (cloudsEl) cloudsEl.textContent = (s.resources.cloud_distribution || []).length;
                     }
 
-                    // 检索源通道
+                    // 搜索源通道
                     if (s.sources) {
                         const apiEl = document.getElementById('source-stat-api');
                         if (apiEl && s.sources.api) {
@@ -1601,7 +1580,7 @@
             btnCredentials.className = 'px-2.5 py-0.5 rounded-md text-xs font-semibold text-slate-500 hover:text-slate-700 transition';
             contentChannels.style.display = 'block';
             contentCredentials.style.display = 'none';
-            if (titleEl) titleEl.textContent = '检索源通道集群';
+            if (titleEl) titleEl.textContent = '搜索源通道集群';
             if (subtitleEl) subtitleEl.textContent = 'API、插件与 Telegram 抓取网络';
             if (iconEl) {
                 iconEl.className = 'w-8 h-8 rounded-xl bg-blue-50/80 flex items-center justify-center text-blue-600 transition-colors';

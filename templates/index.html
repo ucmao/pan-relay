@@ -136,7 +136,7 @@
 <script>
     window.SEARCH_LINK_MODE = {{ frontend_link_mode | tojson }};
     window.ENABLE_LINK_CHECK = {{ 'true' if enable_link_check else 'false' }};
-    window.DEFAULT_HIDE_DEAD_LINKS = {{ 'true' if default_hide_dead_links else 'false' }};
+    window.ENABLED_CHECK_PANS = {{ enabled_check_pans | tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>

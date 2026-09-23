@@ -60,7 +60,7 @@ sequenceDiagram
   "api_mode": {
     "api_only": false,
     "enable_frontend": true,
-    "search_scope": "own",
+    "search_scope": "all",
     "transfer_api_key": ""
   },
   "endpoints": {
