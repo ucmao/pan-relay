@@ -60,7 +60,7 @@ function bindFrontendLinkModeEvents() {
 }
 
 function switchSystemTab(target, updateHash = true) {
-    const validTabs = ['storage', 'security', 'credentials', 'strategy', 'api', 'frontend'];
+    const validTabs = ['storage', 'ads', 'security', 'credentials', 'strategy', 'api', 'frontend'];
     const normalized = validTabs.includes(target) ? target : 'storage';
     try {
         localStorage.setItem('panrelay_system_tab', normalized);
@@ -700,6 +700,11 @@ async function loadSensitiveWordsConfig() {
         if (inputToggle) inputToggle.checked = Boolean(config.input_enabled ?? true);
         if (outputToggle) outputToggle.checked = Boolean(config.output_enabled ?? true);
 
+        updateSensitiveWordsBodyUiState(
+            Boolean(config.input_enabled ?? true),
+            Boolean(config.output_enabled ?? true)
+        );
+
         const words = Array.isArray(config.words) ? config.words : [];
         if (textarea) {
             textarea.value = words.join('\n');
@@ -727,6 +732,8 @@ async function saveSensitiveWordsConfig() {
 
     const inputEnabled = inputToggle ? inputToggle.checked : true;
     const outputEnabled = outputToggle ? outputToggle.checked : true;
+
+    updateSensitiveWordsBodyUiState(inputEnabled, outputEnabled);
 
     const payload = {
         enabled: Boolean(inputEnabled || outputEnabled),
@@ -787,6 +794,8 @@ async function loadAdFilterConfig() {
         if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? true);
         if (modeSelect) modeSelect.value = config.title_filter_mode || 'loose';
 
+        updateAdFilterBodyUiState(Boolean(config.enabled ?? true));
+
         const keywords = Array.isArray(config.keywords) ? config.keywords : [];
         if (textarea) {
             textarea.value = keywords.join('\n');
@@ -812,9 +821,12 @@ async function saveAdFilterConfig() {
         .filter(Boolean);
 
     const titleFilterMode = modeSelect ? modeSelect.value : 'loose';
+    const isAdFilterEnabled = globalToggle ? globalToggle.checked : true;
+
+    updateAdFilterBodyUiState(isAdFilterEnabled);
 
     const payload = {
-        enabled: globalToggle ? globalToggle.checked : true,
+        enabled: isAdFilterEnabled,
         title_filter_mode: titleFilterMode,
         keywords: keywords,
     };
@@ -861,7 +873,10 @@ async function loadCustomAdConfig() {
         const config = data.config || {};
 
         const globalToggle = document.getElementById('customAdGlobalToggle');
-        if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? false);
+        const isCustomAdEnabled = Boolean(config.enabled ?? false);
+        if (globalToggle) globalToggle.checked = isCustomAdEnabled;
+
+        updateCustomAdUiState(isCustomAdEnabled);
 
         const adUrls = config.ad_share_urls || {};
         const fieldMap = {
@@ -907,8 +922,11 @@ async function saveCustomAdConfig() {
         adShareUrls[key] = input ? input.value.trim() : '';
     }
 
+    const isCustomAdEnabled = globalToggle ? globalToggle.checked : false;
+    updateCustomAdUiState(isCustomAdEnabled);
+
     const payload = {
-        enabled: globalToggle ? globalToggle.checked : false,
+        enabled: isCustomAdEnabled,
         ad_share_urls: adShareUrls,
         ad_share_url: adShareUrls.quark || adShareUrls.uc || '',
     };
@@ -996,6 +1014,46 @@ function updateStorageCleanupUiState(enabled) {
         inputs.forEach(input => {
             input.disabled = !enabled;
         });
+    }
+}
+
+// 广告引流植入总开关 → 置灰 8 大网盘配置区
+function updateCustomAdUiState(enabled) {
+    const body = document.getElementById('customAdPanelsBody');
+    if (body) {
+        if (!enabled) {
+            body.classList.add('opacity-50', 'pointer-events-none');
+        } else {
+            body.classList.remove('opacity-50', 'pointer-events-none');
+        }
+        body.querySelectorAll('input, button').forEach(el => { el.disabled = !enabled; });
+    }
+}
+
+// 广告智能净化开关 → 置灰广告词库区
+function updateAdFilterBodyUiState(enabled) {
+    const body = document.getElementById('adFilterBody');
+    if (body) {
+        if (!enabled) {
+            body.classList.add('opacity-50', 'pointer-events-none');
+        } else {
+            body.classList.remove('opacity-50', 'pointer-events-none');
+        }
+        body.querySelectorAll('textarea').forEach(el => { el.disabled = !enabled; });
+    }
+}
+
+// 搜索输入拦截 + 输出结果净化同时关闭 → 置灰敏感词库区
+function updateSensitiveWordsBodyUiState(inputEnabled, outputEnabled) {
+    const enabled = inputEnabled || outputEnabled;
+    const body = document.getElementById('sensitiveWordsBody');
+    if (body) {
+        if (!enabled) {
+            body.classList.add('opacity-50', 'pointer-events-none');
+        } else {
+            body.classList.remove('opacity-50', 'pointer-events-none');
+        }
+        body.querySelectorAll('textarea').forEach(el => { el.disabled = !enabled; });
     }
 }
 

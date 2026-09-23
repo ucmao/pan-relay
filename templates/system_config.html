@@ -16,10 +16,13 @@
     <!-- 分段控制 Tab 导航 -->
     <div class="source-tabs-header">
         <button class="source-tab-btn is-active" data-system-tab-target="storage" type="button">
-            <i class="fas fa-server text-emerald-600"></i> 转存运营管理
+            <i class="fas fa-server text-emerald-600"></i> 转存管理
+        </button>
+        <button class="source-tab-btn" data-system-tab-target="ads" type="button">
+            <i class="fas fa-bullhorn text-indigo-600"></i> 广告管理
         </button>
         <button class="source-tab-btn" data-system-tab-target="security" type="button">
-            <i class="fas fa-shield-alt text-red-600"></i> 内容安全风控
+            <i class="fas fa-filter text-blue-600"></i> 搜索过滤
         </button>
         <button class="source-tab-btn" data-system-tab-target="credentials" type="button">
             <i class="fas fa-key text-amber-500"></i> 云盘转存凭证
@@ -30,569 +33,703 @@
     <!-- Tab 内容区域 -->
     <div class="system-tab-content">
 
-    <!-- TAB 1: 转存运营管理 -->
-    <div id="tab-pane-storage" class="system-tab-pane is-active space-y-6">
+        <!-- TAB 1: 转存管理 -->
+        <div id="tab-pane-storage" class="system-tab-pane is-active space-y-6">
 
-        <!-- 1. 网盘通用转存目录设置 -->
-        <section class="admin-panel">
-            <div class="admin-panel-header">
-                <div class="admin-panel-title-area">
-                    <h2 class="admin-panel-title">
-                        <i class="fas fa-folder-tree text-indigo-600"></i> 网盘转存目标目录
-                    </h2>
-                    <p class="admin-panel-desc">转存成功后的资源将统一存入指定网盘文件夹</p>
+            <!-- 1. 网盘通用转存目录设置 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-folder-tree text-indigo-600"></i> 网盘转存目标目录
+                        </h2>
+                        <p class="admin-panel-desc">转存成功后的资源将统一存入指定网盘文件夹</p>
+                    </div>
                 </div>
-            </div>
-            <div class="admin-panel-body">
-                <div class="divide-y divide-slate-100">
-                    <!-- 配置: 默认转存目标文件夹 -->
-                    <div class="setting-item-row">
-                        <div class="space-y-1 min-w-0 pr-4">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="font-semibold text-slate-800 text-sm">默认转存目录</span>
-                                <span class="help-tooltip" data-tooltip="各网盘自动转存时将存入该文件夹，不存在时自动新建，留空或 / 则存入根目录">
-                                    <i class="far fa-circle-question text-xs"></i>
-                                </span>
+                <div class="admin-panel-body">
+                    <div class="divide-y divide-slate-100">
+                        <!-- 配置: 默认转存目标文件夹 -->
+                        <div class="setting-item-row">
+                            <div class="space-y-1 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-semibold text-slate-800 text-sm">默认转存目录</span>
+                                    <span class="help-tooltip" data-tooltip="各网盘自动转存时将存入该文件夹，不存在时自动新建，留空或 / 则存入根目录">
+                                        <i class="far fa-circle-question text-xs"></i>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500">转存至站长云盘的统一落盘目录</p>
                             </div>
-                            <p class="text-xs text-slate-500">转存文件在站长云盘中的统一存放路径</p>
-                        </div>
-                        <div class="flex items-center space-x-2 flex-shrink-0">
-                            <div class="relative flex items-center">
-                                <span class="absolute left-3 text-slate-400 text-xs"><i class="fas fa-folder"></i></span>
-                                <input type="text" id="transferTargetDirInput" class="form-control form-control-sm pl-8 text-xs font-medium" style="min-width: 170px;" placeholder="例如: Pan-Relay分享" value="Pan-Relay分享">
+                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                <div class="relative flex items-center">
+                                    <span class="absolute left-3 text-slate-400 text-xs"><i
+                                            class="fas fa-folder"></i></span>
+                                    <input type="text" id="transferTargetDirInput"
+                                        class="form-control form-control-sm pl-8 text-xs font-medium"
+                                        style="min-width: 170px;" placeholder="例如: Pan-Relay分享" value="Pan-Relay分享">
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm px-3"
+                                    onclick="saveTransferTargetDirConfig()">
+                                    <i class="fas fa-check text-[10px]"></i> 保存
+                                </button>
                             </div>
-                            <button type="button" class="btn btn-primary btn-sm px-3" onclick="saveTransferTargetDirConfig()">
-                                <i class="fas fa-check text-[10px]"></i> 保存
-                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- 2. 个人自定义引流广告植入 -->
-        <section class="admin-panel">
-            <div class="admin-panel-header">
-                <div class="admin-panel-title-area">
-                    <h2 class="admin-panel-title">
-                        <i class="fas fa-bullhorn text-indigo-600"></i> 自定义引流文件植入
-                    </h2>
-                    <p class="admin-panel-desc">转存时自动在生成的分享目录中附带专属宣传文件 (全面支持 8 大主流及特色网盘)</p>
-                </div>
-            </div>
-            <div class="admin-panel-body">
-                <div class="divide-y divide-slate-100">
-                    <!-- 开关: 广告引流植入总开关 -->
-                    <div class="setting-item-row">
-                        <div class="space-y-1 min-w-0 pr-4">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="font-semibold text-slate-800 text-sm">广告引流植入总开关</span>
-                                <span class="help-tooltip" data-tooltip="开启后，转存成功时将自动合并对应网盘引流分享链接中的宣传文件至目标分享文件夹">
-                                    <i class="far fa-circle-question text-xs"></i>
-                                </span>
-                            </div>
-                            <p class="text-xs text-slate-500">开启后各网盘转存时将自动识别并合并各自配置的引流文件</p>
-                        </div>
-                        <div class="flex items-center flex-shrink-0">
-                            <label class="plugin-switch" title="广告引流植入总开关">
-                                <input type="checkbox" id="customAdGlobalToggle" onchange="saveCustomAdConfig()">
+            <!-- 2. 存储优化与超期转存清理 -->
+
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-recycle text-amber-600"></i> 存储优化与超期转存清理
+                        </h2>
+                        <p class="admin-panel-desc">定时自动从网盘物理删除超期转存资源并取消关联分享，释放网盘容量</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                            <span class="text-xs font-bold text-slate-700">开启定时清理</span>
+                            <label class="plugin-switch">
+                                <input type="checkbox" id="storageCleanupGlobalToggle"
+                                    onchange="saveStorageCleanupConfig()">
                                 <span class="plugin-switch-slider"></span>
                             </label>
                         </div>
-                    </div>
-
-                    <!-- 8 大网盘独立配置区 -->
-                    <div class="py-4 space-y-3">
-                        <div class="flex items-center justify-between pb-1">
-                            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wider">各网盘独立引流分享链接配置</span>
-                            <button type="button" class="btn btn-primary btn-sm px-3" onclick="saveCustomAdConfig()">
-                                <i class="fas fa-save mr-1"></i> 保存全部引流配置
-                            </button>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <!-- 夸克网盘 -->
-                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
-                                <div class="w-24 shrink-0 flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-cloud"></i></span>
-                                    <span class="font-medium text-xs text-slate-800 shrink-0">夸克网盘</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <input type="text" id="customAdQuarkUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://pan.quark.cn/s/xxxxxx">
-                                </div>
-                            </div>
-
-                            <!-- UC网盘 -->
-                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
-                                <div class="w-24 shrink-0 flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-bolt"></i></span>
-                                    <span class="font-medium text-xs text-slate-800 shrink-0">UC网盘</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <input type="text" id="customAdUcUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://drive.uc.cn/s/xxxxxx">
-                                </div>
-                            </div>
-
-                            <!-- 百度网盘 -->
-                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
-                                <div class="w-24 shrink-0 flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-paw"></i></span>
-                                    <span class="font-medium text-xs text-slate-800 shrink-0">百度网盘</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <input type="text" id="customAdBaiduUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://pan.baidu.com/s/xxxxxx?pwd=xxxx">
-                                </div>
-                            </div>
-
-                            <!-- 阿里云盘 -->
-                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
-                                <div class="w-24 shrink-0 flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-cube"></i></span>
-                                    <span class="font-medium text-xs text-slate-800 shrink-0">阿里云盘</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <input type="text" id="customAdAliyunUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://www.alipan.com/s/xxxxxx">
-                                </div>
-                            </div>
-
-                            <!-- 迅雷网盘 -->
-                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
-                                <div class="w-24 shrink-0 flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-feather"></i></span>
-                                    <span class="font-medium text-xs text-slate-800 shrink-0">迅雷网盘</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <input type="text" id="customAdXunleiUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://pan.xunlei.com/s/xxxxxx">
-                                </div>
-                            </div>
-
-                            <!-- 移动云盘 -->
-                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
-                                <div class="w-24 shrink-0 flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-mobile-screen"></i></span>
-                                    <span class="font-medium text-xs text-slate-800 shrink-0">移动云盘</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <input type="text" id="customAdCaiyunUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://caiyun.139.com/w/i/xxxxxx">
-                                </div>
-                            </div>
-
-                            <!-- 光鸭云盘 -->
-                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
-                                <div class="w-24 shrink-0 flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-duck"></i></span>
-                                    <span class="font-medium text-xs text-slate-800 shrink-0">光鸭云盘</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <input type="text" id="customAdGuangyaUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://www.guangyapan.com/s/xxxxxx">
-                                </div>
-                            </div>
-
-                            <!-- 悟空网盘 -->
-                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
-                                <div class="w-24 shrink-0 flex items-center gap-2">
-                                    <span class="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-crown"></i></span>
-                                    <span class="font-medium text-xs text-slate-800 shrink-0">悟空网盘</span>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <input type="text" id="customAdWukongUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://pan.wkbrowser.com/s/xxxxxx">
-                                </div>
-                            </div>
-                        </div>
+                        <button class="btn btn-outline-primary btn-sm" id="runStorageCleanupBtn" type="button"
+                            onclick="runStorageCleanupNow()">
+                            <i class="fas fa-trash-alt text-[10px] mr-1"></i> 立即执行清理
+                        </button>
                     </div>
                 </div>
-            </div>
-        </section>
-
-
-        <!-- 3. 存储空间优化与过期自动清理 -->
-        <section class="admin-panel">
-            <div class="admin-panel-header">
-                <div class="admin-panel-title-area">
-                    <h2 class="admin-panel-title">
-                        <i class="fas fa-recycle text-amber-600"></i> 存储空间优化与超期转存清理
-                    </h2>
-                    <p class="admin-panel-desc">定时自动从网盘物理删除超期转存资源并取消关联分享，释放网盘容量</p>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-200/80">
-                        <span class="text-xs font-bold text-slate-700">开启定时清理</span>
-                        <label class="plugin-switch">
-                            <input type="checkbox" id="storageCleanupGlobalToggle" onchange="saveStorageCleanupConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
-                    </div>
-                    <button class="btn btn-outline-primary btn-sm" id="runStorageCleanupBtn" type="button" onclick="runStorageCleanupNow()">
-                        <i class="fas fa-trash-alt text-[10px] mr-1"></i> 立即执行清理
-                    </button>
-                </div>
-            </div>
-            <div class="admin-panel-body space-y-4" id="storageCleanupBody">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-amber-50/60 rounded-xl border border-amber-200/60 text-xs">
-                    <div class="flex items-center text-amber-800 font-medium">
-                        <i class="fas fa-shield-halved text-amber-600 mr-2 text-sm"></i>
-                        <span>清理流程一键联动：① 网盘物理删除文件 ② 取消关联分享 ③ 清除数据库记录</span>
-                    </div>
-                    <div class="text-slate-600 shrink-0">
-                        待清理超期资源：<span id="expiredResourcesCount" class="font-bold text-amber-600 text-sm">0</span> 条
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                    <div>
-                        <label class="form-label font-bold text-slate-800 text-xs mb-1">统一转存保留时长</label>
-                        <div class="flex items-center space-x-1.5">
-                            <input type="number" id="storageRetentionValueInput" class="form-control form-control-sm text-xs font-semibold flex-1" min="1" max="9999" value="15" onchange="saveStorageCleanupConfig()">
-                            <select id="storageRetentionUnitSelect" class="form-select form-select-sm text-xs font-semibold w-24" onchange="handleRetentionUnitChange()">
-                                <option value="minutes">分钟</option>
-                                <option value="hours">小时</option>
-                                <option value="days" selected>天</option>
-                            </select>
+                <div class="admin-panel-body space-y-4" id="storageCleanupBody">
+                    <div
+                        class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-amber-50/60 rounded-xl border border-amber-200/60 text-xs">
+                        <div class="flex items-center text-amber-800 font-medium">
+                            <i class="fas fa-shield-halved text-amber-600 mr-2 text-sm"></i>
+                            <span>清理流程一键联动：① 网盘物理删除文件 ② 取消关联分享 ③ 清除数据库记录</span>
                         </div>
-                        <input type="hidden" id="storageRetentionDaysInput" value="15">
-                        <p class="text-[11px] text-slate-400 mt-1 mb-0">最低 30 分钟，超期将被物理删除释放空间</p>
-                    </div>
-                    <div>
-                        <label class="form-label font-bold text-slate-800 text-xs mb-1">扫描清理周期</label>
-                        <div class="flex items-center space-x-1.5">
-                            <input type="number" id="storageCleanupIntervalValueInput" class="form-control form-control-sm text-xs font-semibold flex-1" min="1" max="9999" value="12" onchange="saveStorageCleanupConfig()">
-                            <select id="storageCleanupIntervalUnitSelect" class="form-select form-select-sm text-xs font-semibold w-24" onchange="handleCleanupIntervalUnitChange()">
-                                <option value="minutes">分钟</option>
-                                <option value="hours" selected>小时</option>
-                                <option value="days">天</option>
-                            </select>
-                        </div>
-                        <input type="hidden" id="storageCleanupIntervalInput" value="12">
-                        <p class="text-[11px] text-slate-400 mt-1 mb-0" id="storageCleanupIntervalDesc">后台定期巡检清理（最低 15 分钟）</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-    </div>
-
-    <!-- TAB 2: 内容安全风控 -->
-    <div id="tab-pane-security" class="system-tab-pane">
-        <section class="admin-panel mb-0">
-            <div class="admin-panel-header">
-                <div class="admin-panel-title-area">
-                    <h2 class="admin-panel-title">
-                        <i class="fas fa-shield-alt text-red-600"></i> 内容安全风控与智能净化
-                    </h2>
-                    <p class="admin-panel-desc">集中管理敏感词黑名单实时拦截、输出净化与网盘转存广告文件自动剔除规则</p>
-                </div>
-            </div>
-
-            <!-- 内部左右 1:1 分栏，中间加浅色细竖分割线与充足间距 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-100 items-stretch">
-
-                <!-- 1. 敏感词过滤与风控 (左侧) -->
-                <div class="p-6 lg:p-7 space-y-4 flex flex-col justify-between">
-                    <div>
-                        <!-- 子标题与说明分层 -->
-                        <div class="space-y-1 mb-3.5">
-                            <div class="flex items-center space-x-2">
-                                <span class="w-1.5 h-3.5 bg-red-500 rounded-full inline-block"></span>
-                                <h3 class="text-xs font-bold text-slate-800 m-0">敏感词过滤与风控</h3>
-                            </div>
-                            <p class="text-[11px] text-slate-500 pl-3.5 m-0 leading-tight">实时阻断非法搜索关键词与剔除脏数据结果</p>
-                        </div>
-
-                        <!-- 2 列开关控制区（单行水平对齐，固定 h-[58px]） -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pb-4 border-b border-slate-100">
-                            <!-- 搜索输入拦截开关 -->
-                            <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px]">
-                                <div class="min-w-0 pr-1">
-                                    <span class="font-bold text-slate-800 text-xs block truncate">搜索输入拦截</span>
-                                    <span class="text-[10px] text-slate-500 block truncate">实时拒绝违规搜索请求</span>
-                                </div>
-                                <label class="plugin-switch shrink-0">
-                                    <input type="checkbox" id="sensitiveWordsInputToggle" onchange="saveSensitiveWordsConfig()">
-                                    <span class="plugin-switch-slider"></span>
-                                </label>
-                            </div>
-
-                            <!-- 输出结果净化开关 -->
-                            <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px]">
-                                <div class="min-w-0 pr-1">
-                                    <span class="font-bold text-slate-800 text-xs block truncate">输出结果净化</span>
-                                    <span class="text-[10px] text-slate-500 block truncate">自动剔除违规脏数据</span>
-                                </div>
-                                <label class="plugin-switch shrink-0">
-                                    <input type="checkbox" id="sensitiveWordsOutputToggle" onchange="saveSensitiveWordsConfig()">
-                                    <span class="plugin-switch-slider"></span>
-                                </label>
-                            </div>
+                        <div class="text-slate-600 shrink-0">
+                            待清理超期资源：<span id="expiredResourcesCount" class="font-bold text-amber-600 text-sm">0</span> 条
                         </div>
                     </div>
 
-                    <!-- 敏感词词库 Textarea -->
-                    <div class="pt-2 flex-1 flex flex-col">
-                        <div class="flex items-center justify-between mb-2">
-                            <label for="sensitiveWordsTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
-                                敏感词黑名单词库 (每行一个词)
-                            </label>
-                            <span class="text-xs text-slate-500">当前词数：<strong id="sensitiveWordsCount" class="text-blue-600">0</strong> 条</span>
-                        </div>
-                        <textarea class="form-control font-mono text-xs flex-1" id="sensitiveWordsTextarea" style="height: 280px; min-height: 280px;" placeholder="请输入敏感词，每行一个（例如：外挂、博彩、破解工具等）" onblur="saveSensitiveWordsConfig()"></textarea>
-                        <p class="text-[11px] text-slate-400 mt-1.5 mb-0">离开输入框后系统将自动保存并即时生效。</p>
-                    </div>
-                </div>
-
-                <!-- 2. 搜索精准度与广告净化 (右侧) -->
-                <div class="p-6 lg:p-7 space-y-4 flex flex-col justify-between">
-                    <div>
-                        <!-- 子标题与说明分层 -->
-                        <div class="space-y-1 mb-3.5">
-                            <div class="flex items-center space-x-2">
-                                <span class="w-1.5 h-3.5 bg-emerald-500 rounded-full inline-block"></span>
-                                <h3 class="text-xs font-bold text-slate-800 m-0">搜索精准度与广告净化</h3>
-                            </div>
-                            <p class="text-[11px] text-slate-500 pl-3.5 m-0 leading-tight">优化搜索结果相关性匹配与自动剔除转存广告文件</p>
-                        </div>
-
-                        <!-- 2 列控制卡片区（单行水平对齐，固定 h-[58px]） -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pb-4 border-b border-slate-100">
-                            <!-- 标题匹配模式下拉选择（上下两部分，无副标题） -->
-                            <div class="p-2 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px] flex flex-col justify-between">
-                                <span class="font-bold text-slate-800 text-xs block leading-none">标题匹配模式</span>
-                                <select id="titleFilterModeSelect" class="form-select form-select-sm text-xs font-semibold text-slate-700 bg-white rounded-lg border-slate-300 py-0.5 px-2 w-full mt-0.5" onchange="saveAdFilterConfig()">
-                                    <option value="loose">智能匹配 (推荐)</option>
-                                    <option value="off">关闭二次过滤</option>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        <div>
+                            <label class="form-label font-bold text-slate-800 text-xs mb-1">统一转存保留时长</label>
+                            <div class="flex items-center space-x-1.5">
+                                <input type="number" id="storageRetentionValueInput"
+                                    class="form-control form-control-sm text-xs font-semibold flex-1" min="1" max="9999"
+                                    value="15" onchange="saveStorageCleanupConfig()">
+                                <select id="storageRetentionUnitSelect"
+                                    class="form-select form-select-sm text-xs font-semibold w-24"
+                                    onchange="handleRetentionUnitChange()">
+                                    <option value="minutes">分钟</option>
+                                    <option value="hours">小时</option>
+                                    <option value="days" selected>天</option>
                                 </select>
                             </div>
+                            <input type="hidden" id="storageRetentionDaysInput" value="15">
+                            <p class="text-[11px] text-slate-400 mt-1 mb-0">最低 30 分钟，超期将被物理删除释放空间</p>
+                        </div>
+                        <div>
+                            <label class="form-label font-bold text-slate-800 text-xs mb-1">扫描清理周期</label>
+                            <div class="flex items-center space-x-1.5">
+                                <input type="number" id="storageCleanupIntervalValueInput"
+                                    class="form-control form-control-sm text-xs font-semibold flex-1" min="1" max="9999"
+                                    value="12" onchange="saveStorageCleanupConfig()">
+                                <select id="storageCleanupIntervalUnitSelect"
+                                    class="form-select form-select-sm text-xs font-semibold w-24"
+                                    onchange="handleCleanupIntervalUnitChange()">
+                                    <option value="minutes">分钟</option>
+                                    <option value="hours" selected>小时</option>
+                                    <option value="days">天</option>
+                                </select>
+                            </div>
+                            <input type="hidden" id="storageCleanupIntervalInput" value="12">
+                            <p class="text-[11px] text-slate-400 mt-1 mb-0" id="storageCleanupIntervalDesc">后台定期巡检清理（最低
+                                15 分钟）</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-                            <!-- 广告智能净化开关 -->
-                            <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px]">
-                                <div class="min-w-0 pr-1">
-                                    <span class="font-bold text-slate-800 text-xs block truncate">广告智能净化</span>
-                                    <span class="text-[10px] text-slate-500 block truncate">转存丢弃宣传导流文件</span>
+        </div>
+
+        <!-- TAB 2: 广告管理 -->
+        <div id="tab-pane-ads" class="system-tab-pane space-y-6">
+
+            <!-- 广告植入：自定义引流文件植入 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-bullhorn text-indigo-600"></i> 自定义引流文件植入
+                        </h2>
+                        <p class="admin-panel-desc">转存时自动在生成的分享目录中附带专属宣传文件 (全面支持 8 大主流及特色网盘)</p>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="divide-y divide-slate-100">
+                        <!-- 开关: 广告引流植入总开关 -->
+                        <div class="setting-item-row">
+                            <div class="space-y-1 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-semibold text-slate-800 text-sm">广告引流植入总开关</span>
+                                    <span class="help-tooltip" data-tooltip="开启后，转存成功时将自动合并对应网盘引流分享链接中的宣传文件至目标分享文件夹">
+                                        <i class="far fa-circle-question text-xs"></i>
+                                    </span>
                                 </div>
-                                <label class="plugin-switch shrink-0">
+                                <p class="text-xs text-slate-500">转存时自动合并各网盘引流文件</p>
+                            </div>
+                            <div class="flex items-center flex-shrink-0">
+                                <label class="plugin-switch" title="广告引流植入总开关">
+                                    <input type="checkbox" id="customAdGlobalToggle" onchange="saveCustomAdConfig()">
+                                    <span class="plugin-switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 8 大网盘独立配置区 -->
+                        <div id="customAdPanelsBody" class="py-4 space-y-3">
+                            <div class="flex items-center justify-between pb-1">
+                                <span
+                                    class="text-xs font-semibold text-slate-600 uppercase tracking-wider">各网盘独立引流分享链接配置</span>
+                                <button type="button" class="btn btn-primary btn-sm px-3"
+                                    onclick="saveCustomAdConfig()">
+                                    <i class="fas fa-save mr-1"></i> 保存全部引流配置
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <!-- 夸克网盘 -->
+                                <div
+                                    class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                    <div class="w-24 shrink-0 flex items-center gap-2">
+                                        <span
+                                            class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0"><i
+                                                class="fas fa-cloud"></i></span>
+                                        <span class="font-medium text-xs text-slate-800 shrink-0">夸克网盘</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="customAdQuarkUrl"
+                                            class="form-control form-control-sm text-xs font-mono"
+                                            placeholder="例如: https://pan.quark.cn/s/xxxxxx">
+                                    </div>
+                                </div>
+
+                                <!-- UC网盘 -->
+                                <div
+                                    class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                    <div class="w-24 shrink-0 flex items-center gap-2">
+                                        <span
+                                            class="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold shrink-0"><i
+                                                class="fas fa-bolt"></i></span>
+                                        <span class="font-medium text-xs text-slate-800 shrink-0">UC网盘</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="customAdUcUrl"
+                                            class="form-control form-control-sm text-xs font-mono"
+                                            placeholder="例如: https://drive.uc.cn/s/xxxxxx">
+                                    </div>
+                                </div>
+
+                                <!-- 百度网盘 -->
+                                <div
+                                    class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                    <div class="w-24 shrink-0 flex items-center gap-2">
+                                        <span
+                                            class="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold shrink-0"><i
+                                                class="fas fa-paw"></i></span>
+                                        <span class="font-medium text-xs text-slate-800 shrink-0">百度网盘</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="customAdBaiduUrl"
+                                            class="form-control form-control-sm text-xs font-mono"
+                                            placeholder="例如: https://pan.baidu.com/s/xxxxxx?pwd=xxxx">
+                                    </div>
+                                </div>
+
+                                <!-- 阿里云盘 -->
+                                <div
+                                    class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                    <div class="w-24 shrink-0 flex items-center gap-2">
+                                        <span
+                                            class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold shrink-0"><i
+                                                class="fas fa-cube"></i></span>
+                                        <span class="font-medium text-xs text-slate-800 shrink-0">阿里云盘</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="customAdAliyunUrl"
+                                            class="form-control form-control-sm text-xs font-mono"
+                                            placeholder="例如: https://www.alipan.com/s/xxxxxx">
+                                    </div>
+                                </div>
+
+                                <!-- 迅雷网盘 -->
+                                <div
+                                    class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                    <div class="w-24 shrink-0 flex items-center gap-2">
+                                        <span
+                                            class="w-6 h-6 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold shrink-0"><i
+                                                class="fas fa-feather"></i></span>
+                                        <span class="font-medium text-xs text-slate-800 shrink-0">迅雷网盘</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="customAdXunleiUrl"
+                                            class="form-control form-control-sm text-xs font-mono"
+                                            placeholder="例如: https://pan.xunlei.com/s/xxxxxx">
+                                    </div>
+                                </div>
+
+                                <!-- 移动云盘 -->
+                                <div
+                                    class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                    <div class="w-24 shrink-0 flex items-center gap-2">
+                                        <span
+                                            class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0"><i
+                                                class="fas fa-mobile-screen"></i></span>
+                                        <span class="font-medium text-xs text-slate-800 shrink-0">移动云盘</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="customAdCaiyunUrl"
+                                            class="form-control form-control-sm text-xs font-mono"
+                                            placeholder="例如: https://caiyun.139.com/w/i/xxxxxx">
+                                    </div>
+                                </div>
+
+                                <!-- 光鸭云盘 -->
+                                <div
+                                    class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                    <div class="w-24 shrink-0 flex items-center gap-2">
+                                        <span
+                                            class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-xs font-bold shrink-0"><i
+                                                class="fas fa-duck"></i></span>
+                                        <span class="font-medium text-xs text-slate-800 shrink-0">光鸭云盘</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="customAdGuangyaUrl"
+                                            class="form-control form-control-sm text-xs font-mono"
+                                            placeholder="例如: https://www.guangyapan.com/s/xxxxxx">
+                                    </div>
+                                </div>
+
+                                <!-- 悟空网盘 -->
+                                <div
+                                    class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                    <div class="w-24 shrink-0 flex items-center gap-2">
+                                        <span
+                                            class="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold shrink-0"><i
+                                                class="fas fa-crown"></i></span>
+                                        <span class="font-medium text-xs text-slate-800 shrink-0">悟空网盘</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <input type="text" id="customAdWukongUrl"
+                                            class="form-control form-control-sm text-xs font-mono"
+                                            placeholder="例如: https://pan.wkbrowser.com/s/xxxxxx">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 广告净化：转存广告文件自动剔除 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-filter text-emerald-600"></i> 转存广告文件净化
+                        </h2>
+                        <p class="admin-panel-desc">转存时按关键词库自动识别并丢弃宣传、导流文件，保持分享目录整洁</p>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="divide-y divide-slate-100">
+                        <!-- 广告智能净化总开关 -->
+                        <div class="setting-item-row">
+                            <div class="space-y-1 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-semibold text-slate-800 text-sm">广告智能净化</span>
+                                    <span class="help-tooltip" data-tooltip="开启后，转存时将根据广告关键词库自动识别并丢弃宣传、导流类文件">
+                                        <i class="far fa-circle-question text-xs"></i>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500">转存时自动丢弃广告文件</p>
+                            </div>
+                            <div class="flex items-center flex-shrink-0">
+                                <label class="plugin-switch" title="广告智能净化">
                                     <input type="checkbox" id="adFilterGlobalToggle" onchange="saveAdFilterConfig()">
                                     <span class="plugin-switch-slider"></span>
                                 </label>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- 广告词库 Textarea -->
-                    <div class="pt-2 flex-1 flex flex-col">
-                        <div class="flex items-center justify-between mb-2">
-                            <label for="adFilterTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
-                                广告关键词过滤库 (每行一个词)
+                        <!-- 广告关键词词库 -->
+                        <div id="adFilterBody" class="py-4 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label for="adFilterTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
+                                    广告关键词过滤库 (每行一个词)
+                                </label>
+                                <span class="text-xs text-slate-500">当前词数：<strong id="adFilterWordsCount"
+                                        class="text-emerald-600">0</strong> 条</span>
+                            </div>
+                            <textarea class="form-control font-mono text-xs" id="adFilterTextarea"
+                                style="height: 240px; min-height: 240px;"
+                                placeholder="请输入广告关键词，每行一个（例如：公众号、防失联、福利群、更新地址等）"
+                                onblur="saveAdFilterConfig()"></textarea>
+                            <p class="text-[11px] text-slate-400 mb-0">离开输入框后系统将自动保存并即时生效。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+
+        <!-- TAB 3: 搜索过滤 -->
+        <div id="tab-pane-security" class="system-tab-pane space-y-6">
+
+            <!-- 标题匹配模式（顶部独立行） -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-sliders text-blue-600"></i> 搜索结果精准度
+                        </h2>
+                        <p class="admin-panel-desc">控制搜索词与资源标题之间的二次相关性过滤策略</p>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="divide-y divide-slate-100">
+                        <div class="setting-item-row">
+                            <div class="space-y-1 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-semibold text-slate-800 text-sm">标题匹配模式</span>
+                                    <span class="help-tooltip"
+                                        data-tooltip="智能匹配：搜索词需在资源标题中命中；关闭二次过滤：仅输出网盘原始搜索结果，不做相关性筛选">
+                                        <i class="far fa-circle-question text-xs"></i>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500">对搜索结果按标题相关性二次过滤</p>
+                            </div>
+                            <div class="flex items-center flex-shrink-0">
+                                <select id="titleFilterModeSelect"
+                                    class="form-select form-select-sm text-xs font-semibold w-40"
+                                    onchange="saveAdFilterConfig()">
+                                    <option value="loose">智能匹配 (推荐)</option>
+                                    <option value="off">关闭二次过滤</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 敏感词过滤与风控 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-shield-alt text-red-600"></i> 敏感词过滤与风控
+                        </h2>
+                        <p class="admin-panel-desc">拦截违规搜索关键词并净化输出结果，两个开关共用同一敏感词黑名单</p>
+                    </div>
+                </div>
+                <div class="admin-panel-body space-y-4">
+                    <!-- 2 个开关卡片 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <!-- 搜索输入拦截 -->
+                        <div
+                            class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px]">
+                            <div class="min-w-0 pr-1">
+                                <span class="font-bold text-slate-800 text-xs block truncate">搜索输入拦截</span>
+                                <span class="text-[10px] text-slate-500 block truncate">实时拒绝违规搜索请求</span>
+                            </div>
+                            <label class="plugin-switch shrink-0">
+                                <input type="checkbox" id="sensitiveWordsInputToggle"
+                                    onchange="saveSensitiveWordsConfig()">
+                                <span class="plugin-switch-slider"></span>
                             </label>
-                            <span class="text-xs text-slate-500">当前词数：<strong id="adFilterWordsCount" class="text-emerald-600">0</strong> 条</span>
                         </div>
-                        <textarea class="form-control font-mono text-xs flex-1" id="adFilterTextarea" style="height: 280px; min-height: 280px;" placeholder="请输入广告关键词，每行一个（例如：公众号、防失联、福利群、更新地址等）" onblur="saveAdFilterConfig()"></textarea>
-                        <p class="text-[11px] text-slate-400 mt-1.5 mb-0">离开输入框后系统将自动保存并即时生效。</p>
+
+                        <!-- 输出结果净化 -->
+                        <div
+                            class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px]">
+                            <div class="min-w-0 pr-1">
+                                <span class="font-bold text-slate-800 text-xs block truncate">输出结果净化</span>
+                                <span class="text-[10px] text-slate-500 block truncate">自动剔除违规脏数据</span>
+                            </div>
+                            <label class="plugin-switch shrink-0">
+                                <input type="checkbox" id="sensitiveWordsOutputToggle"
+                                    onchange="saveSensitiveWordsConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 敏感词词库 -->
+                    <div id="sensitiveWordsBody" class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label for="sensitiveWordsTextarea"
+                                class="form-label font-bold text-slate-800 text-xs mb-0">
+                                敏感词黑名单词库 (每行一个词)
+                            </label>
+                            <span class="text-xs text-slate-500">当前词数：<strong id="sensitiveWordsCount"
+                                    class="text-blue-600">0</strong> 条</span>
+                        </div>
+                        <textarea class="form-control font-mono text-xs" id="sensitiveWordsTextarea"
+                            style="height: 240px; min-height: 240px;" placeholder="请输入敏感词，每行一个（例如：外挂、博彩、破解工具等）"
+                            onblur="saveSensitiveWordsConfig()"></textarea>
+                        <p class="text-[11px] text-slate-400 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                     </div>
                 </div>
+            </section>
 
-            </div>
-        </section>
+        </div>
+
+        <!-- TAB 3: 云盘转存凭证 -->
+        <div id="tab-pane-credentials" class="system-tab-pane space-y-6">
+
+            <!-- 云盘账号凭证与密钥 Tab 容器 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-key text-amber-500"></i> 云盘账号凭证与密钥
+                        </h2>
+                        <p class="admin-panel-desc">用于后台自动转存与生成私有分享，仅保存在服务端安全数据库中</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
+                        <i class="fas fa-save text-[10px]"></i> 保存凭证
+                    </button>
+                </div>
+
+                <div class="admin-panel-body space-y-5">
+                    <!-- 网盘 Sub-Tabs 导航 -->
+                    <div class="credential-tabs-nav flex flex-wrap gap-2 border-b border-slate-200/80 pb-3">
+                        <button class="credential-tab-btn is-active" data-cred-target="baidu" type="button">
+                            <i class="fas fa-paw text-blue-500"></i> 百度网盘
+                            <span class="cred-status-dot missing" id="dot-baidu"></span>
+                        </button>
+                        <button class="credential-tab-btn" data-cred-target="quark" type="button">
+                            <i class="fas fa-bolt text-indigo-500"></i> 夸克网盘
+                            <span class="cred-status-dot missing" id="dot-quark"></span>
+                        </button>
+                        <button class="credential-tab-btn" data-cred-target="aliyun" type="button">
+                            <i class="fas fa-cloud text-amber-500"></i> 阿里云盘
+                            <span class="cred-status-dot missing" id="dot-aliyun"></span>
+                        </button>
+                        <button class="credential-tab-btn" data-cred-target="uc" type="button">
+                            <i class="fas fa-globe text-orange-500"></i> UC 网盘
+                            <span class="cred-status-dot missing" id="dot-uc"></span>
+                        </button>
+                        <button class="credential-tab-btn" data-cred-target="xunlei" type="button">
+                            <i class="fas fa-bolt-lightning text-sky-500"></i> 迅雷网盘
+                            <span class="cred-status-dot missing" id="dot-xunlei"></span>
+                        </button>
+                        <button class="credential-tab-btn" data-cred-target="guangya" type="button">
+                            <i class="fas fa-feather-pointed text-teal-500"></i> 光鸭云盘
+                            <span class="cred-status-dot missing" id="dot-guangya"></span>
+                        </button>
+                        <button class="credential-tab-btn" data-cred-target="wukong" type="button">
+                            <i class="fas fa-sun text-yellow-500"></i> 悟空网盘
+                            <span class="cred-status-dot missing" id="dot-wukong"></span>
+                        </button>
+                        <button class="credential-tab-btn" data-cred-target="caiyun" type="button">
+                            <i class="fas fa-mobile-screen-button text-cyan-500"></i> 移动云盘
+                            <span class="cred-status-dot missing" id="dot-caiyun"></span>
+                        </button>
+                    </div>
+
+                    <!-- Sub-Tab 1: 百度网盘 -->
+                    <div id="cred-pane-baidu" class="credential-tab-pane is-active space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label for="baiduCookie" class="form-label font-bold text-slate-800 text-xs mb-0">百度网盘
+                                Cookie</label>
+                            <span class="text-[11px] text-slate-400 font-medium" id="baiduStatusText">未配置</span>
+                        </div>
+                        <textarea class="form-control font-mono" id="baiduCookie" rows="6"
+                            placeholder="请输入百度网盘网页端抓取的完整 Cookie (如 BDUSS, STOKEN 等)"></textarea>
+                        <div
+                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold text-slate-700">获取指引：</span>
+                                登录 <a href="https://pan.baidu.com" target="_blank"
+                                    class="text-blue-600 hover:underline">pan.baidu.com</a>，按 F12 打开开发者工具，在网络 (Network)
+                                请求标头中复制完整 <code>Cookie</code> 粘贴到此处。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Tab 2: 夸克网盘 -->
+                    <div id="cred-pane-quark" class="credential-tab-pane space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label for="quarkCookie" class="form-label font-bold text-slate-800 text-xs mb-0">夸克网盘
+                                Cookie</label>
+                            <span class="text-[11px] text-slate-400 font-medium" id="quarkStatusText">未配置</span>
+                        </div>
+                        <textarea class="form-control font-mono" id="quarkCookie" rows="6"
+                            placeholder="请输入夸克网盘网页端抓取的完整 Cookie"></textarea>
+                        <div
+                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold text-slate-700">获取指引：</span>
+                                登录 <a href="https://pan.quark.cn" target="_blank"
+                                    class="text-blue-600 hover:underline">pan.quark.cn</a>，复制 Request Headers 中的
+                                <code>Cookie</code> 字段。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Tab 3: 阿里云盘 -->
+                    <div id="cred-pane-aliyun" class="credential-tab-pane space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label for="aliyunToken" class="form-label font-bold text-slate-800 text-xs mb-0">阿里云盘
+                                Refresh Token</label>
+                            <span class="text-[11px] text-slate-400 font-medium" id="aliyunStatusText">未配置</span>
+                        </div>
+                        <textarea class="form-control font-mono" id="aliyunToken" rows="5"
+                            placeholder="请输入阿里云盘的 refresh_token"></textarea>
+                        <div
+                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold text-slate-700">获取指引：</span>
+                                打开 <a href="https://www.alipan.com" target="_blank"
+                                    class="text-blue-600 hover:underline">alipan.com</a> 开发者工具 Application/Local Storage
+                                中的 <code>token</code> JSON 数据，获取 <code>refresh_token</code> 字符串。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Tab 4: UC网盘 -->
+                    <div id="cred-pane-uc" class="credential-tab-pane space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label for="ucCookie" class="form-label font-bold text-slate-800 text-xs mb-0">UC 网盘
+                                Cookie</label>
+                            <span class="text-[11px] text-slate-400 font-medium" id="ucStatusText">未配置</span>
+                        </div>
+                        <textarea class="form-control font-mono" id="ucCookie" rows="6"
+                            placeholder="请输入 UC 网盘网页端抓取的完整 Cookie"></textarea>
+                        <div
+                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold text-slate-700">获取指引：</span>
+                                登录 <a href="https://drive.uc.cn" target="_blank"
+                                    class="text-blue-600 hover:underline">drive.uc.cn</a>，复制网络请求标头中的完整
+                                <code>Cookie</code>。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Tab 5: 迅雷网盘 -->
+                    <div id="cred-pane-xunlei" class="credential-tab-pane space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800 text-xs">迅雷网盘凭证组</span>
+                            <span class="text-[11px] text-slate-400 font-medium" id="xunleiStatusText">未配置</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="xunleiRefreshToken" class="form-label">Refresh Token</label>
+                                <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="3"
+                                    placeholder="请输入迅雷网盘 refresh_token"></textarea>
+                            </div>
+                            <div>
+                                <label for="xunleiCaptchaSign" class="form-label">Captcha Sign</label>
+                                <textarea class="form-control font-mono" id="xunleiCaptchaSign" rows="3"
+                                    placeholder="请输入 captcha_sign"></textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="xunleiUserId" class="form-label">User ID</label>
+                                <input type="text" class="form-control font-mono" id="xunleiUserId"
+                                    placeholder="请输入 user_id">
+                            </div>
+                        </div>
+                        <div
+                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold text-slate-700">说明：</span>
+                                迅雷网盘需要同时配置 <code>refresh_token</code>、<code>captcha_sign</code> 和 <code>user_id</code>
+                                三个凭证项方可生效。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Tab 6: 光鸭云盘 -->
+                    <div id="cred-pane-guangya" class="credential-tab-pane space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label for="guangyaToken" class="form-label font-bold text-slate-800 text-xs mb-0">光鸭云盘
+                                Token / Refresh Token</label>
+                            <span class="text-[11px] text-slate-400 font-medium" id="guangyaStatusText">未配置</span>
+                        </div>
+                        <textarea class="form-control font-mono" id="guangyaToken" rows="5"
+                            placeholder="请输入光鸭云盘 access_token 或包含 refresh_token 的凭证"></textarea>
+                        <div
+                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-teal-500 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold text-slate-700">获取指引：</span>
+                                登录 <a href="https://www.guangyapan.com" target="_blank"
+                                    class="text-blue-600 hover:underline">guangyapan.com</a>，在开发者工具网络请求标头中复制
+                                <code>Authorization: Bearer &lt;token&gt;</code> 的 Token 字符串。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Tab 7: 悟空网盘 -->
+                    <div id="cred-pane-wukong" class="credential-tab-pane space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label for="wukongCookie" class="form-label font-bold text-slate-800 text-xs mb-0">悟空网盘
+                                Cookie / Token</label>
+                            <span class="text-[11px] text-slate-400 font-medium" id="wukongStatusText">未配置</span>
+                        </div>
+                        <textarea class="form-control font-mono" id="wukongCookie" rows="5"
+                            placeholder="请输入悟空网盘/悟空浏览器网页端 Cookie 或 Session Token"></textarea>
+                        <div
+                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-yellow-500 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold text-slate-700">获取指引：</span>
+                                打开 <a href="https://pan.wkbrowser.com" target="_blank"
+                                    class="text-blue-600 hover:underline">pan.wkbrowser.com</a>，在网络请求标头中复制
+                                <code>Cookie</code> 或 Token 字符串。
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-Tab 8: 移动云盘 -->
+                    <div id="cred-pane-caiyun" class="credential-tab-pane space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label for="caiyunToken" class="form-label font-bold text-slate-800 text-xs mb-0">中国移动云盘
+                                Authorization / Token</label>
+                            <span class="text-[11px] text-slate-400 font-medium" id="caiyunStatusText">未配置</span>
+                        </div>
+                        <textarea class="form-control font-mono" id="caiyunToken" rows="5"
+                            placeholder="请输入移动云盘 (和彩云) 的 Authorization 或 jwtToken"></textarea>
+                        <div
+                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+                            <i class="fas fa-info-circle text-cyan-500 mt-0.5"></i>
+                            <div>
+                                <span class="font-semibold text-slate-700">获取指引：</span>
+                                登录 <a href="https://yun.139.com" target="_blank"
+                                    class="text-blue-600 hover:underline">yun.139.com</a>，在开发者工具网络请求标头中复制
+                                <code>Authorization</code> 字段内容。
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
     </div>
-
-    <!-- TAB 3: 云盘转存凭证 -->
-    <div id="tab-pane-credentials" class="system-tab-pane space-y-6">
-
-        <!-- 云盘账号凭证与密钥 Tab 容器 -->
-        <section class="admin-panel">
-            <div class="admin-panel-header">
-                <div class="admin-panel-title-area">
-                    <h2 class="admin-panel-title">
-                        <i class="fas fa-key text-amber-500"></i> 云盘账号凭证与密钥
-                    </h2>
-                    <p class="admin-panel-desc">用于后台自动转存与生成私有分享，仅保存在服务端安全数据库中</p>
-                </div>
-                <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
-                    <i class="fas fa-save text-[10px]"></i> 保存凭证
-                </button>
-            </div>
-
-            <div class="admin-panel-body space-y-5">
-                <!-- 网盘 Sub-Tabs 导航 -->
-                <div class="credential-tabs-nav flex flex-wrap gap-2 border-b border-slate-200/80 pb-3">
-                    <button class="credential-tab-btn is-active" data-cred-target="baidu" type="button">
-                        <i class="fas fa-paw text-blue-500"></i> 百度网盘
-                        <span class="cred-status-dot missing" id="dot-baidu"></span>
-                    </button>
-                    <button class="credential-tab-btn" data-cred-target="quark" type="button">
-                        <i class="fas fa-bolt text-indigo-500"></i> 夸克网盘
-                        <span class="cred-status-dot missing" id="dot-quark"></span>
-                    </button>
-                    <button class="credential-tab-btn" data-cred-target="aliyun" type="button">
-                        <i class="fas fa-cloud text-amber-500"></i> 阿里云盘
-                        <span class="cred-status-dot missing" id="dot-aliyun"></span>
-                    </button>
-                    <button class="credential-tab-btn" data-cred-target="uc" type="button">
-                        <i class="fas fa-globe text-orange-500"></i> UC 网盘
-                        <span class="cred-status-dot missing" id="dot-uc"></span>
-                    </button>
-                    <button class="credential-tab-btn" data-cred-target="xunlei" type="button">
-                        <i class="fas fa-bolt-lightning text-sky-500"></i> 迅雷网盘
-                        <span class="cred-status-dot missing" id="dot-xunlei"></span>
-                    </button>
-                    <button class="credential-tab-btn" data-cred-target="guangya" type="button">
-                        <i class="fas fa-feather-pointed text-teal-500"></i> 光鸭云盘
-                        <span class="cred-status-dot missing" id="dot-guangya"></span>
-                    </button>
-                    <button class="credential-tab-btn" data-cred-target="wukong" type="button">
-                        <i class="fas fa-sun text-yellow-500"></i> 悟空网盘
-                        <span class="cred-status-dot missing" id="dot-wukong"></span>
-                    </button>
-                    <button class="credential-tab-btn" data-cred-target="caiyun" type="button">
-                        <i class="fas fa-mobile-screen-button text-cyan-500"></i> 移动云盘
-                        <span class="cred-status-dot missing" id="dot-caiyun"></span>
-                    </button>
-                </div>
-
-                <!-- Sub-Tab 1: 百度网盘 -->
-                <div id="cred-pane-baidu" class="credential-tab-pane is-active space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label for="baiduCookie" class="form-label font-bold text-slate-800 text-xs mb-0">百度网盘 Cookie</label>
-                        <span class="text-[11px] text-slate-400 font-medium" id="baiduStatusText">未配置</span>
-                    </div>
-                    <textarea class="form-control font-mono" id="baiduCookie" rows="6" placeholder="请输入百度网盘网页端抓取的完整 Cookie (如 BDUSS, STOKEN 等)"></textarea>
-                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                        <div>
-                            <span class="font-semibold text-slate-700">获取指引：</span>
-                            登录 <a href="https://pan.baidu.com" target="_blank" class="text-blue-600 hover:underline">pan.baidu.com</a>，按 F12 打开开发者工具，在网络 (Network) 请求标头中复制完整 <code>Cookie</code> 粘贴到此处。
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sub-Tab 2: 夸克网盘 -->
-                <div id="cred-pane-quark" class="credential-tab-pane space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label for="quarkCookie" class="form-label font-bold text-slate-800 text-xs mb-0">夸克网盘 Cookie</label>
-                        <span class="text-[11px] text-slate-400 font-medium" id="quarkStatusText">未配置</span>
-                    </div>
-                    <textarea class="form-control font-mono" id="quarkCookie" rows="6" placeholder="请输入夸克网盘网页端抓取的完整 Cookie"></textarea>
-                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                        <div>
-                            <span class="font-semibold text-slate-700">获取指引：</span>
-                            登录 <a href="https://pan.quark.cn" target="_blank" class="text-blue-600 hover:underline">pan.quark.cn</a>，复制 Request Headers 中的 <code>Cookie</code> 字段。
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sub-Tab 3: 阿里云盘 -->
-                <div id="cred-pane-aliyun" class="credential-tab-pane space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label for="aliyunToken" class="form-label font-bold text-slate-800 text-xs mb-0">阿里云盘 Refresh Token</label>
-                        <span class="text-[11px] text-slate-400 font-medium" id="aliyunStatusText">未配置</span>
-                    </div>
-                    <textarea class="form-control font-mono" id="aliyunToken" rows="5" placeholder="请输入阿里云盘的 refresh_token"></textarea>
-                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                        <div>
-                            <span class="font-semibold text-slate-700">获取指引：</span>
-                            打开 <a href="https://www.alipan.com" target="_blank" class="text-blue-600 hover:underline">alipan.com</a> 开发者工具 Application/Local Storage 中的 <code>token</code> JSON 数据，获取 <code>refresh_token</code> 字符串。
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sub-Tab 4: UC网盘 -->
-                <div id="cred-pane-uc" class="credential-tab-pane space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label for="ucCookie" class="form-label font-bold text-slate-800 text-xs mb-0">UC 网盘 Cookie</label>
-                        <span class="text-[11px] text-slate-400 font-medium" id="ucStatusText">未配置</span>
-                    </div>
-                    <textarea class="form-control font-mono" id="ucCookie" rows="6" placeholder="请输入 UC 网盘网页端抓取的完整 Cookie"></textarea>
-                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                        <div>
-                            <span class="font-semibold text-slate-700">获取指引：</span>
-                            登录 <a href="https://drive.uc.cn" target="_blank" class="text-blue-600 hover:underline">drive.uc.cn</a>，复制网络请求标头中的完整 <code>Cookie</code>。
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sub-Tab 5: 迅雷网盘 -->
-                <div id="cred-pane-xunlei" class="credential-tab-pane space-y-4">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-slate-800 text-xs">迅雷网盘凭证组</span>
-                        <span class="text-[11px] text-slate-400 font-medium" id="xunleiStatusText">未配置</span>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="xunleiRefreshToken" class="form-label">Refresh Token</label>
-                            <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="3" placeholder="请输入迅雷网盘 refresh_token"></textarea>
-                        </div>
-                        <div>
-                            <label for="xunleiCaptchaSign" class="form-label">Captcha Sign</label>
-                            <textarea class="form-control font-mono" id="xunleiCaptchaSign" rows="3" placeholder="请输入 captcha_sign"></textarea>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label for="xunleiUserId" class="form-label">User ID</label>
-                            <input type="text" class="form-control font-mono" id="xunleiUserId" placeholder="请输入 user_id">
-                        </div>
-                    </div>
-                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                        <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                        <div>
-                            <span class="font-semibold text-slate-700">说明：</span>
-                            迅雷网盘需要同时配置 <code>refresh_token</code>、<code>captcha_sign</code> 和 <code>user_id</code> 三个凭证项方可生效。
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sub-Tab 6: 光鸭云盘 -->
-                <div id="cred-pane-guangya" class="credential-tab-pane space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label for="guangyaToken" class="form-label font-bold text-slate-800 text-xs mb-0">光鸭云盘 Token / Refresh Token</label>
-                        <span class="text-[11px] text-slate-400 font-medium" id="guangyaStatusText">未配置</span>
-                    </div>
-                    <textarea class="form-control font-mono" id="guangyaToken" rows="5" placeholder="请输入光鸭云盘 access_token 或包含 refresh_token 的凭证"></textarea>
-                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                        <i class="fas fa-info-circle text-teal-500 mt-0.5"></i>
-                        <div>
-                            <span class="font-semibold text-slate-700">获取指引：</span>
-                            登录 <a href="https://www.guangyapan.com" target="_blank" class="text-blue-600 hover:underline">guangyapan.com</a>，在开发者工具网络请求标头中复制 <code>Authorization: Bearer &lt;token&gt;</code> 的 Token 字符串。
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sub-Tab 7: 悟空网盘 -->
-                <div id="cred-pane-wukong" class="credential-tab-pane space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label for="wukongCookie" class="form-label font-bold text-slate-800 text-xs mb-0">悟空网盘 Cookie / Token</label>
-                        <span class="text-[11px] text-slate-400 font-medium" id="wukongStatusText">未配置</span>
-                    </div>
-                    <textarea class="form-control font-mono" id="wukongCookie" rows="5" placeholder="请输入悟空网盘/悟空浏览器网页端 Cookie 或 Session Token"></textarea>
-                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                        <i class="fas fa-info-circle text-yellow-500 mt-0.5"></i>
-                        <div>
-                            <span class="font-semibold text-slate-700">获取指引：</span>
-                            打开 <a href="https://pan.wkbrowser.com" target="_blank" class="text-blue-600 hover:underline">pan.wkbrowser.com</a>，在网络请求标头中复制 <code>Cookie</code> 或 Token 字符串。
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Sub-Tab 8: 移动云盘 -->
-                <div id="cred-pane-caiyun" class="credential-tab-pane space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label for="caiyunToken" class="form-label font-bold text-slate-800 text-xs mb-0">中国移动云盘 Authorization / Token</label>
-                        <span class="text-[11px] text-slate-400 font-medium" id="caiyunStatusText">未配置</span>
-                    </div>
-                    <textarea class="form-control font-mono" id="caiyunToken" rows="5" placeholder="请输入移动云盘 (和彩云) 的 Authorization 或 jwtToken"></textarea>
-                    <div class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                        <i class="fas fa-info-circle text-cyan-500 mt-0.5"></i>
-                        <div>
-                            <span class="font-semibold text-slate-700">获取指引：</span>
-                            登录 <a href="https://yun.139.com" target="_blank" class="text-blue-600 hover:underline">yun.139.com</a>，在开发者工具网络请求标头中复制 <code>Authorization</code> 字段内容。
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-    </div>
-</div>
 </div>
 
 <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>

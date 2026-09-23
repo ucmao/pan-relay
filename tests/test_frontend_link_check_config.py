@@ -106,7 +106,7 @@ class FrontendLinkCheckConfigTest(unittest.TestCase):
         self.assertEqual(200, resp.status_code)
         self.assertIn("enableFrontendLinkCheckToggle", resp.text)
         self.assertIn("defaultHideDeadLinksToggle", resp.text)
-        self.assertIn("前台链接实时免登录测活", resp.text)
+        self.assertIn("前台链接实时测活", resp.text)
         self.assertIn("前台默认过滤失效资源", resp.text)
 
 

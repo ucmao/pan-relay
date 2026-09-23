@@ -435,8 +435,8 @@ body.admin-body::before {
     bottom: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%) translateY(4px);
-    background: #0f172a;
-    color: #f8fafc;
+    background: #ffffff;
+    color: #334155;
     padding: 6px 10px;
     border-radius: 8px;
     font-size: 0.6875rem;
@@ -447,7 +447,8 @@ body.admin-body::before {
     max-width: 260px;
     text-align: left;
     z-index: 1050;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease, transform 0.15s ease;
@@ -460,7 +461,7 @@ body.admin-body::before {
     left: 50%;
     transform: translateX(-50%) translateY(4px);
     border: 5px solid transparent;
-    border-top-color: #0f172a;
+    border-top-color: #e2e8f0;
     z-index: 1050;
     opacity: 0;
     pointer-events: none;
