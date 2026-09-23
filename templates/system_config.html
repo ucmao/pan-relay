@@ -77,54 +77,133 @@
                     <h2 class="admin-panel-title">
                         <i class="fas fa-bullhorn text-indigo-600"></i> 自定义引流文件植入
                     </h2>
-                    <p class="admin-panel-desc">转存时自动在生成的分享目录中附带专属宣传文件 (支持 Quark / UC)</p>
+                    <p class="admin-panel-desc">转存时自动在生成的分享目录中附带专属宣传文件 (全面支持 8 大主流及特色网盘)</p>
                 </div>
             </div>
             <div class="admin-panel-body">
                 <div class="divide-y divide-slate-100">
-                    <!-- 开关: 广告引流植入 -->
+                    <!-- 开关: 广告引流植入总开关 -->
                     <div class="setting-item-row">
                         <div class="space-y-1 min-w-0 pr-4">
                             <div class="flex items-center gap-2 flex-wrap">
-                                <span class="font-semibold text-slate-800 text-sm">广告引流植入</span>
-                                <span class="help-tooltip" data-tooltip="开启后，转存成功时将自动合并引流分享链接中的宣传文件至目标分享文件夹">
+                                <span class="font-semibold text-slate-800 text-sm">广告引流植入总开关</span>
+                                <span class="help-tooltip" data-tooltip="开启后，转存成功时将自动合并对应网盘引流分享链接中的宣传文件至目标分享文件夹">
                                     <i class="far fa-circle-question text-xs"></i>
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500">转存时自动合并此分享链接中的宣传文件至分享文件夹</p>
+                            <p class="text-xs text-slate-500">开启后各网盘转存时将自动识别并合并各自配置的引流文件</p>
                         </div>
                         <div class="flex items-center flex-shrink-0">
-                            <label class="plugin-switch" title="广告引流植入">
+                            <label class="plugin-switch" title="广告引流植入总开关">
                                 <input type="checkbox" id="customAdGlobalToggle" onchange="saveCustomAdConfig()">
                                 <span class="plugin-switch-slider"></span>
                             </label>
                         </div>
                     </div>
 
-                    <!-- 配置: 引流分享链接 -->
-                    <div class="setting-item-row">
-                        <div class="space-y-1 flex-1 min-w-0 pr-4">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <label for="customAdShareUrlInput" class="form-label font-semibold text-slate-800 text-sm mb-0">引流分享链接</label>
-                                <span class="help-tooltip" data-tooltip="提供包含宣传文件或公众号说明的完整公开分享链接">
-                                    <i class="far fa-circle-question text-xs"></i>
-                                </span>
-                            </div>
-                            <p class="text-xs text-slate-500">包含引流宣传文件的完整网盘公开分享链接</p>
-                        </div>
-                        <div class="flex items-center space-x-2 flex-shrink-0 sm:w-1/2">
-                            <div class="relative flex-1">
-                                <span class="absolute left-3 top-2.5 text-slate-400 text-xs"><i class="fas fa-link"></i></span>
-                                <input type="text" id="customAdShareUrlInput" class="form-control form-control-sm pl-8 text-xs font-mono" placeholder="例如: https://pan.quark.cn/s/xxxxxx">
-                            </div>
+                    <!-- 8 大网盘独立配置区 -->
+                    <div class="py-4 space-y-3">
+                        <div class="flex items-center justify-between pb-1">
+                            <span class="text-xs font-semibold text-slate-600 uppercase tracking-wider">各网盘独立引流分享链接配置</span>
                             <button type="button" class="btn btn-primary btn-sm px-3" onclick="saveCustomAdConfig()">
-                                <i class="fas fa-check text-[10px]"></i> 保存
+                                <i class="fas fa-save mr-1"></i> 保存全部引流配置
                             </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- 夸克网盘 -->
+                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                <div class="w-24 shrink-0 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-cloud"></i></span>
+                                    <span class="font-medium text-xs text-slate-800 shrink-0">夸克网盘</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="customAdQuarkUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://pan.quark.cn/s/xxxxxx">
+                                </div>
+                            </div>
+
+                            <!-- UC网盘 -->
+                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                <div class="w-24 shrink-0 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-bolt"></i></span>
+                                    <span class="font-medium text-xs text-slate-800 shrink-0">UC网盘</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="customAdUcUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://drive.uc.cn/s/xxxxxx">
+                                </div>
+                            </div>
+
+                            <!-- 百度网盘 -->
+                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                <div class="w-24 shrink-0 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-paw"></i></span>
+                                    <span class="font-medium text-xs text-slate-800 shrink-0">百度网盘</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="customAdBaiduUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://pan.baidu.com/s/xxxxxx?pwd=xxxx">
+                                </div>
+                            </div>
+
+                            <!-- 阿里云盘 -->
+                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                <div class="w-24 shrink-0 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-cube"></i></span>
+                                    <span class="font-medium text-xs text-slate-800 shrink-0">阿里云盘</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="customAdAliyunUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://www.alipan.com/s/xxxxxx">
+                                </div>
+                            </div>
+
+                            <!-- 迅雷网盘 -->
+                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                <div class="w-24 shrink-0 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-feather"></i></span>
+                                    <span class="font-medium text-xs text-slate-800 shrink-0">迅雷网盘</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="customAdXunleiUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://pan.xunlei.com/s/xxxxxx">
+                                </div>
+                            </div>
+
+                            <!-- 移动云盘 -->
+                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                <div class="w-24 shrink-0 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-mobile-screen"></i></span>
+                                    <span class="font-medium text-xs text-slate-800 shrink-0">移动云盘</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="customAdCaiyunUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://caiyun.139.com/w/i/xxxxxx">
+                                </div>
+                            </div>
+
+                            <!-- 光鸭云盘 -->
+                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                <div class="w-24 shrink-0 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-duck"></i></span>
+                                    <span class="font-medium text-xs text-slate-800 shrink-0">光鸭云盘</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="customAdGuangyaUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://www.guangyapan.com/s/xxxxxx">
+                                </div>
+                            </div>
+
+                            <!-- 悟空网盘 -->
+                            <div class="flex items-center gap-2.5 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                                <div class="w-24 shrink-0 flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold shrink-0"><i class="fas fa-crown"></i></span>
+                                    <span class="font-medium text-xs text-slate-800 shrink-0">悟空网盘</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <input type="text" id="customAdWukongUrl" class="form-control form-control-sm text-xs font-mono" placeholder="例如: https://pan.wkbrowser.com/s/xxxxxx">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+
 
         <!-- 3. 存储空间优化与过期自动清理 -->
         <section class="admin-panel">

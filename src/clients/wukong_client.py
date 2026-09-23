@@ -119,9 +119,20 @@ class WukongPanClient(BasePanClient):
             return None, None, None
 
         data = detail.get("data") or detail
-        file_list = data.get("files") or data.get("file_list") or []
+        from src.services.ad_filter_service import is_ad_filename
+
+        raw_file_list = data.get("files") or data.get("file_list") or []
+        file_list = [
+            item for item in raw_file_list
+            if not is_ad_filename(item.get("name") or item.get("title") or "")
+        ]
+        if not file_list:
+            logger.warning(f"悟空网盘分享内容全为广告，已终止转存与分享: {share_url}")
+            return None, None, None
+
         file_ids = [item.get("file_id") or item.get("id") for item in file_list if (item.get("file_id") or item.get("id"))]
         file_name = (file_list[0].get("name") if file_list else data.get("title")) or "悟空网盘分享文件"
+
 
         # 2. 转存文件
         save_res = self._request_api(
@@ -139,6 +150,14 @@ class WukongPanClient(BasePanClient):
 
         saved_data = save_res.get("data") or save_res
         saved_file_ids = saved_data.get("file_ids") or file_ids
+
+        # 尝试植入个人自定义引流广告 (若已配置并启用)
+        for fid in saved_file_ids:
+            try:
+                self.add_ad(fid)
+            except Exception:
+                pass
+
 
         # 3. 创建新分享
         new_share_res = self._request_api(
@@ -163,6 +182,103 @@ class WukongPanClient(BasePanClient):
 
         saved_file_id_str = json.dumps(saved_file_ids, ensure_ascii=False) if isinstance(saved_file_ids, list) else str(saved_file_ids)
         return saved_file_id_str, file_name, new_share_url
+
+
+    def get_or_create_dir(self, dir_name: str, parent_id: str = "0") -> str:
+        """获取或创建悟空网盘目录"""
+        if not dir_name or dir_name.strip() in ("", "/"):
+            return parent_id or "0"
+        clean_name = dir_name.strip().strip("/")
+        try:
+            res = self._request_api(
+                "POST",
+                "/api/v1/folder/create",
+                payload={"name": clean_name, "parent_id": parent_id or "0"},
+            )
+            if res and (res.get("code") in (0, 200, None) or res.get("data")):
+                data = res.get("data") or res
+                fid = data.get("file_id") or data.get("id")
+                if fid:
+                    logger.info(f"悟空网盘成功创建目录 [{clean_name}]: {fid}")
+                    return str(fid)
+        except Exception as exc:
+            logger.error(f"悟空网盘创建目录异常: {exc}")
+        return parent_id or "0"
+
+    def _clean_ad_files_and_folders(self, file_ids: List[str]) -> List[str]:
+        """清理悟空网盘转存文件中的广告引流文件"""
+        from src.services.ad_filter_service import is_ad_filename
+
+        valid_ids = []
+        ad_ids = []
+        for fid in file_ids:
+            try:
+                info = self._request_api("GET", "/api/v1/file/info", params={"file_id": fid})
+                data = (info or {}).get("data") or info or {}
+                name = data.get("name") or data.get("title") or ""
+                if name and is_ad_filename(name):
+                    logger.info(f"悟空网盘转存项命中广告: {name} ({fid})")
+                    ad_ids.append(fid)
+                else:
+                    valid_ids.append(fid)
+            except Exception:
+                valid_ids.append(fid)
+
+        if ad_ids:
+            try:
+                self.del_file(ad_ids)
+                logger.info(f"悟空网盘已清理广告文件 {len(ad_ids)} 项")
+            except Exception as exc:
+                logger.error(f"悟空网盘清理广告失败: {exc}")
+
+        return valid_ids
+
+    def add_ad(self, target_dir_id: str, ad_share_url: Optional[str] = None) -> bool:
+        """向悟空网盘指定的目录植入个人自定义引流/宣传文件"""
+        target_url = (ad_share_url or "").strip()
+        if not target_url:
+            from src.services.system_config_service import get_ad_share_url_for_disk
+            target_url = get_ad_share_url_for_disk("wukong")
+
+        if not target_url:
+            return False
+
+        share_id, pwd = self._parse_share_url(target_url)
+        if not share_id:
+            logger.warning(f"悟空网盘广告植入链接无效: {target_url}")
+            return False
+
+        try:
+            detail = self._request_api(
+                "GET",
+                "/api/v1/share/info",
+                params={"share_id": share_id, "pwd": pwd or ""},
+            )
+            data = (detail or {}).get("data") or detail or {}
+            files = data.get("files") or data.get("file_list") or []
+            if not files:
+                return False
+
+            first_fid = files[0].get("file_id") or files[0].get("id")
+            if not first_fid:
+                return False
+
+            save_res = self._request_api(
+                "POST",
+                "/api/v1/share/save",
+                payload={
+                    "share_id": share_id,
+                    "file_ids": [first_fid],
+                    "target_dir_id": target_dir_id or "0",
+                },
+            )
+            if save_res and save_res.get("code") in (0, 200, None):
+                logger.info(f"悟空网盘已向目录 {target_dir_id} 成功植入自定义引流文件 (share_id={share_id})")
+                return True
+        except Exception as exc:
+            logger.error(f"悟空网盘植入自定义广告异常: {exc}")
+        return False
+
 
     def del_file(self, file_ids: Union[str, List[str]]) -> bool:
         """从个人网盘中删除文件"""

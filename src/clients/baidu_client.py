@@ -106,6 +106,12 @@ class BaiduPanClient(BasePanClient):
                 logger.warning("百度网盘转存内容全为广告，已删除并终止分享: %s", full_path)
                 return None, None, None
 
+            # 尝试植入个人自定义引流广告 (若已配置并启用)
+            try:
+                self.add_ad(full_path)
+            except Exception:
+                pass
+
             if not new_fs_id:
                 new_fs_id = self._get_file_id_by_path(full_path)
             if not new_fs_id:
@@ -121,6 +127,49 @@ class BaiduPanClient(BasePanClient):
         except Exception as exc:
             logger.exception("百度网盘 store 异常: %s", exc)
             return None, None, None
+
+    def get_or_create_dir(self, dir_name: str, parent_id: str = "/") -> str:
+        """获取或创建百度网盘目标目录"""
+        if not dir_name or dir_name.strip() in ("", "/"):
+            return parent_id if parent_id else "/"
+        clean_dir = dir_name.strip().strip("/")
+        parent_clean = "/" + parent_id.strip("/") if parent_id and parent_id != "/" else ""
+        target_path = f"{parent_clean}/{clean_dir}"
+        self.ensure_dir(target_path)
+        return target_path
+
+    def add_ad(self, target_path: str, ad_share_url: Optional[str] = None) -> bool:
+        """向百度网盘指定的转存目录植入个人自定义引流/广告文件"""
+        target_url = (ad_share_url or "").strip()
+        if not target_url:
+            from src.services.system_config_service import get_ad_share_url_for_disk
+            target_url = get_ad_share_url_for_disk("baidu")
+        if not target_url:
+            return False
+
+        surl, pwd = self._parse_share_url(target_url)
+        if not surl:
+            logger.warning("百度网盘广告植入链接无效: %s", target_url)
+            return False
+
+        try:
+            if pwd:
+                self._verify_pwd(surl, pwd)
+            share_info = self._get_share_page_info(surl)
+            if not share_info:
+                return False
+            share_id, from_uk, fs_id_list, _ = share_info
+            if not fs_id_list:
+                return False
+            clean_target = "/" + target_path.strip("/")
+            res = self._transfer_file(share_id, from_uk, [fs_id_list[0]], clean_target, surl=surl)
+            if res:
+                logger.info("百度网盘已向目录 %s 成功植入自定义引流文件 (surl=%s)", clean_target, surl)
+                return True
+        except Exception as exc:
+            logger.error("百度网盘植入自定义广告异常: %s", exc)
+        return False
+
 
     def _clean_ad_files(self, target_path: str) -> bool:
         """

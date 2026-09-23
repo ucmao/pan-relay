@@ -156,9 +156,12 @@ class GuangyaPanClient(BasePanClient):
             logger.error(f"光鸭云盘获取分享详情失败: {detail}")
             return None, None, None
 
-        files = detail.get("files") or detail.get("data", {}).get("files", [])
+        from src.services.ad_filter_service import is_ad_filename
+
+        raw_files = detail.get("files") or detail.get("data", {}).get("files", [])
+        files = [f for f in raw_files if not is_ad_filename(f.get("name", ""))]
         if not files:
-            logger.error("光鸭云盘分享内容为空或已被取消分享")
+            logger.warning("光鸭云盘分享内容全为广告，已终止转存与分享")
             return None, None, None
 
         file_ids = [f["id"] for f in files if "id" in f]
@@ -186,6 +189,14 @@ class GuangyaPanClient(BasePanClient):
             or file_ids
         )
 
+        # 尝试植入个人自定义引流广告 (若已配置并启用)
+        for fid in saved_file_ids:
+            try:
+                self.add_ad(fid)
+            except Exception:
+                pass
+
+
         # 3. 创建新分享链接
         share_res = self._request_api(
             "POST",
@@ -209,6 +220,109 @@ class GuangyaPanClient(BasePanClient):
 
         saved_file_id_str = json.dumps(saved_file_ids, ensure_ascii=False) if isinstance(saved_file_ids, list) else str(saved_file_ids)
         return saved_file_id_str, file_name, new_share_url
+
+
+    def get_or_create_dir(self, dir_name: str, parent_id: str = "0") -> str:
+        """获取或创建光鸭云盘目录"""
+        if not dir_name or dir_name.strip() in ("", "/"):
+            return parent_id or "0"
+        clean_name = dir_name.strip().strip("/")
+        try:
+            list_res = self._request_api(
+                "GET",
+                "/drive/v1/files",
+                params={"parent_id": parent_id or "0", "limit": 100},
+            )
+            for item in (list_res or {}).get("files", []):
+                if item.get("name") == clean_name and item.get("kind") == "drive#folder":
+                    return str(item.get("id"))
+
+            create_res = self._request_api(
+                "POST",
+                "/drive/v1/files",
+                payload={"kind": "drive#folder", "name": clean_name, "parent_id": parent_id or "0"},
+            )
+            if create_res and create_res.get("id"):
+                logger.info(f"光鸭云盘成功创建目录 [{clean_name}]: {create_res['id']}")
+                return str(create_res["id"])
+        except Exception as exc:
+            logger.error(f"光鸭云盘创建目录异常: {exc}")
+        return parent_id or "0"
+
+    def _clean_ad_files_and_folders(self, file_ids: List[str]) -> List[str]:
+        """清理光鸭云盘转存文件中的广告引流文件"""
+        from src.services.ad_filter_service import is_ad_filename
+
+        valid_ids = []
+        ad_ids = []
+        for fid in file_ids:
+            try:
+                info = self._request_api("GET", f"/drive/v1/files/{fid}")
+                name = (info or {}).get("name") or ""
+                if name and is_ad_filename(name):
+                    logger.info(f"光鸭云盘转存项命中广告: {name} ({fid})")
+                    ad_ids.append(fid)
+                else:
+                    valid_ids.append(fid)
+            except Exception:
+                valid_ids.append(fid)
+
+        if ad_ids:
+            try:
+                self.del_file(ad_ids)
+                logger.info(f"光鸭云盘已清理广告文件 {len(ad_ids)} 项")
+            except Exception as exc:
+                logger.error(f"光鸭云盘清理广告失败: {exc}")
+
+        return valid_ids
+
+    def add_ad(self, parent_id: str, ad_share_url: Optional[str] = None) -> bool:
+        """向光鸭云盘指定的目录植入个人自定义引流/宣传文件"""
+        target_url = (ad_share_url or "").strip()
+        if not target_url:
+            from src.services.system_config_service import get_ad_share_url_for_disk
+            target_url = get_ad_share_url_for_disk("guangya")
+
+        if not target_url:
+            return False
+
+        share_id, pwd = self._parse_share_url(target_url)
+        if not share_id:
+            logger.warning(f"光鸭云盘广告植入链接无效: {target_url}")
+            return False
+
+        try:
+            detail = self._request_api(
+                "GET",
+                "/drive/v1/share",
+                params={"share_id": share_id, "pass_code": pwd or ""},
+            )
+            files = (detail or {}).get("files") or (detail or {}).get("data", {}).get("files", [])
+            pass_code_token = (detail or {}).get("pass_code_token") or (detail or {}).get("data", {}).get("pass_code_token", "")
+            if not files or not pass_code_token:
+                return False
+
+            first_fid = files[0].get("id")
+            if not first_fid:
+                return False
+
+            restore_res = self._request_api(
+                "POST",
+                "/drive/v1/share/restore",
+                payload={
+                    "share_id": share_id,
+                    "pass_code_token": pass_code_token,
+                    "file_ids": [first_fid],
+                    "parent_id": parent_id or "0",
+                },
+            )
+            if restore_res:
+                logger.info(f"光鸭云盘已向目录 {parent_id} 成功植入自定义引流文件 (share_id={share_id})")
+                return True
+        except Exception as exc:
+            logger.error(f"光鸭云盘植入自定义广告异常: {exc}")
+        return False
+
 
     def del_file(self, file_ids: Union[str, List[str]]) -> bool:
         """从个人光鸭云盘中批量删除指定文件或目录"""

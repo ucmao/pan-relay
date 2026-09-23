@@ -250,7 +250,7 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
     # --- 6. 多网盘组合过滤参数 (cloud_name=夸克,百度 或 多值参数) 测试 ---
 
     def test_parse_netdisk_names_utility(self):
-        from src.utils.netdisk_utils import parse_netdisk_names
+        from src.utils.netdisk_utils import parse_netdisk_names, normalize_cloud_name
 
         self.assertEqual(set(), parse_netdisk_names(""))
         self.assertEqual(set(), parse_netdisk_names(None))
@@ -258,6 +258,29 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
         self.assertEqual({"夸克网盘", "百度网盘"}, parse_netdisk_names("夸克网盘, 百度网盘"))
         self.assertEqual({"夸克网盘", "百度网盘", "阿里云盘"}, parse_netdisk_names(["夸克网盘", "百度网盘,阿里云盘"]))
         self.assertEqual({"123云盘", "迅雷网盘"}, parse_netdisk_names("123云盘;迅雷网盘|123云盘"))
+
+        # 别名/短词解析与归一化测试
+        self.assertEqual("百度网盘", normalize_cloud_name("百度"))
+        self.assertEqual("百度网盘", normalize_cloud_name("baidu"))
+        self.assertEqual("夸克网盘", normalize_cloud_name("quark"))
+        self.assertEqual("阿里云盘", normalize_cloud_name("阿里"))
+        self.assertEqual("阿里云盘", normalize_cloud_name("alipan"))
+        self.assertEqual("123云盘", normalize_cloud_name("123"))
+        self.assertEqual("115网盘", normalize_cloud_name("115"))
+        self.assertEqual("UC网盘", normalize_cloud_name("uc"))
+        self.assertEqual("Google Drive", normalize_cloud_name("google"))
+        self.assertEqual("磁力链接", normalize_cloud_name("magnet"))
+        self.assertIsNone(normalize_cloud_name("未知神秘网盘"))
+
+        # parse_netdisk_names 自动归一化
+        self.assertEqual(
+            {"百度网盘", "夸克网盘", "阿里云盘"},
+            parse_netdisk_names("百度,quark, 阿里")
+        )
+        self.assertEqual(
+            {"123云盘", "115网盘", "UC网盘"},
+            parse_netdisk_names(["123", "115;uc"])
+        )
 
     @patch("src.routes.api_v1_routes.search_public_resources")
     def test_api_v1_search_multi_cloud_filtering(self, mock_public_search):
@@ -277,11 +300,11 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
 
         mock_public_search.reset_mock()
 
-        # 2. 多值 Query 参数 ?cloud_name=夸克网盘&cloud_name=阿里云盘
-        resp = self.client.get("/api/v1/search?keyword=繁花&cloud_name=夸克网盘&cloud_name=阿里云盘&scope=all")
+        # 2. 多值 Query 参数包含短词别名 ?cloud_name=夸克&cloud_name=阿里&cloud_name=baidu
+        resp = self.client.get("/api/v1/search?keyword=繁花&cloud_name=夸克&cloud_name=阿里&cloud_name=baidu&scope=all")
         self.assertEqual(200, resp.status_code)
         called_clouds = mock_public_search.call_args[1].get("cloud_name")
-        self.assertEqual({"夸克网盘", "阿里云盘"}, called_clouds)
+        self.assertEqual({"夸克网盘", "阿里云盘", "百度网盘"}, called_clouds)
 
         # 3. 传入不支持的非法网盘名称 -> 400 校验拦截
         resp_invalid = self.client.get("/api/v1/search?keyword=繁花&cloud_name=夸克网盘,未知神秘网盘")

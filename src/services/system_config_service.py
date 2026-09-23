@@ -364,15 +364,30 @@ def get_title_filter_mode() -> str:
 
 
 CUSTOM_AD_INJECTION_CONFIG_KEY = "custom_ad_injection_config"
+DEFAULT_AD_SHARE_URLS = {
+    "quark": "",
+    "uc": "",
+    "baidu": "",
+    "aliyun": "",
+    "xunlei": "",
+    "caiyun": "",
+    "guangya": "",
+    "wukong": "",
+}
 DEFAULT_CUSTOM_AD_INJECTION_CONFIG = {
     "enabled": False,
     "ad_share_url": "",
+    "ad_share_urls": DEFAULT_AD_SHARE_URLS.copy(),
 }
 
 
 def get_custom_ad_injection_config() -> Dict[str, Any]:
-    """获取自定义引流广告植入配置"""
-    default_config = DEFAULT_CUSTOM_AD_INJECTION_CONFIG.copy()
+    """获取自定义引流广告植入配置（支持多网盘独立配置）"""
+    default_config = {
+        "enabled": False,
+        "ad_share_url": "",
+        "ad_share_urls": DEFAULT_AD_SHARE_URLS.copy(),
+    }
     raw_value = get_config_value(CUSTOM_AD_INJECTION_CONFIG_KEY)
     if not raw_value:
         return default_config
@@ -380,9 +395,20 @@ def get_custom_ad_injection_config() -> Dict[str, Any]:
         parsed = json.loads(raw_value)
         if not isinstance(parsed, dict):
             return default_config
+        
+        ad_urls = DEFAULT_AD_SHARE_URLS.copy()
+        raw_urls = parsed.get("ad_share_urls")
+        if isinstance(raw_urls, dict):
+            for k in ad_urls.keys():
+                if k in raw_urls and isinstance(raw_urls[k], str):
+                    ad_urls[k] = raw_urls[k].strip()
+        
+        legacy_url = str(parsed.get("ad_share_url", "")).strip()
+
         return {
             "enabled": bool(parsed.get("enabled", False)),
-            "ad_share_url": str(parsed.get("ad_share_url", "")).strip(),
+            "ad_share_url": legacy_url,
+            "ad_share_urls": ad_urls,
         }
     except Exception as e:
         logger.warning(f"读取自定义广告植入配置失败，回退默认配置: {e}")
@@ -390,15 +416,55 @@ def get_custom_ad_injection_config() -> Dict[str, Any]:
 
 
 def save_custom_ad_injection_config(config_data: Dict[str, Any]) -> bool:
-    """保存自定义引流广告植入配置"""
+    """保存自定义引流广告植入配置（支持多网盘独立配置）"""
     if not isinstance(config_data, dict):
         return False
     current = get_custom_ad_injection_config()
+    
+    enabled = bool(config_data.get("enabled", current["enabled"]))
+    legacy_url = str(config_data.get("ad_share_url", current.get("ad_share_url", ""))).strip()
+    
+    ad_urls = current.get("ad_share_urls", DEFAULT_AD_SHARE_URLS.copy()).copy()
+    if "ad_share_urls" in config_data and isinstance(config_data["ad_share_urls"], dict):
+        for k in DEFAULT_AD_SHARE_URLS.keys():
+            if k in config_data["ad_share_urls"]:
+                ad_urls[k] = str(config_data["ad_share_urls"][k] or "").strip()
+
     payload = {
-        "enabled": bool(config_data.get("enabled", current["enabled"])),
-        "ad_share_url": str(config_data.get("ad_share_url", current["ad_share_url"])).strip(),
+        "enabled": enabled,
+        "ad_share_url": legacy_url,
+        "ad_share_urls": ad_urls,
     }
     return set_config_value(CUSTOM_AD_INJECTION_CONFIG_KEY, payload)
+
+
+def get_ad_share_url_for_disk(disk_type: str) -> str:
+    """
+    根据网盘类型获取其专属引流分享链接；若未配置专属链接则尝试回退到通用引流链接。
+    :param disk_type: 网盘标识或中文名（如 'quark', '夸克网盘', 'baidu', '百度网盘' 等）
+    :return: 对应的引流分享链接，若未启用或未配置则返回空字符串
+    """
+    cfg = get_custom_ad_injection_config()
+    if not cfg.get("enabled"):
+        return ""
+    
+    key_map = {
+        "quark": "quark", "夸克网盘": "quark", "夸克": "quark",
+        "uc": "uc", "uc网盘": "uc", "uc云盘": "uc",
+        "baidu": "baidu", "百度网盘": "baidu", "百度": "baidu",
+        "aliyun": "aliyun", "阿里云盘": "aliyun", "阿里": "aliyun", "alipan": "aliyun",
+        "xunlei": "xunlei", "迅雷网盘": "xunlei", "迅雷": "xunlei",
+        "caiyun": "caiyun", "移动云盘": "caiyun", "和彩云": "caiyun", "mobile": "caiyun",
+        "guangya": "guangya", "光鸭云盘": "guangya", "光雅网盘": "guangya", "光雅": "guangya",
+        "wukong": "wukong", "悟空网盘": "wukong", "悟空": "wukong",
+    }
+    norm_key = key_map.get(str(disk_type).strip().lower(), "")
+    ad_urls = cfg.get("ad_share_urls") or {}
+    if norm_key and norm_key in ad_urls and ad_urls[norm_key]:
+        return ad_urls[norm_key].strip()
+    
+    return cfg.get("ad_share_url", "").strip()
+
 
 
 STORAGE_CLEANUP_CONFIG_KEY = "storage_cleanup_config"

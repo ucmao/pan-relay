@@ -205,10 +205,10 @@
                         <div class="space-y-1 min-w-0">
                             <div class="font-bold text-slate-800 flex items-center gap-1.5 flex-wrap">
                                 <span>原生免登录网盘链接测活保障</span>
-                                <span class="text-[11px] font-normal text-slate-400">（覆盖 9 大主流网盘）</span>
+                                <span class="text-[11px] font-normal text-slate-400">（覆盖 12 大网盘）</span>
                             </div>
                             <p class="text-slate-600 leading-relaxed">
-                                系统内置夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘的原生免登录探测引擎。步骤 1 搜索可开启 <code class="font-mono bg-white text-slate-700 px-1 py-0.5 rounded border border-slate-200">check_status=true</code> 实时识别失效与空链接；步骤 2 转存默认执行前置测活校验（空资源、违规或失效链接直接返回 HTTP 422 拒绝转存），杜绝死链入库。
+                                系统内置夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘、联通云盘、悟空网盘、光鸭云盘的原生免登录探测引擎。步骤 1 搜索可开启 <code class="font-mono bg-white text-slate-700 px-1 py-0.5 rounded border border-slate-200">check_status=true</code> 实时识别失效与空链接；步骤 2 转存默认执行前置测活校验（空资源、违规或失效链接直接返回 HTTP 422 拒绝转存），杜绝死链入库。
                             </p>
                         </div>
                     </div>
@@ -344,7 +344,7 @@
                                             <td class="px-3 py-2 font-mono text-slate-500">Query</td>
                                             <td class="px-3 py-2 text-slate-500">String</td>
                                             <td class="px-3 py-2 text-slate-400">可选</td>
-                                            <td class="px-3 py-2 text-slate-600">指定网盘筛选，支持单个或逗号分隔多个（如：夸克网盘、百度网盘、阿里云盘、UC网盘、迅雷网盘等）</td>
+                                            <td class="px-3 py-2 text-slate-600">指定网盘筛选，支持全称或常见简称/别名（如 百度、阿里、夸克、quark、115、123、uc 等），支持逗号分隔多个</td>
                                         </tr>
                                         <tr>
                                             <td class="px-3 py-2 font-mono font-bold text-slate-800">limit</td>
@@ -520,7 +520,7 @@
                         </div>
                         <div class="p-4 space-y-3 text-xs">
                             <p class="text-slate-600 leading-relaxed">
-                                原生探测 9 大主流网盘（夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘），免登录实时解析资源有效性、提取码状态、以及内部文件数量。支持单条与批量两种调用模式：
+                                原生探测 12 大网盘（夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘、联通云盘、悟空网盘、光鸭云盘），免登录实时解析资源有效性、提取码状态、以及内部文件数量。支持单条与批量两种调用模式：
                             </p>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse">

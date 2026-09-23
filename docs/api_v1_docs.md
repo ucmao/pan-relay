@@ -82,7 +82,7 @@ sequenceDiagram
 - **接口地址**: `GET /api/v1/search`
 - **请求参数**:
   - `keyword` (string, **必填**): 搜索关键词，例如 `黑神话`
-  - `cloud_name` / `cloud_names` (string, **可选**): 指定筛选网盘类型，支持单个网盘或逗号分隔多个网盘，如 `夸克网盘,百度网盘` 或 `cloud_name=夸克网盘&cloud_name=阿里云盘`
+  - `cloud_name` / `cloud_names` (string, **可选**): 指定筛选网盘类型，支持全称或常见简称/别名（如 `百度`、`阿里`、`夸克`、`quark`、`115`、`123`、`uc`、`google`、`磁力` 等），支持单个网盘、逗号分隔多个网盘，如 `夸克,百度` 或多值参数 `cloud_name=夸克&cloud_name=阿里`
   - `limit` (int, **可选**): 限制最大返回结果条数，默认 `100`
   - `scope` (string, **可选**): 查询作用域 (`own` 仅自有库, `all` 全网聚合，默认按后台配置)
   - `check_status` (bool, **可选**): 是否对搜索结果实时测活，默认 `false`。开启后每条结果将注入 `health_state` (`ok` / `bad` / `locked` / `uncertain`) 与 `health_summary`、`file_count`
@@ -210,7 +210,7 @@ sequenceDiagram
 ### 5. 网盘链接免登录测活接口
 
 - **接口地址**: `POST /api/v1/link/check`
-- **说明**: 原生免登录探测 9 大主流网盘（夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘），实时返回有效性、提取码要求及文件数量。
+- **说明**: 原生免登录探测 12 大网盘（夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘、联通云盘、悟空网盘、光鸭云盘），实时返回有效性、提取码要求及文件数量。
 
 **单条测活请求**:
 ```json

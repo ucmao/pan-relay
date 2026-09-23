@@ -249,11 +249,8 @@ class UcPanClient(BasePanClient):
         """
         target_url = (ad_share_url or "").strip()
         if not target_url:
-            from src.services.system_config_service import get_custom_ad_injection_config
-            cfg = get_custom_ad_injection_config()
-            if not cfg.get("enabled"):
-                return False
-            target_url = cfg.get("ad_share_url", "").strip()
+            from src.services.system_config_service import get_ad_share_url_for_disk
+            target_url = get_ad_share_url_for_disk("uc")
 
         if not target_url:
             return False

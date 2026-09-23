@@ -861,19 +861,24 @@ async function loadCustomAdConfig() {
         const config = data.config || {};
 
         const globalToggle = document.getElementById('customAdGlobalToggle');
-        const shareUrlInput = document.getElementById('customAdShareUrlInput');
-        const badge = document.getElementById('customAdShareUrlBadge');
-
         if (globalToggle) globalToggle.checked = Boolean(config.enabled ?? false);
-        const url = (config.ad_share_url || '').trim();
-        if (shareUrlInput) shareUrlInput.value = url;
-        if (badge) {
-            if (url) {
-                badge.textContent = '已配置';
-                badge.className = 'badge badge-success text-[10px]';
-            } else {
-                badge.textContent = '未配置';
-                badge.className = 'badge badge-secondary text-[10px]';
+
+        const adUrls = config.ad_share_urls || {};
+        const fieldMap = {
+            quark: 'customAdQuarkUrl',
+            uc: 'customAdUcUrl',
+            baidu: 'customAdBaiduUrl',
+            aliyun: 'customAdAliyunUrl',
+            xunlei: 'customAdXunleiUrl',
+            caiyun: 'customAdCaiyunUrl',
+            guangya: 'customAdGuangyaUrl',
+            wukong: 'customAdWukongUrl',
+        };
+
+        for (const [key, elementId] of Object.entries(fieldMap)) {
+            const input = document.getElementById(elementId);
+            if (input) {
+                input.value = (adUrls[key] || '').trim();
             }
         }
     } catch (error) {
@@ -884,11 +889,28 @@ async function loadCustomAdConfig() {
 
 async function saveCustomAdConfig() {
     const globalToggle = document.getElementById('customAdGlobalToggle');
-    const shareUrlInput = document.getElementById('customAdShareUrlInput');
+
+    const fieldMap = {
+        quark: 'customAdQuarkUrl',
+        uc: 'customAdUcUrl',
+        baidu: 'customAdBaiduUrl',
+        aliyun: 'customAdAliyunUrl',
+        xunlei: 'customAdXunleiUrl',
+        caiyun: 'customAdCaiyunUrl',
+        guangya: 'customAdGuangyaUrl',
+        wukong: 'customAdWukongUrl',
+    };
+
+    const adShareUrls = {};
+    for (const [key, elementId] of Object.entries(fieldMap)) {
+        const input = document.getElementById(elementId);
+        adShareUrls[key] = input ? input.value.trim() : '';
+    }
 
     const payload = {
         enabled: globalToggle ? globalToggle.checked : false,
-        ad_share_url: shareUrlInput ? shareUrlInput.value.trim() : '',
+        ad_share_urls: adShareUrls,
+        ad_share_url: adShareUrls.quark || adShareUrls.uc || '',
     };
 
     try {
@@ -903,13 +925,14 @@ async function saveCustomAdConfig() {
             throw new Error(data.message || `HTTP error! status: ${response.status}`);
         }
 
-        showToast(data.message || '自定义引流广告配置保存成功', 'success');
+        showToast(data.message || '8大网盘自定义引流配置保存成功', 'success');
         await loadCustomAdConfig();
     } catch (error) {
         console.error('保存自定义广告配置失败:', error);
         showToast(`保存自定义广告配置失败: ${error.message}`, 'danger');
     }
 }
+
 
 function handleRetentionUnitChange() {
     const unitSelect = document.getElementById('storageRetentionUnitSelect');

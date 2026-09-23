@@ -24,6 +24,9 @@ from src.services.link_checker.detectors import (
     TianyiDetector,
     UCDetector,
     XunleiDetector,
+    UnicomDetector,
+    WukongDetector,
+    GuangyaDetector,
 )
 
 
@@ -252,6 +255,73 @@ class ModularLinkCheckerTest(unittest.TestCase):
 
         res = check_link("https://yun.139.com/shareweb/#/w/i/cmcc123", force_refresh=True)
         self.assertEqual(STATE_OK, res["state"])
+
+    @patch("requests.Session.get")
+    def test_unicom_detector(self, mock_get):
+        resp_ok = MagicMock()
+        resp_ok.status_code = 200
+        resp_ok.text = "<html><body>联通云盘 沃云盘 资源下载 pan.wo.cn</body></html>"
+        mock_get.return_value = resp_ok
+
+        res_ok = check_link("https://pan.wo.cn/s/unicom123", force_refresh=True)
+        self.assertEqual(STATE_OK, res_ok["state"])
+
+        resp_bad = MagicMock()
+        resp_bad.status_code = 200
+        resp_bad.text = "<div>该分享已失效已被删除</div>"
+        mock_get.return_value = resp_bad
+
+        res_bad = check_link("https://pan.wo.cn/s/unicombad", force_refresh=True)
+        self.assertEqual(STATE_BAD, res_bad["state"])
+
+    @patch("requests.Session.get")
+    def test_wukong_detector(self, mock_get):
+        resp_ok = MagicMock()
+        resp_ok.json.return_value = {
+            "code": 0,
+            "data": {
+                "files": [{"file_id": "1", "name": "test.mp4"}],
+                "title": "悟空合集",
+            },
+        }
+        mock_get.return_value = resp_ok
+
+        res_ok = check_link("https://pan.wkbrowser.com/s/wukong123", force_refresh=True)
+        self.assertEqual(STATE_OK, res_ok["state"])
+        self.assertEqual(1, res_ok["file_count"])
+
+        # 密码锁定
+        resp_lock = MagicMock()
+        resp_lock.json.return_value = {"code": 401, "message": "请输入提取码"}
+        mock_get.return_value = resp_lock
+
+        res_lock = check_link("https://pan.wkbrowser.com/s/wukonglock", force_refresh=True)
+        self.assertEqual(STATE_LOCKED, res_lock["state"])
+
+    @patch("requests.Session.get")
+    def test_guangya_detector(self, mock_get):
+        resp_ok = MagicMock()
+        resp_ok.json.return_value = {
+            "code": 0,
+            "files": [{"id": "g1", "name": "photo.png"}],
+        }
+        mock_get.return_value = resp_ok
+
+        res_ok = check_link("https://www.guangyapan.com/s/guangya123", force_refresh=True)
+        self.assertEqual(STATE_OK, res_ok["state"])
+        self.assertEqual(1, res_ok["file_count"])
+
+        # 空列表
+        resp_empty = MagicMock()
+        resp_empty.json.return_value = {
+            "code": 0,
+            "files": [],
+        }
+        mock_get.return_value = resp_empty
+
+        res_empty = check_link("https://www.guangyapan.com/s/guangyaempty", force_refresh=True)
+        self.assertEqual(STATE_BAD, res_empty["state"])
+        self.assertEqual(0, res_empty["file_count"])
 
     # --- 5. 引擎 SingleFlight 并发与缓存测试 ---
     def test_cache_hit(self):

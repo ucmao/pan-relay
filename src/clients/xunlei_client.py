@@ -83,7 +83,15 @@ class XunleiPanClient(BasePanClient):
                 logger.error("迅雷网盘分享状态异常: %s (share_id=%s)", status_text, share_id)
             return None, None, None
 
-        file_ids = [item["id"] for item in detail.get("files", []) if item.get("id")]
+        from src.services.ad_filter_service import is_ad_filename
+
+        raw_files = detail.get("files", [])
+        files = [item for item in raw_files if not is_ad_filename(item.get("name", ""))]
+        if not files:
+            logger.warning("迅雷网盘分享内容全为广告，已终止转存与分享: share_id=%s", share_id)
+            return None, None, None
+
+        file_ids = [item["id"] for item in files if item.get("id")]
         if not file_ids or not detail.get("pass_code_token"):
             logger.error("迅雷网盘分享详情缺少必要字段: file_ids=%s, pass_code_token=%s", file_ids, bool(detail.get("pass_code_token")))
             return None, None, None
@@ -128,11 +136,19 @@ class XunleiPanClient(BasePanClient):
             logger.error("迅雷网盘未解析出转存后的文件 ID")
             return None, None, None
 
+        # 尝试植入个人自定义引流广告 (若已配置并启用)
+        for fid in trace_file_ids:
+            try:
+                self.add_ad(fid)
+            except Exception:
+                pass
+
+
         share_result = self._request_pan(
             "POST",
             "https://api-pan.xunlei.com/drive/v1/share",
             payload={
-                "file_ids": trace_file_ids,
+                "file_ids": cleaned_file_ids,
                 "share_to": "copy",
                 "params": {
                     "subscribe_push": "false",
@@ -154,7 +170,125 @@ class XunleiPanClient(BasePanClient):
             final_url = f"{final_url}?pwd={share_result['pass_code']}"
 
         title = (detail.get("files") or [{}])[0].get("name") or "迅雷网盘资源"
-        return json.dumps(trace_file_ids, ensure_ascii=False), title, final_url
+        return json.dumps(cleaned_file_ids, ensure_ascii=False), title, final_url
+
+    def get_or_create_dir(self, dir_name: str, parent_id: str = "") -> str:
+        """获取或自动创建迅雷网盘目录"""
+        if not dir_name or dir_name.strip() in ("", "/"):
+            return parent_id or ""
+        clean_name = dir_name.strip().strip("/")
+        try:
+            list_res = self._request_pan(
+                "GET",
+                "https://api-pan.xunlei.com/drive/v1/files",
+                params={"parent_id": parent_id or "", "limit": 100},
+                action="get:/drive/v1/files",
+            )
+            for item in (list_res or {}).get("files", []):
+                if item.get("name") == clean_name and item.get("kind") == "drive#folder":
+                    return str(item.get("id"))
+
+            create_res = self._request_pan(
+                "POST",
+                "https://api-pan.xunlei.com/drive/v1/files",
+                payload={"kind": "drive#folder", "name": clean_name, "parent_id": parent_id or ""},
+                action="post:/drive/v1/files",
+            )
+            if create_res and create_res.get("id"):
+                logger.info("迅雷网盘成功创建目录 [%s]: id=%s", clean_name, create_res["id"])
+                return str(create_res["id"])
+        except Exception as exc:
+            logger.error("迅雷网盘创建/获取目录异常: %s", exc)
+        return parent_id or ""
+
+    def _clean_ad_files_and_folders(self, file_ids: List[str]) -> List[str]:
+        """清理迅雷网盘转存文件中的广告文件"""
+        from src.services.ad_filter_service import is_ad_filename
+
+        valid_ids = []
+        ad_ids = []
+        for fid in file_ids:
+            try:
+                info = self._request_pan(
+                    "GET",
+                    f"https://api-pan.xunlei.com/drive/v1/files/{fid}",
+                    action=f"get:/drive/v1/files/{fid}",
+                )
+                name = (info or {}).get("name") or ""
+                if name and is_ad_filename(name):
+                    logger.info("迅雷网盘转存项命中广告，标记清理: %s (fid=%s)", name, fid)
+                    ad_ids.append(fid)
+                else:
+                    valid_ids.append(fid)
+            except Exception:
+                valid_ids.append(fid)
+
+        if ad_ids:
+            try:
+                self.del_file(ad_ids)
+                logger.info("迅雷网盘已清理广告文件 %d 项", len(ad_ids))
+            except Exception as exc:
+                logger.error("迅雷网盘清理广告失败: %s", exc)
+
+        return valid_ids
+
+    def add_ad(self, parent_id: str, ad_share_url: Optional[str] = None) -> bool:
+        """向迅雷网盘指定的目录植入个人自定义引流/宣传文件"""
+        target_url = (ad_share_url or "").strip()
+        if not target_url:
+            from src.services.system_config_service import get_ad_share_url_for_disk
+            target_url = get_ad_share_url_for_disk("xunlei")
+
+        if not target_url:
+            return False
+
+        share_id, pwd = self._parse_share_url(target_url)
+        if not share_id:
+            logger.warning("迅雷网盘广告植入链接无效: %s", target_url)
+            return False
+
+        try:
+            detail = self._request_pan(
+                "GET",
+                "https://api-pan.xunlei.com/drive/v1/share",
+                params={
+                    "share_id": share_id,
+                    "pass_code": pwd or "",
+                    "limit": 50,
+                    "pass_code_token": "",
+                    "page_token": "",
+                    "thumbnail_size": "SIZE_SMALL",
+                },
+                action="get:/drive/v1/share",
+            )
+            files = (detail or {}).get("files") or []
+            pass_code_token = (detail or {}).get("pass_code_token")
+            if not files or not pass_code_token:
+                return False
+
+            first_file = files[0]
+            restore_res = self._request_pan(
+                "POST",
+                "https://api-pan.xunlei.com/drive/v1/share/restore",
+                payload={
+                    "parent_id": parent_id or "",
+                    "share_id": share_id,
+                    "pass_code_token": pass_code_token,
+                    "ancestor_ids": [],
+                    "specify_parent_id": True,
+                    "file_ids": [first_file["id"]],
+                },
+                action="post:/drive/v1/share/restore",
+            )
+            task_id = (restore_res or {}).get("restore_task_id")
+            if task_id:
+                self._wait_task(task_id, retries=5)
+                logger.info("迅雷网盘已向目录 %s 成功植入自定义引流文件 (share_id=%s)", parent_id, share_id)
+                return True
+        except Exception as exc:
+            logger.error("迅雷网盘植入自定义广告异常: %s", exc)
+        return False
+
 
     def del_file(self, file_ids: List[str]) -> bool:
         normalized_ids = [item for item in file_ids if item]

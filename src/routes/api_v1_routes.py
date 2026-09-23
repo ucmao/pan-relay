@@ -414,7 +414,7 @@ def api_docs():
                 "parameters": {
                     "keyword": "关键词 (必填)",
                     "scope": "搜索范围 (own: 仅站长收益库; all: 全网聚合，默认按后台配置)",
-                    "cloud_name": "指定网盘筛选，支持单个或逗号分隔多个 (可选)",
+                    "cloud_name": "指定网盘筛选，支持全称或常见简称/别名（如 百度、阿里、夸克、quark、115、123、uc 等），支持单个或逗号分隔多个 (可选)",
                     "cloud_names": "多网盘筛选别名 (可选)",
                     "limit": "条数限制 (默认 100)",
                     "check_status": "是否实时免登录测活注入 health_state/health_summary/file_count (默认 false)",
@@ -444,7 +444,7 @@ def api_docs():
             {
                 "path": "/api/v1/link/check",
                 "method": "POST",
-                "summary": "网盘分享链接免登录测活检测 (支持夸克/百度/阿里/UC/迅雷等9大网盘，单条或批量)",
+                "summary": "网盘分享链接免登录测活检测 (支持夸克/百度/阿里/UC/迅雷/联通/悟空/光鸭等12大网盘，单条或批量)",
                 "body": {
                     "url": "单条检测链接 (单条必填)",
                     "password": "提取码 (可选)",

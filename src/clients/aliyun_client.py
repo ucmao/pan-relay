@@ -65,7 +65,14 @@ class AliyunPanClient(BasePanClient):
             logger.error("阿里云盘获取 share_token 失败: %s (share_id=%s)", err_msg, share_id)
             return None, None, None
 
-        file_infos = share_info["file_infos"]
+        from src.services.ad_filter_service import is_ad_filename
+
+        raw_file_infos = share_info["file_infos"]
+        file_infos = [f for f in raw_file_infos if not is_ad_filename(f.get("name", ""))]
+        if not file_infos:
+            logger.warning("阿里云盘分享内容全为广告，已终止转存与分享")
+            return None, None, None
+
         title = share_info.get("share_name") or file_infos[0].get("name") or "阿里云盘资源"
 
         requests_payload = []
@@ -111,6 +118,14 @@ class AliyunPanClient(BasePanClient):
             logger.error("阿里云盘未返回转存后的 file_id")
             return None, None, None
 
+        # 尝试植入个人自定义引流广告 (若已配置并启用)
+        for fid in new_file_ids:
+            try:
+                self.add_ad(fid)
+            except Exception:
+                pass
+
+
         share_result = self._request(
             "POST",
             "https://api.aliyundrive.com/adrive/v2/share_link/create",
@@ -118,7 +133,7 @@ class AliyunPanClient(BasePanClient):
                 "drive_id": self.drive_id,
                 "expiration": "",
                 "share_pwd": "",
-                "file_id_list": new_file_ids,
+                "file_id_list": cleaned_file_ids,
             },
         )
         share_url_new = (share_result or {}).get("share_url")
@@ -127,7 +142,105 @@ class AliyunPanClient(BasePanClient):
             logger.error("阿里云盘创建分享失败: %s", err_msg)
             return None, None, None
 
-        return json.dumps(new_file_ids, ensure_ascii=False), title, share_url_new
+        return json.dumps(cleaned_file_ids, ensure_ascii=False), title, share_url_new
+
+    def _clean_ad_files_and_folders(self, file_ids: List[str]) -> List[str]:
+        """扫描阿里云盘转存后的文件，智能清理广告/引流文件"""
+        from src.services.ad_filter_service import is_ad_filename
+
+        valid_ids: List[str] = []
+        ad_ids: List[str] = []
+
+        for fid in file_ids:
+            try:
+                info = self._request(
+                    "POST",
+                    "https://api.aliyundrive.com/v2/file/get",
+                    {"drive_id": self.drive_id, "file_id": fid},
+                )
+                name = (info or {}).get("name") or ""
+                if name and is_ad_filename(name):
+                    logger.info("阿里云盘转存项命中广告关键词，标记清理: %s (fid=%s)", name, fid)
+                    ad_ids.append(fid)
+                else:
+                    valid_ids.append(fid)
+            except Exception as exc:
+                logger.warning("阿里云盘检测文件信息异常 (fid=%s): %s", fid, exc)
+                valid_ids.append(fid)
+
+        if ad_ids:
+            try:
+                self.del_file(ad_ids)
+                logger.info("阿里云盘已清理广告文件 %d 项: %s", len(ad_ids), ad_ids)
+            except Exception as exc:
+                logger.error("阿里云盘清理广告文件失败: %s", exc)
+
+        return valid_ids
+
+    def add_ad(self, parent_file_id: str, ad_share_url: Optional[str] = None) -> bool:
+        """向阿里云盘指定的目录植入个人自定义引流/宣传文件"""
+        target_url = (ad_share_url or "").strip()
+        if not target_url:
+            from src.services.system_config_service import get_ad_share_url_for_disk
+            target_url = get_ad_share_url_for_disk("aliyun")
+
+        if not target_url:
+            return False
+
+        share_id = self._extract_share_id(target_url)
+        if not share_id:
+            logger.warning("阿里云盘广告植入链接无效: %s", target_url)
+            return False
+
+        try:
+            share_info = self._post_anonymous(
+                "https://api.aliyundrive.com/adrive/v3/share_link/get_share_by_anonymous",
+                {"share_id": share_id},
+            )
+            file_infos = (share_info or {}).get("file_infos") or []
+            if not file_infos:
+                return False
+
+            token_data = self._request(
+                "POST",
+                "https://api.aliyundrive.com/v2/share_link/get_share_token",
+                {"share_id": share_id},
+            )
+            share_token = (token_data or {}).get("share_token")
+            if not share_token:
+                return False
+
+            first_file = file_infos[0]
+            copy_res = self._request(
+                "POST",
+                "https://api.aliyundrive.com/adrive/v4/batch",
+                {
+                    "requests": [
+                        {
+                            "body": {
+                                "auto_rename": True,
+                                "file_id": first_file["file_id"],
+                                "share_id": share_id,
+                                "to_drive_id": self.drive_id,
+                                "to_parent_file_id": parent_file_id or "root",
+                            },
+                            "headers": {"Content-Type": "application/json"},
+                            "id": "ad-copy-0",
+                            "method": "POST",
+                            "url": "/file/copy",
+                        }
+                    ],
+                    "resource": "file",
+                },
+                extra_headers={"X-Share-Token": share_token},
+            )
+            if copy_res and (copy_res.get("responses") or []):
+                logger.info("阿里云盘已向目录 %s 成功植入自定义引流文件 (share_id=%s)", parent_file_id, share_id)
+                return True
+        except Exception as exc:
+            logger.error("阿里云盘植入自定义广告异常: %s", exc)
+        return False
+
 
     def get_or_create_dir(self, dir_name: str, parent_file_id: str = "root") -> str:
         """获取指定名称的文件夹 file_id，若不存在则自动新建"""

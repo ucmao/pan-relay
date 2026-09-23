@@ -11,6 +11,9 @@ from .pan123 import Pan123Detector
 from .tianyi import TianyiDetector
 from .pan115 import Pan115Detector
 from .cmcc import CMCCDetector
+from .unicom import UnicomDetector
+from .wukong import WukongDetector
+from .guangya import GuangyaDetector
 
 ALL_DETECTORS: List[BaseDetector] = [
     QuarkDetector(),
@@ -22,6 +25,9 @@ ALL_DETECTORS: List[BaseDetector] = [
     TianyiDetector(),
     Pan115Detector(),
     CMCCDetector(),
+    UnicomDetector(),
+    WukongDetector(),
+    GuangyaDetector(),
 ]
 
 __all__ = [
@@ -35,4 +41,8 @@ __all__ = [
     "TianyiDetector",
     "Pan115Detector",
     "CMCCDetector",
+    "UnicomDetector",
+    "WukongDetector",
+    "GuangyaDetector",
 ]
+

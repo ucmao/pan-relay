@@ -147,10 +147,20 @@ class CaiyunPanClient(BasePanClient):
                 return None, None, None
 
         data = share_info.get("data") or share_info
-        content_list = data.get("contentList") or data.get("fileList") or []
-        first_item = content_list[0] if content_list else {}
+        from src.services.ad_filter_service import is_ad_filename
+
+        raw_content_list = data.get("contentList") or data.get("fileList") or []
+        content_list = [
+            item for item in raw_content_list
+            if not is_ad_filename(item.get("contentName") or item.get("name") or "")
+        ]
+        if not content_list:
+            logger.warning(f"移动云盘分享内容全为广告，已终止转存与分享: {share_url}")
+            return None, None, None
+
+        first_item = content_list[0]
         file_name = first_item.get("contentName") or data.get("shareTitle") or "移动云盘转存文件"
-        
+
         content_ids = []
         for item in content_list:
             cid = item.get("contentID") or item.get("id") or item.get("caID")
@@ -176,6 +186,14 @@ class CaiyunPanClient(BasePanClient):
         saved_data = restore_res.get("data") or restore_res
         saved_file_ids = saved_data.get("contentIDs") or content_ids
 
+        # 尝试植入个人自定义引流广告 (若已配置并启用)
+        for fid in saved_file_ids:
+            try:
+                self.add_ad(fid)
+            except Exception:
+                pass
+
+
         # 3. 创建新分享链接
         share_create_res = self._request_api(
             "POST",
@@ -200,6 +218,108 @@ class CaiyunPanClient(BasePanClient):
 
         saved_file_id_str = json.dumps(saved_file_ids, ensure_ascii=False) if isinstance(saved_file_ids, list) else str(saved_file_ids)
         return saved_file_id_str, file_name, new_share_url
+
+
+    def get_or_create_dir(self, dir_name: str, parent_id: str = "root") -> str:
+        """获取或创建移动云盘目标目录"""
+        if not dir_name or dir_name.strip() in ("", "/"):
+            return parent_id or "root"
+        clean_name = dir_name.strip().strip("/")
+        try:
+            res = self._request_api(
+                "POST",
+                "/orchestration/personalCloud/catalog/v1.0/createCatalog",
+                payload={"parentCatalogID": parent_id or "root", "catalogName": clean_name},
+            )
+            if res:
+                data = res.get("data") or res
+                cat_id = data.get("catalogID") or data.get("id")
+                if cat_id:
+                    logger.info(f"移动云盘新建/确认目录 [{clean_name}]: {cat_id}")
+                    return str(cat_id)
+        except Exception as exc:
+            logger.error(f"移动云盘创建目录异常: {exc}")
+        return parent_id or "root"
+
+    def _clean_ad_files_and_folders(self, file_ids: List[str]) -> List[str]:
+        """清理移动云盘转存文件中的广告引流文件"""
+        from src.services.ad_filter_service import is_ad_filename
+
+        valid_ids = []
+        ad_ids = []
+        for fid in file_ids:
+            try:
+                info = self._request_api(
+                    "POST",
+                    "/orchestration/personalCloud/catalog/v1.0/getContentInfo",
+                    payload={"contentID": fid},
+                )
+                data = (info or {}).get("data") or info or {}
+                name = data.get("contentName") or data.get("name") or ""
+                if name and is_ad_filename(name):
+                    logger.info(f"移动云盘转存项命中广告关键词: {name} ({fid})")
+                    ad_ids.append(fid)
+                else:
+                    valid_ids.append(fid)
+            except Exception:
+                valid_ids.append(fid)
+
+        if ad_ids:
+            try:
+                self.del_file(ad_ids)
+                logger.info(f"移动云盘已清理广告文件 {len(ad_ids)} 项")
+            except Exception as exc:
+                logger.error(f"移动云盘清理广告失败: {exc}")
+
+        return valid_ids
+
+    def add_ad(self, target_dir_id: str, ad_share_url: Optional[str] = None) -> bool:
+        """向移动云盘指定的目录植入个人自定义引流/宣传文件"""
+        target_url = (ad_share_url or "").strip()
+        if not target_url:
+            from src.services.system_config_service import get_ad_share_url_for_disk
+            target_url = get_ad_share_url_for_disk("caiyun")
+
+        if not target_url:
+            return False
+
+        share_id, pwd = self._parse_share_url(target_url)
+        if not share_id:
+            logger.warning(f"移动云盘广告植入链接无效: {target_url}")
+            return False
+
+        try:
+            share_info = self._request_api(
+                "POST",
+                "/orchestration/personalCloud/share/v1.0/getShareInfo",
+                payload={"linkID": share_id, "password": pwd or ""},
+            )
+            data = (share_info or {}).get("data") or share_info or {}
+            content_list = data.get("contentList") or data.get("fileList") or []
+            if not content_list:
+                return False
+
+            first_cid = content_list[0].get("contentID") or content_list[0].get("id") or content_list[0].get("caID")
+            if not first_cid:
+                return False
+
+            restore_res = self._request_api(
+                "POST",
+                "/orchestration/personalCloud/batch/v1.0/createBatch",
+                payload={
+                    "action": "restore",
+                    "linkID": share_id,
+                    "contentIDs": [first_cid],
+                    "targetDirID": target_dir_id or "root",
+                },
+            )
+            if restore_res and (restore_res.get("success", False) or restore_res.get("code") in ("0", 0, "0000")):
+                logger.info(f"移动云盘已向目录 {target_dir_id} 成功植入自定义引流文件 (share_id={share_id})")
+                return True
+        except Exception as exc:
+            logger.error(f"移动云盘植入自定义广告异常: {exc}")
+        return False
+
 
     def del_file(self, file_ids: Union[str, List[str]]) -> bool:
         """从移动云盘中删除文件"""

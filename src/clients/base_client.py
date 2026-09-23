@@ -40,3 +40,18 @@ class BasePanClient(ABC):
     ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """store 的规范命名别名"""
         return self.store(share_url, to_pdir_path=to_pdir_path)
+
+    def get_or_create_dir(self, dir_name: str, parent_id: str = "0") -> str:
+        """
+        获取指定名称的文件夹 ID 或路径，若不存在则自动新建。
+        各网盘客户端可重写此方法。默认返回传入的 parent_id。
+        """
+        return parent_id
+
+    def add_ad(self, dir_id_or_path: str, ad_share_url: Optional[str] = None) -> bool:
+        """
+        向指定的转存目标目录/文件夹植入个人自定义引流文件。
+        各网盘客户端可重写此方法。默认未实现返回 False。
+        """
+        return False
+

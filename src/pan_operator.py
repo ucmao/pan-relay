@@ -164,12 +164,9 @@ def _resolve_target_dir(client_class, client_credential, target_dir_name: str) -
     根据配置的目录名称与网盘类型，解析出对应的目标路径/文件夹 ID。
     """
     if not target_dir_name or target_dir_name.strip() in ("", "/"):
-        return "/" if client_class == BaiduPanClient else ("root" if client_class == AliyunPanClient else "0")
+        return "/" if client_class == BaiduPanClient else ("root" if client_class in (AliyunPanClient, CaiyunPanClient) else "0")
 
     clean_dir = target_dir_name.strip().strip("/")
-    if client_class == BaiduPanClient:
-        return f"/{clean_dir}"
-
     try:
         client = client_class(client_credential)
         if hasattr(client, "get_or_create_dir"):
@@ -177,7 +174,10 @@ def _resolve_target_dir(client_class, client_credential, target_dir_name: str) -
     except Exception as exc:
         logger.error(f"[{client_class.__name__}] 解析目标转存目录失败: {exc}")
 
-    return "root" if client_class == AliyunPanClient else "0"
+    if client_class == BaiduPanClient:
+        return f"/{clean_dir}"
+    return "root" if client_class in (AliyunPanClient, CaiyunPanClient) else "0"
+
 
 
 # --- 业务接口：创建分享 ---
