@@ -1361,14 +1361,6 @@ function updateApiLivePreview() {
     const scopeHtml = renderParam('scope', scope, scopeLocked, 'text-teal-700 font-medium', 'text-teal-800 font-black');
     const limitHtml = renderParam('limit', limit, limitLocked, 'text-blue-700 font-medium', 'text-blue-800 font-black');
 
-    const filterBadNormal = filterBad ? 'text-emerald-700 font-bold' : 'text-rose-600 font-medium';
-    const filterBadLockedStr = filterBad ? 'text-emerald-800 font-black' : 'text-rose-700 font-black';
-    const filterBadHtml = renderParam('filter_bad', filterBad, filterBadLocked, filterBadNormal, filterBadLockedStr);
-
-    const checkStatusNormal = checkStatus ? 'text-emerald-700 font-bold' : 'text-rose-600 font-medium';
-    const checkStatusLockedStr = checkStatus ? 'text-emerald-800 font-black' : 'text-rose-700 font-black';
-    const checkStatusHtml = renderParam('check_status', checkStatus, checkStatusLocked, checkStatusNormal, checkStatusLockedStr);
-
     previewEl.innerHTML = `<span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 font-bold text-[11px] me-2 border border-sky-200">GET</span>` +
         `<span class="text-emerald-600 font-semibold">${protocolStr}</span>` +
         `<span class="text-slate-900 font-bold me-0.5">${hostPathStr}</span>` +
@@ -1377,11 +1369,7 @@ function updateApiLivePreview() {
         `<span class="text-slate-400 font-bold px-0.5">&amp;</span>` +
         `${scopeHtml}` +
         `<span class="text-slate-400 font-bold px-0.5">&amp;</span>` +
-        `${limitHtml}` +
-        `<span class="text-slate-400 font-bold px-0.5">&amp;</span>` +
-        `${filterBadHtml}` +
-        `<span class="text-slate-400 font-bold px-0.5">&amp;</span>` +
-        `${checkStatusHtml}`;
+        `${limitHtml}`;
 }
 
 async function loadApiModeConfig() {
@@ -1401,13 +1389,9 @@ async function loadApiModeConfig() {
         const searchScopeSelect = document.getElementById('searchScopeSelect');
         const searchScopeBadge = document.getElementById('searchScopeBadge');
         const searchApiLimitInput = document.getElementById('searchApiLimitInput');
-        const searchApiFilterBadToggle = document.getElementById('searchApiFilterBadToggle');
-        const searchApiCheckStatusToggle = document.getElementById('searchApiCheckStatusToggle');
 
         const searchScopeLockToggle = document.getElementById('searchScopeLockToggle');
         const searchLimitLockToggle = document.getElementById('searchLimitLockToggle');
-        const searchFilterBadLockToggle = document.getElementById('searchFilterBadLockToggle');
-        const searchCheckStatusLockToggle = document.getElementById('searchCheckStatusLockToggle');
 
         const transferApiKeyInput = document.getElementById('transferApiKeyInput');
         const transferApiKeyBadge = document.getElementById('transferApiKeyBadge');
@@ -1432,13 +1416,9 @@ async function loadApiModeConfig() {
         }
 
         if (searchApiLimitInput) searchApiLimitInput.value = String(cfg.search_limit || 50);
-        if (searchApiFilterBadToggle) searchApiFilterBadToggle.checked = Boolean(cfg.search_filter_bad);
-        if (searchApiCheckStatusToggle) searchApiCheckStatusToggle.checked = Boolean(cfg.search_check_status);
 
         if (searchScopeLockToggle) searchScopeLockToggle.checked = Boolean(cfg.search_scope_lock);
         if (searchLimitLockToggle) searchLimitLockToggle.checked = Boolean(cfg.search_limit_lock);
-        if (searchFilterBadLockToggle) searchFilterBadLockToggle.checked = Boolean(cfg.search_filter_bad_lock);
-        if (searchCheckStatusLockToggle) searchCheckStatusLockToggle.checked = Boolean(cfg.search_check_status_lock);
 
         if (transferApiKeyInput) transferApiKeyInput.value = cfg.transfer_api_key || '';
         if (transferApiKeyBadge) {
@@ -1463,13 +1443,9 @@ async function saveApiModeConfig() {
     const enableFrontendToggle = document.getElementById('enableFrontendToggle');
     const searchScopeSelect = document.getElementById('searchScopeSelect');
     const searchApiLimitInput = document.getElementById('searchApiLimitInput');
-    const searchApiFilterBadToggle = document.getElementById('searchApiFilterBadToggle');
-    const searchApiCheckStatusToggle = document.getElementById('searchApiCheckStatusToggle');
 
     const searchScopeLockToggle = document.getElementById('searchScopeLockToggle');
     const searchLimitLockToggle = document.getElementById('searchLimitLockToggle');
-    const searchFilterBadLockToggle = document.getElementById('searchFilterBadLockToggle');
-    const searchCheckStatusLockToggle = document.getElementById('searchCheckStatusLockToggle');
 
     const transferApiKeyInput = document.getElementById('transferApiKeyInput');
 
@@ -1480,12 +1456,8 @@ async function saveApiModeConfig() {
         enable_frontend: enableFrontendToggle ? enableFrontendToggle.checked : true,
         search_scope: searchScopeSelect ? searchScopeSelect.value : 'all',
         search_limit: searchApiLimitInput ? (parseInt(searchApiLimitInput.value, 10) || 50) : 50,
-        search_filter_bad: searchApiFilterBadToggle ? searchApiFilterBadToggle.checked : false,
-        search_check_status: searchApiCheckStatusToggle ? searchApiCheckStatusToggle.checked : false,
         search_scope_lock: searchScopeLockToggle ? searchScopeLockToggle.checked : false,
         search_limit_lock: searchLimitLockToggle ? searchLimitLockToggle.checked : false,
-        search_filter_bad_lock: searchFilterBadLockToggle ? searchFilterBadLockToggle.checked : false,
-        search_check_status_lock: searchCheckStatusLockToggle ? searchCheckStatusLockToggle.checked : false,
         transfer_api_key: transferApiKeyInput ? transferApiKeyInput.value.trim() : '',
     };
 

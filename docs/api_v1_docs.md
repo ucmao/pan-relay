@@ -40,11 +40,9 @@ sequenceDiagram
 | **前台搜索开关** | 开启 / 关闭 | - | 控制是否开放前台 Web 搜索界面 (关闭时访问根路径 `GET /` 自动重定向至后台管理登录页面 `/login`) |
 | **默认搜索作用域** | `own`, `all` | 支持锁定 | 未传参 `scope` 时的检索范围 (`own`: 仅站长收益库 / `all`: 全网并发)。锁定后外部无法强行穿透 |
 | **默认单次结果上限** | 数字 (如 `50`) | 支持锁定 | 未传参 `limit` 时的单次最大条数。锁定后外部请求即便传入更大的 `limit` 也无法穿透该上限 |
-| **默认清洗失效死链** | 开启 / 关闭 | 支持锁定 | 未传参 `filter_bad` 时默认剔除已失效死链。开启后即使未设 `check_status=true` 亦会触发实时免登录测活 |
-| **默认实时健康探针** | 开启 / 关闭 | 支持锁定 | 未传参 `check_status` 时默认实时检测并发注入 `health_state`。锁定后可防止外部高频高开销测活穿透 |
 | **转存 API 鉴权密钥** | 字符串 / 留空 | - | 保护敏感转存写接口 `POST /api/v1/transfer` (留空表示公开允许转存，设置后需携带 `X-API-Key` 或 Bearer Token) |
 
-> 🔒 **防护锁 (Lock) 说明**：各项策略右侧的“防护锁”勾选锁定后，外部 API 请求即便显式传入对应参数（如 `?limit=1000` 或 `?check_status=true`），系统亦会强制按管理员预设执行，有效防止恶意刷量与带宽滥用。
+> 🔒 **防护锁 (Lock) 说明**：各项策略右侧的“防护锁”勾选锁定后，外部 API 请求即便显式传入对应参数（如 `?limit=1000`），系统亦会强制按管理员预设执行，有效防止恶意刷量与带宽滥用。
 
 ---
 
@@ -88,13 +86,11 @@ sequenceDiagram
 - **说明**: 采用同步一次性 JSON 响应。在全网聚合查询（`scope=all`）下，服务端需等待所有上游爬虫响应完毕后统一返回（可能存在数秒阻塞等待）。如开发 Web 前端/小程序，**强烈推荐改用下方 3. SSE 流式接口**。
 - **请求参数**:
   - `keyword` (string, **必填**): 搜索关键词，例如 `黑神话`
-  - `cloud_name` / `cloud_names` (string, **可选**): 指定筛选网盘类型，支持全称或常见简称/别名（如 `百度`、`阿里`、`夸克`、`quark`、`115`、`123`、`uc`、`google`、`磁力` 等），支持单个网盘、逗号分隔多个网盘，如 `夸克,百度` 或多值参数 `cloud_name=夸克&cloud_name=阿里`
+  - `cloud_name` / `cloud_names` (string, **可选**): 指定筛选网盘类型，支持全称或常见简称/别名（如 `百度`、`夸克`、`115`、`123` 等），支持单个网盘、逗号分隔多个网盘
   - `limit` (int, **可选**): 限制最大返回结果条数，默认 `100`
   - `scope` (string, **可选**): 查询作用域 (`own` 仅自有库, `all` 全网聚合，默认按后台配置)
-  - `check_status` (bool, **可选**): 是否对搜索结果实时测活，默认 `false`。开启后每条结果将注入 `health_state` (`ok` / `bad` / `locked` / `uncertain`) 与 `health_summary`、`file_count`
-  - `filter_bad` (bool, **可选**): 是否自动在服务端剔除已失效、违规或空文件的链接，默认 `false`
 
-**响应示例 (开启 `check_status=true`)**:
+**响应示例**:
 ```json
 {
   "success": true,
@@ -106,20 +102,14 @@ sequenceDiagram
       "share_link": "https://pan.quark.cn/s/raw_public_link_123",
       "cloud_name": "夸克网盘",
       "password": "",
-      "source": "plugin",
-      "health_state": "ok",
-      "health_summary": "链接有效",
-      "file_count": 5
+      "source": "plugin"
     },
     {
       "title": "黑神话：悟空 高清原画合集",
       "share_link": "https://pan.quark.cn/s/already_relayed_link_888",
       "cloud_name": "夸克网盘",
       "password": "",
-      "source": "hot",
-      "health_state": "ok",
-      "health_summary": "链接有效",
-      "file_count": 1
+      "source": "hot"
     }
   ]
 }
@@ -133,7 +123,7 @@ sequenceDiagram
 - **推荐等级**: **强烈推荐 (前端 UI / 小程序交互首选)**
 - **优势**: 使用 Server-Sent Events 协议，0 等待秒级推流首屏结果，渐进式展现聚合搜索过程，大幅提升用户感知响应体验（避免同步接口卡顿）。
 - **请求参数**:
-  - 请求参数与 `GET /api/v1/search` 完全一致（包含 `keyword` 必填，以及可选的 `cloud_name` / `cloud_names`、`limit`、`scope`、`check_status`、`filter_bad`）
+  - 请求参数与 `GET /api/v1/search` 完全一致（包含 `keyword` 必填，以及可选的 `cloud_name` / `cloud_names`、`limit`、`scope`）
 - **说明**: 返回 `text/event-stream` 格式的 Server-Sent Events，支持前端/小程序实现打字机式流式加载。
 - **事件结构**:
   ```text

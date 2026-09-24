@@ -79,7 +79,7 @@
                 <h2 class="admin-panel-title">
                     <i class="fas fa-sliders-h text-indigo-600"></i> 默认检索策略
                 </h2>
-                <p class="admin-panel-desc">配置 API 默认检索范围、结果上限及死链与探针预设</p>
+                <p class="admin-panel-desc">配置 API 默认检索范围及结果上限预设</p>
             </div>
         </div>
         <div class="admin-panel-body">
@@ -147,67 +147,6 @@
                     </div>
                 </div>
 
-                <!-- 配置 3: 默认清洗失效死链 -->
-                <div class="setting-item-row">
-                    <div class="space-y-1 min-w-0 pr-4">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-semibold text-slate-800 text-sm">默认清洗失效死链</span>
-                            <span class="help-tooltip" data-tooltip="未指定 filter_bad 时自动过滤掉已标记为失效死链的资源 (保证 API 输出质量)">
-                                <i class="far fa-circle-question text-xs"></i>
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500">外部请求未指定 filter_bad 时默认自动剔除失效链接</p>
-                    </div>
-                    <div class="flex items-center space-x-3 flex-shrink-0">
-                        <label class="plugin-switch" title="切换默认死链清洗">
-                            <input type="checkbox" id="searchApiFilterBadToggle" onchange="saveApiModeConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
-                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs select-none px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 has-[:checked]:bg-amber-50 has-[:checked]:border-amber-300 transition whitespace-nowrap flex-shrink-0" title="防护锁：勾选锁定后，外部请求即便传入 filter_bad=false 也无法强制关闭死链清洗">
-                            <input type="checkbox" id="searchFilterBadLockToggle" onchange="saveApiModeConfig()" class="hidden peer">
-                            <span class="inline-flex items-center gap-1 text-slate-500 peer-checked:hidden text-[11px] font-medium whitespace-nowrap">
-                                <i class="fas fa-unlock text-slate-400 text-[11px]"></i>
-                                <span>可穿透</span>
-                            </span>
-                            <span class="hidden peer-checked:inline-flex items-center gap-1 text-amber-700 text-[11px] font-bold whitespace-nowrap">
-                                <i class="fas fa-lock text-amber-600 text-[11px]"></i>
-                                <span>已锁定</span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 配置 4: 默认实时健康探针 -->
-                <div class="setting-item-row">
-                    <div class="space-y-1 min-w-0 pr-4">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-semibold text-slate-800 text-sm">默认实时健康探针</span>
-                            <span class="help-tooltip" data-tooltip="未指定 check_status 时自动触发并发测活探针并注入 health_state (开启会增加耗时与网络请求)">
-                                <i class="far fa-circle-question text-xs"></i>
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500">外部请求未指定 check_status 时默认实时并发检测网盘存活</p>
-                    </div>
-                    <div class="flex items-center space-x-3 flex-shrink-0">
-                        <label class="plugin-switch" title="切换默认实时健康探针">
-                            <input type="checkbox" id="searchApiCheckStatusToggle" onchange="saveApiModeConfig()">
-                            <span class="plugin-switch-slider"></span>
-                        </label>
-                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs select-none px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 has-[:checked]:bg-amber-50 has-[:checked]:border-amber-300 transition whitespace-nowrap flex-shrink-0" title="防护锁：勾选锁定后，外部请求即便传入 check_status=true 也无法强行触发高开销测活探针">
-                            <input type="checkbox" id="searchCheckStatusLockToggle" onchange="saveApiModeConfig()" class="hidden peer">
-                            <span class="inline-flex items-center gap-1 text-slate-500 peer-checked:hidden text-[11px] font-medium whitespace-nowrap">
-                                <i class="fas fa-unlock text-slate-400 text-[11px]"></i>
-                                <span>可穿透</span>
-                            </span>
-                            <span class="hidden peer-checked:inline-flex items-center gap-1 text-amber-700 text-[11px] font-bold whitespace-nowrap">
-                                <i class="fas fa-lock text-amber-600 text-[11px]"></i>
-                                <span>已锁定</span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
             <!-- 实时 API 默认端点行为折叠预览 (置于卡片最下方，UI 色与 media-parser 一致) -->
             <div class="mt-4 pt-4 border-t border-slate-100">
                 <details class="rounded-xl overflow-hidden bg-slate-50/80 border border-slate-200/90 transition-all">
@@ -226,7 +165,7 @@
                     </summary>
                     <div class="p-3.5 bg-slate-50/90 border-t border-slate-200/80 text-xs overflow-x-auto select-all">
                         <code id="apiDefaultLivePreview" class="font-mono inline-flex items-center flex-wrap gap-y-1 text-slate-800">
-                            <span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 font-bold text-[11px] me-2 border border-sky-200">GET</span><span class="text-emerald-600 font-semibold">https://</span><span class="text-slate-900 font-bold me-0.5">your-domain.com/api/v1/search</span><span class="text-amber-600 font-bold">?</span><span class="text-indigo-600 font-medium">keyword</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-amber-700 font-medium bg-amber-50 px-1 py-0.5 rounded border border-amber-200/60 me-0.5">{kw}</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">scope</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-teal-700 font-medium">all</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">limit</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-blue-700 font-medium">50</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">filter_bad</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-rose-600 font-medium">false</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">check_status</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-rose-600 font-medium">false</span>
+                            <span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 font-bold text-[11px] me-2 border border-sky-200">GET</span><span class="text-emerald-600 font-semibold">https://</span><span class="text-slate-900 font-bold me-0.5">your-domain.com/api/v1/search</span><span class="text-amber-600 font-bold">?</span><span class="text-indigo-600 font-medium">keyword</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-amber-700 font-medium bg-amber-50 px-1 py-0.5 rounded border border-amber-200/60 me-0.5">{kw}</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">scope</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-teal-700 font-medium">all</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">limit</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-blue-700 font-medium">50</span>
                         </code>
                     </div>
                 </details>
@@ -350,7 +289,7 @@
                                 <span class="text-[11px] font-normal text-slate-400">（覆盖 12 大网盘）</span>
                             </div>
                             <p class="text-slate-600 leading-relaxed">
-                                系统内置夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘、联通云盘、悟空网盘、光鸭云盘的原生免登录探测引擎。步骤 1 搜索可开启 <code class="font-mono bg-white text-slate-700 px-1 py-0.5 rounded border border-slate-200">check_status=true</code> 实时识别失效与空链接；步骤 2 转存默认执行前置测活校验（空资源、违规或失效链接直接返回 HTTP 422 拒绝转存），杜绝死链入库。
+                                系统内置夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘、联通云盘、悟空网盘、光鸭云盘的原生免登录探测引擎。步骤 2 转存默认执行前置测活校验（空资源、违规或失效链接直接返回 HTTP 422 拒绝转存），或通过独立测活接口异步检测，杜绝死链入库。
                             </p>
                         </div>
                     </div>
@@ -495,24 +434,6 @@
                                             <td class="px-3 py-2 text-slate-400">可选</td>
                                             <td class="px-3 py-2 text-slate-600">限制最大返回条数，默认 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded">100</code></td>
                                         </tr>
-                                        <tr>
-                                            <td class="px-3 py-2 font-mono font-bold text-slate-800">check_status</td>
-                                            <td class="px-3 py-2 font-mono text-slate-500">Query</td>
-                                            <td class="px-3 py-2 text-slate-500">Boolean</td>
-                                            <td class="px-3 py-2 text-slate-400">可选</td>
-                                            <td class="px-3 py-2 text-slate-600">
-                                                是否对返回结果进行免登录实时测活，默认 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded">false</code>。开启后结果携带 <code class="font-mono text-blue-600 font-bold">health_state</code>、<code class="font-mono text-blue-600 font-bold">health_summary</code>、<code class="font-mono text-blue-600 font-bold">file_count</code>。
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-3 py-2 font-mono font-bold text-slate-800">filter_bad</td>
-                                            <td class="px-3 py-2 font-mono text-slate-500">Query</td>
-                                            <td class="px-3 py-2 text-slate-500">Boolean</td>
-                                            <td class="px-3 py-2 text-slate-400">可选</td>
-                                            <td class="px-3 py-2 text-slate-600">
-                                                是否在服务端自动剔除已失效、违规封禁或内容为空的死链，默认 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded">false</code>。建议与 <code class="font-mono">check_status=true</code> 配合使用。
-                                            </td>
-                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -575,20 +496,7 @@
                                             <td class="px-3 py-2 text-slate-400">可选</td>
                                             <td class="px-3 py-2 text-slate-600">检索范围：<code class="font-mono bg-slate-100 px-1 py-0.5 rounded">own</code> (站长收益库) 或 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded">all</code> (全网并发)</td>
                                         </tr>
-                                        <tr>
-                                            <td class="px-3 py-2 font-mono font-bold text-slate-800">check_status</td>
-                                            <td class="px-3 py-2 font-mono text-slate-500">Query</td>
-                                            <td class="px-3 py-2 text-slate-500">Boolean</td>
-                                            <td class="px-3 py-2 text-slate-400">可选</td>
-                                            <td class="px-3 py-2 text-slate-600">是否实时并发测活并注入 health_state</td>
-                                        </tr>
-                                        <tr>
-                                            <td class="px-3 py-2 font-mono font-bold text-slate-800">filter_bad</td>
-                                            <td class="px-3 py-2 font-mono text-slate-500">Query</td>
-                                            <td class="px-3 py-2 text-slate-500">Boolean</td>
-                                            <td class="px-3 py-2 text-slate-400">可选</td>
-                                            <td class="px-3 py-2 text-slate-600">是否自动在服务端剔除已失效死链与空资源</td>
-                                        </tr>
+                                    </tbody>
                                     </tbody>
                                 </table>
                             </div>
@@ -920,8 +828,8 @@
                             </button>
                         </div>
                         <pre id="snippet-code"
-                            class="p-4 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed"># 步骤 1: 聚合搜索并过滤失效链接
-curl -X GET "http://localhost:5004/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
+                            class="p-4 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed"># 步骤 1: 聚合搜索
+curl -X GET "http://localhost:5004/api/v1/search?keyword=黑神话"
 
 # 步骤 2: 发起转存替换 (默认前置测活校验，若链接失效/空文件夹则返回 422 拦截)
 curl -X POST "http://localhost:5004/api/v1/transfer" \
@@ -991,7 +899,6 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
                     <option value="status">GET /api/v1/status (系统运行状态)</option>
                     <option value="search_own">GET /api/v1/search (scope=own 仅收益库)</option>
                     <option value="search_all">GET /api/v1/search (scope=all 全网聚合)</option>
-                    <option value="search_check">GET /api/v1/search (实时测活+过滤死链)</option>
                     <option value="transfer">POST /api/v1/transfer (测试转存替换/前置拦截)</option>
                     <option value="link_check">POST /api/v1/link/check (单条链接免登录测活)</option>
                 </select>
@@ -1199,8 +1106,8 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
     const hostOrigin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : "http://localhost:5004";
 
     const SNIPPETS = {
-        curl: `# 步骤 1: 聚合搜索并过滤失效链接
-curl -X GET "${hostOrigin}/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
+        curl: `# 步骤 1: 聚合搜索
+curl -X GET "${hostOrigin}/api/v1/search?keyword=黑神话"
 
 # 步骤 2: 发起转存替换 (默认前置测活校验，若链接失效/空文件夹则返回 422 拦截)
 curl -X POST "${hostOrigin}/api/v1/transfer" \\
@@ -1212,11 +1119,9 @@ curl -X POST "${hostOrigin}/api/v1/transfer" \\
 BASE_URL = "${hostOrigin}"
 API_KEY = "YOUR_API_KEY"
 
-# 步骤 1: 聚合搜索并开启实时免登录测活 + 过滤死链
+# 步骤 1: 聚合搜索
 search_res = requests.get(f"{BASE_URL}/api/v1/search", params={
-    "keyword": "黑神话",
-    "check_status": "true",
-    "filter_bad": "true"
+    "keyword": "黑神话"
 }).json()
 print("有效资源列表:", search_res)
 
@@ -1233,9 +1138,9 @@ else:
         js: `const BASE_URL = "${hostOrigin}";
 const API_KEY = "YOUR_API_KEY";
 
-// 步骤 1: 聚合搜索有效资源 (带测活并过滤失效)
+// 步骤 1: 聚合搜索有效资源
 const searchRes = await fetch(
-  \`\${BASE_URL}/api/v1/search?keyword=\${encodeURIComponent("黑神话")}&check_status=true&filter_bad=true\`
+  \`\${BASE_URL}/api/v1/search?keyword=\${encodeURIComponent("黑神话")}\`
 );
 const searchData = await searchRes.json();
 console.log("有效资源:", searchData);
@@ -1313,8 +1218,6 @@ console.log("转存结果 (422 为死链拦截):", transferData);`
             url = `/api/v1/search?keyword=${encodeURIComponent(param || "黑神话")}&scope=own`;
         } else if (endpoint === "search_all") {
             url = `/api/v1/search?keyword=${encodeURIComponent(param || "黑神话")}&scope=all`;
-        } else if (endpoint === "search_check") {
-            url = `/api/v1/search?keyword=${encodeURIComponent(param || "黑神话")}&scope=all&check_status=true&filter_bad=true`;
         } else if (endpoint === "transfer") {
             url = "/api/v1/transfer";
             method = "POST";

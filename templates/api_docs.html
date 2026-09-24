@@ -90,7 +90,7 @@
                         </div>
                         <h3 class="text-base font-bold text-slate-800">查询全网或站长收益资源</h3>
                         <p class="text-xs text-slate-600 leading-relaxed">
-                            支持指定 <code class="bg-slate-100 text-blue-700 px-1.5 py-0.5 rounded border border-slate-200">scope=own</code> 仅检索站长已有收益库（0 服务器开销、毫秒级响应、结果均为站长专属收益链），或 <code class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">scope=all</code> 全网聚合检索。支持开启 <code class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">check_status=true</code> 实时测活并过滤死链。
+                            支持指定 <code class="bg-slate-100 text-blue-700 px-1.5 py-0.5 rounded border border-slate-200">scope=own</code> 仅检索站长已有收益库（0 服务器开销、毫秒级响应、结果均为站长专属收益链），或 <code class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">scope=all</code> 全网聚合检索。
                         </p>
                     </div>
                     <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 font-mono flex items-center justify-between">
@@ -129,7 +129,7 @@
                         <span class="text-[11px] font-normal text-slate-400">（覆盖夸克、百度、阿里、UC、迅雷、123盘、天翼、115、移动云盘、联通云盘、悟空网盘、光鸭云盘 12 大网盘）</span>
                     </div>
                     <p class="text-slate-600 leading-relaxed">
-                        无需登录第三方网盘即可快速检测分享链接的真实有效性、是否需要提取码、以及内部包含的文件总数。步骤 1 支持 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded">filter_bad=true</code> 自动过滤失效与空链接，步骤 2 转存默认自动拦截问题链接并返回 HTTP 422 状态码，有效保护网盘转存配额。
+                        无需登录第三方网盘即可快速检测分享链接的真实有效性、是否需要提取码、以及内部包含的文件总数。步骤 2 转存默认自动拦截问题链接并返回 HTTP 422 状态码，或者通过独立接口 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded">POST /api/v1/link/check</code> 进行异步测活。
                     </p>
                 </div>
             </div>
@@ -264,18 +264,6 @@
                                     <td class="px-3 py-2 text-slate-400">否</td>
                                     <td class="px-3 py-2">返回结果条数限制，默认 100</td>
                                 </tr>
-                                <tr>
-                                    <td class="px-3 py-2 font-mono font-bold text-slate-800">check_status</td>
-                                    <td class="px-3 py-2 font-mono">bool</td>
-                                    <td class="px-3 py-2 text-slate-400">否</td>
-                                    <td class="px-3 py-2">是否对结果进行免登录实时测活，默认 false。开启后每条结果注入 health_state、health_summary、file_count</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-3 py-2 font-mono font-bold text-slate-800">filter_bad</td>
-                                    <td class="px-3 py-2 font-mono">bool</td>
-                                    <td class="px-3 py-2 text-slate-400">否</td>
-                                    <td class="px-3 py-2">是否在服务端自动剔除已失效、违规或内容为空的死链，默认 false</td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -291,10 +279,7 @@
       "share_link": "https://pan.quark.cn/s/raw_sample_123",
       "cloud_name": "夸克网盘",
       "password": "",
-      "source": "hot",
-      "health_state": "ok",
-      "health_summary": "链接有效",
-      "file_count": 5
+      "source": "hot"
     }
   ]
 }</pre>
@@ -313,7 +298,7 @@
                     <span class="text-xs text-amber-800 font-medium">步骤 1 (SSE) · 0等待秒级实时流式打字机推送</span>
                 </div>
                 <div class="p-6 space-y-4">
-                    <p class="text-xs sm:text-sm text-slate-600">使用 Server-Sent Events (SSE) 协议实时流式返回搜索结果。<strong class="text-amber-800">强烈推荐 Web 前端、小程序、App 用户交互界面优先使用此接口</strong>，首屏数据几十毫秒推送，避免同步接口等待全网爬虫导致的数秒卡顿。请求参数与 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">GET /api/v1/search</code> 完全一致（包含 <code class="font-mono">keyword</code> 必填、<code class="font-mono">cloud_name</code>、<code class="font-mono">limit</code>、<code class="font-mono">scope</code>、<code class="font-mono">check_status</code>、<code class="font-mono">filter_bad</code>）。</p>
+                    <p class="text-xs sm:text-sm text-slate-600">使用 Server-Sent Events (SSE) 协议实时流式返回搜索结果。<strong class="text-amber-800">强烈推荐 Web 前端、小程序、App 用户交互界面优先使用此接口</strong>，首屏数据几十毫秒推送，避免同步接口等待全网爬虫导致的数秒卡顿。请求参数与 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">GET /api/v1/search</code> 完全一致（包含 <code class="font-mono">keyword</code> 必填、<code class="font-mono">cloud_name</code>、<code class="font-mono">limit</code>、<code class="font-mono">scope</code>）。</p>
                     <div class="rounded-xl overflow-hidden bg-slate-50/70 border border-slate-200">
                         <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">SSE Stream Format:</div>
                         <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">data: {"type": "start", "keyword": "黑神话"}
@@ -552,8 +537,8 @@ data: {"type": "done", "total": 1}</pre>
                     </div>
                 </div>
                 <pre id="snippet-code"
-                    class="p-4 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed"># 步骤 1: 聚合搜索并过滤失效链接
-curl -X GET "http://localhost:5004/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
+                    class="p-4 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed"># 步骤 1: 聚合搜索 (响应极快)
+curl -X GET "http://localhost:5004/api/v1/search?keyword=黑神话"
 
 # 步骤 2: 发起转存替换 (默认前置测活校验，若链接失效/空文件夹则返回 422 拦截)
 curl -X POST "http://localhost:5004/api/v1/transfer" \
@@ -581,7 +566,6 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
                             <option value="status">GET /api/v1/status (系统运行状态)</option>
                             <option value="search_own">GET /api/v1/search (搜索: scope=own 仅收益库)</option>
                             <option value="search_all">GET /api/v1/search (搜索: scope=all 全网聚合)</option>
-                            <option value="search_check">GET /api/v1/search (实时测活+过滤死链)</option>
                             <option value="transfer">POST /api/v1/transfer (测试转存替换/前置拦截)</option>
                             <option value="link_check">POST /api/v1/link/check (单条链接免登录测活)</option>
                         </select>
@@ -640,8 +624,8 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
         const hostOrigin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : "http://localhost:5004";
 
         const snippets = {
-            curl: `# 步骤 1: 聚合搜索并过滤失效链接
-curl -X GET "${hostOrigin}/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
+            curl: `# 步骤 1: 聚合搜索
+curl -X GET "${hostOrigin}/api/v1/search?keyword=黑神话"
 
 # 步骤 2: 发起转存替换 (默认前置测活校验，若链接失效/空文件夹则返回 422 拦截)
 curl -X POST "${hostOrigin}/api/v1/transfer" \\
@@ -656,9 +640,7 @@ API_KEY = "YOUR_API_KEY" # 若后台未配置则留空
 
 # 步骤 1: 聚合搜索
 search_res = requests.get(f"{BASE_URL}/search", params={
-    "keyword": "黑神话",
-    "check_status": "true",
-    "filter_bad": "true"
+    "keyword": "黑神话"
 }).json()
 
 if search_res.get("results"):
@@ -682,7 +664,7 @@ const API_KEY = 'YOUR_API_KEY';
 
 async function main() {
   // 步骤 1: 聚合搜索
-  const searchRes = await fetch(\`\${BASE_URL}/search?keyword=黑神话&check_status=true&filter_bad=true\`);
+  const searchRes = await fetch(\`\${BASE_URL}/search?keyword=黑神话\`);
   const searchData = await searchRes.json();
 
   if (searchData.results && searchData.results.length > 0) {
@@ -744,8 +726,6 @@ main();`
                 url = `/api/v1/search?keyword=${encodeURIComponent(param || "黑神话")}&scope=own`;
             } else if (endpoint === "search_all") {
                 url = `/api/v1/search?keyword=${encodeURIComponent(param || "黑神话")}&scope=all`;
-            } else if (endpoint === "search_check") {
-                url = `/api/v1/search?keyword=${encodeURIComponent(param || "黑神话")}&check_status=true&filter_bad=true`;
             } else if (endpoint === "transfer") {
                 url = "/api/v1/transfer";
                 method = "POST";

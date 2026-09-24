@@ -57,8 +57,6 @@ def search_api():
     limit = request.args.get("limit", 100, type=int)
     raw_clouds = request.args.getlist("cloud_name") + request.args.getlist("cloud_names")
     target_clouds = parse_netdisk_names(raw_clouds)
-    check_status = request.args.get("check_status", "false").lower() in ("true", "1")
-    filter_bad = request.args.get("filter_bad", "false").lower() in ("true", "1")
 
     invalid_clouds = [c for c in target_clouds if c not in FRONTEND_DISPLAY_NETDISK_OPTIONS]
     if invalid_clouds:
@@ -84,24 +82,6 @@ def search_api():
     if not success:
         status_code = 400 if "请提供搜索关键词" in message else 500
         return jsonify({"success": False, "message": message}), status_code
-
-    if results and (check_status or filter_bad):
-        check_items = [
-            {
-                "url": r.get("share_link") or r.get("url") or "",
-                "password": r.get("password") or r.get("pwd") or "",
-                "disk_type": r.get("cloud_name") or r.get("netdisk_name") or "",
-            }
-            for r in results
-        ]
-        check_res_list = check_links_batch(check_items)
-        for item, chk in zip(results, check_res_list):
-            item["health_state"] = chk.get("state")
-            item["health_summary"] = chk.get("summary")
-            if chk.get("file_count") is not None:
-                item["file_count"] = chk.get("file_count")
-        if filter_bad:
-            results = [item for item in results if item.get("health_state") != STATE_BAD]
 
     return jsonify({"success": True, "total": len(results), "results": results})
 

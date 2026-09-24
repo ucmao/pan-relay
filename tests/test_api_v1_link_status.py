@@ -14,8 +14,7 @@ class ApiV1LinkStatusTest(unittest.TestCase):
 
     @patch("src.routes.api_v1_routes.is_public_search_api_enabled", return_value=True)
     @patch("src.routes.api_v1_routes.search_public_resources")
-    @patch("src.routes.api_v1_routes.check_links_batch")
-    def test_search_with_check_status(self, mock_batch, mock_search, mock_api_enabled):
+    def test_search_ignores_deprecated_status_flags(self, mock_search, mock_api_enabled):
         mock_search.return_value = (
             True,
             "成功",
@@ -32,53 +31,15 @@ class ApiV1LinkStatusTest(unittest.TestCase):
                 },
             ],
         )
-        mock_batch.return_value = [
-            {"state": STATE_OK, "summary": "链接有效", "file_count": 3},
-            {"state": STATE_BAD, "summary": "分享链接无文件或已失效", "file_count": 0},
-        ]
 
-        # 1. 开启 check_status
-        resp = self.client.get("/api/v1/search?keyword=黑神话&scope=all&check_status=true")
+        # 即使传入 check_status=true 和 filter_bad=true，请求也应该直接成功返回结果且不进行实时探针检测
+        resp = self.client.get("/api/v1/search?keyword=黑神话&scope=all&check_status=true&filter_bad=true")
         self.assertEqual(200, resp.status_code)
         data = resp.get_json()
         self.assertTrue(data["success"])
         self.assertEqual(2, data["total"])
-        self.assertEqual(STATE_OK, data["results"][0]["health_state"])
-        self.assertEqual(3, data["results"][0]["file_count"])
-        self.assertEqual(STATE_BAD, data["results"][1]["health_state"])
-
-    @patch("src.routes.api_v1_routes.is_public_search_api_enabled", return_value=True)
-    @patch("src.routes.api_v1_routes.search_public_resources")
-    @patch("src.routes.api_v1_routes.check_links_batch")
-    def test_search_with_filter_bad(self, mock_batch, mock_search, mock_api_enabled):
-        mock_search.return_value = (
-            True,
-            "成功",
-            [
-                {
-                    "title": "资源A (有效)",
-                    "share_link": "https://pan.quark.cn/s/link1",
-                    "cloud_name": "夸克网盘",
-                },
-                {
-                    "title": "资源B (已失效空资源)",
-                    "share_link": "https://pan.quark.cn/s/empty_link",
-                    "cloud_name": "夸克网盘",
-                },
-            ],
-        )
-        mock_batch.return_value = [
-            {"state": STATE_OK, "summary": "链接有效", "file_count": 1},
-            {"state": STATE_BAD, "summary": "分享链接无效：文件列表为空", "file_count": 0},
-        ]
-
-        resp = self.client.get("/api/v1/search?keyword=黑神话&scope=all&filter_bad=true")
-        self.assertEqual(200, resp.status_code)
-        data = resp.get_json()
-        self.assertTrue(data["success"])
-        # 自动剔除 STATE_BAD，仅剩 1 条
-        self.assertEqual(1, data["total"])
-        self.assertEqual("资源A (有效)", data["results"][0]["title"])
+        self.assertEqual("资源A", data["results"][0]["title"])
+        self.assertEqual("资源B", data["results"][1]["title"])
 
     @patch("src.routes.api_v1_routes.get_transfer_api_key", return_value=None)
     @patch("src.routes.api_v1_routes.check_link")

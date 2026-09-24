@@ -23,12 +23,8 @@ from src.services.system_config_service import (
     get_api_mode_config,
     get_search_api_scope,
     get_search_api_limit,
-    get_search_api_filter_bad,
-    get_search_api_check_status,
     get_search_api_scope_lock,
     get_search_api_limit_lock,
-    get_search_api_filter_bad_lock,
-    get_search_api_check_status_lock,
     get_transfer_api_key,
     is_public_search_api_enabled,
 )
@@ -63,31 +59,6 @@ def api_status():
     })
 
 
-def _enrich_and_filter_results(results: list, check_status: bool, filter_bad: bool) -> list:
-    """对搜索结果进行并发测活注入 (health_state/summary/file_count) 与失效链接过滤"""
-    if not results or (not check_status and not filter_bad):
-        return results
-
-    check_items = []
-    for r in results:
-        u = r.get("share_link") or r.get("url") or ""
-        p = r.get("password") or r.get("pwd") or ""
-        d = r.get("cloud_name") or r.get("netdisk_name") or ""
-        check_items.append({"url": u, "password": p, "disk_type": d})
-
-    check_res_list = check_links_batch(check_items)
-    for item, chk in zip(results, check_res_list):
-        item["health_state"] = chk.get("state")
-        item["health_summary"] = chk.get("summary")
-        if chk.get("file_count") is not None:
-            item["file_count"] = chk.get("file_count")
-
-    if filter_bad:
-        results = [item for item in results if item.get("health_state") != STATE_BAD]
-
-    return results
-
-
 def _resolve_search_api_options(req):
     keyword = req.args.get("keyword", "", type=str).strip()
 
@@ -113,33 +84,11 @@ def _resolve_search_api_options(req):
     if scope == "local":
         scope = "own"
 
-    # 探针检测与防护锁
-    check_lock = get_search_api_check_status_lock()
-    req_check = req.args.get("check_status", None)
-    if check_lock:
-        check_status = get_search_api_check_status()
-    elif req_check is not None:
-        check_status = req_check.lower() in ("true", "1")
-    else:
-        check_status = get_search_api_check_status()
-
-    # 死链清洗与防护锁
-    filter_lock = get_search_api_filter_bad_lock()
-    req_filter = req.args.get("filter_bad", None)
-    if filter_lock:
-        filter_bad = get_search_api_filter_bad()
-    elif req_filter is not None:
-        filter_bad = req_filter.lower() in ("true", "1")
-    else:
-        filter_bad = get_search_api_filter_bad()
-
     return {
         "keyword": keyword,
         "limit": limit,
         "target_clouds": target_clouds,
         "scope": scope,
-        "check_status": check_status,
-        "filter_bad": filter_bad,
     }
 
 
@@ -166,8 +115,6 @@ def api_search():
     limit = opts["limit"]
     target_clouds = opts["target_clouds"]
     scope = opts["scope"]
-    check_status = opts["check_status"]
-    filter_bad = opts["filter_bad"]
 
     if not keyword:
         record_log(
@@ -209,7 +156,6 @@ def api_search():
             item.to_dict() if hasattr(item, "to_dict") else item
             for item in filtered_items[:limit]
         ]
-        results = _enrich_and_filter_results(results, check_status=check_status, filter_bad=filter_bad)
         duration_ms = int((time.time() - start_time) * 1000)
         record_log(
             log_type="search",
@@ -241,7 +187,6 @@ def api_search():
     if not success:
         return jsonify({"success": False, "message": message}), 500
 
-    results = _enrich_and_filter_results(results, check_status=check_status, filter_bad=filter_bad)
     return jsonify({
         "success": True,
         "scope": "all",
@@ -488,8 +433,6 @@ def api_docs():
                     "cloud_name": "指定网盘筛选，支持全称或常见简称/别名（如 百度、阿里、夸克、quark、115、123、uc 等），支持单个或逗号分隔多个 (可选)",
                     "cloud_names": "多网盘筛选别名 (可选)",
                     "limit": "条数限制 (默认 100)",
-                    "check_status": "是否实时免登录测活注入 health_state/health_summary/file_count (默认 false)",
-                    "filter_bad": "是否自动在服务端剔除失效与空链接 (默认 false)",
                 },
             },
             {

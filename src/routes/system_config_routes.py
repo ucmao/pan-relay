@@ -829,12 +829,8 @@ def update_api_mode_config_api():
     enable_frontend = data.get("enable_frontend", True)
     search_scope = data.get("search_scope", "all")
     search_limit = data.get("search_limit", 50)
-    search_filter_bad = data.get("search_filter_bad", False)
-    search_check_status = data.get("search_check_status", False)
     search_scope_lock = bool(data.get("search_scope_lock", False))
     search_limit_lock = bool(data.get("search_limit_lock", False))
-    search_filter_bad_lock = bool(data.get("search_filter_bad_lock", False))
-    search_check_status_lock = bool(data.get("search_check_status_lock", False))
     transfer_api_key = data.get("transfer_api_key", "")
 
     success = save_api_mode_config(
@@ -842,12 +838,8 @@ def update_api_mode_config_api():
         enable_frontend=enable_frontend,
         search_scope=search_scope,
         search_limit=search_limit,
-        search_filter_bad=search_filter_bad,
-        search_check_status=search_check_status,
         search_scope_lock=search_scope_lock,
         search_limit_lock=search_limit_lock,
-        search_filter_bad_lock=search_filter_bad_lock,
-        search_check_status_lock=search_check_status_lock,
         transfer_api_key=transfer_api_key,
     )
     if not success:
