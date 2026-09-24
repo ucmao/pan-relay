@@ -312,7 +312,7 @@
                     <span class="text-xs text-slate-500 font-medium">步骤 1 (SSE) · 实时流式打字机推送</span>
                 </div>
                 <div class="p-6 space-y-4">
-                    <p class="text-xs sm:text-sm text-slate-600">使用 Server-Sent Events 协议实时流式返回搜索结果。参数包含 <code class="font-mono">keyword</code> (必填)。</p>
+                    <p class="text-xs sm:text-sm text-slate-600">使用 Server-Sent Events 协议实时流式返回搜索结果。请求参数与 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">GET /api/v1/search</code> 完全一致（包含 <code class="font-mono">keyword</code> 必填、<code class="font-mono">cloud_name</code>、<code class="font-mono">limit</code>、<code class="font-mono">scope</code>、<code class="font-mono">check_status</code>、<code class="font-mono">filter_bad</code>）。</p>
                     <div class="rounded-xl overflow-hidden bg-slate-50/70 border border-slate-200">
                         <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">SSE Stream Format:</div>
                         <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">data: {"type": "start", "keyword": "黑神话"}
@@ -636,19 +636,21 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
 
     <!-- Snippets and Playground JS -->
     <script>
+        const hostOrigin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : "http://localhost:5004";
+
         const snippets = {
             curl: `# 步骤 1: 聚合搜索并过滤失效链接
-curl -X GET "http://localhost:5004/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
+curl -X GET "${hostOrigin}/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
 
 # 步骤 2: 发起转存替换 (默认前置测活校验，若链接失效/空文件夹则返回 422 拦截)
-curl -X POST "http://localhost:5004/api/v1/transfer" \\
+curl -X POST "${hostOrigin}/api/v1/transfer" \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: YOUR_API_KEY" \\
   -d '{"url": "https://pan.quark.cn/s/raw123", "title": "黑神话", "skip_check": false}'`,
 
             python: `import requests
 
-BASE_URL = "http://localhost:5004/api/v1"
+BASE_URL = "${hostOrigin}/api/v1"
 API_KEY = "YOUR_API_KEY" # 若后台未配置则留空
 
 # 步骤 1: 聚合搜索
@@ -674,7 +676,7 @@ if search_res.get("results"):
     print("转存出链结果:", transfer_res.json())`,
 
             js: `// Node.js (Fetch API)
-const BASE_URL = 'http://localhost:5004/api/v1';
+const BASE_URL = '${hostOrigin}/api/v1';
 const API_KEY = 'YOUR_API_KEY';
 
 async function main() {

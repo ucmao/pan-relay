@@ -691,3 +691,15 @@ textarea::placeholder {
         font-size: 0.7rem;
     }
 }
+
+/* 资源标题 2 行截断 */
+.line-clamp-2-title {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-all;
+    max-width: 380px;
+    max-height: 2.8em;
+}
+

@@ -823,17 +823,31 @@ def get_api_mode_config_api():
 @system_config_bp.route("/admin/api/api-mode-config", methods=["PUT", "POST"])
 @token_required
 def update_api_mode_config_api():
-    """更新 API 模式及前台 UI 开关与安全转存 Key 配置"""
+    """更新 API 模式、前台 UI 开关、检索默认参数与安全转存 Key 配置"""
     data = request.get_json() or {}
     api_only = data.get("api_only", False)
     enable_frontend = data.get("enable_frontend", True)
     search_scope = data.get("search_scope", "all")
+    search_limit = data.get("search_limit", 50)
+    search_filter_bad = data.get("search_filter_bad", False)
+    search_check_status = data.get("search_check_status", False)
+    search_scope_lock = bool(data.get("search_scope_lock", False))
+    search_limit_lock = bool(data.get("search_limit_lock", False))
+    search_filter_bad_lock = bool(data.get("search_filter_bad_lock", False))
+    search_check_status_lock = bool(data.get("search_check_status_lock", False))
     transfer_api_key = data.get("transfer_api_key", "")
 
     success = save_api_mode_config(
         api_only=api_only,
         enable_frontend=enable_frontend,
         search_scope=search_scope,
+        search_limit=search_limit,
+        search_filter_bad=search_filter_bad,
+        search_check_status=search_check_status,
+        search_scope_lock=search_scope_lock,
+        search_limit_lock=search_limit_lock,
+        search_filter_bad_lock=search_filter_bad_lock,
+        search_check_status_lock=search_check_status_lock,
         transfer_api_key=transfer_api_key,
     )
     if not success:
@@ -841,7 +855,7 @@ def update_api_mode_config_api():
 
     return jsonify({
         "success": True,
-        "message": "API 模式配置保存成功",
+        "message": "API 模式与默认检索配置保存成功",
         "config": get_api_mode_config(),
     })
 

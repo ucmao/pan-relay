@@ -22,6 +22,13 @@ from src.services.resource_service import list_resources
 from src.services.system_config_service import (
     get_api_mode_config,
     get_search_api_scope,
+    get_search_api_limit,
+    get_search_api_filter_bad,
+    get_search_api_check_status,
+    get_search_api_scope_lock,
+    get_search_api_limit_lock,
+    get_search_api_filter_bad_lock,
+    get_search_api_check_status_lock,
     get_transfer_api_key,
     is_public_search_api_enabled,
 )
@@ -81,6 +88,61 @@ def _enrich_and_filter_results(results: list, check_status: bool, filter_bad: bo
     return results
 
 
+def _resolve_search_api_options(req):
+    keyword = req.args.get("keyword", "", type=str).strip()
+
+    # 结果上限与防护锁
+    default_limit = get_search_api_limit()
+    limit_lock = get_search_api_limit_lock()
+    req_limit = req.args.get("limit", None, type=int)
+    if limit_lock:
+        limit = min(req_limit, default_limit) if (req_limit is not None and req_limit > 0) else default_limit
+    else:
+        limit = req_limit if (req_limit is not None and req_limit > 0) else default_limit
+
+    raw_clouds = req.args.getlist("cloud_name") + req.args.getlist("cloud_names")
+    target_clouds = parse_netdisk_names(raw_clouds)
+
+    # 作用域与防护锁
+    scope_lock = get_search_api_scope_lock()
+    req_scope = req.args.get("scope", "", type=str).strip().lower()
+    if scope_lock:
+        scope = get_search_api_scope()
+    else:
+        scope = req_scope if req_scope in ("own", "all", "local") else get_search_api_scope()
+    if scope == "local":
+        scope = "own"
+
+    # 探针检测与防护锁
+    check_lock = get_search_api_check_status_lock()
+    req_check = req.args.get("check_status", None)
+    if check_lock:
+        check_status = get_search_api_check_status()
+    elif req_check is not None:
+        check_status = req_check.lower() in ("true", "1")
+    else:
+        check_status = get_search_api_check_status()
+
+    # 死链清洗与防护锁
+    filter_lock = get_search_api_filter_bad_lock()
+    req_filter = req.args.get("filter_bad", None)
+    if filter_lock:
+        filter_bad = get_search_api_filter_bad()
+    elif req_filter is not None:
+        filter_bad = req_filter.lower() in ("true", "1")
+    else:
+        filter_bad = get_search_api_filter_bad()
+
+    return {
+        "keyword": keyword,
+        "limit": limit,
+        "target_clouds": target_clouds,
+        "scope": scope,
+        "check_status": check_status,
+        "filter_bad": filter_bad,
+    }
+
+
 @api_v1_bp.route("/search", methods=["GET"])
 def api_search():
     """
@@ -99,13 +161,13 @@ def api_search():
         )
         return jsonify({"success": False, "message": "公开聚合查询接口已被关闭"}), 403
 
-    keyword = request.args.get("keyword", "", type=str).strip()
-    limit = request.args.get("limit", 100, type=int)
-    raw_clouds = request.args.getlist("cloud_name") + request.args.getlist("cloud_names")
-    target_clouds = parse_netdisk_names(raw_clouds)
-    req_scope = request.args.get("scope", "", type=str).strip().lower()
-    check_status = request.args.get("check_status", "false").lower() in ("true", "1")
-    filter_bad = request.args.get("filter_bad", "false").lower() in ("true", "1")
+    opts = _resolve_search_api_options(request)
+    keyword = opts["keyword"]
+    limit = opts["limit"]
+    target_clouds = opts["target_clouds"]
+    scope = opts["scope"]
+    check_status = opts["check_status"]
+    filter_bad = opts["filter_bad"]
 
     if not keyword:
         record_log(
@@ -132,11 +194,6 @@ def api_search():
             "message": f"不支持的网盘类型: {invalid_str}",
             "supported_cloud_names": list(FRONTEND_DISPLAY_NETDISK_OPTIONS),
         }), 400
-
-    # 判断查询作用域
-    scope = req_scope if req_scope in ("own", "all", "local") else get_search_api_scope()
-    if scope == "local":
-        scope = "own"
 
     cloud_display = ",".join(sorted(target_clouds)) if target_clouds else "all"
 
@@ -196,14 +253,28 @@ def api_search():
 @api_v1_bp.route("/search/stream", methods=["GET"])
 def api_search_stream():
     """
-    步骤 1 (流式): SSE 实时流式返回搜索结果
+    步骤 1 (流式): SSE 实时流式返回搜索结果 (遵循后台默认控制与防护锁)
     """
-    keyword = request.args.get("keyword", "", type=str).strip()
+    if not is_public_search_api_enabled():
+        return jsonify({"success": False, "message": "公开聚合查询接口已被关闭"}), 403
+
+    opts = _resolve_search_api_options(request)
+    keyword = opts["keyword"]
+    limit = opts["limit"]
+    target_clouds = opts["target_clouds"]
+    scope = opts["scope"]
+
     if not keyword:
         return jsonify({"success": False, "message": "缺少必填参数: keyword"}), 400
 
     def generate_events():
-        for payload in generate_search_stream_events(keyword, action="search.api.v1"):
+        for payload in generate_search_stream_events(
+            keyword,
+            action="search.api.v1",
+            limit=limit,
+            target_clouds=target_clouds,
+            scope=scope,
+        ):
             yield f"data: {payload}\n\n"
 
     return Response(stream_with_context(generate_events()), mimetype="text/event-stream")

@@ -4,7 +4,7 @@ import logging
 import random
 import re
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from urllib.parse import urlparse
 
 import jmespath
@@ -520,6 +520,9 @@ def generate_search_stream_events(
     client_ip: Optional[str] = None,
     action: str = "search.web",
     apply_frontend_filter: Optional[bool] = None,
+    limit: Optional[int] = None,
+    target_clouds: Optional[Union[List[str], Set[str]]] = None,
+    scope: str = "all",
 ):
     """
     生成搜索结果的 SSE 事件流 (生成字符串, 不直接返回 Response)
@@ -527,6 +530,9 @@ def generate_search_stream_events(
     :param client_ip: 客户端 IP (可选)
     :param action: 行为标识 (默认为 search.web, API v1 流为 search.api.v1)
     :param apply_frontend_filter: 是否应用 Web 前端网盘显示过滤配置。若未指定，仅对 search.web 默认开启
+    :param limit: 条数限制 (达成即触发自动阻断)
+    :param target_clouds: 过滤特定网盘类型
+    :param scope: 'own' (私有库) 或 'all' (全网)
     """
     keyword = str(keyword or "").strip()
     if not client_ip:
@@ -581,6 +587,10 @@ def generate_search_stream_events(
             cached_items = filter_results_by_title(filter_search_results(cached_items), keyword)
             if should_apply_frontend_filter:
                 cached_items = filter_results_by_frontend_netdisks(cached_items)
+            if target_clouds:
+                cached_items = _filter_results_by_cloud_name(cached_items, target_clouds)
+            if limit and limit > 0:
+                cached_items = cached_items[:limit]
             duration_ms = int((time.time() - start_time) * 1000)
             record_log(
                 log_type="search",
@@ -626,21 +636,33 @@ def generate_search_stream_events(
         db_results = search_in_database(keyword)
         if should_apply_frontend_filter:
             db_results = filter_results_by_frontend_netdisks(db_results)
+        if target_clouds:
+            db_results = _filter_results_by_cloud_name(db_results, target_clouds)
         db_results = filter_results_by_title(filter_search_results(db_results), keyword)
         db_results = _dedupe_stream_chunk(db_results)
         if db_results:
             yield json.dumps({"type": "initial", "results": _serialize_items(db_results)})
 
-        for results in iter_upstream_search_results(keyword):
-            if should_apply_frontend_filter:
-                results = filter_results_by_frontend_netdisks(results)
-            results = filter_results_by_title(filter_search_results(results), keyword)
-            results = _dedupe_stream_chunk(results)
-            if results:
-                yield json.dumps({"type": "update", "results": _serialize_items(results)})
+        if scope != "own":
+            for results in iter_upstream_search_results(keyword):
+                if should_apply_frontend_filter:
+                    results = filter_results_by_frontend_netdisks(results)
+                if target_clouds:
+                    results = _filter_results_by_cloud_name(results, target_clouds)
+                results = filter_results_by_title(filter_search_results(results), keyword)
+                results = _dedupe_stream_chunk(results)
+                if results:
+                    yield json.dumps({"type": "update", "results": _serialize_items(results)})
+
+                if limit and limit > 0 and len(seen_items_map) >= limit:
+                    logger.info("流式聚合搜索满足限额 limit=%d (已查获 %d 条)，自动触发阻断中断后续源。", limit, len(seen_items_map))
+                    break
 
         # 搜索完成，将所有去重并排序后的最终结果加入 TTL 缓存
         final_stream_items = sort_search_results(list(seen_items_map.values()), keyword=keyword)
+        if limit and limit > 0:
+            final_stream_items = final_stream_items[:limit]
+
         if final_stream_items:
             set_cached_search_items(keyword, final_stream_items)
 
@@ -1008,9 +1030,40 @@ def search_public_resources(keyword="", limit=100, cloud_name=""):
     db_results = search_in_database(keyword)
     aggregated_results.extend(db_results)
 
+    # 1. 检查数据库结果是否已直接满足 limit 需求
+    filtered_db = filter_results_by_title(filter_search_results(db_results), keyword)
+    filtered_db = _filter_results_by_cloud_name(filtered_db, target_clouds)
+    deduped_db = dedupe_search_results(filtered_db)
+    if limit and len(deduped_db) >= limit:
+        logger.info("聚合搜索在数据库层已满足 limit=%d (找到 %d 条)，自动阻断后续上游网络开销", limit, len(deduped_db))
+        sorted_results = sort_search_results(deduped_db, keyword=keyword)
+        set_cached_search_items(keyword, sorted_results)
+        limited_results = sorted_results[: max(limit, 1)]
+        duration_ms = int((time.time() - start_time) * 1000)
+        record_log(
+            log_type="search",
+            action="search.api",
+            query_text=query_display,
+            status_code=200,
+            duration_ms=duration_ms,
+            result_count=len(limited_results),
+        )
+        return True, "聚合搜索成功", [
+            item.to_dict() if isinstance(item, SearchResultItem) else item
+            for item in limited_results
+        ]
+
+    # 2. 逐个接收上游数据源，只要去重后的符合条件结果数达到 limit，立即自动 break 退出（取消后续所有请求）
     for results in iter_upstream_search_results(keyword):
         if results:
             aggregated_results.extend(results)
+            if limit and limit > 0:
+                temp_filtered = filter_results_by_title(filter_search_results(aggregated_results), keyword)
+                temp_filtered = _filter_results_by_cloud_name(temp_filtered, target_clouds)
+                temp_deduped = dedupe_search_results(temp_filtered)
+                if len(temp_deduped) >= limit:
+                    logger.info("聚合搜索累计数据已达限额 limit=%d (满足 %d 条)，自动阻断中断后续上游请求。", limit, len(temp_deduped))
+                    break
 
     # 敏感词过滤、去重与排序
     aggregated_results = filter_results_by_title(filter_search_results(aggregated_results), keyword)

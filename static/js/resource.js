@@ -339,14 +339,18 @@ function renderTable() {
                 <input class="form-check-input resource-row-checkbox" type="checkbox" data-id="${resource.id}" ${isSelected ? 'checked' : ''} aria-label="选择资源 ${resource.id}">
             </td>
             <td>${resource.id}</td>
-            <td title="${resource.name}">${resource.name}</td>
+            <td title="${escapeHtml(resource.name)}">
+                <div class="line-clamp-2-title text-slate-800 font-medium text-xs leading-relaxed" title="${escapeHtml(resource.name)}">
+                    ${escapeHtml(resource.name)}
+                </div>
+            </td>
             <td><a href="${resource.share_link}" target="_blank" class="text-truncate d-inline-block" style="max-width: 250px;">${resource.share_link}</a></td>
             <td>${resource.cloud_name || '-'}</td>
             <td>${resource.type || '-'}</td>
             <td>${renderHealthStatusBadge(resource.health_status, resource.health_message, resource.checked_at)}</td>
             <td>${resource.is_replaced ? '<span class="status-synced">已同步</span>' : '-'}</td>
             <td class="action-buttons d-flex justify-content-center align-items-center">
-                <button class="btn btn-secondary btn-sm copy-btn" data-id="${resource.id}" title="复制链接">
+                <button class="btn btn-secondary btn-sm copy-btn" data-id="${resource.id}" title="复制标题与链接">
                     <i class="fas fa-copy"></i> 复制
                 </button>
                 <div class="dropdown">
@@ -614,10 +618,10 @@ async function copyResource(id, buttonEl) {
     const resource = resourcesData.find(r => r.id === id);
     if (!resource) return;
 
-    // 格式化复制内容：优先提供干净链接与提取码，支持直接打开或客户端自动识别
-    let copyContent = resource.share_link || '';
+    // 格式化复制内容：包含“标题: ”与“链接: ”前缀，保持与全站搜索复制一致
+    let copyContent = `标题: ${resource.name}\n链接: ${resource.share_link}`;
     if (resource.code && resource.code !== '无' && resource.code.trim() !== '') {
-        copyContent = `${resource.share_link} 提取码: ${resource.code}`;
+        copyContent += ` 提取码: ${resource.code}`;
     }
 
     const success = await copyTextToClipboard(copyContent);

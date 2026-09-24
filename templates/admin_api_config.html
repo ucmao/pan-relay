@@ -72,14 +72,14 @@
         </div>
     </section>
 
-    <!-- 2. API 检索与转存安全 -->
-    <section class="admin-panel">
+    <!-- 2. API 默认检索策略 -->
+    <section id="apiDefaultStrategyPanel" class="admin-panel transition-all duration-200">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
-                    <i class="fas fa-shield-halved text-indigo-600"></i> 检索与转存安全
+                    <i class="fas fa-sliders-h text-indigo-600"></i> 默认检索策略
                 </h2>
-                <p class="admin-panel-desc">设置 API 检索范围及转存鉴权密钥</p>
+                <p class="admin-panel-desc">配置 API 默认检索范围、结果上限及死链与探针预设</p>
             </div>
         </div>
         <div class="admin-panel-body">
@@ -97,29 +97,171 @@
                     </div>
                     <div class="flex items-center space-x-3 flex-shrink-0">
                         <select id="searchScopeSelect" class="form-select form-select-sm" onchange="saveApiModeConfig()"
-                            style="min-width: 170px;">
-                            <option value="all">全网并发聚合 (all)</option>
-                            <option value="own">仅站长收益库 (own)</option>
+                            style="min-width: 160px;">
+                            <option value="all">全网并发聚合</option>
+                            <option value="own">仅私有收益库</option>
                         </select>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs select-none px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 has-[:checked]:bg-amber-50 has-[:checked]:border-amber-300 transition whitespace-nowrap flex-shrink-0" title="防护锁：勾选锁定后，外部请求即便传入 ?scope=xxx 也无法覆盖本配置">
+                            <input type="checkbox" id="searchScopeLockToggle" onchange="saveApiModeConfig()" class="hidden peer">
+                            <span class="inline-flex items-center gap-1 text-slate-500 peer-checked:hidden text-[11px] font-medium whitespace-nowrap">
+                                <i class="fas fa-unlock text-slate-400 text-[11px]"></i>
+                                <span>可穿透</span>
+                            </span>
+                            <span class="hidden peer-checked:inline-flex items-center gap-1 text-amber-700 text-[11px] font-bold whitespace-nowrap">
+                                <i class="fas fa-lock text-amber-600 text-[11px]"></i>
+                                <span>已锁定</span>
+                            </span>
+                        </label>
                     </div>
                 </div>
 
-                <!-- 配置 2: 转存 API 校验 Key -->
+                <!-- 配置 2: API 默认单次条数上限 -->
                 <div class="setting-item-row">
                     <div class="space-y-1 min-w-0 pr-4">
                         <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-semibold text-slate-800 text-sm">转存接口鉴权密钥</span>
-                            <code
-                                class="text-[11px] font-mono text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/50">POST /api/v1/transfer</code>
-                            <span class="help-tooltip" data-tooltip="留空则公开调用；填写后请求头需携带 X-API-Key 或 Bearer 凭证">
+                            <span class="font-semibold text-slate-800 text-sm">默认单次结果上限</span>
+                            <span class="help-tooltip" data-tooltip="外部请求未指定 limit 时的默认单次返回最大条数 (控制带宽与网络负载)">
                                 <i class="far fa-circle-question text-xs"></i>
                             </span>
                         </div>
-                        <p class="text-xs text-slate-500">保护转存接口避免被恶意调用消耗网盘容量</p>
+                        <p class="text-xs text-slate-500">外部请求未指定 limit 时的单次返回记录数</p>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-shrink-0">
+                        <div class="relative flex items-center">
+                            <input type="number" id="searchApiLimitInput" min="1" max="1000" step="1"
+                                class="form-control form-control-sm pr-7 text-xs font-mono text-center" style="width: 110px;"
+                                placeholder="50" value="50" onchange="saveApiModeConfig()" onkeydown="if(event.key==='Enter'){saveApiModeConfig();}">
+                            <span class="absolute right-2.5 text-slate-400 text-xs pointer-events-none select-none">条</span>
+                        </div>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs select-none px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 has-[:checked]:bg-amber-50 has-[:checked]:border-amber-300 transition whitespace-nowrap flex-shrink-0" title="防护锁：勾选锁定后，外部请求即便传入更大 limit 也无法穿透该上限">
+                            <input type="checkbox" id="searchLimitLockToggle" onchange="saveApiModeConfig()" class="hidden peer">
+                            <span class="inline-flex items-center gap-1 text-slate-500 peer-checked:hidden text-[11px] font-medium whitespace-nowrap">
+                                <i class="fas fa-unlock text-slate-400 text-[11px]"></i>
+                                <span>可穿透</span>
+                            </span>
+                            <span class="hidden peer-checked:inline-flex items-center gap-1 text-amber-700 text-[11px] font-bold whitespace-nowrap">
+                                <i class="fas fa-lock text-amber-600 text-[11px]"></i>
+                                <span>已锁定</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 配置 3: 默认清洗失效死链 -->
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">默认清洗失效死链</span>
+                            <span class="help-tooltip" data-tooltip="未指定 filter_bad 时自动过滤掉已标记为失效死链的资源 (保证 API 输出质量)">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500">外部请求未指定 filter_bad 时默认自动剔除失效链接</p>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-shrink-0">
+                        <label class="plugin-switch" title="切换默认死链清洗">
+                            <input type="checkbox" id="searchApiFilterBadToggle" onchange="saveApiModeConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs select-none px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 has-[:checked]:bg-amber-50 has-[:checked]:border-amber-300 transition whitespace-nowrap flex-shrink-0" title="防护锁：勾选锁定后，外部请求即便传入 filter_bad=false 也无法强制关闭死链清洗">
+                            <input type="checkbox" id="searchFilterBadLockToggle" onchange="saveApiModeConfig()" class="hidden peer">
+                            <span class="inline-flex items-center gap-1 text-slate-500 peer-checked:hidden text-[11px] font-medium whitespace-nowrap">
+                                <i class="fas fa-unlock text-slate-400 text-[11px]"></i>
+                                <span>可穿透</span>
+                            </span>
+                            <span class="hidden peer-checked:inline-flex items-center gap-1 text-amber-700 text-[11px] font-bold whitespace-nowrap">
+                                <i class="fas fa-lock text-amber-600 text-[11px]"></i>
+                                <span>已锁定</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 配置 4: 默认实时健康探针 -->
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">默认实时健康探针</span>
+                            <span class="help-tooltip" data-tooltip="未指定 check_status 时自动触发并发测活探针并注入 health_state (开启会增加耗时与网络请求)">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500">外部请求未指定 check_status 时默认实时并发检测网盘存活</p>
+                    </div>
+                    <div class="flex items-center space-x-3 flex-shrink-0">
+                        <label class="plugin-switch" title="切换默认实时健康探针">
+                            <input type="checkbox" id="searchApiCheckStatusToggle" onchange="saveApiModeConfig()">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs select-none px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 has-[:checked]:bg-amber-50 has-[:checked]:border-amber-300 transition whitespace-nowrap flex-shrink-0" title="防护锁：勾选锁定后，外部请求即便传入 check_status=true 也无法强行触发高开销测活探针">
+                            <input type="checkbox" id="searchCheckStatusLockToggle" onchange="saveApiModeConfig()" class="hidden peer">
+                            <span class="inline-flex items-center gap-1 text-slate-500 peer-checked:hidden text-[11px] font-medium whitespace-nowrap">
+                                <i class="fas fa-unlock text-slate-400 text-[11px]"></i>
+                                <span>可穿透</span>
+                            </span>
+                            <span class="hidden peer-checked:inline-flex items-center gap-1 text-amber-700 text-[11px] font-bold whitespace-nowrap">
+                                <i class="fas fa-lock text-amber-600 text-[11px]"></i>
+                                <span>已锁定</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 实时 API 默认端点行为折叠预览 (置于卡片最下方，UI 色与 media-parser 一致) -->
+            <div class="mt-4 pt-4 border-t border-slate-100">
+                <details class="rounded-xl overflow-hidden bg-slate-50/80 border border-slate-200/90 transition-all">
+                    <summary class="px-4 py-2.5 bg-slate-100/70 hover:bg-slate-100 cursor-pointer select-none font-sans font-semibold text-xs text-slate-700 flex items-center justify-between transition-colors">
+                        <span class="flex items-center gap-2">
+                            <i class="fas fa-terminal text-indigo-500"></i>
+                            <span>未传参数时的默认端点行为动态预览</span>
+                        </span>
+                        <span class="flex items-center gap-2 text-[11px] text-slate-400 font-normal">
+                            <span class="hidden sm:inline-flex items-center gap-1 text-amber-600/80 me-1">
+                                <i class="fas fa-shield-alt text-amber-500"></i>
+                                <span>防护锁可防止穿透</span>
+                            </span>
+                            <span>点击展开/收起 ▾</span>
+                        </span>
+                    </summary>
+                    <div class="p-3.5 bg-slate-50/90 border-t border-slate-200/80 text-xs overflow-x-auto select-all">
+                        <code id="apiDefaultLivePreview" class="font-mono inline-flex items-center flex-wrap gap-y-1 text-slate-800">
+                            <span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 font-bold text-[11px] me-2 border border-sky-200">GET</span><span class="text-emerald-600 font-semibold">https://</span><span class="text-slate-900 font-bold me-0.5">your-domain.com/api/v1/search</span><span class="text-amber-600 font-bold">?</span><span class="text-indigo-600 font-medium">keyword</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-amber-700 font-medium bg-amber-50 px-1 py-0.5 rounded border border-amber-200/60 me-0.5">{kw}</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">scope</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-teal-700 font-medium">all</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">limit</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-blue-700 font-medium">50</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">filter_bad</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-rose-600 font-medium">false</span><span class="text-slate-400 font-bold px-0.5">&amp;</span><span class="text-indigo-600 font-medium">check_status</span><span class="text-slate-400 font-bold px-0.5">=</span><span class="text-rose-600 font-medium">false</span>
+                        </code>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. 转存接口鉴权与安全密钥 -->
+    <section id="transferAuthPanel" class="admin-panel transition-all duration-200">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-key text-amber-500"></i> 转存接口鉴权密钥
+                </h2>
+                <p class="admin-panel-desc">设置敏感写操作接口 (POST /api/v1/transfer) 的访问保护凭证</p>
+            </div>
+        </div>
+        <div class="admin-panel-body">
+            <div class="divide-y divide-slate-100">
+                <!-- 配置: 转存 API 校验 Key -->
+                <div class="setting-item-row">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">接口访问 Token / Key</span>
+                            <code
+                                class="text-[11px] font-mono text-slate-400 bg-slate-100/90 px-1.5 py-0.5 rounded border border-slate-200/50">POST /api/v1/transfer</code>
+                            <span class="help-tooltip" data-tooltip="留空则公开调用；填写后请求头需携带 X-API-Key 或 Authorization: Bearer <key>">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500">保护物理网盘转存接口，防止未经授权的外部请求消耗网盘存储容量</p>
                     </div>
                     <div class="flex items-center space-x-2 flex-shrink-0">
                         <div class="relative flex items-center">
-                            <span class="absolute left-3 text-slate-400 text-xs"><i class="fas fa-key"></i></span>
+                            <span class="absolute left-3 text-slate-400 text-xs"><i class="fas fa-lock"></i></span>
                             <input type="text" id="transferApiKeyInput"
                                 class="form-control form-control-sm pl-8 text-xs font-mono" style="min-width: 170px;"
                                 placeholder="留空则不校验" value="">
@@ -390,7 +532,7 @@
                         </div>
                         <div class="p-4 space-y-3 text-xs">
                             <p class="text-slate-600 leading-relaxed">
-                                使用 Server-Sent Events (SSE) 协议实时流式返回搜索结果（包含 start / item / done 事件）。支持客户端边检索边渲染，提升用户感知响应速度。
+                                使用 Server-Sent Events (SSE) 协议实时流式返回搜索结果（包含 start / item / done 事件）。支持客户端边检索边渲染，提升用户感知响应速度。请求参数与 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">GET /api/v1/search</code> 完全一致。
                             </p>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse">
@@ -410,6 +552,41 @@
                                             <td class="px-3 py-2 text-slate-500">String</td>
                                             <td class="px-3 py-2 font-bold text-rose-600">必选</td>
                                             <td class="px-3 py-2 text-slate-600">搜索关键词，例如：<code class="font-mono bg-slate-100 px-1 py-0.5 rounded">黑神话</code></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono font-bold text-slate-800">cloud_name</td>
+                                            <td class="px-3 py-2 font-mono text-slate-500">Query</td>
+                                            <td class="px-3 py-2 text-slate-500">String</td>
+                                            <td class="px-3 py-2 text-slate-400">可选</td>
+                                            <td class="px-3 py-2 text-slate-600">指定筛选网盘（如 `百度`、`阿里`、`夸克`、`115` 等），支持逗号分隔或多值</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono font-bold text-slate-800">limit</td>
+                                            <td class="px-3 py-2 font-mono text-slate-500">Query</td>
+                                            <td class="px-3 py-2 text-slate-500">Integer</td>
+                                            <td class="px-3 py-2 text-slate-400">可选</td>
+                                            <td class="px-3 py-2 text-slate-600">单次最大条数（受防护锁与后台预设控制）</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono font-bold text-slate-800">scope</td>
+                                            <td class="px-3 py-2 font-mono text-slate-500">Query</td>
+                                            <td class="px-3 py-2 text-slate-500">String</td>
+                                            <td class="px-3 py-2 text-slate-400">可选</td>
+                                            <td class="px-3 py-2 text-slate-600">检索范围：<code class="font-mono bg-slate-100 px-1 py-0.5 rounded">own</code> (站长收益库) 或 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded">all</code> (全网并发)</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono font-bold text-slate-800">check_status</td>
+                                            <td class="px-3 py-2 font-mono text-slate-500">Query</td>
+                                            <td class="px-3 py-2 text-slate-500">Boolean</td>
+                                            <td class="px-3 py-2 text-slate-400">可选</td>
+                                            <td class="px-3 py-2 text-slate-600">是否实时并发测活并注入 health_state</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-3 py-2 font-mono font-bold text-slate-800">filter_bad</td>
+                                            <td class="px-3 py-2 font-mono text-slate-500">Query</td>
+                                            <td class="px-3 py-2 text-slate-500">Boolean</td>
+                                            <td class="px-3 py-2 text-slate-400">可选</td>
+                                            <td class="px-3 py-2 text-slate-600">是否自动在服务端剔除已失效死链与空资源</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1018,18 +1195,20 @@ curl -X POST "http://localhost:5004/api/v1/transfer" \
         }
     });
 
+    const hostOrigin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : "http://localhost:5004";
+
     const SNIPPETS = {
         curl: `# 步骤 1: 聚合搜索并过滤失效链接
-curl -X GET "http://localhost:5004/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
+curl -X GET "${hostOrigin}/api/v1/search?keyword=黑神话&check_status=true&filter_bad=true"
 
 # 步骤 2: 发起转存替换 (默认前置测活校验，若链接失效/空文件夹则返回 422 拦截)
-curl -X POST "http://localhost:5004/api/v1/transfer" \\
+curl -X POST "${hostOrigin}/api/v1/transfer" \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: YOUR_API_KEY" \\
   -d '{"url": "https://pan.quark.cn/s/raw123", "title": "黑神话", "skip_check": false}'`,
         python: `import requests
 
-BASE_URL = "http://localhost:5004"
+BASE_URL = "${hostOrigin}"
 API_KEY = "YOUR_API_KEY"
 
 # 步骤 1: 聚合搜索并开启实时免登录测活 + 过滤死链
@@ -1050,7 +1229,7 @@ if transfer_res.status_code == 422:
     print("前置测活拦截失败:", transfer_res.json())
 else:
     print("转存成功:", transfer_res.json())`,
-        js: `const BASE_URL = "http://localhost:5004";
+        js: `const BASE_URL = "${hostOrigin}";
 const API_KEY = "YOUR_API_KEY";
 
 // 步骤 1: 聚合搜索有效资源 (带测活并过滤失效)

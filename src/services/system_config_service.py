@@ -16,6 +16,13 @@ DEFAULT_TRANSFER_TARGET_DIR = "Pan-Relay分享"
 FRONTEND_LINK_MODE_OPTIONS = {"copy", "view"}
 API_MODE_CONFIG_KEY = "api_mode_config"
 SEARCH_API_SCOPE_KEY = "search_api_scope"
+SEARCH_API_LIMIT_KEY = "search_api_limit"
+SEARCH_API_FILTER_BAD_KEY = "search_api_filter_bad"
+SEARCH_API_CHECK_STATUS_KEY = "search_api_check_status"
+SEARCH_API_SCOPE_LOCK_KEY = "search_api_scope_lock"
+SEARCH_API_LIMIT_LOCK_KEY = "search_api_limit_lock"
+SEARCH_API_FILTER_BAD_LOCK_KEY = "search_api_filter_bad_lock"
+SEARCH_API_CHECK_STATUS_LOCK_KEY = "search_api_check_status_lock"
 TRANSFER_API_KEY_KEY = "transfer_api_key"
 FRONTEND_LINK_CHECK_CONFIG_KEY = "frontend_link_check_config"
 
@@ -829,6 +836,13 @@ def get_api_mode_config() -> Dict[str, Any]:
         "api_only": False,
         "enable_frontend": True,
         "search_scope": get_search_api_scope(),
+        "search_limit": get_search_api_limit(),
+        "search_filter_bad": get_search_api_filter_bad(),
+        "search_check_status": get_search_api_check_status(),
+        "search_scope_lock": get_search_api_scope_lock(),
+        "search_limit_lock": get_search_api_limit_lock(),
+        "search_filter_bad_lock": get_search_api_filter_bad_lock(),
+        "search_check_status_lock": get_search_api_check_status_lock(),
         "transfer_api_key": get_transfer_api_key(),
     }
 
@@ -856,14 +870,47 @@ def is_frontend_enabled() -> bool:
     return get_api_mode_config()["enable_frontend"]
 
 
-def save_api_mode_config(api_only: bool = False, enable_frontend: bool = True, search_scope: str = "all", transfer_api_key: str = "", **kwargs) -> bool:
+def save_api_mode_config(
+    api_only: bool = False,
+    enable_frontend: bool = True,
+    search_scope: str = "all",
+    search_limit: int = 50,
+    search_filter_bad: bool = False,
+    search_check_status: bool = False,
+    search_scope_lock: bool = False,
+    search_limit_lock: bool = False,
+    search_filter_bad_lock: bool = False,
+    search_check_status_lock: bool = False,
+    transfer_api_key: str = "",
+    **kwargs
+) -> bool:
+    try:
+        val = int(search_limit)
+        clean_limit = max(1, min(val, 1000))
+    except (TypeError, ValueError):
+        clean_limit = 50
+
     config = {
         "api_only": bool(api_only),
         "enable_frontend": bool(enable_frontend),
         "search_scope": "own" if str(search_scope).strip().lower() in ("own", "local") else "all",
+        "search_limit": clean_limit,
+        "search_filter_bad": bool(search_filter_bad),
+        "search_check_status": bool(search_check_status),
+        "search_scope_lock": bool(search_scope_lock),
+        "search_limit_lock": bool(search_limit_lock),
+        "search_filter_bad_lock": bool(search_filter_bad_lock),
+        "search_check_status_lock": bool(search_check_status_lock),
         "transfer_api_key": str(transfer_api_key or "").strip(),
     }
     save_search_api_scope(config["search_scope"])
+    save_search_api_limit(config["search_limit"])
+    save_search_api_filter_bad(config["search_filter_bad"])
+    save_search_api_check_status(config["search_check_status"])
+    save_search_api_scope_lock(config["search_scope_lock"])
+    save_search_api_limit_lock(config["search_limit_lock"])
+    save_search_api_filter_bad_lock(config["search_filter_bad_lock"])
+    save_search_api_check_status_lock(config["search_check_status_lock"])
     save_transfer_api_key(config["transfer_api_key"])
     return set_config_value(API_MODE_CONFIG_KEY, config)
 
@@ -887,6 +934,118 @@ def get_search_api_scope() -> str:
 def save_search_api_scope(scope: str) -> bool:
     clean_scope = "own" if str(scope).strip().lower() in ("own", "local") else "all"
     return set_config_value(SEARCH_API_SCOPE_KEY, {"scope": clean_scope})
+
+
+def get_search_api_limit() -> int:
+    """获取 API 搜索默认单次返回结果数上限 (默认 50)"""
+    raw_value = get_config_value(SEARCH_API_LIMIT_KEY)
+    if not raw_value:
+        return 50
+    try:
+        parsed = json.loads(raw_value)
+        val = int(parsed.get("limit", 50))
+        return max(1, min(val, 1000))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return 50
+
+
+def save_search_api_limit(limit: int) -> bool:
+    try:
+        val = int(limit)
+        clean_limit = max(1, min(val, 1000))
+    except (TypeError, ValueError):
+        clean_limit = 50
+    return set_config_value(SEARCH_API_LIMIT_KEY, {"limit": clean_limit})
+
+
+def get_search_api_filter_bad() -> bool:
+    """获取 API 搜索默认死链过滤开关 (默认 False)"""
+    raw_value = get_config_value(SEARCH_API_FILTER_BAD_KEY)
+    if not raw_value:
+        return False
+    try:
+        parsed = json.loads(raw_value)
+        return bool(parsed.get("filter_bad", False))
+    except (TypeError, json.JSONDecodeError):
+        return False
+
+
+def save_search_api_filter_bad(enabled: bool) -> bool:
+    return set_config_value(SEARCH_API_FILTER_BAD_KEY, {"filter_bad": bool(enabled)})
+
+
+def get_search_api_check_status() -> bool:
+    """获取 API 搜索默认实时测活探针开关 (默认 False)"""
+    raw_value = get_config_value(SEARCH_API_CHECK_STATUS_KEY)
+    if not raw_value:
+        return False
+    try:
+        parsed = json.loads(raw_value)
+        return bool(parsed.get("check_status", False))
+    except (TypeError, json.JSONDecodeError):
+        return False
+
+
+def save_search_api_check_status(enabled: bool) -> bool:
+    return set_config_value(SEARCH_API_CHECK_STATUS_KEY, {"check_status": bool(enabled)})
+
+
+def get_search_api_scope_lock() -> bool:
+    raw_value = get_config_value(SEARCH_API_SCOPE_LOCK_KEY)
+    if not raw_value:
+        return False
+    try:
+        return bool(json.loads(raw_value).get("locked", False))
+    except (TypeError, json.JSONDecodeError):
+        return False
+
+
+def save_search_api_scope_lock(locked: bool) -> bool:
+    return set_config_value(SEARCH_API_SCOPE_LOCK_KEY, {"locked": bool(locked)})
+
+
+def get_search_api_limit_lock() -> bool:
+    raw_value = get_config_value(SEARCH_API_LIMIT_LOCK_KEY)
+    if not raw_value:
+        return False
+    try:
+        return bool(json.loads(raw_value).get("locked", False))
+    except (TypeError, json.JSONDecodeError):
+        return False
+
+
+def save_search_api_limit_lock(locked: bool) -> bool:
+    return set_config_value(SEARCH_API_LIMIT_LOCK_KEY, {"locked": bool(locked)})
+
+
+def get_search_api_filter_bad_lock() -> bool:
+    raw_value = get_config_value(SEARCH_API_FILTER_BAD_LOCK_KEY)
+    if not raw_value:
+        return False
+    try:
+        return bool(json.loads(raw_value).get("locked", False))
+    except (TypeError, json.JSONDecodeError):
+        return False
+
+
+def save_search_api_filter_bad_lock(locked: bool) -> bool:
+    return set_config_value(SEARCH_API_FILTER_BAD_LOCK_KEY, {"locked": bool(locked)})
+
+
+def get_search_api_check_status_lock() -> bool:
+    raw_value = get_config_value(SEARCH_API_CHECK_STATUS_LOCK_KEY)
+    if not raw_value:
+        return False
+    try:
+        return bool(json.loads(raw_value).get("locked", False))
+    except (TypeError, json.JSONDecodeError):
+        return False
+
+
+def save_search_api_check_status_lock(locked: bool) -> bool:
+    return set_config_value(SEARCH_API_CHECK_STATUS_LOCK_KEY, {"locked": bool(locked)})
+
+
 
 
 def get_transfer_api_key() -> str:
