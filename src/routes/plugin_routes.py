@@ -109,27 +109,6 @@ def health_admin_plugin_api(plugin_name):
     return health_plugin_api(plugin_name)
 
 
-@plugin_bp.route("/admin/api/plugins/reload", methods=["POST"])
-@token_required
-def reload_admin_plugins_api():
-    """
-    热重载重新扫描插件目录 (管理员接口)
-    """
-    try:
-        plugins = plugin_manager.reload_plugins()
-        data = [_enrich_plugin_dict(p) for p in plugins]
-        return jsonify({
-            "success": True,
-            "message": f"成功重新扫描插件目录，共载入 {len(data)} 个插件",
-            "total": len(data),
-            "enabled_count": len([p for p in plugins if p.is_enabled]),
-            "plugins": data,
-        })
-    except Exception as e:
-        logger.error(f"重新加载插件异常: {e}")
-        return jsonify({"success": False, "message": f"重新载入插件失败: {e}"}), 500
-
-
 @plugin_bp.route("/admin/api/plugins/enable-all", methods=["POST"])
 @token_required
 def enable_all_admin_plugins_api():
@@ -188,6 +167,73 @@ def test_all_admin_plugins_api():
     except Exception as e:
         logger.error(f"批量测试插件异常: {e}")
         return jsonify({"success": False, "message": f"批量测试插件失败: {e}"}), 500
+
+
+@plugin_bp.route("/admin/api/plugins/batch-toggle", methods=["POST", "PUT"])
+@token_required
+def batch_toggle_admin_plugins_api():
+    """批量启停指定插件"""
+    data = request.get_json() or {}
+    names = data.get("names", [])
+    is_enabled = bool(data.get("is_enabled"))
+    if not names:
+        return jsonify({"success": False, "message": "缺少插件名称列表"}), 400
+
+    count = 0
+    for name in names:
+        if is_enabled:
+            plugin_manager.enable_plugin(name)
+        else:
+            plugin_manager.disable_plugin(name)
+        count += 1
+    action_str = "启用" if is_enabled else "停用"
+    return jsonify({"success": True, "message": f"已成功批量{action_str} {count} 个插件", "count": count})
+
+
+@plugin_bp.route("/admin/api/plugins/test-batch", methods=["POST"])
+@token_required
+def test_batch_admin_plugins_api():
+    """批量测试指定的插件健康度"""
+    try:
+        data = request.get_json() or {}
+        names = set(data.get("names", []))
+        if not names:
+            return jsonify({"success": False, "message": "缺少要测试的插件名称列表"}), 400
+
+        plugins = [p for p in plugin_manager.get_all_plugins() if p.name in names]
+        if not plugins:
+            return jsonify({
+                "success": True,
+                "message": "暂无可检测的指定插件",
+                "total": 0,
+                "healthy_count": 0,
+                "failed_count": 0,
+                "results": [],
+            })
+
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(plugins), 5)) as executor:
+            futures = {executor.submit(_check_single_plugin_health, p): p for p in plugins}
+            for future in concurrent.futures.as_completed(futures):
+                results.append(future.result())
+
+        total = len(results)
+        healthy_count = sum(1 for r in results if r.get("success"))
+        failed_count = total - healthy_count
+        message = f"插件检测完成：{healthy_count}/{total} 个正常"
+
+        return jsonify({
+            "success": True,
+            "message": message,
+            "total": total,
+            "healthy_count": healthy_count,
+            "failed_count": failed_count,
+            "results": results,
+        })
+    except Exception as e:
+        logger.error(f"批量测试插件异常: {e}")
+        return jsonify({"success": False, "message": f"批量测试插件失败: {e}"}), 500
+
 
 
 

@@ -67,34 +67,6 @@
         font-weight: 600;
     }
 
-    /* Floating Batch Toolbar */
-    .batch-floating-toolbar {
-        position: fixed;
-        bottom: 1.5rem;
-        left: 50%;
-        transform: translateX(-50%) translateY(1rem);
-        background: rgba(255, 255, 255, 0.96);
-        backdrop-filter: blur(12px);
-        border: 1px solid #e2e8f0;
-        border-radius: 1rem;
-        padding: 0.5rem 1rem;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        z-index: 40;
-        font-size: 0.75rem;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .batch-floating-toolbar.active {
-        opacity: 1;
-        pointer-events: auto;
-        transform: translateX(-50%) translateY(0);
-    }
-
     /* Batch Select Dropdown */
     .batch-select-dropdown {
         position: relative;
@@ -333,8 +305,14 @@
                                 onclick="handleSearchSort('created_at')">
                                 搜索时间 <span id="searchSortIconCreatedAt" class="text-blue-600 font-bold ml-0.5">↓</span>
                             </th>
-                            <th class="px-3 py-3 whitespace-nowrap w-28">搜索渠道</th>
-                            <th class="px-3 py-3 min-w-[220px]">搜索关键词</th>
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-28"
+                                onclick="handleSearchSort('channel')">
+                                搜索渠道 <span id="searchSortIconChannel" class="text-slate-300 ml-0.5">↕</span>
+                            </th>
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition min-w-[220px]"
+                                onclick="handleSearchSort('keyword')">
+                                搜索关键词 <span id="searchSortIconKeyword" class="text-slate-300 ml-0.5">↕</span>
+                            </th>
                             <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-24 text-center"
                                 onclick="handleSearchSort('result_count')">
                                 命中结果 <span id="searchSortIconResultCount" class="text-slate-300 ml-0.5">↕</span>
@@ -343,7 +321,10 @@
                                 onclick="handleSearchSort('duration_ms')">
                                 响应耗时 <span id="searchSortIconDurationMs" class="text-slate-300 ml-0.5">↕</span>
                             </th>
-                            <th class="px-3 py-3 whitespace-nowrap w-32">客户端 IP</th>
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-32"
+                                onclick="handleSearchSort('client_ip')">
+                                客户端 IP <span id="searchSortIconClientIp" class="text-slate-300 ml-0.5">↕</span>
+                            </th>
                             <th class="px-3 py-3 whitespace-nowrap w-24 text-center">快捷操作</th>
                         </tr>
                     </thead>
@@ -370,11 +351,22 @@
                         <option value="100">100 条</option>
                     </select>
                     <span class="text-slate-400">第 <span id="searchCurrentPageNum">1</span> / <span
-                            id="searchTotalPageNum">1</span> 页</span>
+                            id="searchTotalPageNum">1</span> 页（共 <span id="searchTotalCountNum">0</span> 条）</span>
                 </div>
 
-                <div class="flex items-center space-x-1.5" id="searchLogsPagination">
-                    <!-- Dynamic rendering by JS -->
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center space-x-1.5" id="searchLogsPagination">
+                        <!-- Dynamic rendering by JS -->
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs text-slate-500 border-l border-slate-200 pl-3">
+                        <span>跳至</span>
+                        <input type="number" id="searchLogsJumpInput" min="1" value="1"
+                            class="w-14 px-2 py-1 text-xs text-center rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-500"
+                            onkeydown="if(event.key==='Enter'){handleSearchJumpPage();}">
+                        <span>页</span>
+                        <button type="button" onclick="handleSearchJumpPage()"
+                            class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer">跳转</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -527,9 +519,18 @@
                                 onclick="handleSort('created_at')">
                                 时间 <span id="sortIconCreatedAt" class="text-blue-600 font-bold ml-0.5">↓</span>
                             </th>
-                            <th class="px-3 py-3 whitespace-nowrap w-24">类型</th>
-                            <th class="px-3 py-3 whitespace-nowrap w-32">动作/接口</th>
-                            <th class="px-3 py-3 min-w-[200px]">搜索词 / 目标链接</th>
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-24"
+                                onclick="handleSort('log_type')">
+                                类型 <span id="sortIconLogType" class="text-slate-300 ml-0.5">↕</span>
+                            </th>
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-32"
+                                onclick="handleSort('action')">
+                                动作/接口 <span id="sortIconAction" class="text-slate-300 ml-0.5">↕</span>
+                            </th>
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition min-w-[200px]"
+                                onclick="handleSort('query_text')">
+                                搜索词 / 目标链接 <span id="sortIconQueryText" class="text-slate-300 ml-0.5">↕</span>
+                            </th>
                             <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-20 text-center"
                                 onclick="handleSort('status_code')">
                                 状态 <span id="sortIconStatusCode" class="text-slate-300 ml-0.5">↕</span>
@@ -538,8 +539,14 @@
                                 onclick="handleSort('duration_ms')">
                                 耗时 <span id="sortIconDurationMs" class="text-slate-300 ml-0.5">↕</span>
                             </th>
-                            <th class="px-3 py-3 whitespace-nowrap w-20 text-center">命中数</th>
-                            <th class="px-3 py-3 whitespace-nowrap w-28">客户端 IP</th>
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-20 text-center"
+                                onclick="handleSort('result_count')">
+                                命中数 <span id="sortIconResultCount" class="text-slate-300 ml-0.5">↕</span>
+                            </th>
+                            <th class="px-3 py-3 cursor-pointer hover:text-slate-900 transition whitespace-nowrap w-28"
+                                onclick="handleSort('client_ip')">
+                                客户端 IP <span id="sortIconClientIp" class="text-slate-300 ml-0.5">↕</span>
+                            </th>
                             <th class="px-3 py-3 whitespace-nowrap w-20 text-center">操作</th>
                         </tr>
                     </thead>
@@ -567,43 +574,45 @@
                         <option value="100">100 条</option>
                     </select>
                     <span class="text-slate-400">第 <span id="currentPageNum">1</span> / <span id="totalPageNum">1</span>
-                        页</span>
+                        页（共 <span id="auditTotalCountNum">0</span> 条）</span>
                 </div>
 
-                <div class="flex items-center space-x-1.5" id="logsPagination">
-                    <!-- Dynamic rendering by JS -->
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center space-x-1.5" id="logsPagination">
+                        <!-- Dynamic rendering by JS -->
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs text-slate-500 border-l border-slate-200 pl-3">
+                        <span>跳至</span>
+                        <input type="number" id="logsJumpInput" min="1" value="1"
+                            class="w-14 px-2 py-1 text-xs text-center rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-500"
+                            onkeydown="if(event.key==='Enter'){handleAuditJumpPage();}">
+                        <span>页</span>
+                        <button type="button" onclick="handleAuditJumpPage()"
+                            class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer">跳转</button>
+                    </div>
                 </div>
             </div>
         </section>
     </div>
 </div>
 
-<!-- 批量操作悬浮条 (支持 搜索运营视角 和 系统运维视角) -->
-<div class="batch-floating-toolbar" id="batchFloatingToolbar">
-    <div class="flex items-center gap-2 font-semibold text-slate-800 text-xs">
-        <i class="fas fa-check-double text-blue-600"></i>
-        <span id="batchToolbarSummaryText">已选中 <strong id="selectedCountBadge" class="text-blue-600 font-bold">0</strong> 条记录</span>
-        <button type="button" id="batchSelectAllToggleBtn" onclick="toggleActiveSelectAllMode()"
-            class="text-blue-600 hover:text-blue-800 underline ml-1 font-medium cursor-pointer text-xs">
-            选择全部 (<span id="batchTotalCountSpan">0</span> 条)
+<!-- 批量操作悬浮条 (支持 搜索运营视角 和 系统运维视角，全站统一胶囊规范) -->
+<div class="batch-floating-toolbar" id="batchFloatingToolbar" role="toolbar" aria-label="批量操作栏">
+    <div class="resource-batch-summary">
+        <i class="fas fa-check-circle text-blue-600"></i>
+        <span><span id="batchToolbarSummaryText">已选 <strong id="selectedCountBadge">0</strong> 项</span></span>
+        <button class="resource-batch-scope-link" id="batchScopeToggleLink" onclick="toggleActiveSelectAllMode()" type="button" style="display: none;"></button>
+        <span class="resource-batch-summary-divider"></span>
+        <button class="resource-batch-btn-clear" onclick="clearActiveSelection()" type="button" title="清空选择">
+            <i class="fas fa-times"></i> 清空
         </button>
     </div>
-    <div class="h-3.5 w-px bg-slate-200"></div>
-    <div class="flex items-center gap-2">
-        <button type="button" onclick="executeBatchExport()"
-            class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold transition flex items-center gap-1 shadow-2xs">
-            <i class="fas fa-file-export text-[10px]"></i>
-            <span>批量导出 CSV</span>
+    <div class="resource-batch-actions">
+        <button class="btn btn-primary btn-sm" onclick="executeBatchExport()" type="button">
+            <i class="fas fa-file-export"></i> 导出 CSV
         </button>
-        <button type="button" onclick="executeBatchDelete()"
-            class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold transition flex items-center gap-1 shadow-2xs">
-            <i class="fas fa-trash-can text-[10px]"></i>
-            <span>批量删除</span>
-        </button>
-        <button type="button" onclick="clearActiveSelection()"
-            class="px-2 py-1 text-slate-400 hover:text-slate-600 transition text-xs flex items-center gap-0.5" title="取消选择">
-            <i class="fas fa-xmark"></i>
-            <span>清空</span>
+        <button class="btn btn-danger btn-sm" onclick="executeBatchDelete()" type="button">
+            <i class="fas fa-trash-alt"></i> 删除
         </button>
     </div>
 </div>
@@ -706,13 +715,18 @@
     const savedSystemLogsPageSize = parseInt(localStorage.getItem('panrelay_system_logs_pagesize'), 10);
     const initialSystemLogsPageSize = (savedSystemLogsPageSize && [15, 30, 50, 100].includes(savedSystemLogsPageSize)) ? savedSystemLogsPageSize : 15;
 
+    const savedSearchChannel = localStorage.getItem('panrelay_search_logs_channel') || '';
+    const savedSearchResultFilter = localStorage.getItem('panrelay_search_logs_result_filter') || '';
+    const savedSystemLogType = localStorage.getItem('panrelay_system_logs_type') || '';
+    const savedSystemStatus = localStorage.getItem('panrelay_system_logs_status') || '';
+
     // 搜索分析专属状态
     const searchLogsState = {
         page: 1,
         pageSize: initialSearchLogsPageSize,
         q: '',
-        channel: '',
-        resultFilter: '',
+        channel: savedSearchChannel,
+        resultFilter: savedSearchResultFilter,
         startDate: '',
         endDate: '',
         sortBy: 'created_at',
@@ -729,8 +743,8 @@
         page: 1,
         pageSize: initialSystemLogsPageSize,
         q: '',
-        logType: '',
-        status: '',
+        logType: savedSystemLogType,
+        status: savedSystemStatus,
         startDate: '',
         endDate: '',
         sortBy: 'created_at',
@@ -857,6 +871,8 @@
             document.getElementById('searchLogsTotalCount').textContent = searchLogsState.total;
             document.getElementById('searchCurrentPageNum').textContent = searchLogsState.page;
             document.getElementById('searchTotalPageNum').textContent = searchLogsState.totalPages;
+            const searchCntEl = document.getElementById('searchTotalCountNum');
+            if (searchCntEl) searchCntEl.textContent = searchLogsState.total;
 
             const dropdownTotal = document.getElementById('searchDropdownTotal');
             if (dropdownTotal) dropdownTotal.textContent = searchLogsState.total;
@@ -969,9 +985,15 @@
         const current = searchLogsState.page;
         const total = searchLogsState.totalPages;
 
-        if (total <= 1) {
-            container.innerHTML = '';
-            return;
+        const jumpInput = document.getElementById('searchLogsJumpInput');
+        if (jumpInput) {
+            jumpInput.value = current;
+            jumpInput.max = total;
+            jumpInput.disabled = total <= 1;
+        }
+        const jumpBtn = document.getElementById('searchLogsJumpBtn');
+        if (jumpBtn) {
+            jumpBtn.disabled = total <= 1;
         }
 
         let html = '';
@@ -1000,12 +1022,26 @@
         container.innerHTML = html;
     }
 
+    function handleSearchJumpPage() {
+        const input = document.getElementById('searchLogsJumpInput');
+        if (!input) return;
+        const target = parseInt(input.value, 10);
+        if (!target || target < 1 || target > searchLogsState.totalPages) {
+            return;
+        }
+        handleSearchPageChange(target);
+    }
+
     function handleSearchFilterChange() {
         searchLogsState.q = document.getElementById('searchLogsQueryInput').value.trim();
         searchLogsState.channel = document.getElementById('searchLogsChannelFilter').value;
         searchLogsState.resultFilter = document.getElementById('searchLogsResultFilter').value;
         searchLogsState.startDate = document.getElementById('searchLogsStartDate').value;
         searchLogsState.endDate = document.getElementById('searchLogsEndDate').value;
+        try {
+            localStorage.setItem('panrelay_search_logs_channel', searchLogsState.channel);
+            localStorage.setItem('panrelay_search_logs_result_filter', searchLogsState.resultFilter);
+        } catch (e) {}
         searchLogsState.page = 1;
         searchLogsState.selectedIds.clear();
         searchLogsState.selectMode = 'page';
@@ -1018,6 +1054,10 @@
         document.getElementById('searchLogsResultFilter').value = '';
         document.getElementById('searchLogsStartDate').value = '';
         document.getElementById('searchLogsEndDate').value = '';
+        try {
+            localStorage.removeItem('panrelay_search_logs_channel');
+            localStorage.removeItem('panrelay_search_logs_result_filter');
+        } catch (e) {}
         searchLogsState.q = '';
         searchLogsState.channel = '';
         searchLogsState.resultFilter = '';
@@ -1057,7 +1097,7 @@
     }
 
     function updateSearchSortIcons() {
-        const fields = ['created_at', 'duration_ms', 'result_count'];
+        const fields = ['created_at', 'channel', 'keyword', 'duration_ms', 'result_count', 'client_ip'];
         fields.forEach(f => {
             const icon = document.getElementById(`searchSortIcon${f.charAt(0).toUpperCase() + f.slice(1).replace(/_([a-z])/g, (_, l) => l.toUpperCase())}`);
             if (!icon) return;
@@ -1083,6 +1123,24 @@
         const logSizeSelect = document.getElementById('logsPageSizeSelector');
         if (logSizeSelect) {
             logSizeSelect.value = String(currentLogsState.pageSize);
+        }
+
+        // 同步日志筛选下拉框初始值
+        const searchChannelSelect = document.getElementById('searchLogsChannelFilter');
+        if (searchChannelSelect && searchLogsState.channel) {
+            searchChannelSelect.value = searchLogsState.channel;
+        }
+        const searchResultFilterSelect = document.getElementById('searchLogsResultFilter');
+        if (searchResultFilterSelect && searchLogsState.resultFilter) {
+            searchResultFilterSelect.value = searchLogsState.resultFilter;
+        }
+        const logsTypeSelect = document.getElementById('logsTypeFilter');
+        if (logsTypeSelect && currentLogsState.logType) {
+            logsTypeSelect.value = currentLogsState.logType;
+        }
+        const logsStatusSelect = document.getElementById('logsStatusFilter');
+        if (logsStatusSelect && currentLogsState.status) {
+            logsStatusSelect.value = currentLogsState.status;
         }
 
         const urlTab = new URLSearchParams(window.location.search).get('tab');
@@ -1171,6 +1229,8 @@
             document.getElementById('logsResultTotal').textContent = currentLogsState.total;
             document.getElementById('currentPageNum').textContent = currentLogsState.page;
             document.getElementById('totalPageNum').textContent = currentLogsState.totalPages;
+            const auditCntEl = document.getElementById('auditTotalCountNum');
+            if (auditCntEl) auditCntEl.textContent = currentLogsState.total;
 
             const dropdownTotal = document.getElementById('auditDropdownTotal');
             if (dropdownTotal) dropdownTotal.textContent = currentLogsState.total;
@@ -1287,9 +1347,15 @@
         const current = currentLogsState.page;
         const total = currentLogsState.totalPages;
 
-        if (total <= 1) {
-            container.innerHTML = '';
-            return;
+        const jumpInput = document.getElementById('logsJumpInput');
+        if (jumpInput) {
+            jumpInput.value = current;
+            jumpInput.max = total;
+            jumpInput.disabled = total <= 1;
+        }
+        const jumpBtn = document.getElementById('logsJumpBtn');
+        if (jumpBtn) {
+            jumpBtn.disabled = total <= 1;
         }
 
         let html = '';
@@ -1318,12 +1384,26 @@
         container.innerHTML = html;
     }
 
+    function handleAuditJumpPage() {
+        const input = document.getElementById('logsJumpInput');
+        if (!input) return;
+        const target = parseInt(input.value, 10);
+        if (!target || target < 1 || target > currentLogsState.totalPages) {
+            return;
+        }
+        handlePageChange(target);
+    }
+
     function handleFilterChange() {
         currentLogsState.q = document.getElementById('logsSearchInput').value.trim();
         currentLogsState.logType = document.getElementById('logsTypeFilter').value;
         currentLogsState.status = document.getElementById('logsStatusFilter').value;
         currentLogsState.startDate = document.getElementById('logsStartDate').value;
         currentLogsState.endDate = document.getElementById('logsEndDate').value;
+        try {
+            localStorage.setItem('panrelay_system_logs_type', currentLogsState.logType);
+            localStorage.setItem('panrelay_system_logs_status', currentLogsState.status);
+        } catch (e) {}
         currentLogsState.page = 1;
         currentLogsState.selectedIds.clear();
         currentLogsState.selectMode = 'page';
@@ -1336,6 +1416,10 @@
         document.getElementById('logsStatusFilter').value = '';
         document.getElementById('logsStartDate').value = '';
         document.getElementById('logsEndDate').value = '';
+        try {
+            localStorage.removeItem('panrelay_system_logs_type');
+            localStorage.removeItem('panrelay_system_logs_status');
+        } catch (e) {}
         currentLogsState.q = '';
         currentLogsState.logType = '';
         currentLogsState.status = '';
@@ -1375,7 +1459,7 @@
     }
 
     function updateSortIcons() {
-        const fields = ['created_at', 'status_code', 'duration_ms'];
+        const fields = ['created_at', 'log_type', 'action', 'query_text', 'status_code', 'duration_ms', 'result_count', 'client_ip'];
         fields.forEach(f => {
             const icon = document.getElementById(`sortIcon${f.charAt(0).toUpperCase() + f.slice(1).replace(/_([a-z])/g, (_, l) => l.toUpperCase())}`);
             if (!icon) return;
@@ -1415,14 +1499,22 @@
     function selectCurrentPage(tab) {
         document.querySelectorAll('.batch-select-dropdown.open').forEach(dd => dd.classList.remove('open'));
         const state = tab === 'analytics' ? searchLogsState : currentLogsState;
+        const pageItems = state.items || [];
+        const isAlreadyPage = state.selectMode === 'page';
+        const allPageSelected = pageItems.length > 0 && pageItems.every(item => state.selectedIds.has(item.id));
+
         state.selectMode = 'page';
-        state.items.forEach(item => state.selectedIds.add(item.id));
+        pageItems.forEach(item => state.selectedIds.add(item.id));
         if (tab === 'analytics') {
             renderSearchLogsTable(state.items);
         } else {
             renderLogsTable(state.items);
         }
         updateBatchToolbar();
+
+        if (allPageSelected && isAlreadyPage && typeof showToast === 'function') {
+            showToast(`本页 ${pageItems.length} 项已全部选中`, 'info');
+        }
     }
 
     function selectAllFiltered(tab) {
@@ -1480,9 +1572,11 @@
         const state = activeLogTab === 'analytics' ? searchLogsState : currentLogsState;
         if (state.selectMode === 'all') {
             state.selectMode = 'page';
+            state.selectedIds.clear();
+            (state.items || []).forEach(item => state.selectedIds.add(item.id));
         } else {
             state.selectMode = 'all';
-            state.items.forEach(item => state.selectedIds.add(item.id));
+            (state.items || []).forEach(item => state.selectedIds.add(item.id));
         }
         if (activeLogTab === 'analytics') {
             renderSearchLogsTable(state.items);
@@ -1512,9 +1606,11 @@
         const count = state.selectedIds.size;
         const isAll = state.selectMode === 'all';
         const total = state.total || 0;
+        const pageItems = state.items || [];
+        const pageCount = pageItems.length;
 
         const summaryText = document.getElementById('batchToolbarSummaryText');
-        const toggleBtn = document.getElementById('batchSelectAllToggleBtn');
+        const scopeLink = document.getElementById('batchScopeToggleLink');
 
         const searchDropdownTotal = document.getElementById('searchDropdownTotal');
         if (searchDropdownTotal) searchDropdownTotal.textContent = searchLogsState.total || 0;
@@ -1524,22 +1620,21 @@
         if (count > 0 || isAll) {
             toolbar.classList.add('active');
             if (isAll) {
-                summaryText.innerHTML = `已选择全部 <strong class="text-blue-600 font-bold">${total}</strong> 条记录`;
-                toggleBtn.textContent = `仅选当前页 (${count} 条)`;
-                toggleBtn.className = "text-slate-500 hover:text-slate-800 underline ml-1 font-normal cursor-pointer text-xs";
-                toggleBtn.style.display = 'inline-block';
+                if (summaryText) summaryText.innerHTML = `已选全部 <strong class="text-blue-600 font-bold">${total}</strong> 项`;
+                if (scopeLink) {
+                    scopeLink.style.display = 'inline-flex';
+                    scopeLink.textContent = `(切换为仅选本页)`;
+                }
             } else {
-                summaryText.innerHTML = `已选中 <strong class="text-blue-600 font-bold">${count}</strong> 条记录`;
-                if (total > count) {
-                    toggleBtn.style.display = 'inline-block';
-                    toggleBtn.innerHTML = `选择全部 (共 <span id="batchTotalCountSpan">${total}</span> 条)`;
-                    toggleBtn.className = "text-blue-600 hover:text-blue-800 underline ml-1 font-semibold cursor-pointer text-xs";
-                } else {
-                    toggleBtn.style.display = 'none';
+                if (summaryText) summaryText.innerHTML = `已选 <strong class="text-blue-600 font-bold">${count}</strong> 项`;
+                if (scopeLink) {
+                    scopeLink.style.display = 'inline-flex';
+                    scopeLink.textContent = `(全选全部 ${total} 条)`;
                 }
             }
         } else {
             toolbar.classList.remove('active');
+            if (scopeLink) scopeLink.style.display = 'none';
         }
     }
 

@@ -12,6 +12,16 @@ from src.utils.netdisk_utils import match_netdisk_link, extract_canonical_resour
 class TestNewPanClients(unittest.TestCase):
     """测试新增的光鸭云盘、悟空网盘、移动云盘客户端"""
 
+    def setUp(self):
+        from src.db.system_configs import delete_config_value
+        delete_config_value("custom_ad_injection_config")
+        delete_config_value("ad_filter_config")
+
+    def tearDown(self):
+        from src.db.system_configs import delete_config_value
+        delete_config_value("custom_ad_injection_config")
+        delete_config_value("ad_filter_config")
+
     def test_client_inheritance(self):
         """验证所有新客户端均继承 BasePanClient"""
         self.assertTrue(issubclass(GuangyaPanClient, BasePanClient))

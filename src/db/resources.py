@@ -202,7 +202,7 @@ def update_share_link(resource_id: int, new_share_link: str, file_id: Optional[s
 
 
 def list_resources(
-    page: int = 1, page_size: int = 10, search: str = ""
+    page: int = 1, page_size: int = 10, search: str = "", sort_by: str = "id", order: str = "desc"
 ) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
     """
     后台列表分页查询 resources（供 resource_service 调用）。
@@ -229,11 +229,25 @@ def list_resources(
         total_pages = (total_count + page_size - 1) // page_size
         offset = (page - 1) * page_size
 
+        allowed_sort_fields = {
+            "id": "id",
+            "name": "name",
+            "cloud_name": "cloud_name",
+            "type": "type",
+            "health_status": "health_status",
+            "is_replaced": "is_replaced",
+            "checked_at": "checked_at",
+            "created_at": "created_at",
+            "updated_at": "updated_at",
+        }
+        sort_field = allowed_sort_fields.get(sort_by, "id")
+        sort_order = "ASC" if order and order.lower() == "asc" else "DESC"
+
         query_sql = f"""
         SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, health_status, health_message, checked_at, created_at, updated_at
         FROM resources
         {where_clause}
-        ORDER BY created_at DESC
+        ORDER BY {sort_field} {sort_order}, id DESC
         LIMIT ? OFFSET ?
         """
         params.extend([page_size, offset])

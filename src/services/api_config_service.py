@@ -270,9 +270,13 @@ def test_single_api(
     )
 
 
-def test_all_apis_and_update_status():
-    """测试所有API配置并更新其状态"""
+def test_all_apis_and_update_status(target_ids=None):
+    """测试指定或所有 API 配置并更新其状态"""
     api_configs = read_api_configs_from_db()
+    if target_ids is not None:
+        target_set = set(target_ids)
+        api_configs = [c for c in api_configs if c.get("id") in target_set]
+
     if not api_configs:
         return True, "暂无可检测的 API 搜索源", {
             "total": 0,

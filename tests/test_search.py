@@ -77,10 +77,12 @@ class SearchDeduplicationTest(unittest.TestCase):
 class SearchRankingTest(unittest.TestCase):
     def tearDown(self):
         clear_search_cache()
+        from src.db.system_configs import delete_config_value
+        delete_config_value("ad_filter_config")
 
     def test_loose_title_filter_mode(self):
         from src.services.system_config_service import save_ad_filter_config
-        save_ad_filter_config({"title_filter_mode": "loose"})
+        save_ad_filter_config({"enabled": True, "title_filter_mode": "loose"})
         results = [
             SearchResultItem(source="other", title="全套商务英语口语培训讲义.pdf", share_link="https://pan.quark.cn/s/one", cloud_name="夸克网盘"),
             SearchResultItem(source="other", title="新概念英语 1-4 册视频教程.rar", share_link="https://pan.quark.cn/s/two", cloud_name="夸克网盘"),
@@ -96,7 +98,7 @@ class SearchRankingTest(unittest.TestCase):
 
     def test_off_title_filter_mode(self):
         from src.services.system_config_service import save_ad_filter_config
-        save_ad_filter_config({"title_filter_mode": "off"})
+        save_ad_filter_config({"enabled": True, "title_filter_mode": "off"})
         results = [
             SearchResultItem(source="other", title="任意无关资源.mp4", share_link="https://pan.quark.cn/s/one", cloud_name="夸克网盘"),
             SearchResultItem(source="other", title="扫码关注公众号防走丢.zip", share_link="https://pan.quark.cn/s/two", cloud_name="夸克网盘"),
@@ -104,7 +106,7 @@ class SearchRankingTest(unittest.TestCase):
         filtered = filter_results_by_title(results, "英语培训资料")
         titles = [item.title for item in filtered]
         self.assertEqual(["任意无关资源.mp4"], titles)
-        save_ad_filter_config({"title_filter_mode": "loose"})
+        save_ad_filter_config({"enabled": True, "title_filter_mode": "loose"})
 
     def test_multiple_terms_match_any_whitespace_separated_term_and_rank_by_count(self):
         results = [

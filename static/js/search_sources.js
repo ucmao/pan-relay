@@ -4,6 +4,108 @@
 (function () {
     let tgChannels = [];
     let tgConfig = null;
+    const savedTgSortBy = localStorage.getItem('panrelay_tg_sort_by');
+    let tgSortBy = savedTgSortBy || 'id';
+    const savedTgOrder = localStorage.getItem('panrelay_tg_order');
+    let tgOrder = (savedTgOrder === 'asc' || savedTgOrder === 'desc') ? savedTgOrder : 'asc';
+    let tgCurrentPage = 1;
+    const savedTgPageSize = parseInt(localStorage.getItem('panrelay_tg_pagesize'), 10);
+    let tgPageSize = (savedTgPageSize && [15, 30, 50, 100].includes(savedTgPageSize)) ? savedTgPageSize : 15;
+
+    function handleTgPageSizeChange(val) {
+        const size = parseInt(val, 10);
+        if (size > 0) {
+            tgPageSize = size;
+            try {
+                localStorage.setItem('panrelay_tg_pagesize', String(tgPageSize));
+            } catch (e) {}
+            tgCurrentPage = 1;
+            renderTgChannels();
+        }
+    }
+    window.handleTgPageSizeChange = handleTgPageSizeChange;
+
+    function handleTgSort(field) {
+        if (tgSortBy === field) {
+            tgOrder = tgOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            tgSortBy = field;
+            tgOrder = (field === 'title' || field === 'channel') ? 'asc' : 'desc';
+        }
+        try {
+            localStorage.setItem('panrelay_tg_sort_by', tgSortBy);
+            localStorage.setItem('panrelay_tg_order', tgOrder);
+        } catch (e) {}
+        tgCurrentPage = 1;
+        sortTgChannels();
+        updateTgSortIcons();
+        renderTgChannels();
+    }
+
+    function sortTgChannels() {
+        if (!tgSortBy) return;
+        const factor = tgOrder === 'asc' ? 1 : -1;
+        tgChannels.sort((a, b) => {
+            let valA, valB;
+
+            if (tgSortBy === 'health_status') {
+                const rank = (c) => {
+                    const s = c.health?.status;
+                    return s === 'healthy' ? 3 : (s === 'no_data' ? 2 : (s === 'error' ? 1 : 0));
+                };
+                valA = rank(a);
+                valB = rank(b);
+            } else if (tgSortBy === 'latency_ms') {
+                valA = Number(a.health?.latency_ms) || 0;
+                valB = Number(b.health?.latency_ms) || 0;
+            } else if (tgSortBy === 'checked_at') {
+                valA = a.health?.checked_at ? new Date(a.health.checked_at).getTime() : 0;
+                valB = b.health?.checked_at ? new Date(b.health.checked_at).getTime() : 0;
+            } else if (tgSortBy === 'is_enabled') {
+                valA = Boolean(a.is_enabled) ? 1 : 0;
+                valB = Boolean(b.is_enabled) ? 1 : 0;
+            } else if (tgSortBy === 'title') {
+                valA = String(a.title || a.channel || '').toLowerCase();
+                valB = String(b.title || b.channel || '').toLowerCase();
+            } else if (tgSortBy === 'id') {
+                valA = String(a.channel || '').toLowerCase();
+                valB = String(b.channel || '').toLowerCase();
+            } else {
+                valA = String(a[tgSortBy] || '').toLowerCase();
+                valB = String(b[tgSortBy] || '').toLowerCase();
+            }
+
+            if (valA < valB) return -1 * factor;
+            if (valA > valB) return 1 * factor;
+            return 0;
+        });
+    }
+
+    function updateTgSortIcons() {
+        const iconMap = {
+            'id': 'tgSortIconId',
+            'title': 'tgSortIconTitle',
+            'channel': 'tgSortIconChannel',
+            'is_enabled': 'tgSortIconIsEnabled',
+            'health_status': 'tgSortIconHealthStatus',
+            'latency_ms': 'tgSortIconLatencyMs',
+            'checked_at': 'tgSortIconCheckedAt'
+        };
+
+        Object.entries(iconMap).forEach(([field, elementId]) => {
+            const iconEl = document.getElementById(elementId);
+            if (!iconEl) return;
+            if (tgSortBy === field) {
+                iconEl.textContent = tgOrder === 'asc' ? '↑' : '↓';
+                iconEl.className = 'text-blue-600 font-bold ml-0.5';
+            } else {
+                iconEl.textContent = '↕';
+                iconEl.className = 'text-slate-300 ml-0.5';
+            }
+        });
+    }
+
+    window.handleTgSort = handleTgSort;
 
     function escapeHtml(value) {
         const div = document.createElement('div');
@@ -34,10 +136,9 @@
             pane.classList.toggle('is-active', pane.id === `tab-pane-${normalized}`);
         });
 
-        if (updateHash && window.history?.replaceState) {
-            window.history.replaceState(null, '', `#${normalized}`);
-        }
         if (normalized === 'telegram') loadTgSearchConfig();
+        if (normalized === 'plugins' && typeof window.loadPlugins === 'function') window.loadPlugins();
+        if (normalized === 'api' && typeof window.loadApiConfigs === 'function') window.loadApiConfigs();
     }
 
     function initTabNavigation() {
@@ -84,16 +185,242 @@
         return Number.isNaN(date.getTime()) ? '--' : date.toLocaleString('zh-CN', { hour12: false });
     }
 
-    function renderTgChannels() {
-        const tbody = document.getElementById('tgChannelTableBody');
-        if (!tbody) return;
-        if (tgChannels.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">暂无频道，请点击“新增频道”添加</td></tr>';
-            updateTgKPI();
+    const tgSelectionState = {
+        selectedChannels: new Set(),
+        selectMode: 'page'
+    };
+
+    function toggleSelectTgRow(channel, checked) {
+        tgSelectionState.selectMode = 'page';
+        const decoded = decodeURIComponent(channel);
+        if (checked) {
+            tgSelectionState.selectedChannels.add(decoded);
+        } else {
+            tgSelectionState.selectedChannels.delete(decoded);
+        }
+        updateTgBatchToolbar();
+    }
+
+    function toggleSelectTgPage(checkbox) {
+        const isChecked = checkbox.checked;
+        tgSelectionState.selectMode = 'page';
+        const startIdx = (tgCurrentPage - 1) * tgPageSize;
+        const endIdx = Math.min(startIdx + tgPageSize, tgChannels.length);
+        const pageItems = tgChannels.slice(startIdx, endIdx);
+
+        pageItems.forEach(item => {
+            if (isChecked) {
+                tgSelectionState.selectedChannels.add(item.channel);
+            } else {
+                tgSelectionState.selectedChannels.delete(item.channel);
+            }
+        });
+        renderTgChannels();
+    }
+
+    function selectTgCurrentPage() {
+        const total = tgChannels.length;
+        const startIdx = (tgCurrentPage - 1) * tgPageSize;
+        const endIdx = Math.min(startIdx + tgPageSize, total);
+        const pageItems = tgChannels.slice(startIdx, endIdx);
+
+        tgSelectionState.selectedChannels.clear();
+        pageItems.forEach(item => tgSelectionState.selectedChannels.add(item.channel));
+        tgSelectionState.selectMode = 'page';
+        renderTgChannels();
+
+        if (typeof showToast === 'function') {
+            showToast(`已切换为仅选本页（${pageItems.length} 项）`, 'info');
+        }
+    }
+
+    function toggleTgSelectAllMode() {
+        const total = tgChannels.length;
+        const isAll = tgSelectionState.selectMode === 'all';
+
+        if (isAll) {
+            selectTgCurrentPage();
+        } else {
+            tgSelectionState.selectMode = 'all';
+            tgChannels.forEach(item => tgSelectionState.selectedChannels.add(item.channel));
+            renderTgChannels();
+            if (typeof showToast === 'function') {
+                showToast(`已全选全部 ${total} 项`, 'info');
+            }
+        }
+    }
+
+    function clearTgSelection() {
+        tgSelectionState.selectedChannels.clear();
+        tgSelectionState.selectMode = 'page';
+        renderTgChannels();
+    }
+
+    function updateTgBatchToolbar() {
+        const toolbar = document.getElementById('tgBatchToolbar');
+        if (!toolbar) return;
+
+        const count = tgSelectionState.selectedChannels.size;
+        const total = tgChannels.length;
+        const isAll = tgSelectionState.selectMode === 'all';
+        const startIdx = (tgCurrentPage - 1) * tgPageSize;
+        const endIdx = Math.min(startIdx + tgPageSize, total);
+        const pageItems = tgChannels.slice(startIdx, endIdx);
+        const pageCount = pageItems.length;
+        const allPageSelected = pageCount > 0 && pageItems.every(item => tgSelectionState.selectedChannels.has(item.channel));
+
+        const summaryCountEl = document.getElementById('tgSelectedCount');
+        const scopeLink = document.getElementById('tgScopeToggleLink');
+        const selectPageCb = document.getElementById('selectTgPageCheckbox');
+
+        if (selectPageCb) {
+            selectPageCb.checked = allPageSelected;
+            selectPageCb.indeterminate = pageItems.some(item => tgSelectionState.selectedChannels.has(item.channel)) && !allPageSelected;
+        }
+
+        if (count > 0 || isAll) {
+            toolbar.classList.add('active');
+            if (summaryCountEl) summaryCountEl.textContent = isAll ? total : count;
+            if (scopeLink) {
+                scopeLink.style.display = 'inline-flex';
+                scopeLink.textContent = isAll ? '(切换为仅选本页)' : `(全选全部 ${total} 条)`;
+            }
+        } else {
+            toolbar.classList.remove('active');
+            if (scopeLink) scopeLink.style.display = 'none';
+        }
+    }
+
+    async function batchEnableTgChannels(isEnabled) {
+        const channels = Array.from(tgSelectionState.selectedChannels);
+        const isAll = tgSelectionState.selectMode === 'all';
+        const actionStr = isEnabled ? '启用' : '停用';
+
+        if (channels.length === 0 && !isAll) {
+            showToast(`请先选择要${actionStr}的频道`, 'warning');
             return;
         }
 
-        tbody.innerHTML = tgChannels.map((item, index) => {
+        const targetChannels = isAll ? tgChannels.map(item => item.channel) : channels;
+
+        try {
+            const response = await fetch('/admin/api/tg-channels/batch-toggle', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channels: targetChannels, is_enabled: isEnabled })
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                showToast(data.message || `已批量${actionStr}频道`, 'success');
+                clearTgSelection();
+                loadTgChannels();
+            } else {
+                showToast(data.message || `批量${actionStr}失败`, 'danger');
+            }
+        } catch (e) {
+            showToast(`批量${actionStr}网络请求异常: ${e.message}`, 'danger');
+        }
+    }
+
+    async function batchDeleteTgChannels() {
+        const channels = Array.from(tgSelectionState.selectedChannels);
+        const isAll = tgSelectionState.selectMode === 'all';
+
+        if (channels.length === 0 && !isAll) {
+            showToast('请先选择要删除的频道', 'warning');
+            return;
+        }
+
+        const targetChannels = isAll ? tgChannels.map(item => item.channel) : channels;
+        if (!confirm(`确定要批量删除选中的 ${targetChannels.length} 个 Telegram 频道吗？该操作不可恢复！`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/admin/api/tg-channels/batch-delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channels: targetChannels })
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                showToast(data.message || '已批量删除频道', 'success');
+                clearTgSelection();
+                loadTgChannels();
+            } else {
+                showToast(data.message || '批量删除失败', 'danger');
+            }
+        } catch (e) {
+            showToast(`批量删除网络请求异常: ${e.message}`, 'danger');
+        }
+    }
+
+    async function batchTestTgChannels(forceAll = false) {
+        const channels = Array.from(tgSelectionState.selectedChannels);
+        const isAll = forceAll || tgSelectionState.selectMode === 'all';
+
+        if (!forceAll && channels.length === 0 && !isAll) {
+            showToast('请先选择要检测连通性的频道', 'warning');
+            return;
+        }
+
+        const targetChannels = (forceAll || isAll) ? tgChannels.map(item => item.channel) : channels;
+        if (targetChannels.length === 0) {
+            showToast('暂无 Telegram 频道可供测试', 'warning');
+            return;
+        }
+
+        showToast(`正在后台测试 ${targetChannels.length} 个 Telegram 频道，请稍候...`, 'info');
+
+        try {
+            const response = await fetch('/admin/api/tg-channels/test-batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channels: targetChannels })
+            });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                showToast(data.message || '批量测试完成', 'success');
+                loadTgChannels();
+            } else {
+                showToast(data.message || '批量测试失败', 'danger');
+            }
+        } catch (e) {
+            showToast(`批量测试网络请求异常: ${e.message}`, 'danger');
+        }
+    }
+
+    window.toggleSelectTgRow = toggleSelectTgRow;
+    window.toggleSelectTgPage = toggleSelectTgPage;
+    window.selectTgCurrentPage = selectTgCurrentPage;
+    window.toggleTgSelectAllMode = toggleTgSelectAllMode;
+    window.clearTgSelection = clearTgSelection;
+    window.batchEnableTgChannels = batchEnableTgChannels;
+    window.batchDeleteTgChannels = batchDeleteTgChannels;
+    window.batchTestTgChannels = batchTestTgChannels;
+
+    function renderTgChannels() {
+        const tbody = document.getElementById('tgChannelTableBody');
+        if (!tbody) return;
+        const totalCount = tgChannels.length;
+        if (totalCount === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">暂无频道，请点击“新增频道”添加</td></tr>';
+            updateTgKPI();
+            renderTgPagination(0, 1);
+            updateTgBatchToolbar();
+            return;
+        }
+
+        const totalPages = Math.ceil(totalCount / tgPageSize) || 1;
+        if (tgCurrentPage > totalPages) tgCurrentPage = totalPages;
+        if (tgCurrentPage < 1) tgCurrentPage = 1;
+
+        const startIdx = (tgCurrentPage - 1) * tgPageSize;
+        const endIdx = Math.min(startIdx + tgPageSize, totalCount);
+        const pageItems = tgChannels.slice(startIdx, endIdx);
+
+        tbody.innerHTML = pageItems.map((item, idx) => {
+            const globalIndex = startIdx + idx;
             const health = item.health || {};
             const status = health.status || 'unknown';
             const statusText = health.status_text || '未检测';
@@ -124,10 +451,14 @@
             const channel = escapeHtml(item.channel);
             const title = escapeHtml(item.title || item.channel);
             const encodedChannel = encodeURIComponent(item.channel);
+            const isChecked = tgSelectionState.selectedChannels.has(item.channel);
 
             return `
                 <tr class="${rowClass}">
-                    <td class="text-center">${index + 1}</td>
+                    <td class="text-center">
+                        <input class="form-check-input tg-row-checkbox" type="checkbox" data-channel="${encodedChannel}" ${isChecked ? 'checked' : ''} onchange="toggleSelectTgRow('${encodedChannel}', this.checked)">
+                    </td>
+                    <td class="text-center">${globalIndex + 1}</td>
                     <td class="font-medium text-slate-800 text-xs">${title}</td>
                     <td>
                         <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-blue-600 hover:text-blue-700">@${channel}</a>
@@ -148,7 +479,94 @@
                 </tr>`;
         }).join('');
         updateTgKPI();
+        renderTgPagination(totalCount, totalPages);
+        updateTgBatchToolbar();
     }
+
+    function renderTgPagination(totalCount, totalPages) {
+        const selEl = document.getElementById('tgPageSizeSelect');
+        if (selEl) selEl.value = tgPageSize;
+        const curEl = document.getElementById('tgCurrentPageNum');
+        if (curEl) curEl.textContent = tgCurrentPage;
+        const totEl = document.getElementById('tgTotalPageNum');
+        if (totEl) totEl.textContent = totalPages;
+        const cntEl = document.getElementById('tgTotalCountNum');
+        if (cntEl) cntEl.textContent = totalCount;
+        const countEl = document.getElementById('tgTotalCount');
+        if (countEl) countEl.textContent = `共 ${totalCount} 条`;
+
+        const controlsEl = document.getElementById('tgPaginationControls');
+        const jumpInput = document.getElementById('tgJumpPageInput');
+        if (jumpInput) {
+            jumpInput.max = totalPages;
+            jumpInput.value = tgCurrentPage;
+            jumpInput.disabled = totalPages <= 1;
+        }
+        const jumpBtn = document.getElementById('tgJumpPageBtn');
+        if (jumpBtn) {
+            jumpBtn.disabled = totalPages <= 1;
+        }
+
+        if (!controlsEl) return;
+        controlsEl.innerHTML = '';
+
+        // Prev Button
+        const prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.className = `px-2.5 py-1 text-xs rounded-lg border border-slate-200 transition ${tgCurrentPage === 1 ? 'opacity-50 cursor-not-allowed bg-slate-50 text-slate-400' : 'bg-white text-slate-600 hover:bg-slate-50 cursor-pointer'}`;
+        prevBtn.innerHTML = '<i class="fas fa-chevron-left text-[10px]"></i>';
+        prevBtn.disabled = tgCurrentPage === 1;
+        prevBtn.onclick = () => { tgCurrentPage--; renderTgChannels(); };
+        controlsEl.appendChild(prevBtn);
+
+        // Page numbers
+        for (let p = 1; p <= totalPages; p++) {
+            if (totalPages > 7 && Math.abs(p - tgCurrentPage) > 2 && p !== 1 && p !== totalPages) {
+                if (p === 2 && tgCurrentPage > 4) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.className = 'px-1 text-slate-400 text-xs';
+                    ellipsis.textContent = '...';
+                    controlsEl.appendChild(ellipsis);
+                } else if (p === totalPages - 1 && tgCurrentPage < totalPages - 3) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.className = 'px-1 text-slate-400 text-xs';
+                    ellipsis.textContent = '...';
+                    controlsEl.appendChild(ellipsis);
+                }
+                continue;
+            }
+
+            const pageBtn = document.createElement('button');
+            pageBtn.type = 'button';
+            pageBtn.className = `px-2.5 py-1 text-xs rounded-lg transition font-medium cursor-pointer ${p === tgCurrentPage ? 'bg-blue-600 text-white shadow-2xs font-semibold' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`;
+            pageBtn.textContent = p;
+            pageBtn.onclick = () => { tgCurrentPage = p; renderTgChannels(); };
+            controlsEl.appendChild(pageBtn);
+        }
+
+        // Next Button
+        const nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = `px-2.5 py-1 text-xs rounded-lg border border-slate-200 transition ${tgCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed bg-slate-50 text-slate-400' : 'bg-white text-slate-600 hover:bg-slate-50 cursor-pointer'}`;
+        nextBtn.innerHTML = '<i class="fas fa-chevron-right text-[10px]"></i>';
+        nextBtn.disabled = tgCurrentPage === totalPages;
+        nextBtn.onclick = () => { tgCurrentPage++; renderTgChannels(); };
+        controlsEl.appendChild(nextBtn);
+    }
+
+    function handleTgJumpPage() {
+        const input = document.getElementById('tgJumpPageInput');
+        if (!input) return;
+        const page = parseInt(input.value, 10);
+        const totalPages = Math.ceil(tgChannels.length / tgPageSize) || 1;
+        if (page >= 1 && page <= totalPages) {
+            tgCurrentPage = page;
+            renderTgChannels();
+        } else {
+            input.value = tgCurrentPage;
+        }
+    }
+    window.handleTgJumpPage = handleTgJumpPage;
 
     async function loadTgSearchConfig() {
         try {
@@ -176,6 +594,8 @@
             if (apiWorkersEl) apiWorkersEl.value = scheduler.api?.max_workers || 8;
             if (pluginTimeoutEl) pluginTimeoutEl.value = scheduler.plugin?.timeout || 10;
             if (pluginWorkersEl) pluginWorkersEl.value = scheduler.plugin?.max_workers || 6;
+            sortTgChannels();
+            updateTgSortIcons();
             renderTgChannels();
         } catch (error) {
             console.error('加载 TG 配置失败:', error);

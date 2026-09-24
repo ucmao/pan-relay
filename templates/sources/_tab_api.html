@@ -10,32 +10,70 @@
                 <p class="admin-panel-desc">配置外部搜索接口与 JMESPath 提取规则，支持在线自检与全局启停</p>
             </div>
             <div class="flex items-center space-x-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="batchTestApis(true)" title="全盘检测试验所有 API 接口健康状态">
+                    <i class="fas fa-stethoscope text-[10px]"></i> 全部检测
+                </button>
                 <button class="btn btn-primary btn-sm" data-ui-modal-target="#addApiModal">
                     <i class="fas fa-plus text-[10px]"></i> 新建 API
-                </button>
-                <button class="btn btn-outline-primary btn-sm" id="testAllApiButton">
-                    <i class="fas fa-vial text-[10px]"></i> 全部测试
-                </button>
-                <button class="btn btn-outline-primary btn-sm" id="enableAllButton">
-                    <i class="fas fa-play text-[10px]"></i> 全部启用
-                </button>
-                <button class="btn btn-outline-secondary btn-sm" id="disableAllButton">
-                    <i class="fas fa-ban text-[10px]"></i> 全部禁用
                 </button>
             </div>
         </div>
 
-        <div class="data-table-shell" style="max-height: 620px; overflow-y: auto;">
+        <!-- API 悬浮批量操作栏 -->
+        <div class="batch-floating-toolbar" id="apiBatchToolbar" role="toolbar" aria-label="API 批量操作栏">
+            <div class="resource-batch-summary">
+                <i class="fas fa-check-circle text-blue-600"></i>
+                <span>已选 <strong id="apiSelectedCount" class="text-blue-600 font-bold">0</strong> 项</span>
+                <button class="resource-batch-scope-link" id="apiScopeToggleLink" onclick="toggleApiSelectAllMode()" type="button" style="display: none;"></button>
+                <span class="resource-batch-summary-divider"></span>
+                <button class="resource-batch-btn-clear" onclick="clearApiSelection()" type="button" title="清空选择">
+                    <i class="fas fa-times"></i> 清空
+                </button>
+            </div>
+            <div class="resource-batch-actions">
+                <button class="btn btn-info btn-sm" onclick="batchTestApis()" type="button" title="联调测试选中的 API 接口">
+                    <i class="fas fa-stethoscope"></i> 测试所选
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="batchEnableApis(true)" type="button">
+                    <i class="fas fa-play"></i> 批量启用
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="batchEnableApis(false)" type="button">
+                    <i class="fas fa-ban"></i> 批量停用
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="batchDeleteApis()" type="button">
+                    <i class="fas fa-trash-alt"></i> 批量删除
+                </button>
+            </div>
+        </div>
+
+        <div class="data-table-shell">
             <table class="table">
-                <thead>
+                <thead class="select-none">
                     <tr>
-                        <th style="width: 50px; text-align: center;">#</th>
-                        <th style="width: 150px;">名称</th>
-                        <th style="width: 85px; text-align: center;">启用状态</th>
-                        <th style="width: 80px; text-align: center;">健康状态</th>
-                        <th style="width: 170px; text-align: center;">最近检测</th>
-                        <th>接口 URL</th>
-                        <th style="width: 90px; text-align: center;">耗时</th>
+                        <th style="width: 44px; text-align: center;">
+                            <input class="form-check-input" type="checkbox" id="selectApiPageCheckbox" onchange="toggleSelectApiPage(this)" title="选择当前页">
+                        </th>
+                        <th style="width: 50px; text-align: center; cursor: pointer;" onclick="handleApiSort('id')" title="点击按序号排序">
+                            # <span id="apiSortIconId" class="text-blue-600 font-bold ml-0.5">↓</span>
+                        </th>
+                        <th style="width: 150px; cursor: pointer;" onclick="handleApiSort('name')" title="点击按名称排序">
+                            名称 <span id="apiSortIconName" class="text-slate-300 ml-0.5">↕</span>
+                        </th>
+                        <th style="width: 95px; text-align: center; cursor: pointer;" onclick="handleApiSort('is_enabled')" title="点击按启用状态排序">
+                            启用状态 <span id="apiSortIconIsEnabled" class="text-slate-300 ml-0.5">↕</span>
+                        </th>
+                        <th style="width: 90px; text-align: center; cursor: pointer;" onclick="handleApiSort('status')" title="点击按健康状态排序">
+                            健康状态 <span id="apiSortIconStatus" class="text-slate-300 ml-0.5">↕</span>
+                        </th>
+                        <th style="width: 170px; text-align: center; cursor: pointer;" onclick="handleApiSort('checked_at')" title="点击按最近检测时间排序">
+                            最近检测 <span id="apiSortIconCheckedAt" class="text-slate-300 ml-0.5">↕</span>
+                        </th>
+                        <th style="cursor: pointer;" onclick="handleApiSort('url')" title="点击按接口 URL 排序">
+                            接口 URL <span id="apiSortIconUrl" class="text-slate-300 ml-0.5">↕</span>
+                        </th>
+                        <th style="width: 90px; text-align: center; cursor: pointer;" onclick="handleApiSort('response_time_ms')" title="点击按耗时排序">
+                            耗时 <span id="apiSortIconResponseTimeMs" class="text-slate-300 ml-0.5">↕</span>
+                        </th>
                         <th style="width: 160px; text-align: center;">操作</th>
                     </tr>
                 </thead>
@@ -47,6 +85,33 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- 分页栏 (全站统一 Slate 规范) -->
+        <div class="px-5 py-4 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-sans text-slate-500">
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+                <span>每页显示</span>
+                <select id="apiPageSizeSelect" onchange="handleApiPageSizeChange(this.value)"
+                    class="px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer">
+                    <option value="15" selected>15 条</option>
+                    <option value="30">30 条</option>
+                    <option value="50">50 条</option>
+                    <option value="100">100 条</option>
+                </select>
+                <span class="text-slate-400">第 <span id="apiCurrentPageNum">1</span> / <span id="apiTotalPageNum">1</span> 页（共 <span id="apiTotalCountNum">0</span> 条）</span>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <div class="flex items-center space-x-1.5" id="apiPaginationControls"></div>
+                <div class="flex items-center gap-1.5 text-xs text-slate-500 border-l border-slate-200 pl-3">
+                    <span>跳至</span>
+                    <input type="number" id="apiJumpPageInput" min="1" value="1"
+                        class="w-14 px-2 py-1 text-xs text-center rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-500"
+                        onkeydown="if(event.key==='Enter'){handleApiJumpPage();}">
+                    <span>页</span>
+                    <button type="button" onclick="handleApiJumpPage()"
+                        class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer">跳转</button>
+                </div>
+            </div>
         </div>
     </section>
 </div>

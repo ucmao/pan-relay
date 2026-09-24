@@ -103,11 +103,6 @@ class PluginManager:
             self._plugins[plugin.name] = plugin
             logger.info(f"手动注册插件成功: [{plugin.name}]")
 
-    def reload_plugins(self, plugin_dir: Optional[str] = None) -> List[BasePlugin]:
-        """重新扫描插件目录并热重载加载"""
-        self.discover_plugins(plugin_dir)
-        return self.get_all_plugins()
-
     def get_plugin(self, name: str) -> Optional[BasePlugin]:
         with self._plugin_lock:
             return self._plugins.get(name)

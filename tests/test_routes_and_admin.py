@@ -109,6 +109,14 @@ class RoutesAndAdminTest(unittest.TestCase):
         html = resp.get_data(as_text=True)
         self.assertIn("我的资源管理", html)
 
+    def test_resources_api_sorting(self):
+        self.client.set_cookie("token", self.token)
+        resp = self.client.get("/admin/api/resources?sort_by=name&order=asc")
+        self.assertEqual(200, resp.status_code)
+        data = resp.get_json()
+        self.assertTrue(data.get("success"))
+        self.assertIn("items", data.get("data", {}))
+
     @patch("src.routes.search_routes.search_public_resources")
     def test_public_search_api_filters_by_cloud_name(self, mock_search):
         mock_search.return_value = (True, "聚合搜索成功", [])

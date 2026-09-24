@@ -1616,3 +1616,306 @@ legend {
 .bg-light { background-color: #f8fafc !important; }
 .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important; }
 
+/* --------------------------------------------------------------------------
+   Floating Batch Action Toolbar (全站统一胶囊型悬浮工具栏 Design System)
+   -------------------------------------------------------------------------- */
+.resource-batch-toolbar,
+.batch-floating-toolbar {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(28px) scale(0.96);
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap !important;
+    gap: 12px;
+    padding: 7px 14px 7px 16px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    border-radius: 9999px;
+    box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.16), 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+    transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0.2s ease;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+    .resource-batch-toolbar,
+    .batch-floating-toolbar {
+        left: calc(50% + 128px);
+        transform: translateX(-50%) translateY(28px) scale(0.96);
+    }
+}
+
+.resource-batch-toolbar.show,
+.resource-batch-toolbar.active,
+.batch-floating-toolbar.show,
+.batch-floating-toolbar.active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0) scale(1);
+}
+
+@media (min-width: 1024px) {
+    .resource-batch-toolbar.show,
+    .resource-batch-toolbar.active,
+    .batch-floating-toolbar.show,
+    .batch-floating-toolbar.active {
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+}
+
+.resource-batch-summary {
+    color: #334155;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.resource-batch-summary i {
+    color: #2563eb;
+    font-size: 0.85rem;
+}
+
+.resource-batch-summary strong {
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+/* 清空选择按钮（轻量次级微按钮） */
+.resource-batch-btn-clear {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    margin-left: 2px;
+    border-radius: 9999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.15s ease;
+}
+
+.resource-batch-btn-clear:hover {
+    color: #ef4444;
+    background: #fef2f2;
+}
+
+/* 极简全选切换文字链接 */
+.resource-batch-scope-link {
+    background: transparent;
+    border: none;
+    color: #2563eb;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 2px 6px;
+    margin-left: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.15s ease;
+}
+
+.resource-batch-scope-link:hover {
+    color: #1d4ed8;
+    background: #eff6ff;
+    text-decoration: underline;
+}
+
+/* 总结区小分隔竖线 */
+.resource-batch-summary-divider {
+    width: 1px;
+    height: 12px;
+    background-color: #cbd5e1;
+    margin: 0 4px;
+    display: inline-block;
+}
+
+/* 分隔竖线 */
+.resource-batch-divider {
+    width: 1px;
+    height: 16px;
+    background-color: #e2e8f0;
+    flex-shrink: 0;
+}
+
+/* 范围选择组（选本页、全选） */
+.resource-batch-scope {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    flex-wrap: nowrap !important;
+}
+
+/* 范围选择幽灵按钮 */
+.resource-batch-btn-subtle {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.resource-batch-btn-subtle:hover {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #2563eb;
+    transform: translateY(-1px);
+}
+
+.resource-batch-btn-subtle.active {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #2563eb;
+    font-weight: 600;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15);
+}
+
+.resource-batch-btn-subtle:active {
+    transform: translateY(0);
+}
+
+/* 核心动作组（导出、删除） */
+.resource-batch-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    flex-wrap: nowrap !important;
+}
+
+.resource-batch-actions .btn {
+    border-radius: 9999px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: none;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.resource-batch-actions .btn:hover {
+    transform: translateY(-1px);
+}
+
+.resource-batch-actions .btn:active {
+    transform: translateY(0);
+}
+
+.resource-batch-actions .btn-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+.resource-batch-actions .btn-primary:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.resource-batch-actions .btn-danger {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #ffffff;
+}
+
+.resource-batch-actions .btn-danger:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+
+@media (max-width: 768px) {
+    .resource-batch-toolbar,
+    .batch-floating-toolbar {
+        bottom: 16px;
+        left: 50% !important;
+        transform: translateX(-50%) translateY(28px) scale(0.96);
+        padding: 6px 12px;
+        gap: 8px;
+        border-radius: 9999px;
+        max-width: calc(100vw - 16px);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .resource-batch-toolbar.show,
+    .resource-batch-toolbar.active,
+    .batch-floating-toolbar.show,
+    .batch-floating-toolbar.active {
+        transform: translateX(-50%) translateY(0) scale(1) !important;
+    }
+
+    .resource-batch-toolbar::-webkit-scrollbar,
+    .batch-floating-toolbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .resource-batch-summary {
+        font-size: 0.725rem;
+        gap: 4px;
+    }
+
+    .resource-batch-btn-clear {
+        padding: 1px 4px;
+        font-size: 0.7rem;
+    }
+
+    .resource-batch-divider {
+        height: 14px;
+    }
+
+    .resource-batch-scope {
+        gap: 4px;
+    }
+
+    .resource-batch-btn-subtle {
+        padding: 3px 8px;
+        font-size: 0.7rem;
+    }
+
+    .resource-batch-actions {
+        gap: 4px;
+    }
+
+    .resource-batch-actions .btn {
+        padding: 4px 9px;
+        font-size: 0.7rem;
+    }
+}
+
+

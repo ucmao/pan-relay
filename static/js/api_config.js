@@ -1,4 +1,98 @@
 let apiConfigs = [];
+const savedApiSortBy = localStorage.getItem('panrelay_api_sort_by');
+let apiSortBy = savedApiSortBy || 'id';
+const savedApiOrder = localStorage.getItem('panrelay_api_order');
+let apiOrder = (savedApiOrder === 'asc' || savedApiOrder === 'desc') ? savedApiOrder : 'asc';
+let apiCurrentPage = 1;
+const savedApiPageSize = parseInt(localStorage.getItem('panrelay_api_pagesize'), 10);
+let apiPageSize = (savedApiPageSize && [15, 30, 50, 100].includes(savedApiPageSize)) ? savedApiPageSize : 15;
+
+function handleApiPageSizeChange(val) {
+    const size = parseInt(val, 10);
+    if (size > 0) {
+        apiPageSize = size;
+        try {
+            localStorage.setItem('panrelay_api_pagesize', String(apiPageSize));
+        } catch (e) {}
+        apiCurrentPage = 1;
+        renderTable();
+    }
+}
+window.handleApiPageSizeChange = handleApiPageSizeChange;
+
+function handleApiSort(field) {
+    if (apiSortBy === field) {
+        apiOrder = apiOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        apiSortBy = field;
+        apiOrder = (field === 'name' || field === 'url') ? 'asc' : 'desc';
+    }
+    try {
+        localStorage.setItem('panrelay_api_sort_by', apiSortBy);
+        localStorage.setItem('panrelay_api_order', apiOrder);
+    } catch (e) {}
+    apiCurrentPage = 1;
+    sortApiConfigs();
+    updateApiSortIcons();
+    renderTable();
+}
+
+function sortApiConfigs() {
+    if (!apiSortBy) return;
+    const factor = apiOrder === 'asc' ? 1 : -1;
+    apiConfigs.sort((a, b) => {
+        let valA = a[apiSortBy];
+        let valB = b[apiSortBy];
+
+        if (apiSortBy === 'status') {
+            const rank = (val) => (val === 'healthy' || val === true ? 2 : (val === 'unhealthy' || val === false ? 1 : 0));
+            valA = rank(valA);
+            valB = rank(valB);
+        } else if (apiSortBy === 'response_time_ms' || apiSortBy === 'id') {
+            valA = Number(valA) || 0;
+            valB = Number(valB) || 0;
+        } else if (apiSortBy === 'is_enabled') {
+            valA = Boolean(valA) ? 1 : 0;
+            valB = Boolean(valB) ? 1 : 0;
+        } else if (apiSortBy === 'checked_at') {
+            valA = valA ? new Date(valA).getTime() : 0;
+            valB = valB ? new Date(valB).getTime() : 0;
+        } else {
+            valA = String(valA || '').toLowerCase();
+            valB = String(valB || '').toLowerCase();
+        }
+
+        if (valA < valB) return -1 * factor;
+        if (valA > valB) return 1 * factor;
+        return 0;
+    });
+}
+
+function updateApiSortIcons() {
+    const iconMap = {
+        'id': 'apiSortIconId',
+        'name': 'apiSortIconName',
+        'is_enabled': 'apiSortIconIsEnabled',
+        'status': 'apiSortIconStatus',
+        'checked_at': 'apiSortIconCheckedAt',
+        'url': 'apiSortIconUrl',
+        'response_time_ms': 'apiSortIconResponseTimeMs'
+    };
+
+    Object.entries(iconMap).forEach(([field, elementId]) => {
+        const iconEl = document.getElementById(elementId);
+        if (!iconEl) return;
+        if (apiSortBy === field) {
+            iconEl.textContent = apiOrder === 'asc' ? '↑' : '↓';
+            iconEl.className = 'text-blue-600 font-bold ml-0.5';
+        } else {
+            iconEl.textContent = '↕';
+            iconEl.className = 'text-slate-300 ml-0.5';
+        }
+    });
+}
+
+window.handleApiSort = handleApiSort;
 
 /**
  * 显示 Toast 通知
@@ -117,12 +211,226 @@ async function loadApiConfigs() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         apiConfigs = await response.json();
+        sortApiConfigs();
+        updateApiSortIcons();
         renderTable();
     } catch (error) {
         console.error('加载 API 配置时出错:', error);
         showToast('加载 API 配置失败，请检查后端连接或日志。', 'danger');
     }
 }
+
+const apiSelectionState = {
+    selectedIds: new Set(),
+    selectMode: 'page' // 'page' or 'all'
+};
+
+function toggleSelectApiRow(id, checked) {
+    apiSelectionState.selectMode = 'page';
+    if (checked) {
+        apiSelectionState.selectedIds.add(id);
+    } else {
+        apiSelectionState.selectedIds.delete(id);
+    }
+    updateApiBatchToolbar();
+}
+
+function toggleSelectApiPage(checkbox) {
+    const isChecked = checkbox.checked;
+    apiSelectionState.selectMode = 'page';
+    const startIdx = (apiCurrentPage - 1) * apiPageSize;
+    const endIdx = Math.min(startIdx + apiPageSize, apiConfigs.length);
+    const pageItems = apiConfigs.slice(startIdx, endIdx);
+
+    pageItems.forEach(api => {
+        if (isChecked) {
+            apiSelectionState.selectedIds.add(api.id);
+        } else {
+            apiSelectionState.selectedIds.delete(api.id);
+        }
+    });
+    renderTable();
+}
+
+function selectApiCurrentPage() {
+    const total = apiConfigs.length;
+    const startIdx = (apiCurrentPage - 1) * apiPageSize;
+    const endIdx = Math.min(startIdx + apiPageSize, total);
+    const pageItems = apiConfigs.slice(startIdx, endIdx);
+
+    apiSelectionState.selectedIds.clear();
+    pageItems.forEach(api => apiSelectionState.selectedIds.add(api.id));
+    apiSelectionState.selectMode = 'page';
+    renderTable();
+
+    if (typeof showToast === 'function') {
+        showToast(`已切换为仅选本页（${pageItems.length} 项）`, 'info');
+    }
+}
+
+function toggleApiSelectAllMode() {
+    const total = apiConfigs.length;
+    const isAll = apiSelectionState.selectMode === 'all';
+
+    if (isAll) {
+        selectApiCurrentPage();
+    } else {
+        apiSelectionState.selectMode = 'all';
+        apiConfigs.forEach(api => apiSelectionState.selectedIds.add(api.id));
+        renderTable();
+        if (typeof showToast === 'function') {
+            showToast(`已全选全部 ${total} 项`, 'info');
+        }
+    }
+}
+
+function clearApiSelection() {
+    apiSelectionState.selectedIds.clear();
+    apiSelectionState.selectMode = 'page';
+    renderTable();
+}
+
+function updateApiBatchToolbar() {
+    const toolbar = document.getElementById('apiBatchToolbar');
+    if (!toolbar) return;
+
+    const count = apiSelectionState.selectedIds.size;
+    const total = apiConfigs.length;
+    const isAll = apiSelectionState.selectMode === 'all';
+    const startIdx = (apiCurrentPage - 1) * apiPageSize;
+    const endIdx = Math.min(startIdx + apiPageSize, total);
+    const pageItems = apiConfigs.slice(startIdx, endIdx);
+    const pageCount = pageItems.length;
+    const allPageSelected = pageCount > 0 && pageItems.every(api => apiSelectionState.selectedIds.has(api.id));
+
+    const summaryCountEl = document.getElementById('apiSelectedCount');
+    const scopeLink = document.getElementById('apiScopeToggleLink');
+    const selectPageCb = document.getElementById('selectApiPageCheckbox');
+
+    if (selectPageCb) {
+        selectPageCb.checked = allPageSelected;
+        selectPageCb.indeterminate = pageItems.some(api => apiSelectionState.selectedIds.has(api.id)) && !allPageSelected;
+    }
+
+    if (count > 0 || isAll) {
+        toolbar.classList.add('active');
+        if (summaryCountEl) summaryCountEl.textContent = isAll ? total : count;
+        if (scopeLink) {
+            scopeLink.style.display = 'inline-flex';
+            scopeLink.textContent = isAll ? '(切换为仅选本页)' : `(全选全部 ${total} 条)`;
+        }
+    } else {
+        toolbar.classList.remove('active');
+        if (scopeLink) scopeLink.style.display = 'none';
+    }
+}
+
+async function batchEnableApis(isEnabled) {
+    const ids = Array.from(apiSelectionState.selectedIds);
+    const isAll = apiSelectionState.selectMode === 'all';
+    const actionStr = isEnabled ? '启用' : '停用';
+
+    if (ids.length === 0 && !isAll) {
+        showToast(`请先选择要${actionStr}的 API`, 'warning');
+        return;
+    }
+
+    const targetIds = isAll ? apiConfigs.map(a => a.id) : ids;
+
+    try {
+        const response = await fetch('/admin/api/configs/batch-toggle', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: targetIds, is_enabled: isEnabled })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+            showToast(data.message || `已批量${actionStr} API`, 'success');
+            clearApiSelection();
+            loadApiConfigs();
+        } else {
+            showToast(data.message || `批量${actionStr}失败`, 'danger');
+        }
+    } catch (e) {
+        showToast(`批量${actionStr}网络请求异常: ${e.message}`, 'danger');
+    }
+}
+
+async function batchDeleteApis() {
+    const ids = Array.from(apiSelectionState.selectedIds);
+    const isAll = apiSelectionState.selectMode === 'all';
+
+    if (ids.length === 0 && !isAll) {
+        showToast('请先选择要删除的 API', 'warning');
+        return;
+    }
+
+    const targetIds = isAll ? apiConfigs.map(a => a.id) : ids;
+    if (!confirm(`确定要批量删除选中的 ${targetIds.length} 个 API 搜索源吗？该操作不可恢复！`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/admin/api/configs/batch-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: targetIds })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+            showToast(data.message || '已批量删除 API', 'success');
+            clearApiSelection();
+            loadApiConfigs();
+        } else {
+            showToast(data.message || '批量删除失败', 'danger');
+        }
+    } catch (e) {
+        showToast(`批量删除网络请求异常: ${e.message}`, 'danger');
+    }
+}
+
+async function batchTestApis(forceAll = false) {
+    const ids = Array.from(apiSelectionState.selectedIds);
+    const isAll = forceAll || apiSelectionState.selectMode === 'all';
+
+    if (!forceAll && ids.length === 0 && !isAll) {
+        showToast('请先选择要联调测试的 API', 'warning');
+        return;
+    }
+
+    const targetIds = (forceAll || isAll) ? apiConfigs.map(a => a.id) : ids;
+    if (targetIds.length === 0) {
+        showToast('暂无 API 接口可供测试', 'warning');
+        return;
+    }
+    showToast(`正在后台测试 ${targetIds.length} 个 API 接口，请稍候...`, 'info');
+
+    try {
+        const response = await fetch('/admin/api/test-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: targetIds })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+            showToast(data.message || '批量测试完成', 'success');
+            loadApiConfigs();
+        } else {
+            showToast(data.message || '批量测试失败', 'danger');
+        }
+    } catch (e) {
+        showToast(`批量测试网络请求异常: ${e.message}`, 'danger');
+    }
+}
+
+window.toggleSelectApiRow = toggleSelectApiRow;
+window.toggleSelectApiPage = toggleSelectApiPage;
+window.selectApiCurrentPage = selectApiCurrentPage;
+window.toggleApiSelectAllMode = toggleApiSelectAllMode;
+window.clearApiSelection = clearApiSelection;
+window.batchEnableApis = batchEnableApis;
+window.batchDeleteApis = batchDeleteApis;
+window.batchTestApis = batchTestApis;
 
 // 渲染表格
 function renderTable() {
@@ -142,7 +450,23 @@ function renderTable() {
     const tabBadgeApi = document.getElementById('tabBadgeApi');
     if (tabBadgeApi) tabBadgeApi.textContent = `${enabledCount}/${totalCount}`;
 
-    apiConfigs.forEach((api, index) => {
+    if (totalCount === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-slate-400 py-6">暂无 API 搜索源数据</td></tr>`;
+        renderApiPagination(0, 1);
+        updateApiBatchToolbar();
+        return;
+    }
+
+    const totalPages = Math.ceil(totalCount / apiPageSize) || 1;
+    if (apiCurrentPage > totalPages) apiCurrentPage = totalPages;
+    if (apiCurrentPage < 1) apiCurrentPage = 1;
+
+    const startIdx = (apiCurrentPage - 1) * apiPageSize;
+    const endIdx = Math.min(startIdx + apiPageSize, totalCount);
+    const pageItems = apiConfigs.slice(startIdx, endIdx);
+
+    pageItems.forEach((api, idx) => {
+        const globalIndex = startIdx + idx;
         const isHealthy = api.status === 'healthy' || api.status === true;
         const isUnhealthy = api.status === 'unhealthy' || api.status === false;
         const healthClass = isHealthy ? 'health-normal' : (isUnhealthy ? 'health-error' : 'health-unknown');
@@ -176,8 +500,12 @@ function renderTable() {
 
         const row = document.createElement('tr');
         row.className = rowClass;
+        const isRowChecked = apiSelectionState.selectedIds.has(api.id);
         row.innerHTML = `
-                    <td class="text-center">${index + 1}</td>
+                    <td class="text-center">
+                        <input class="form-check-input api-row-checkbox" type="checkbox" data-id="${api.id}" ${isRowChecked ? 'checked' : ''} onchange="toggleSelectApiRow(${api.id}, this.checked)">
+                    </td>
+                    <td class="text-center">${globalIndex + 1}</td>
                     <td><strong>${escapeHtml(api.name)}</strong></td>
                     <td class="text-center">${enableBadge}</td>
                     <td class="text-center">${healthBadge}</td>
@@ -222,7 +550,95 @@ function renderTable() {
                 `;
         tbody.appendChild(row);
     });
+
+    renderApiPagination(totalCount, totalPages);
+    updateApiBatchToolbar();
 }
+
+function renderApiPagination(totalCount, totalPages) {
+    const selectEl = document.getElementById('apiPageSizeSelect');
+    if (selectEl) selectEl.value = String(apiPageSize);
+    const curEl = document.getElementById('apiCurrentPageNum');
+    if (curEl) curEl.textContent = apiCurrentPage;
+    const totEl = document.getElementById('apiTotalPageNum');
+    if (totEl) totEl.textContent = totalPages;
+    const cntEl = document.getElementById('apiTotalCountNum');
+    if (cntEl) cntEl.textContent = totalCount;
+    const countEl = document.getElementById('apiTotalCount');
+    if (countEl) countEl.textContent = `共 ${totalCount} 条`;
+
+    const controlsEl = document.getElementById('apiPaginationControls');
+    const jumpInput = document.getElementById('apiJumpPageInput');
+    if (jumpInput) {
+        jumpInput.max = totalPages;
+        jumpInput.value = apiCurrentPage;
+        jumpInput.disabled = totalPages <= 1;
+    }
+    const jumpBtn = document.getElementById('apiJumpPageBtn');
+    if (jumpBtn) {
+        jumpBtn.disabled = totalPages <= 1;
+    }
+
+    if (!controlsEl) return;
+    controlsEl.innerHTML = '';
+
+    // Prev Button
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = `px-2.5 py-1 text-xs rounded-lg border border-slate-200 transition ${apiCurrentPage === 1 ? 'opacity-50 cursor-not-allowed bg-slate-50 text-slate-400' : 'bg-white text-slate-600 hover:bg-slate-50 cursor-pointer'}`;
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left text-[10px]"></i>';
+    prevBtn.disabled = apiCurrentPage === 1;
+    prevBtn.onclick = () => { apiCurrentPage--; renderTable(); };
+    controlsEl.appendChild(prevBtn);
+
+    // Page numbers
+    for (let p = 1; p <= totalPages; p++) {
+        if (totalPages > 7 && Math.abs(p - apiCurrentPage) > 2 && p !== 1 && p !== totalPages) {
+            if (p === 2 && apiCurrentPage > 4) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'px-1 text-slate-400 text-xs';
+                ellipsis.textContent = '...';
+                controlsEl.appendChild(ellipsis);
+            } else if (p === totalPages - 1 && apiCurrentPage < totalPages - 3) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'px-1 text-slate-400 text-xs';
+                ellipsis.textContent = '...';
+                controlsEl.appendChild(ellipsis);
+            }
+            continue;
+        }
+
+        const pageBtn = document.createElement('button');
+        pageBtn.type = 'button';
+        pageBtn.className = `px-2.5 py-1 text-xs rounded-lg transition font-medium cursor-pointer ${p === apiCurrentPage ? 'bg-blue-600 text-white shadow-2xs font-semibold' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`;
+        pageBtn.textContent = p;
+        pageBtn.onclick = () => { apiCurrentPage = p; renderTable(); };
+        controlsEl.appendChild(pageBtn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = `px-2.5 py-1 text-xs rounded-lg border border-slate-200 transition ${apiCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed bg-slate-50 text-slate-400' : 'bg-white text-slate-600 hover:bg-slate-50 cursor-pointer'}`;
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right text-[10px]"></i>';
+    nextBtn.disabled = apiCurrentPage === totalPages;
+    nextBtn.onclick = () => { apiCurrentPage++; renderTable(); };
+    controlsEl.appendChild(nextBtn);
+}
+
+function handleApiJumpPage() {
+    const input = document.getElementById('apiJumpPageInput');
+    if (!input) return;
+    const page = parseInt(input.value, 10);
+    const totalPages = Math.ceil(apiConfigs.length / apiPageSize) || 1;
+    if (page >= 1 && page <= totalPages) {
+        apiCurrentPage = page;
+        renderTable();
+    } else {
+        input.value = apiCurrentPage;
+    }
+}
+window.handleApiJumpPage = handleApiJumpPage;
 
 function formatCheckedAt(value) {
     if (!value) return '--';

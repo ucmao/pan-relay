@@ -1,6 +1,108 @@
 // 插件管理前端交互逻辑
 
 let currentPluginsData = [];
+const savedPluginSortBy = localStorage.getItem('panrelay_plugin_sort_by');
+let pluginSortBy = savedPluginSortBy || 'id';
+const savedPluginOrder = localStorage.getItem('panrelay_plugin_order');
+let pluginOrder = (savedPluginOrder === 'asc' || savedPluginOrder === 'desc') ? savedPluginOrder : 'asc';
+let pluginCurrentPage = 1;
+const savedPluginPageSize = parseInt(localStorage.getItem('panrelay_plugin_pagesize'), 10);
+let pluginPageSize = (savedPluginPageSize && [15, 30, 50, 100].includes(savedPluginPageSize)) ? savedPluginPageSize : 15;
+
+function handlePluginPageSizeChange(val) {
+    const size = parseInt(val, 10);
+    if (size > 0) {
+        pluginPageSize = size;
+        try {
+            localStorage.setItem('panrelay_plugin_pagesize', String(pluginPageSize));
+        } catch (e) {}
+        pluginCurrentPage = 1;
+        renderPluginTable();
+    }
+}
+window.handlePluginPageSizeChange = handlePluginPageSizeChange;
+
+function handlePluginSort(field) {
+    if (pluginSortBy === field) {
+        pluginOrder = pluginOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        pluginSortBy = field;
+        pluginOrder = (field === 'name' || field === 'description') ? 'asc' : 'desc';
+    }
+    try {
+        localStorage.setItem('panrelay_plugin_sort_by', pluginSortBy);
+        localStorage.setItem('panrelay_plugin_order', pluginOrder);
+    } catch (e) {}
+    pluginCurrentPage = 1;
+    sortPluginData();
+    updatePluginSortIcons();
+    renderPluginTable();
+}
+
+function sortPluginData() {
+    if (!pluginSortBy) return;
+    const factor = pluginOrder === 'asc' ? 1 : -1;
+    currentPluginsData.sort((a, b) => {
+        let valA, valB;
+
+        if (pluginSortBy === 'health_status') {
+            const rank = (p) => {
+                const s = p.health?.status;
+                return s === 'healthy' ? 3 : (s === 'no_data' ? 2 : (s === 'error' ? 1 : 0));
+            };
+            valA = rank(a);
+            valB = rank(b);
+        } else if (pluginSortBy === 'latency_ms') {
+            valA = Number(a.health?.latency_ms) || 0;
+            valB = Number(b.health?.latency_ms) || 0;
+        } else if (pluginSortBy === 'checked_at') {
+            valA = a.health?.checked_at ? new Date(a.health.checked_at).getTime() : 0;
+            valB = b.health?.checked_at ? new Date(b.health.checked_at).getTime() : 0;
+        } else if (pluginSortBy === 'is_enabled') {
+            valA = Boolean(a.is_enabled) ? 1 : 0;
+            valB = Boolean(b.is_enabled) ? 1 : 0;
+        } else if (pluginSortBy === 'name') {
+            valA = String(a.display_name || a.name || '').toLowerCase();
+            valB = String(b.display_name || b.name || '').toLowerCase();
+        } else if (pluginSortBy === 'id') {
+            valA = String(a.name || a.id || '').toLowerCase();
+            valB = String(b.name || b.id || '').toLowerCase();
+        } else {
+            valA = String(a[pluginSortBy] || '').toLowerCase();
+            valB = String(b[pluginSortBy] || '').toLowerCase();
+        }
+
+        if (valA < valB) return -1 * factor;
+        if (valA > valB) return 1 * factor;
+        return 0;
+    });
+}
+
+function updatePluginSortIcons() {
+    const iconMap = {
+        'id': 'pluginSortIconId',
+        'name': 'pluginSortIconName',
+        'is_enabled': 'pluginSortIconIsEnabled',
+        'health_status': 'pluginSortIconHealthStatus',
+        'latency_ms': 'pluginSortIconLatencyMs',
+        'checked_at': 'pluginSortIconCheckedAt',
+        'description': 'pluginSortIconDescription'
+    };
+
+    Object.entries(iconMap).forEach(([field, elementId]) => {
+        const iconEl = document.getElementById(elementId);
+        if (!iconEl) return;
+        if (pluginSortBy === field) {
+            iconEl.textContent = pluginOrder === 'asc' ? '↑' : '↓';
+            iconEl.className = 'text-blue-600 font-bold ml-0.5';
+        } else {
+            iconEl.textContent = '↕';
+            iconEl.className = 'text-slate-300 ml-0.5';
+        }
+    });
+}
+
+window.handlePluginSort = handlePluginSort;
 
 async function loadPlugins() {
     const tbody = document.getElementById('pluginTableBody');
@@ -28,21 +130,223 @@ async function loadPlugins() {
             tabBadgePlugins.textContent = `${enabled}/${total}`;
         }
 
-        if (!tbody) return;
+        sortPluginData();
+        updatePluginSortIcons();
+        renderPluginTable();
+    } catch (error) {
+        console.error('加载插件失败:', error);
+        showToast('加载插件失败: ' + error.message, 'danger');
+    }
+}
 
-        if (currentPluginsData.length === 0) {
+const pluginSelectionState = {
+    selectedNames: new Set(),
+    selectMode: 'page'
+};
+
+function toggleSelectPluginRow(name, checked) {
+    pluginSelectionState.selectMode = 'page';
+    if (checked) {
+        pluginSelectionState.selectedNames.add(name);
+    } else {
+        pluginSelectionState.selectedNames.delete(name);
+    }
+    updatePluginBatchToolbar();
+}
+
+function toggleSelectPluginPage(checkbox) {
+    const isChecked = checkbox.checked;
+    pluginSelectionState.selectMode = 'page';
+    const startIdx = (pluginCurrentPage - 1) * pluginPageSize;
+    const endIdx = Math.min(startIdx + pluginPageSize, currentPluginsData.length);
+    const pageItems = currentPluginsData.slice(startIdx, endIdx);
+
+    pageItems.forEach(p => {
+        if (isChecked) {
+            pluginSelectionState.selectedNames.add(p.name);
+        } else {
+            pluginSelectionState.selectedNames.delete(p.name);
+        }
+    });
+    renderPluginTable();
+}
+
+function selectPluginCurrentPage() {
+    const total = currentPluginsData.length;
+    const startIdx = (pluginCurrentPage - 1) * pluginPageSize;
+    const endIdx = Math.min(startIdx + pluginPageSize, total);
+    const pageItems = currentPluginsData.slice(startIdx, endIdx);
+
+    pluginSelectionState.selectedNames.clear();
+    pageItems.forEach(p => pluginSelectionState.selectedNames.add(p.name));
+    pluginSelectionState.selectMode = 'page';
+    renderPluginTable();
+
+    if (typeof showToast === 'function') {
+        showToast(`已切换为仅选本页（${pageItems.length} 项）`, 'info');
+    }
+}
+
+function togglePluginSelectAllMode() {
+    const total = currentPluginsData.length;
+    const isAll = pluginSelectionState.selectMode === 'all';
+
+    if (isAll) {
+        selectPluginCurrentPage();
+    } else {
+        pluginSelectionState.selectMode = 'all';
+        currentPluginsData.forEach(p => pluginSelectionState.selectedNames.add(p.name));
+        renderPluginTable();
+        if (typeof showToast === 'function') {
+            showToast(`已全选全部 ${total} 项`, 'info');
+        }
+    }
+}
+
+function clearPluginSelection() {
+    pluginSelectionState.selectedNames.clear();
+    pluginSelectionState.selectMode = 'page';
+    renderPluginTable();
+}
+
+function updatePluginBatchToolbar() {
+    const toolbar = document.getElementById('pluginBatchToolbar');
+    if (!toolbar) return;
+
+    const count = pluginSelectionState.selectedNames.size;
+    const total = currentPluginsData.length;
+    const isAll = pluginSelectionState.selectMode === 'all';
+    const startIdx = (pluginCurrentPage - 1) * pluginPageSize;
+    const endIdx = Math.min(startIdx + pluginPageSize, total);
+    const pageItems = currentPluginsData.slice(startIdx, endIdx);
+    const pageCount = pageItems.length;
+    const allPageSelected = pageCount > 0 && pageItems.every(p => pluginSelectionState.selectedNames.has(p.name));
+
+    const summaryCountEl = document.getElementById('pluginSelectedCount');
+    const scopeLink = document.getElementById('pluginScopeToggleLink');
+    const selectPageCb = document.getElementById('selectPluginPageCheckbox');
+
+    if (selectPageCb) {
+        selectPageCb.checked = allPageSelected;
+        selectPageCb.indeterminate = pageItems.some(p => pluginSelectionState.selectedNames.has(p.name)) && !allPageSelected;
+    }
+
+    if (count > 0 || isAll) {
+        toolbar.classList.add('active');
+        if (summaryCountEl) summaryCountEl.textContent = isAll ? total : count;
+        if (scopeLink) {
+            scopeLink.style.display = 'inline-flex';
+            scopeLink.textContent = isAll ? '(切换为仅选本页)' : `(全选全部 ${total} 条)`;
+        }
+    } else {
+        toolbar.classList.remove('active');
+        if (scopeLink) scopeLink.style.display = 'none';
+    }
+}
+
+async function batchEnablePlugins(isEnabled) {
+    const names = Array.from(pluginSelectionState.selectedNames);
+    const isAll = pluginSelectionState.selectMode === 'all';
+    const actionStr = isEnabled ? '启用' : '停用';
+
+    if (names.length === 0 && !isAll) {
+        showToast(`请先选择要${actionStr}的插件`, 'warning');
+        return;
+    }
+
+    const targetNames = isAll ? currentPluginsData.map(p => p.name) : names;
+
+    try {
+        const response = await fetch('/admin/api/plugins/batch-toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ names: targetNames, is_enabled: isEnabled })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+            showToast(data.message || `已批量${actionStr}插件`, 'success');
+            clearPluginSelection();
+            loadPlugins();
+        } else {
+            showToast(data.message || `批量${actionStr}失败`, 'danger');
+        }
+    } catch (e) {
+        showToast(`批量${actionStr}网络请求异常: ${e.message}`, 'danger');
+    }
+}
+
+async function batchTestPlugins(forceAll = false) {
+    const names = Array.from(pluginSelectionState.selectedNames);
+    const isAll = forceAll || pluginSelectionState.selectMode === 'all';
+
+    if (!forceAll && names.length === 0 && !isAll) {
+        showToast('请先选择要测试的插件', 'warning');
+        return;
+    }
+
+    const targetNames = (forceAll || isAll) ? currentPluginsData.map(p => p.name) : names;
+    if (targetNames.length === 0) {
+        showToast('暂无 Python 插件可供测试', 'warning');
+        return;
+    }
+    showToast(`正在后台检测 ${targetNames.length} 个 Python 插件，请稍候...`, 'info');
+
+    try {
+        const response = await fetch('/admin/api/plugins/test-batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ names: targetNames })
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+            showToast(data.message || '批量测试插件完成', 'success');
+            loadPlugins();
+        } else {
+            showToast(data.message || '批量测试插件失败', 'danger');
+        }
+    } catch (e) {
+        showToast(`批量测试网络请求异常: ${e.message}`, 'danger');
+    }
+}
+
+window.toggleSelectPluginRow = toggleSelectPluginRow;
+window.toggleSelectPluginPage = toggleSelectPluginPage;
+window.selectPluginCurrentPage = selectPluginCurrentPage;
+window.togglePluginSelectAllMode = togglePluginSelectAllMode;
+window.clearPluginSelection = clearPluginSelection;
+window.batchEnablePlugins = batchEnablePlugins;
+window.batchTestPlugins = batchTestPlugins;
+
+function renderPluginTable() {
+    const tbody = document.getElementById('pluginTableBody');
+    if (!tbody) return;
+
+    try {
+        const totalCount = currentPluginsData.length;
+        if (totalCount === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center text-muted py-5">
+                    <td colspan="9" class="text-center text-muted py-5">
                         <i class="fas fa-puzzle-piece fa-2x mb-2 text-secondary d-block"></i>
                         暂未发现任何插件。请在 <code>src/plugins/</code> 目录下创建继承自 <code>BasePlugin</code> 的 Python 模块。
                     </td>
                 </tr>
             `;
+            renderPluginPagination(0, 1);
+            updatePluginBatchToolbar();
             return;
         }
 
-        tbody.innerHTML = currentPluginsData.map((p, idx) => {
+        const totalPages = Math.ceil(totalCount / pluginPageSize) || 1;
+        if (pluginCurrentPage > totalPages) pluginCurrentPage = totalPages;
+        if (pluginCurrentPage < 1) pluginCurrentPage = 1;
+
+        const startIdx = (pluginCurrentPage - 1) * pluginPageSize;
+        const endIdx = Math.min(startIdx + pluginPageSize, totalCount);
+        const pageItems = currentPluginsData.slice(startIdx, endIdx);
+
+        tbody.innerHTML = pageItems.map((p, idx) => {
+            const globalIndex = startIdx + idx;
             const isEnabled = Boolean(p.is_enabled);
             const statusBadge = isEnabled
                 ? `<span class="status-dot-badge is-enabled"><span class="dot"></span>已启用</span>`
@@ -74,10 +378,14 @@ async function loadPlugins() {
             const toggleIcon = isEnabled ? 'fa-toggle-on' : 'fa-toggle-off';
             const toggleText = isEnabled ? '启用' : '停用';
             const nextEnabled = !isEnabled;
+            const isChecked = pluginSelectionState.selectedNames.has(p.name);
 
             return `
                 <tr>
-                    <td class="text-center text-muted align-middle">${idx + 1}</td>
+                    <td class="text-center align-middle">
+                        <input class="form-check-input plugin-row-checkbox" type="checkbox" data-name="${escapeHtml(p.name)}" ${isChecked ? 'checked' : ''} onchange="toggleSelectPluginRow('${escapeHtml(p.name)}', this.checked)">
+                    </td>
+                    <td class="text-center text-muted align-middle">${globalIndex + 1}</td>
                     <td class="align-middle">
                         <strong class="text-dark">${escapeHtml(p.display_name || p.name)}</strong>
                     </td>
@@ -102,6 +410,9 @@ async function loadPlugins() {
             `;
         }).join('');
 
+        renderPluginPagination(totalCount, totalPages);
+        updatePluginBatchToolbar();
+
     } catch (err) {
         console.error('加载插件数据出错:', err);
         if (tbody) {
@@ -116,6 +427,91 @@ async function loadPlugins() {
         showToast(`加载插件失败: ${err.message}`, 'danger');
     }
 }
+
+function renderPluginPagination(totalCount, totalPages) {
+    const selEl = document.getElementById('pluginPageSizeSelect');
+    if (selEl) selEl.value = pluginPageSize;
+    const curEl = document.getElementById('pluginCurrentPageNum');
+    if (curEl) curEl.textContent = pluginCurrentPage;
+    const totEl = document.getElementById('pluginTotalPageNum');
+    if (totEl) totEl.textContent = totalPages;
+    const cntEl = document.getElementById('pluginTotalCountNum');
+    if (cntEl) cntEl.textContent = totalCount;
+    const countEl = document.getElementById('pluginTotalCount');
+    if (countEl) countEl.textContent = `共 ${totalCount} 条`;
+
+    const controlsEl = document.getElementById('pluginPaginationControls');
+    const jumpInput = document.getElementById('pluginJumpPageInput');
+    if (jumpInput) {
+        jumpInput.max = totalPages;
+        jumpInput.value = pluginCurrentPage;
+        jumpInput.disabled = totalPages <= 1;
+    }
+    const jumpBtn = document.getElementById('pluginJumpPageBtn');
+    if (jumpBtn) {
+        jumpBtn.disabled = totalPages <= 1;
+    }
+
+    if (!controlsEl) return;
+    controlsEl.innerHTML = '';
+
+    // Prev Button
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = `px-2.5 py-1 text-xs rounded-lg border border-slate-200 transition ${pluginCurrentPage === 1 ? 'opacity-50 cursor-not-allowed bg-slate-50 text-slate-400' : 'bg-white text-slate-600 hover:bg-slate-50 cursor-pointer'}`;
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left text-[10px]"></i>';
+    prevBtn.disabled = pluginCurrentPage === 1;
+    prevBtn.onclick = () => { pluginCurrentPage--; renderPluginTable(); };
+    controlsEl.appendChild(prevBtn);
+
+    // Page numbers
+    for (let p = 1; p <= totalPages; p++) {
+        if (totalPages > 7 && Math.abs(p - pluginCurrentPage) > 2 && p !== 1 && p !== totalPages) {
+            if (p === 2 && pluginCurrentPage > 4) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'px-1 text-slate-400 text-xs';
+                ellipsis.textContent = '...';
+                controlsEl.appendChild(ellipsis);
+            } else if (p === totalPages - 1 && pluginCurrentPage < totalPages - 3) {
+                const ellipsis = document.createElement('span');
+                ellipsis.className = 'px-1 text-slate-400 text-xs';
+                ellipsis.textContent = '...';
+                controlsEl.appendChild(ellipsis);
+            }
+            continue;
+        }
+
+        const pageBtn = document.createElement('button');
+        pageBtn.type = 'button';
+        pageBtn.className = `px-2.5 py-1 text-xs rounded-lg transition font-medium cursor-pointer ${p === pluginCurrentPage ? 'bg-blue-600 text-white shadow-2xs font-semibold' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`;
+        pageBtn.textContent = p;
+        pageBtn.onclick = () => { pluginCurrentPage = p; renderPluginTable(); };
+        controlsEl.appendChild(pageBtn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = `px-2.5 py-1 text-xs rounded-lg border border-slate-200 transition ${pluginCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed bg-slate-50 text-slate-400' : 'bg-white text-slate-600 hover:bg-slate-50 cursor-pointer'}`;
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right text-[10px]"></i>';
+    nextBtn.disabled = pluginCurrentPage === totalPages;
+    nextBtn.onclick = () => { pluginCurrentPage++; renderPluginTable(); };
+    controlsEl.appendChild(nextBtn);
+}
+
+function handlePluginJumpPage() {
+    const input = document.getElementById('pluginJumpPageInput');
+    if (!input) return;
+    const page = parseInt(input.value, 10);
+    const totalPages = Math.ceil(currentPluginsData.length / pluginPageSize) || 1;
+    if (page >= 1 && page <= totalPages) {
+        pluginCurrentPage = page;
+        renderPluginTable();
+    } else {
+        input.value = pluginCurrentPage;
+    }
+}
+window.handlePluginJumpPage = handlePluginJumpPage;
 
 function formatPluginCheckedAt(value) {
     if (!value) return '--';
@@ -142,29 +538,6 @@ async function togglePlugin(pluginName, isEnabled) {
         // 恢复 checkbox
         const chk = document.getElementById(`switch-${pluginName}`);
         if (chk) chk.checked = !isEnabled;
-    }
-}
-
-async function reloadPlugins() {
-    const btn = document.getElementById('reloadPluginsButton');
-    if (btn) btn.disabled = true;
-
-    try {
-        const response = await fetch('/admin/api/plugins/reload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        const data = await response.json();
-        if (!data.success) {
-            throw new Error(data.message || '热重载插件失败');
-        }
-
-        showToast(data.message || '插件目录重新扫描成功', 'success');
-        await loadPlugins();
-    } catch (err) {
-        showToast(`重新扫描失败: ${err.message}`, 'danger');
-    } finally {
-        if (btn) btn.disabled = false;
     }
 }
 
@@ -350,10 +723,10 @@ async function runPluginTest() {
     }
 }
 
+window.loadPlugins = loadPlugins;
 window.enableAllPlugins = enableAllPlugins;
 window.disableAllPlugins = disableAllPlugins;
 window.testAllPlugins = testAllPlugins;
-window.reloadPlugins = reloadPlugins;
 
 document.addEventListener('DOMContentLoaded', () => {
     loadPlugins();

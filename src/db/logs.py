@@ -115,6 +115,10 @@ def query_system_logs(
             "duration_ms": "duration_ms",
             "status_code": "status_code",
             "result_count": "result_count",
+            "log_type": "log_type",
+            "action": "action",
+            "query_text": "query_text",
+            "client_ip": "client_ip",
             "id": "id",
         }
         sort_column = valid_sort_fields.get(sort_by, "created_at")
@@ -531,6 +535,11 @@ def query_search_logs(
             "created_at": "created_at",
             "duration_ms": "duration_ms",
             "result_count": "result_count",
+            "channel": "action",
+            "action": "action",
+            "keyword": "query_text",
+            "query_text": "query_text",
+            "client_ip": "client_ip",
             "id": "id",
         }
         sort_column = valid_sort_fields.get(sort_by, "created_at")

@@ -199,8 +199,8 @@ class TestTransferAndResourcePersistence(unittest.TestCase):
         )
         self.assertIsNotNone(get_active_temp_share("https://pan.quark.cn/s/orig_cleanup", "夸克网盘"))
 
-        # 3. 删除资源
-        del_ok, del_msg = delete_resource_and_share(res_id)
+        # 3. 删除资源 (默认为 False，只在指定 delete_netdisk_file=True 时触发 del_share)
+        del_ok, del_msg = delete_resource_and_share(res_id, delete_netdisk_file=True)
         self.assertTrue(del_ok)
 
         # 4. 验证 resources 已被删除
@@ -208,6 +208,26 @@ class TestTransferAndResourcePersistence(unittest.TestCase):
 
         # 5. 验证 temp_share 已被标记为已删除 (不再为 active)
         self.assertIsNone(get_active_temp_share("https://pan.quark.cn/s/orig_cleanup", "夸克网盘"))
+
+    @patch("src.services.resource_service.del_share")
+    def test_delete_resource_and_share_flag_control(self, mock_del_share):
+        """测试 delete_resource_and_share 控制标志 delete_netdisk_file 的解耦处理"""
+        from src.services.resource_service import add_resource_and_share, delete_resource_and_share
+
+        # 1. 仅删数据库记录（delete_netdisk_file=False）
+        ok1, _, res_id1 = add_resource_and_share({"name": "测试仅删本地", "share_link": "https://pan.quark.cn/s/local_only_1"})
+        self.assertTrue(ok1)
+        del_ok1, _ = delete_resource_and_share(res_id1, delete_netdisk_file=False)
+        self.assertTrue(del_ok1)
+        mock_del_share.assert_not_called()
+        self.assertIsNone(get_resource_by_share_link("https://pan.quark.cn/s/local_only_1"))
+
+        # 2. 同步删物理网盘（delete_netdisk_file=True）
+        ok2, _, res_id2 = add_resource_and_share({"name": "测试同步删网盘", "share_link": "https://pan.quark.cn/s/netdisk_del_2"})
+        self.assertTrue(ok2)
+        del_ok2, _ = delete_resource_and_share(res_id2, delete_netdisk_file=True)
+        self.assertTrue(del_ok2)
+        mock_del_share.assert_called_once()
 
 
 if __name__ == "__main__":

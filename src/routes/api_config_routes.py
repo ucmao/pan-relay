@@ -187,3 +187,67 @@ def test_all_apis():
         "results": summary.get("results", []),
     }), status_code
 
+
+@api_config_bp.route("/admin/api/configs/batch-toggle", methods=["PUT", "POST"])
+@token_required
+def batch_toggle_api():
+    """批量启停指定 API 配置"""
+    data = request.get_json() or {}
+    ids = data.get("ids", [])
+    is_enabled = bool(data.get("is_enabled"))
+    if not ids:
+        return jsonify({"message": "缺少要操作的 API ID 列表"}), 400
+
+    count = 0
+    for api_id in ids:
+        success, _ = set_api_enabled_in_db(api_id, is_enabled)
+        if success:
+            count += 1
+    action_str = "启用" if is_enabled else "停用"
+    return jsonify({"success": True, "message": f"成功批量{action_str} {count} 个 API 搜索源", "count": count})
+
+
+@api_config_bp.route("/admin/api/configs/batch-delete", methods=["POST", "DELETE"])
+@token_required
+def batch_delete_api():
+    """批量删除指定 API 配置"""
+    data = request.get_json() or {}
+    ids = data.get("ids", [])
+    if not ids:
+        return jsonify({"message": "缺少要删除的 API ID 列表"}), 400
+
+    count = 0
+    for api_id in ids:
+        success, _ = delete_api_config_in_db(api_id)
+        if success:
+            count += 1
+    return jsonify({"success": True, "message": f"成功批量删除 {count} 个 API 搜索源", "count": count})
+
+
+@api_config_bp.route("/admin/api/test-batch", methods=["POST"])
+@token_required
+def test_batch_apis():
+    """批量测试指定的 API 配置"""
+    data = request.get_json() or {}
+    ids = data.get("ids", [])
+    if not ids:
+        return jsonify({"message": "缺少要测试的 API ID 列表"}), 400
+
+    res = test_all_apis_and_update_status(target_ids=ids)
+    if len(res) == 3:
+        success, message, summary = res
+    else:
+        success, message = res[:2]
+        summary = {}
+
+    status_code = 200 if success else 500
+    return jsonify({
+        "success": success,
+        "message": message,
+        "total": summary.get("total", 0),
+        "healthy_count": summary.get("healthy_count", 0),
+        "failed_count": summary.get("failed_count", 0),
+        "results": summary.get("results", []),
+    }), status_code
+
+

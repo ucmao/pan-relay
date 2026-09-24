@@ -5,11 +5,16 @@
 // ==========================================
 let currentPage = 1;
 const savedResourcePageSize = parseInt(localStorage.getItem('panrelay_resource_pagesize'), 10);
-let pageSize = (savedResourcePageSize && [20, 50, 100].includes(savedResourcePageSize)) ? savedResourcePageSize : 50;
+let pageSize = (savedResourcePageSize && [15, 30, 50, 100].includes(savedResourcePageSize)) ? savedResourcePageSize : 15;
 let totalPages = 1;
 let totalCount = 0;
 let resourcesData = [];
+const savedResourceSortBy = localStorage.getItem('panrelay_resource_sort_by');
+let resourceSortBy = savedResourceSortBy || 'id';
+const savedResourceOrder = localStorage.getItem('panrelay_resource_order');
+let resourceOrder = (savedResourceOrder === 'asc' || savedResourceOrder === 'desc') ? savedResourceOrder : 'desc';
 const selectedResourceMap = new Map();
+let resourceSelectMode = 'page';
 
 // 网盘凭证配置就绪状态
 let netdiskCredentialsMap = {
@@ -245,7 +250,7 @@ async function loadResources() {
     const searchKeyword = searchInput ? searchInput.value.trim() : '';
 
     try {
-        const response = await fetch(`/admin/api/resources?page=${currentPage}&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}`);
+        const response = await fetch(`/admin/api/resources?page=${currentPage}&page_size=${pageSize}&search=${encodeURIComponent(searchKeyword)}&sort_by=${resourceSortBy}&order=${resourceOrder}`);
         const data = await response.json();
 
         if (data.success) {
@@ -272,6 +277,47 @@ async function loadResources() {
         showToast('网络请求失败，请检查服务状态', 'danger');
     }
 }
+
+function handleResourceSort(field) {
+    if (resourceSortBy === field) {
+        resourceOrder = resourceOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        resourceSortBy = field;
+        resourceOrder = (field === 'name' || field === 'type' || field === 'cloud_name') ? 'asc' : 'desc';
+    }
+    try {
+        localStorage.setItem('panrelay_resource_sort_by', resourceSortBy);
+        localStorage.setItem('panrelay_resource_order', resourceOrder);
+    } catch (e) {}
+    updateResourceSortIcons();
+    currentPage = 1;
+    loadResources();
+}
+
+function updateResourceSortIcons() {
+    const iconMap = {
+        'id': 'resourceSortIconId',
+        'name': 'resourceSortIconName',
+        'cloud_name': 'resourceSortIconCloudName',
+        'type': 'resourceSortIconType',
+        'health_status': 'resourceSortIconHealthStatus',
+        'is_replaced': 'resourceSortIconIsReplaced'
+    };
+
+    Object.entries(iconMap).forEach(([field, elementId]) => {
+        const iconEl = document.getElementById(elementId);
+        if (!iconEl) return;
+        if (resourceSortBy === field) {
+            iconEl.textContent = resourceOrder === 'asc' ? '↑' : '↓';
+            iconEl.className = 'text-blue-600 font-bold ml-0.5';
+        } else {
+            iconEl.textContent = '↕';
+            iconEl.className = 'text-slate-300 ml-0.5';
+        }
+    });
+}
+
+window.handleResourceSort = handleResourceSort;
 
 // 渲染表格
 function renderTable() {
@@ -339,38 +385,53 @@ function renderTable() {
 // 渲染分页
 function renderPagination() {
     if (!pagination) return;
-    pagination.innerHTML = '';
 
-    // 上一页
-    const prevLi = document.createElement('li');
-    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-    prevLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">&laquo;</a>`;
-    pagination.appendChild(prevLi);
+    const curEl = document.getElementById('resourceCurrentPageNum');
+    if (curEl) curEl.textContent = currentPage;
+    const totEl = document.getElementById('resourceTotalPageNum');
+    if (totEl) totEl.textContent = totalPages;
+    const cntEl = document.getElementById('resourceTotalCountNum');
+    if (cntEl) cntEl.textContent = totalCount;
 
-    // 页码逻辑
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, startPage + 4);
+
+    let html = '';
+    html += `<button type="button" onclick="changeResourcePage(${currentPage - 1})" ${currentPage <= 1 ? 'disabled' : ''} class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition" title="上一页"><i class="fas fa-chevron-left"></i></button>`;
+
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
 
     if (startPage > 1) {
-        pagination.appendChild(createPageItem(1));
-        if (startPage > 2) pagination.appendChild(createEllipsis());
+        html += `<button type="button" onclick="changeResourcePage(1)" class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition">1</button>`;
+        if (startPage > 2) html += `<span class="px-1 text-slate-400">...</span>`;
     }
 
-    for (let i = startPage; i <= endPage; i++) {
-        pagination.appendChild(createPageItem(i));
+    for (let p = startPage; p <= endPage; p++) {
+        const isActive = p === currentPage;
+        html += `<button type="button" onclick="changeResourcePage(${p})" class="px-2.5 py-1 text-xs rounded-lg border ${isActive ? 'border-blue-600 bg-blue-600 text-white font-bold' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'} transition">${p}</button>`;
     }
 
     if (endPage < totalPages) {
-        if (endPage < totalPages - 1) pagination.appendChild(createEllipsis());
-        pagination.appendChild(createPageItem(totalPages));
+        if (endPage < totalPages - 1) html += `<span class="px-1 text-slate-400">...</span>`;
+        html += `<button type="button" onclick="changeResourcePage(${totalPages})" class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition">${totalPages}</button>`;
     }
 
-    // 下一页
-    const nextLi = document.createElement('li');
-    nextLi.className = `page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}`;
-    nextLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">&raquo;</a>`;
-    pagination.appendChild(nextLi);
+    html += `<button type="button" onclick="changeResourcePage(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''} class="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition" title="下一页"><i class="fas fa-chevron-right"></i></button>`;
+
+    pagination.innerHTML = html;
 }
+
+function changeResourcePage(page) {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    currentPage = page;
+    loadResources();
+}
+
+function handleJumpPage() {
+    jumpToPage();
+}
+
+window.changeResourcePage = changeResourcePage;
+window.handleJumpPage = handleJumpPage;
 
 function updatePaginationControls() {
     if (resourceTotalCount) {
@@ -477,6 +538,11 @@ function toggleResourceSelection(resourceId, checked) {
 
 function updateSelectionUI() {
     const selectedCount = selectedResourceMap.size;
+    const pageItems = resourcesData || [];
+    const pageCount = pageItems.length;
+    const currentPageIds = pageItems.map(resource => resource.id);
+    const selectedOnPage = currentPageIds.filter(id => selectedResourceMap.has(id)).length;
+    const allPageSelected = pageCount > 0 && selectedOnPage === pageCount;
 
     if (resourceBatchToolbar) {
         resourceBatchToolbar.classList.toggle('show', selectedCount > 0);
@@ -487,10 +553,25 @@ function updateSelectionUI() {
     }
 
     if (selectCurrentPageCheckbox) {
-        const currentPageIds = resourcesData.map(resource => resource.id);
-        const selectedOnPage = currentPageIds.filter(id => selectedResourceMap.has(id)).length;
-        selectCurrentPageCheckbox.checked = currentPageIds.length > 0 && selectedOnPage === currentPageIds.length;
-        selectCurrentPageCheckbox.indeterminate = selectedOnPage > 0 && selectedOnPage < currentPageIds.length;
+        selectCurrentPageCheckbox.checked = pageCount > 0 && allPageSelected;
+        selectCurrentPageCheckbox.indeterminate = selectedOnPage > 0 && selectedOnPage < pageCount;
+    }
+
+    const resourceScopeToggleLink = document.getElementById('resourceScopeToggleLink');
+    const isAll = resourceSelectMode === 'all';
+    if (resourceScopeToggleLink) {
+        if (selectedCount > 0 || isAll) {
+            resourceScopeToggleLink.style.display = 'inline-flex';
+            if (isAll) {
+                resourceScopeToggleLink.textContent = '(切换为仅选本页)';
+                resourceScopeToggleLink.onclick = selectCurrentPageResources;
+            } else {
+                resourceScopeToggleLink.textContent = `(全选全部 ${totalCount} 条)`;
+                resourceScopeToggleLink.onclick = selectAllResources;
+            }
+        } else {
+            resourceScopeToggleLink.style.display = 'none';
+        }
     }
 
     if (exportSelectedBtn) {
@@ -503,14 +584,24 @@ function updateSelectionUI() {
 }
 
 function selectCurrentPageResources() {
-    resourcesData.forEach(resource => selectedResourceMap.set(resource.id, resource));
+    resourceSelectMode = 'page';
+    const pageItems = resourcesData || [];
+    const pageCount = pageItems.length;
+
+    selectedResourceMap.clear();
+    pageItems.forEach(resource => selectedResourceMap.set(resource.id, resource));
     document.querySelectorAll('.resource-row-checkbox').forEach(checkbox => {
         checkbox.checked = true;
     });
     updateSelectionUI();
+
+    if (typeof showToast === 'function') {
+        showToast(`已切换为仅选本页（${pageCount} 条）`, 'info');
+    }
 }
 
 function clearResourceSelection() {
+    resourceSelectMode = 'page';
     selectedResourceMap.clear();
     document.querySelectorAll('.resource-row-checkbox').forEach(checkbox => {
         checkbox.checked = false;
@@ -599,15 +690,103 @@ async function loadHealthStats() {
     }
 }
 
+// 资源专用的可选择是否同步删除网盘文件的确认模态框
+function showResourceDeleteConfirmModal(message, title = '确认删除资源') {
+    return new Promise((resolve) => {
+        let settled = false;
+        
+        const modalContainer = document.createElement('div');
+        modalContainer.className = 'modal fade';
+        modalContainer.setAttribute('tabindex', '-1');
+
+        modalContainer.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content shadow border-0">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title" style="font-size: 1.1rem; font-weight: 600;">
+                            <i class="fas fa-exclamation-circle text-danger me-2"></i>${escapeHtml(title)}
+                        </h5>
+                        <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body py-3 text-secondary space-y-3">
+                        <div>${formatModalMessage(message)}</div>
+                        <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-xl mt-2">
+                            <label class="flex items-center gap-2.5 cursor-pointer text-xs text-slate-700 select-none">
+                                <input type="checkbox" id="deleteNetdiskCheckbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500 w-4 h-4">
+                                <span class="font-medium">同步删除物理网盘中的文件/转存文件夹</span>
+                            </label>
+                            <p class="text-[11px] text-slate-400 mt-1 pl-6">勾选后将尝试通过网盘 API 物理清除对应的网盘文件，取消勾选将仅删除系统数据库内的索引记录。</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light btn-sm px-3" data-ui-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-danger btn-sm px-3" id="confirmDeleteActionBtn">确认删除</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modalContainer);
+        const confirmBtn = modalContainer.querySelector('#confirmDeleteActionBtn');
+        const checkbox = modalContainer.querySelector('#deleteNetdiskCheckbox');
+        const cancelButtons = modalContainer.querySelectorAll('[data-ui-dismiss="modal"]');
+
+        const cleanup = (resConfirmed) => {
+            if (settled) return;
+            settled = true;
+            document.removeEventListener('keydown', onKeyDown);
+            window.AppUI.closeModal(modalContainer);
+            modalContainer.remove();
+            resolve({
+                confirmed: resConfirmed,
+                deleteNetdiskFile: resConfirmed ? Boolean(checkbox?.checked) : false
+            });
+        };
+
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                cleanup(false);
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+
+        confirmBtn.onclick = () => {
+            cleanup(true);
+        };
+
+        cancelButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                cleanup(false);
+            }, { once: true });
+        });
+
+        modalContainer.addEventListener('click', (event) => {
+            if (event.target === modalContainer) {
+                cleanup(false);
+            }
+        }, { once: true });
+
+        window.AppUI.openModal(modalContainer);
+    });
+}
+
 // 删除资源
 async function deleteResource(id) {
-    if (await showConfirm('确定要删除这条资源吗？此操作不可恢复。', 'danger')) {
+    const resource = resourcesData.find(r => r.id === id);
+    const titleText = resource ? `资源「${resource.name}」` : `ID 为 ${id} 的资源`;
+    const confirmResult = await showResourceDeleteConfirmModal(
+        `确定要删除 ${titleText} 吗？此操作不可恢复。`,
+        '确认删除资源'
+    );
+
+    if (confirmResult.confirmed) {
         try {
-            const response = await fetch(`/admin/api/resources/${id}`, { method: 'DELETE' });
+            const deleteNetdisk = confirmResult.deleteNetdiskFile;
+            const response = await fetch(`/admin/api/resources/${id}?delete_netdisk_file=${deleteNetdisk}`, { method: 'DELETE' });
             const data = await response.json();
 
             if (data.success) {
-                showToast('删除成功');
+                showToast(deleteNetdisk ? '已成功从系统及网盘删除资源' : '已成功删除资源本地记录');
                 selectedResourceMap.delete(id);
                 updateSelectionUI();
                 loadResources();
@@ -1046,11 +1225,12 @@ async function fetchAllResourcesForCurrentSearch() {
 }
 
 async function selectAllResources() {
-    if (!selectAllResourcesBtn) return;
-
-    const originalText = selectAllResourcesBtn.innerHTML;
-    selectAllResourcesBtn.disabled = true;
-    selectAllResourcesBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 选择中';
+    const scopeLink = document.getElementById('resourceScopeToggleLink');
+    const originalText = scopeLink ? scopeLink.textContent : '';
+    if (scopeLink) {
+        scopeLink.textContent = '(正在加载全部...)';
+        scopeLink.disabled = true;
+    }
 
     try {
         const allItems = await fetchAllResourcesForCurrentSearch();
@@ -1058,13 +1238,17 @@ async function selectAllResources() {
         document.querySelectorAll('.resource-row-checkbox').forEach(checkbox => {
             checkbox.checked = true;
         });
+        resourceSelectMode = 'all';
         updateSelectionUI();
-        showToast(`已选择 ${allItems.length} 条资源`, 'success');
+        showToast(`已全选全部 ${allItems.length} 条资源`, 'success');
     } catch (error) {
+        resourceSelectMode = 'page';
         showToast('选择全部失败: ' + error.message, 'danger');
+        if (scopeLink) scopeLink.textContent = originalText;
     } finally {
-        selectAllResourcesBtn.disabled = false;
-        selectAllResourcesBtn.innerHTML = originalText;
+        if (scopeLink) {
+            scopeLink.disabled = false;
+        }
     }
 }
 
@@ -1087,10 +1271,16 @@ async function deleteSelectedResources() {
         return;
     }
 
-    if (!await showConfirm(`确定删除已选择的 ${selectedIds.length} 条资源吗？此操作不可撤销。`, 'danger')) {
+    const confirmResult = await showResourceDeleteConfirmModal(
+        `确定要删除已选择的 ${selectedIds.length} 条资源吗？此操作不可撤销。`,
+        '确认批量删除资源'
+    );
+
+    if (!confirmResult.confirmed) {
         return;
     }
 
+    const deleteNetdisk = confirmResult.deleteNetdiskFile;
     const originalText = deleteSelectedBtn ? deleteSelectedBtn.innerHTML : '';
     if (deleteSelectedBtn) {
         deleteSelectedBtn.disabled = true;
@@ -1101,7 +1291,7 @@ async function deleteSelectedResources() {
 
     try {
         for (const id of selectedIds) {
-            const response = await fetch(`/admin/api/resources/${id}`, { method: 'DELETE' });
+            const response = await fetch(`/admin/api/resources/${id}?delete_netdisk_file=${deleteNetdisk}`, { method: 'DELETE' });
             const data = await response.json();
             if (response.ok && data.success) {
                 successCount++;
@@ -1109,7 +1299,8 @@ async function deleteSelectedResources() {
             }
         }
 
-        showToast(`删除完成：成功 ${successCount} 条，失败 ${selectedIds.length - successCount} 条`, successCount === selectedIds.length ? 'success' : 'warning');
+        const msgSuffix = deleteNetdisk ? '（已含网盘物理同步删除）' : '';
+        showToast(`批量删除完成${msgSuffix}：成功 ${successCount} 条，失败 ${selectedIds.length - successCount} 条`, successCount === selectedIds.length ? 'success' : 'warning');
         await loadResources();
     } catch (error) {
         showToast('批量删除失败: ' + error.message, 'danger');
@@ -1180,6 +1371,20 @@ function initResourcePage() {
     if (auditAllResourcesBtn) {
         auditAllResourcesBtn.addEventListener('click', async function () {
             if (this.disabled) return;
+
+            const confirmPrompt = '确定要对库内资源执行全盘批量巡检吗？这可能需要一些时间。';
+            const ok = window.confirmModal
+                ? await window.confirmModal({
+                    title: '批量巡检确认',
+                    message: confirmPrompt,
+                    confirmText: '确定巡检',
+                    cancelText: '取消',
+                    type: 'primary'
+                })
+                : (typeof showConfirm === 'function' ? await showConfirm(confirmPrompt, 'primary', '批量巡检确认') : confirm(confirmPrompt));
+
+            if (!ok) return;
+
             const originalHtml = this.innerHTML;
             this.disabled = true;
             this.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 正在巡检...';
@@ -1316,7 +1521,7 @@ function initResourcePage() {
     if (pageSizeSelect) {
         pageSizeSelect.value = String(pageSize);
         pageSizeSelect.addEventListener('change', () => {
-            pageSize = parseInt(pageSizeSelect.value, 10) || 50;
+            pageSize = parseInt(pageSizeSelect.value, 10) || 15;
             try {
                 localStorage.setItem('panrelay_resource_pagesize', String(pageSize));
             } catch (e) {}

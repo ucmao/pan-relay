@@ -498,8 +498,8 @@
                                     class="text-[10px] font-medium px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-100/60">真实检索</span>
                             </div>
                             <p id="tabKeywordSubtitle" class="text-[11px] text-slate-500 mt-0.5">
-                                {% if current_days == 0 %}全部历史全站真实高频检索关键词榜单与热度排行{% else %}近 {{ current_days }}
-                                天全站真实高频检索关键词榜单与热度排行{% endif %}
+                                {% if current_days == 0 %}全部历史全站高频搜索关键词榜单与热度排行{% else %}近 {{ current_days }}
+                                天全站真实高频搜索关键词榜单与热度排行{% endif %}
                             </p>
                         </div>
                     </div>
@@ -797,9 +797,9 @@
                 <!-- Tab 2: 网盘转存凭证就绪状态 -->
                 <div id="tabEngineCredentialsContent" class="mt-4 space-y-3" style="display: none;">
                     <div class="text-[11px] font-semibold text-slate-500 flex items-center justify-between">
-                        <span>5 大网盘就绪凭证状态</span>
+                        <span>网盘就绪凭证状态</span>
                         <span class="text-slate-400 font-mono text-[10px]">{{ summary.credentials.summary.enabled_count
-                            }}/5 就绪</span>
+                            }}/8 就绪</span>
                     </div>
 
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">

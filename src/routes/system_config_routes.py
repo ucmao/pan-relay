@@ -566,6 +566,92 @@ def test_all_tg_channels_api():
     })
 
 
+@system_config_bp.route("/admin/api/tg-channels/batch-toggle", methods=["PUT", "POST"])
+@token_required
+def batch_toggle_tg_channels_api():
+    data = request.get_json() or {}
+    channels = data.get("channels", [])
+    is_enabled = bool(data.get("is_enabled"))
+    if not channels:
+        return jsonify({"success": False, "message": "缺少频道标识列表"}), 400
+
+    count = 0
+    for ch in channels:
+        success, _ = set_tg_channel_enabled(ch, is_enabled)
+        if success:
+            count += 1
+    action_str = "启用" if is_enabled else "停用"
+    return jsonify({"success": True, "message": f"成功批量{action_str} {count} 个频道", "count": count})
+
+
+@system_config_bp.route("/admin/api/tg-channels/batch-delete", methods=["POST", "DELETE"])
+@token_required
+def batch_delete_tg_channels_api():
+    data = request.get_json() or {}
+    channels = data.get("channels", [])
+    if not channels:
+        return jsonify({"success": False, "message": "缺少要删除的频道列表"}), 400
+
+    count = 0
+    for ch in channels:
+        success, _ = delete_tg_channel(ch)
+        if success:
+            count += 1
+    return jsonify({"success": True, "message": f"成功批量删除 {count} 个频道", "count": count})
+
+
+@system_config_bp.route("/admin/api/tg-channels/test-batch", methods=["POST"])
+@token_required
+def test_batch_tg_channels_api():
+    data = request.get_json() or {}
+    target_channels = set(data.get("channels", []))
+    keyword = str(data.get("keyword", "")).strip() or None
+    if not target_channels:
+        return jsonify({"success": False, "message": "缺少要测试的频道列表"}), 400
+
+    all_channels = [item["channel"] for item in get_tg_channel_items()]
+    channels = [ch for ch in all_channels if ch in target_channels]
+    if not channels:
+        return jsonify({"success": True, "message": "暂无可检测的指定频道", "results": []})
+
+    config = get_search_scheduler_config()["tg"]
+    workers = min(config["max_workers"], len(channels))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(test_telegram_connection, channel, keyword): channel
+            for channel in channels
+        }
+        results = []
+        for future in concurrent.futures.as_completed(futures):
+            channel = futures[future]
+            try:
+                result = future.result()
+            except Exception as error:
+                result = {
+                    "success": False,
+                    "channel": channel,
+                    "message": str(error),
+                    "latency_ms": 0,
+                    "count": 0,
+                    "results": [],
+                }
+            save_tg_channel_health(channel, result)
+            results.append(result)
+
+    healthy_count = sum(1 for result in results if result.get("success"))
+    total = len(results)
+    failed_count = total - healthy_count
+    return jsonify({
+        "success": True,
+        "message": f"检测完成：{healthy_count}/{total} 个频道可连通",
+        "total": total,
+        "healthy_count": healthy_count,
+        "failed_count": failed_count,
+        "results": results,
+    })
+
+
+
 
 @system_config_bp.route("/admin/api/tg-search-config/test", methods=["POST"])
 @token_required

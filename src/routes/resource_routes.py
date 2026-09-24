@@ -25,12 +25,16 @@ def resources_page():
 @resources_bp.route("/admin/api/resources", methods=["GET"])
 @token_required
 def get_resources():
-    """获取资源列表，支持分页和搜索功能"""
+    """获取资源列表，支持分页、搜索与排序功能"""
     page = request.args.get("page", 1, type=int)
     page_size = request.args.get("page_size", 10, type=int)
     search = request.args.get("search", "", type=str)
+    sort_by = request.args.get("sort_by", "id", type=str)
+    order = request.args.get("order", "desc", type=str)
 
-    success, message, data = list_resources(page=page, page_size=page_size, search=search)
+    success, message, data = list_resources(
+        page=page, page_size=page_size, search=search, sort_by=sort_by, order=order
+    )
     if not success:
         return jsonify({"success": False, "message": message}), 500
     return jsonify({"success": True, "data": data})
@@ -75,7 +79,14 @@ def update_resource(resource_id):
 @token_required
 def delete_resource(resource_id):
     """删除资源"""
-    success, message = delete_resource_and_share(resource_id)
+    raw_flag = request.args.get("delete_netdisk_file", None)
+    if raw_flag is None:
+        payload = request.get_json(silent=True) or {}
+        delete_netdisk_file = bool(payload.get("delete_netdisk_file", False))
+    else:
+        delete_netdisk_file = str(raw_flag).lower() in ("true", "1", "yes")
+
+    success, message = delete_resource_and_share(resource_id, delete_netdisk_file=delete_netdisk_file)
     if not success:
         status = 404 if message == "资源不存在" else 500
         return jsonify({"success": False, "message": message}), status

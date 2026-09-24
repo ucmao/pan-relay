@@ -381,6 +381,38 @@ textarea::placeholder {
     background: #fef2f2;
 }
 
+/* 极简全选切换文字链接 */
+.resource-batch-scope-link {
+    background: transparent;
+    border: none;
+    color: #2563eb;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 2px 6px;
+    margin-left: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.15s ease;
+}
+
+.resource-batch-scope-link:hover {
+    color: #1d4ed8;
+    background: #eff6ff;
+    text-decoration: underline;
+}
+
+/* 总结区小分隔竖线 */
+.resource-batch-summary-divider {
+    width: 1px;
+    height: 12px;
+    background-color: #cbd5e1;
+    margin: 0 4px;
+    display: inline-block;
+}
+
 /* 分隔竖线 */
 .resource-batch-divider {
     width: 1px;
@@ -421,6 +453,14 @@ textarea::placeholder {
     border-color: #bfdbfe;
     color: #2563eb;
     transform: translateY(-1px);
+}
+
+.resource-batch-btn-subtle.active {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #2563eb;
+    font-weight: 600;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15);
 }
 
 .resource-batch-btn-subtle:active {

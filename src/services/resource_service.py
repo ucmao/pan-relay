@@ -12,9 +12,9 @@ from src.pan_operator import create_share, del_share
 logger = logging.getLogger(__name__)
 
 
-def list_resources(page: int = 1, page_size: int = 10, search: str = ""):
-    """获取资源列表，支持分页和搜索"""
-    return db_list_resources(page=page, page_size=page_size, search=search)
+def list_resources(page: int = 1, page_size: int = 10, search: str = "", sort_by: str = "id", order: str = "desc"):
+    """获取资源列表，支持分页、搜索与排序"""
+    return db_list_resources(page=page, page_size=page_size, search=search, sort_by=sort_by, order=order)
 
 
 def get_resource_detail(resource_id: int):
@@ -108,26 +108,28 @@ def update_resource_info(resource_id: int, resource_data: dict):
     return update_resource_basic_info(resource_id, resource_data)
 
 
-def delete_resource_and_share(resource_id: int):
+def delete_resource_and_share(resource_id: int, delete_netdisk_file: bool = False):
     """
     删除资源。
-    直接删除数据库记录并将 share_url 传递给 del_share 函数。
+    从数据库删除资源记录。
+    如果 delete_netdisk_file 为 True，则将 share_url / file_id 传递给 del_share 方法从物理网盘中删除。
     """
     # 从数据库删除资源，同时获取被删除记录的 share_link 和 file_id
     success, message, resource = delete_resource_by_id(resource_id)
     if not success:
         return False, message
 
-    # 调用 del_share 处理网盘删除
-    try:
-        share_data = {
-            "share_url": resource["share_link"],
-            "file_id": resource["file_id"],
-        }
-        del_share(share_data)
-        logger.info(f"调用del_share处理资源分享链接: {resource['share_link']}")
-    except Exception as share_err:
-        logger.error(f"调用del_share处理资源分享链接时出错: {share_err}")
+    if delete_netdisk_file:
+        # 调用 del_share 处理网盘删除
+        try:
+            share_data = {
+                "share_url": resource["share_link"],
+                "file_id": resource["file_id"],
+            }
+            del_share(share_data)
+            logger.info(f"调用del_share物理删除网盘资源文件: {resource['share_link']}")
+        except Exception as share_err:
+            logger.error(f"调用del_share处理资源物理删除时出错: {share_err}")
 
     try:
         from src.db.temp_shares import mark_temp_share_deleted_by_url_or_file
