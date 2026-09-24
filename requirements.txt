@@ -1,5 +1,6 @@
 APScheduler==3.11.0
 beautifulsoup4==4.12.3
+curl_cffi>=0.7.0
 Flask==3.0.3
 jmespath==1.0.1
 PyJWT==2.10.1

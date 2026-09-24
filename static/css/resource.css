@@ -700,6 +700,8 @@ textarea::placeholder {
     overflow: hidden;
     word-break: break-all;
     max-width: 380px;
-    max-height: 2.8em;
+    line-height: 1.5;
+    max-height: 3.2em;
+    padding: 1px 0;
 }
 

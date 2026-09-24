@@ -4,7 +4,7 @@ from src.plugins.detail_page_adapter import DetailPagePlugin
 class JavdbPlugin(DetailPagePlugin):
     name = "javdb"
     display_name = "JavDB 磁力"
-    description = "成人内容磁力源；独立标记并默认关闭"
+    description = "磁力源；独立标记并默认关闭"
     priority = 60
     is_enabled = False
     publish_by_default = True

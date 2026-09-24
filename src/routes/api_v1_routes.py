@@ -468,7 +468,7 @@ def api_docs():
         "title": "pan-relay 开发者 REST API 指南",
         "description": "提供两步走 (1. 查询资源 -> 2. 转存替换) 及网盘连接检测服务",
         "workflow": [
-            "步骤 1: 调用 GET /api/v1/search?keyword=...&scope=own 搜索站长收益资源。",
+            "步骤 1 (强烈推荐): 调用 GET /api/v1/search/stream?keyword=... 实时流式打字机推送搜索资源 (0等待避免卡顿)。传统同步可调用 GET /api/v1/search。",
             "步骤 2: 当用户选中资源时，调用 POST /api/v1/transfer 将链接转换为本系统转存链接 (支持 Header X-API-Key)。",
             "步骤 3: 前端/小程序直接向用户展示步骤 2 生成的转存链接。",
         ],
@@ -481,7 +481,7 @@ def api_docs():
             {
                 "path": "/api/v1/search",
                 "method": "GET",
-                "summary": "步骤 1: 搜索资源 (支持原生免登录测活)",
+                "summary": "步骤 1 (同步): 搜索资源 (全网聚合时可能卡顿等待全量完成，推荐改用 /search/stream)",
                 "parameters": {
                     "keyword": "关键词 (必填)",
                     "scope": "搜索范围 (own: 仅站长收益库; all: 全网聚合，默认按后台配置)",
@@ -495,7 +495,7 @@ def api_docs():
             {
                 "path": "/api/v1/search/stream",
                 "method": "GET",
-                "summary": "步骤 1 (SSE): 实时流式搜索",
+                "summary": "步骤 1 (SSE / 强烈推荐⭐): 实时流式打字机搜索 (前端 UI 交互首选)",
                 "parameters": {"keyword": "关键词 (必填)"},
             },
             {

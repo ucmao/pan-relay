@@ -11,7 +11,7 @@ from src.plugins.http_plugin import HttpPlugin, PluginRequestError, clean_text
 class U3c3Plugin(HttpPlugin):
     name = "u3c3"
     display_name = "U3C3 磁力"
-    description = "成人内容动态参数磁力源；独立标记并默认关闭"
+    description = "动态参数磁力源；独立标记并默认关闭"
     priority = 60
     is_enabled = False
     publish_by_default = True

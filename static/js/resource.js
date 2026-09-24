@@ -340,7 +340,7 @@ function renderTable() {
             </td>
             <td>${resource.id}</td>
             <td title="${escapeHtml(resource.name)}">
-                <div class="line-clamp-2-title text-slate-800 font-medium text-xs leading-relaxed" title="${escapeHtml(resource.name)}">
+                <div class="line-clamp-2-title text-slate-800 font-medium text-xs leading-normal" title="${escapeHtml(resource.name)}">
                     ${escapeHtml(resource.name)}
                 </div>
             </td>

@@ -303,16 +303,17 @@
             </div>
 
             <!-- Endpoint 1.5: GET /api/v1/search/stream (SSE) -->
-            <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-                <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div class="bg-white rounded-xl border border-amber-200/80 shadow-xs overflow-hidden ring-1 ring-amber-400/30">
+                <div class="bg-amber-50/60 px-6 py-4 border-b border-amber-200/80 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center space-x-3">
                         <span class="method-badge-get px-2.5 py-1 rounded-md text-xs font-bold font-mono">GET</span>
                         <code class="text-sm font-bold text-slate-900">/api/v1/search/stream</code>
+                        <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500 text-white shadow-xs">强烈推荐 (UI / 前端首选)</span>
                     </div>
-                    <span class="text-xs text-slate-500 font-medium">步骤 1 (SSE) · 实时流式打字机推送</span>
+                    <span class="text-xs text-amber-800 font-medium">步骤 1 (SSE) · 0等待秒级实时流式打字机推送</span>
                 </div>
                 <div class="p-6 space-y-4">
-                    <p class="text-xs sm:text-sm text-slate-600">使用 Server-Sent Events 协议实时流式返回搜索结果。请求参数与 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">GET /api/v1/search</code> 完全一致（包含 <code class="font-mono">keyword</code> 必填、<code class="font-mono">cloud_name</code>、<code class="font-mono">limit</code>、<code class="font-mono">scope</code>、<code class="font-mono">check_status</code>、<code class="font-mono">filter_bad</code>）。</p>
+                    <p class="text-xs sm:text-sm text-slate-600">使用 Server-Sent Events (SSE) 协议实时流式返回搜索结果。<strong class="text-amber-800">强烈推荐 Web 前端、小程序、App 用户交互界面优先使用此接口</strong>，首屏数据几十毫秒推送，避免同步接口等待全网爬虫导致的数秒卡顿。请求参数与 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">GET /api/v1/search</code> 完全一致（包含 <code class="font-mono">keyword</code> 必填、<code class="font-mono">cloud_name</code>、<code class="font-mono">limit</code>、<code class="font-mono">scope</code>、<code class="font-mono">check_status</code>、<code class="font-mono">filter_bad</code>）。</p>
                     <div class="rounded-xl overflow-hidden bg-slate-50/70 border border-slate-200">
                         <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">SSE Stream Format:</div>
                         <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">data: {"type": "start", "keyword": "黑神话"}

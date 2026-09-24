@@ -520,19 +520,20 @@
                     </div>
 
                     <!-- Endpoint 1.5: GET /api/v1/search/stream (SSE) -->
-                    <div class="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                    <div class="rounded-xl border border-amber-200 overflow-hidden bg-white ring-1 ring-amber-400/20">
                         <div
-                            class="bg-slate-50/80 px-4 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                            class="bg-amber-50/60 px-4 py-3 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2">
                             <div class="flex items-center gap-2">
                                 <span
                                     class="px-2 py-0.5 rounded text-xs font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">GET</span>
                                 <code class="text-sm font-bold text-slate-900">/api/v1/search/stream</code>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white shadow-xs">强烈推荐 (UI首选)</span>
                             </div>
-                            <span class="text-xs text-slate-500 font-medium">步骤 1 (SSE) · 实时流式打字机推送</span>
+                            <span class="text-xs text-amber-800 font-medium">步骤 1 (SSE) · 0等待秒级实时流式打字机推送</span>
                         </div>
                         <div class="p-4 space-y-3 text-xs">
                             <p class="text-slate-600 leading-relaxed">
-                                使用 Server-Sent Events (SSE) 协议实时流式返回搜索结果（包含 start / item / done 事件）。支持客户端边检索边渲染，提升用户感知响应速度。请求参数与 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">GET /api/v1/search</code> 完全一致。
+                                使用 Server-Sent Events (SSE) 协议实时流式返回搜索结果（包含 start / item / done 事件）。<strong class="text-amber-800">强烈推荐 Web 前端与小程序交互优先采用</strong>，支持客户端边检索边渲染，零卡顿提升用户体验。请求参数与 <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-800">GET /api/v1/search</code> 完全一致。
                             </p>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left border-collapse">

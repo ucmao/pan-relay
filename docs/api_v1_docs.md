@@ -82,9 +82,10 @@ sequenceDiagram
 
 ---
 
-### 2. 步骤 1: 聚合资源查询接口
+### 2. 步骤 1 (传统同步): 聚合资源查询接口
 
 - **接口地址**: `GET /api/v1/search`
+- **说明**: 采用同步一次性 JSON 响应。在全网聚合查询（`scope=all`）下，服务端需等待所有上游爬虫响应完毕后统一返回（可能存在数秒阻塞等待）。如开发 Web 前端/小程序，**强烈推荐改用下方 3. SSE 流式接口**。
 - **请求参数**:
   - `keyword` (string, **必填**): 搜索关键词，例如 `黑神话`
   - `cloud_name` / `cloud_names` (string, **可选**): 指定筛选网盘类型，支持全称或常见简称/别名（如 `百度`、`阿里`、`夸克`、`quark`、`115`、`123`、`uc`、`google`、`磁力` 等），支持单个网盘、逗号分隔多个网盘，如 `夸克,百度` 或多值参数 `cloud_name=夸克&cloud_name=阿里`
@@ -126,9 +127,11 @@ sequenceDiagram
 
 ---
 
-### 3. 步骤 1 (流式): SSE 实时流式搜索接口
+### 3. 步骤 1 (流式·强烈推荐⭐): SSE 实时流式搜索接口
 
 - **接口地址**: `GET /api/v1/search/stream`
+- **推荐等级**: **强烈推荐 (前端 UI / 小程序交互首选)**
+- **优势**: 使用 Server-Sent Events 协议，0 等待秒级推流首屏结果，渐进式展现聚合搜索过程，大幅提升用户感知响应体验（避免同步接口卡顿）。
 - **请求参数**:
   - 请求参数与 `GET /api/v1/search` 完全一致（包含 `keyword` 必填，以及可选的 `cloud_name` / `cloud_names`、`limit`、`scope`、`check_status`、`filter_bad`）
 - **说明**: 返回 `text/event-stream` 格式的 Server-Sent Events，支持前端/小程序实现打字机式流式加载。
