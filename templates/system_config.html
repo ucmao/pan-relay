@@ -642,8 +642,8 @@
                             <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
                             <div>
                                 <span class="font-semibold text-slate-700">获取指引：</span>
-                                登录 <a href="https://pan.xunlei.com" target="_blank"
-                                    class="text-blue-600 hover:underline">pan.xunlei.com</a>，打开开发者工具 Application &gt; Local Storage，复制 <code>credentials_Xqp0kJBXWhwaTpB6</code> 中的 <code>refresh_token</code>。
+                                <div class="mt-0.5"><strong>① 一键提取（推荐，支持 Windows / macOS）</strong>：本地电脑登录官方迅雷客户端后，在项目终端运行 <code>python3 scripts/extract_xunlei_token.py --save</code> 即可自动读取并写入数据库。</div>
+                                <div class="mt-1"><strong>② 手动填入</strong>：填入提取的 JSON 凭证或抓取手机迅雷 APP 登录时 <code>xluser-ssl.xunlei.com/v1/auth/token</code> 返回的 <code>refresh_token</code>（系统将自动动态计算验签并持久化轮换续期）。</div>
                             </div>
                         </div>
                     </div>

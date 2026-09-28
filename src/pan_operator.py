@@ -52,6 +52,8 @@ def _parse_xunlei_credential(raw_credential: str) -> Dict[str, str]:
                 "refresh_token": str(parsed.get("refresh_token", "")).strip(),
                 "captcha_sign": str(parsed.get("captcha_sign", "")).strip(),
                 "user_id": str(parsed.get("user_id", "")).strip(),
+                "client_id": str(parsed.get("client_id", "")).strip(),
+                "device_id": str(parsed.get("device_id", "")).strip(),
             }
     except Exception:
         pass
@@ -60,6 +62,8 @@ def _parse_xunlei_credential(raw_credential: str) -> Dict[str, str]:
         "refresh_token": raw_credential.strip(),
         "captcha_sign": "",
         "user_id": "",
+        "client_id": "",
+        "device_id": "",
     }
 
 
@@ -169,6 +173,9 @@ def _resolve_target_dir(client_class, client_credential, target_dir_name: str) -
     """
     根据配置的目录名称与网盘类型，解析出对应的目标路径/文件夹 ID。
     """
+    if client_class == XunleiPanClient:
+        return ""
+
     if not target_dir_name or target_dir_name.strip() in ("", "/"):
         return "/" if client_class == BaiduPanClient else ("root" if client_class in (AliyunPanClient, CaiyunPanClient) else "0")
 

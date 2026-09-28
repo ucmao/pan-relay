@@ -173,7 +173,9 @@ X-API-Key: your_transfer_key
 
 * **夸克 / 百度 / UC网盘**：登录网页版，从浏览器开发者工具（F12）网络请求标头中复制完整 `Cookie` 填入。
 * **阿里云盘**：从登录会话中提取并填入 `refresh_token`。
-* **迅雷网盘**：仅需填入 `Refresh Token` 即可启用自动转存；`Captcha Sign` 已内置移动端逆向算法自动计算，无需手动抓包。
+* **迅雷网盘**：
+  * **一键提取（推荐，支持 Windows / macOS / Linux）**：电脑登录官方迅雷客户端后，在项目根目录运行 `python3 scripts/extract_xunlei_token.py --save` 即可跨平台自动读取、导出并一键写入系统配置。
+  * **手动配置**：填入提取的 JSON 凭证或移动端抓包获取的 `refresh_token`（系统将自动动态计算高防验签并执行单次消费轮换续期）。
 * **光鸭云盘**：登录网页版提取 `access_token` 或填入 `refresh_token` 凭证。
 * **悟空网盘**：从网页端开发者工具中复制网络请求标头中的 `Cookie` 或 Token 字符串。
 * **移动云盘**：登录 `yun.139.com` 网页版，从请求标头中复制 `Authorization` 或 `jwtToken`。
