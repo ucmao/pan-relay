@@ -208,6 +208,7 @@ class ModularLinkCheckerTest(unittest.TestCase):
 
     @patch("requests.Session.get")
     def test_xunlei_detector(self, mock_get):
+        # 1. 正常有效分享
         resp = MagicMock()
         resp.status_code = 200
         resp.json.return_value = {"share_status": "OK", "file_count": 3, "share_name": "迅雷合集"}
@@ -216,6 +217,40 @@ class ModularLinkCheckerTest(unittest.TestCase):
         res = check_link("https://pan.xunlei.com/s/xunlei123", force_refresh=True)
         self.assertEqual(STATE_OK, res["state"])
         self.assertEqual(3, res["file_count"])
+
+        # 2. 验证码/限制拦截 -> 归为 STATE_UNCERTAIN，而非误判为失效
+        captcha_resp = MagicMock()
+        captcha_resp.status_code = 400
+        captcha_resp.json.return_value = {
+            "error": "captcha_invalid",
+            "error_code": 9,
+            "error_description": "验证码无效",
+        }
+        mock_get.return_value = captcha_resp
+
+        res_captcha = check_link("https://pan.xunlei.com/s/xunleicaptcha", force_refresh=True)
+        from src.services.link_checker.constants import STATE_UNCERTAIN
+        self.assertEqual(STATE_UNCERTAIN, res_captcha["state"])
+        self.assertIn("需验证码", res_captcha["summary"])
+
+        # 3. 密码错误/需要提取码
+        lock_resp = MagicMock()
+        lock_resp.status_code = 200
+        lock_resp.json.return_value = {"error_code": 1004, "error_description": "pass_code invalid"}
+        mock_get.return_value = lock_resp
+
+        res_lock = check_link("https://pan.xunlei.com/s/xunleilock", force_refresh=True)
+        self.assertEqual(STATE_LOCKED, res_lock["state"])
+
+        # 4. 违规/侵权屏蔽
+        violate_resp = MagicMock()
+        violate_resp.status_code = 200
+        violate_resp.json.return_value = {"share_status": "SENSITIVE_RESOURCE"}
+        mock_get.return_value = violate_resp
+
+        res_violate = check_link("https://pan.xunlei.com/s/xunleiviolate", force_refresh=True)
+        self.assertEqual(STATE_BAD, res_violate["state"])
+        self.assertIn("屏蔽", res_violate["summary"])
 
     @patch("requests.Session.get")
     def test_pan123_detector(self, mock_get):

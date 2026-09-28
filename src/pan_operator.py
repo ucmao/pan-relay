@@ -43,6 +43,8 @@ def _get_transfer_lock(url: str) -> threading.Lock:
 # --- 工具函数：凭证校验 ---
 
 def _parse_xunlei_credential(raw_credential: str) -> Dict[str, str]:
+    if not raw_credential or not raw_credential.strip():
+        return {}
     try:
         parsed = json.loads(raw_credential)
         if isinstance(parsed, dict):
@@ -51,9 +53,14 @@ def _parse_xunlei_credential(raw_credential: str) -> Dict[str, str]:
                 "captcha_sign": str(parsed.get("captcha_sign", "")).strip(),
                 "user_id": str(parsed.get("user_id", "")).strip(),
             }
-    except json.JSONDecodeError:
-        return {}
-    return {}
+    except Exception:
+        pass
+    # 兼容直接存入的纯 refresh_token 字符串
+    return {
+        "refresh_token": raw_credential.strip(),
+        "captcha_sign": "",
+        "user_id": "",
+    }
 
 
 def get_and_validate_credential(netdisk_type: str) -> Any:
@@ -69,9 +76,8 @@ def get_and_validate_credential(netdisk_type: str) -> Any:
 
     if netdisk_type == "迅雷网盘":
         parsed_credential = _parse_xunlei_credential(credential)
-        required_fields = ("refresh_token", "captcha_sign", "user_id")
-        if not all(parsed_credential.get(field) for field in required_fields):
-            logger.error(f"[{netdisk_type}] 操作失败：凭证缺少 refresh_token/captcha_sign/user_id。")
+        if not parsed_credential.get("refresh_token"):
+            logger.error(f"[{netdisk_type}] 操作失败：凭证缺少 refresh_token。")
             return {}
         return parsed_credential
     

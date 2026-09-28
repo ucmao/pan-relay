@@ -56,7 +56,7 @@ Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化�
 | **UC 网盘** | ✓ | ✓ | ✓ | ✓ | ✓ | Cookie |
 | **百度网盘** | ✓ | ✓ | ✓ | ✓ | ✓ | Cookie |
 | **阿里云盘** | ✓ | ✓ | ✓ | ✓ | ✓ | Refresh Token |
-| **迅雷网盘** | ✓ | ✓ | ✓ | ✓ | ✓ | Token / Sign / User ID |
+| **迅雷网盘** | ✓ | ✓ | ✓ | ✓ | ✓ | Refresh Token |
 | **移动云盘** | ✓ | ✓ | ✓ | ✓ | ✓ | Authorization Token |
 | **光鸭云盘** | ✓ | ✓ | ✓ | ✓ | ✓ | Access / Refresh Token |
 | **悟空网盘** | ✓ | ✓ | ✓ | ✓ | ✓ | Cookie / Session Token |
@@ -171,14 +171,12 @@ X-API-Key: your_transfer_key
 
 登录管理后台（`/admin`）进入 **系统配置 -> 云盘凭证** 即可配置8大网盘平台登录态：
 
-* **夸克/百度/UC 网盘**：登录网页版，从浏览器开发者工具（F12）网络请求标头中复制完整 `Cookie` 填入。
+* **夸克 / 百度 / UC网盘**：登录网页版，从浏览器开发者工具（F12）网络请求标头中复制完整 `Cookie` 填入。
 * **阿里云盘**：从登录会话中提取并填入 `refresh_token`。
-* **迅雷网盘**：需同时填入 `Refresh Token`、`Captcha Sign` 与 `User ID` 三项参数（缺一不可）。
+* **迅雷网盘**：仅需填入 `Refresh Token` 即可启用自动转存；`Captcha Sign` 已内置移动端逆向算法自动计算，无需手动抓包。
 * **光鸭云盘**：登录网页版提取 `access_token` 或填入 `refresh_token` 凭证。
 * **悟空网盘**：从网页端开发者工具中复制网络请求标头中的 `Cookie` 或 Token 字符串。
 * **移动云盘**：登录 `yun.139.com` 网页版，从请求标头中复制 `Authorization` 或 `jwtToken`。
-
-> 💡 **安全提示**：所有凭证仅在服务端本地存储，用于自动化转存与动态出链，绝不上传至任何第三方。
 
 ---
 

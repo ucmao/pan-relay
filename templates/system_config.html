@@ -629,35 +629,21 @@
                     </div>
 
                     <!-- Sub-Tab 5: 迅雷网盘 -->
-                    <div id="cred-pane-xunlei" class="credential-tab-pane space-y-4">
+                    <div id="cred-pane-xunlei" class="credential-tab-pane space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="font-bold text-slate-800 text-xs">迅雷网盘凭证组</span>
+                            <label for="xunleiRefreshToken" class="form-label font-bold text-slate-800 text-xs mb-0">迅雷网盘
+                                Refresh Token</label>
                             <span class="text-[11px] text-slate-400 font-medium" id="xunleiStatusText">未配置</span>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="xunleiRefreshToken" class="form-label">Refresh Token</label>
-                                <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="3"
-                                    placeholder="请输入迅雷网盘 refresh_token"></textarea>
-                            </div>
-                            <div>
-                                <label for="xunleiCaptchaSign" class="form-label">Captcha Sign</label>
-                                <textarea class="form-control font-mono" id="xunleiCaptchaSign" rows="3"
-                                    placeholder="请输入 captcha_sign"></textarea>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label for="xunleiUserId" class="form-label">User ID</label>
-                                <input type="text" class="form-control font-mono" id="xunleiUserId"
-                                    placeholder="请输入 user_id">
-                            </div>
-                        </div>
+                        <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="5"
+                            placeholder="请输入迅雷网盘 refresh_token"></textarea>
                         <div
                             class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
                             <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
                             <div>
-                                <span class="font-semibold text-slate-700">说明：</span>
-                                迅雷网盘需要同时配置 <code>refresh_token</code>、<code>captcha_sign</code> 和 <code>user_id</code>
-                                三个凭证项方可生效。
+                                <span class="font-semibold text-slate-700">获取指引：</span>
+                                登录 <a href="https://pan.xunlei.com" target="_blank"
+                                    class="text-blue-600 hover:underline">pan.xunlei.com</a>，打开开发者工具 Application &gt; Local Storage，复制 <code>credentials_Xqp0kJBXWhwaTpB6</code> 中的 <code>refresh_token</code>。
                             </div>
                         </div>
                     </div>

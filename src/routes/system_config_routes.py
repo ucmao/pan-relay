@@ -67,7 +67,8 @@ DYNAMIC_TRANSFER_STATUS_CONFIGS = [
     },
     {
         "cloud_name": "迅雷网盘",
-        "credential_type": "Refresh Token / Captcha Sign / User ID",
+        "credential_type": "Refresh Token",
+        "min_length": 20,
     },
     {
         "cloud_name": "光鸭云盘",
@@ -125,16 +126,15 @@ def _build_dynamic_transfer_statuses():
                 except json.JSONDecodeError:
                     parsed = {}
 
-                required_fields = ("refresh_token", "captcha_sign", "user_id")
-                has_all_fields = isinstance(parsed, dict) and all(str(parsed.get(field, "")).strip() for field in required_fields)
+                has_rt = bool(str(parsed.get("refresh_token", "")).strip()) if isinstance(parsed, dict) else False
 
-                if has_all_fields:
+                if has_rt:
                     status = {
                         "cloud_name": cloud_name,
                         "credential_type": credential_type,
                         "status": "enabled",
                         "title": "已就绪",
-                        "description": "已检测到完整凭证，动态查看时会优先生成临时分享链接。",
+                        "description": "已检测到可用凭证，支持自动转存与分享（验证码签名由系统全自动计算）。",
                     }
                     enabled_count += 1
                 else:
@@ -143,7 +143,7 @@ def _build_dynamic_transfer_statuses():
                         "credential_type": credential_type,
                         "status": "invalid",
                         "title": "凭证不完整",
-                        "description": "需要同时填写 refresh_token、captcha_sign 和 user_id。",
+                        "description": "迅雷网盘需配置有效 refresh_token。",
                     }
 
             statuses.append(status)
@@ -349,8 +349,10 @@ def get_credential_config():
     caiyun_token = get_cookie_by_cloud_name("移动云盘")
     try:
         xunlei_config = json.loads(xunlei_raw) if xunlei_raw else {}
-    except json.JSONDecodeError:
-        xunlei_config = {}
+        if not isinstance(xunlei_config, dict):
+            xunlei_config = {"refresh_token": str(xunlei_raw).strip()}
+    except Exception:
+        xunlei_config = {"refresh_token": str(xunlei_raw).strip()} if xunlei_raw else {}
     dynamic_transfer_status = _build_dynamic_transfer_statuses()
     return jsonify(
         {
@@ -398,13 +400,8 @@ def save_credential_config():
         if not success:
             return jsonify({"success": False, "message": message}), 500
 
-    has_any_xunlei_field = any([xunlei_refresh_token, xunlei_captcha_sign, xunlei_user_id])
-    has_all_xunlei_fields = all([xunlei_refresh_token, xunlei_captcha_sign, xunlei_user_id])
-    if has_any_xunlei_field and not has_all_xunlei_fields:
-        return jsonify({"success": False, "message": "迅雷网盘凭证需要同时填写 refresh_token、captcha_sign 和 user_id"}), 400
-
     xunlei_credential = ""
-    if has_all_xunlei_fields:
+    if xunlei_refresh_token:
         xunlei_credential = json.dumps(
             {
                 "refresh_token": xunlei_refresh_token,

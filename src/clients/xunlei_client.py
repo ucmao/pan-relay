@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import re
@@ -9,6 +10,20 @@ import requests
 from src.clients.base_client import BasePanClient
 
 logger = logging.getLogger(__name__)
+
+# Android 移动端签名盐值算法 (10 轮 MD5 迭代)
+_XUNLEI_ALGORITHMS = [
+    "9uJNVj/wLmdwKrJaVj/omlQ",
+    "Oz64Lp0GigmChHMf/6TNfxx7O9PyopcczMsnf",
+    "Eb+L7Ce+Ej48u",
+    "jKY0",
+    "ASr0zCl6v8W4aidjPK5KHd1Lq3t+vBFf41dqv5+fnOd",
+    "wQlozdg6r1qxh0eRmt3QgNXOvSZO6q/GXK",
+    "gmirk+ciAvIgA/cxUUCema47jr/YToixTT+Q6O",
+    "5IiCoM9B1/788ntB",
+    "P07JH0h6qoM6TSUAK2aL9T5s2QBVeY9JWvalf",
+    "+oK0AN",
+]
 
 # 全局缓存，避免频繁刷新 Token 触发风控
 # 结构: {refresh_token: {"access_token": str, "expires_at": float}}
@@ -143,6 +158,9 @@ class XunleiPanClient(BasePanClient):
             except Exception:
                 pass
 
+        cleaned_file_ids = self._clean_ad_files_and_folders(trace_file_ids)
+        if not cleaned_file_ids:
+            cleaned_file_ids = trace_file_ids
 
         share_result = self._request_pan(
             "POST",
@@ -340,13 +358,19 @@ class XunleiPanClient(BasePanClient):
             logger.error("迅雷网盘获取 access_token 请求异常: %s", exc)
             return ""
 
-        if data.get("code") != 0 or not data.get("data", {}).get("access_token"):
-            err_msg = data.get("error_description") or data.get("msg") or data.get("code")
+        if not data:
+            logger.error("迅雷网盘获取 access_token 返回空响应")
+            return ""
+
+        # 兼容 OAuth2 标准顶层返回格式及 data 嵌套格式
+        token_data = data.get("data") if isinstance(data.get("data"), dict) else data
+        access_token = token_data.get("access_token", "")
+        if not access_token:
+            err_msg = data.get("error_description") or data.get("msg") or data.get("code") or "未知认证错误"
             logger.error("迅雷网盘 refresh_token 认证失败: %s", err_msg)
             return ""
 
-        token_data = data["data"]
-        self.access_token = token_data.get("access_token", "")
+        self.access_token = access_token
         expires_in = int(token_data.get("expires_in", 7200))
         new_refresh_token = token_data.get("refresh_token")
 
@@ -369,6 +393,12 @@ class XunleiPanClient(BasePanClient):
 
         return self.access_token
 
+    def _calc_captcha_sign(self, client_id: str, client_version: str, package_name: str, device_id: str, ts: int) -> str:
+        s = f"{client_id}{client_version}{package_name}{device_id}{ts}"
+        for salt in _XUNLEI_ALGORITHMS:
+            s = hashlib.md5((s + salt).encode("utf-8")).hexdigest()
+        return f"1.{s}"
+
     def _get_captcha_token(self, action: str) -> str:
         global _XUNLEI_CAPTCHA_TOKEN_CACHE
 
@@ -378,26 +408,47 @@ class XunleiPanClient(BasePanClient):
         if cached and cached.get("captcha_token") and now < cached.get("expires_at", 0) - 10:
             return cached["captcha_token"]
 
+        ts = int(now * 1000)
+        client_id = "Xp6vsxz_7IYVw2BB"
+        client_version = "8.31.0.9726"
+        package_name = "com.xunlei.downloadprovider"
+        device_id = self.device_id or "c24ecadc44c643637d127fb847dbe36d"
+        sign = self.captcha_sign
+
+        # 如果没有配置有效 sign，自动基于 Android 客户端逆向盐值算法动态计算
+        if not sign or sign.startswith("ck0.") or len(sign) < 10:
+            sign = self._calc_captcha_sign(client_id, client_version, package_name, device_id, ts)
+        else:
+            client_id = self.client_id
+            package_name = "pan.xunlei.com"
+            client_version = "1.92.23"
+
         try:
             response = requests.post(
                 "https://xluser-ssl.xunlei.com/v1/shield/captcha/init",
                 json={
-                    "client_id": self.client_id,
+                    "client_id": client_id,
                     "action": action,
-                    "device_id": self.device_id,
+                    "device_id": device_id,
                     "meta": {
-                        "package_name": "pan.xunlei.com",
-                        "client_version": "1.92.23",
-                        "captcha_sign": self.captcha_sign,
-                        "timestamp": str(int(time.time() * 1000)),
+                        "package_name": package_name,
+                        "client_version": client_version,
+                        "captcha_sign": sign,
+                        "timestamp": str(ts),
                         "user_id": self.user_id,
                     },
                 },
                 headers={
                     "Content-Type": "application/json",
-                    "User-Agent": self.session.headers["User-Agent"],
-                    "x-client-id": self.client_id,
-                    "x-device-id": self.device_id,
+                    "User-Agent": (
+                        "ANDROID-com.xunlei.downloadprovider/8.31.0.9726 "
+                        "netWorkType/5G appid/40 deviceName/Xiaomi_M2004j7ac "
+                        "deviceModel/M2004J7AC OSVersion/12 protocolVersion/301 "
+                        "platformVersion/10 sdkVersion/512000 Oauth2Client/0.9 "
+                        "(Linux 4_14_186-perf-gddfs8vbb238b) (JAVA 0)"
+                    ) if package_name != "pan.xunlei.com" else self.session.headers["User-Agent"],
+                    "x-client-id": client_id,
+                    "x-device-id": device_id,
                 },
                 timeout=20,
             )
@@ -407,8 +458,8 @@ class XunleiPanClient(BasePanClient):
             logger.error("迅雷网盘获取 captcha_token 异常: %s", exc)
             return ""
 
-        captcha_token = data.get("data", {}).get("captcha_token", "")
-        expires_in = int(data.get("data", {}).get("expires_in", 300))
+        captcha_token = data.get("captcha_token") or data.get("data", {}).get("captcha_token", "")
+        expires_in = int(data.get("expires_in") or data.get("data", {}).get("expires_in", 300))
         if captcha_token:
             _XUNLEI_CAPTCHA_TOKEN_CACHE[cache_key] = {
                 "captcha_token": captcha_token,
