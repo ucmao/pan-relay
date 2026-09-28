@@ -1,6 +1,7 @@
 from .connection import Error, db_cursor, get_db_connection, init_sqlite_db
 from . import api_configs
 from . import credentials
+from . import accounts
 from . import resources
 from . import system_configs
 from . import temp_shares
@@ -16,5 +17,6 @@ __all__ = [
     "system_configs",
     "temp_shares",
     "credentials",
+    "accounts",
     "telegram_channels",
 ]

@@ -7,14 +7,18 @@ logger = logging.getLogger(__name__)
 
 def get_all_cookies() -> List[Dict[str, Any]]:
     """
-    从数据库中读取所有云盘凭证配置。
+    从数据库中读取所有云盘凭证配置（直接基于 cloud_accounts 账号池）。
     """
     conn = get_db_connection()
     if not conn:
         return []
 
     cookies = []
-    query = "SELECT id, cloud_name, cookie, created_at, updated_at FROM cookie_config ORDER BY created_at DESC"
+    query = """
+        SELECT id, cloud_name, account_name, credential, is_active, is_valid, created_at, updated_at 
+        FROM cloud_accounts 
+        ORDER BY priority ASC, updated_at ASC
+    """
 
     try:
         cursor = conn.cursor(as_dict=True)
@@ -25,7 +29,10 @@ def get_all_cookies() -> List[Dict[str, Any]]:
             cookie_config = {
                 "id": row["id"],
                 "cloud_name": row["cloud_name"],
-                "cookie": row["cookie"],
+                "account_name": row["account_name"],
+                "cookie": row["credential"],
+                "is_active": row["is_active"],
+                "is_valid": row["is_valid"],
                 "created_at": str(row["created_at"]),
                 "updated_at": str(row["updated_at"])
             }
@@ -40,19 +47,38 @@ def get_all_cookies() -> List[Dict[str, Any]]:
 
 def get_cookie_by_cloud_name(cloud_name: str) -> Optional[str]:
     """
-    根据云盘名称获取对应的凭证内容。
+    根据云盘名称获取对应的凭证内容（直接从 cloud_accounts 账号池获取有效主号）。
     """
     conn = get_db_connection()
     if not conn:
         return None
 
-    query = "SELECT cookie FROM cookie_config WHERE cloud_name = ?"
-
     try:
         cursor = conn.cursor(as_dict=True)
-        cursor.execute(query, (cloud_name,))
-        result = cursor.fetchone()
-        return result["cookie"] if result else None
+        cursor.execute(
+            """
+            SELECT credential FROM cloud_accounts
+            WHERE cloud_name = ? AND is_active = 1 AND is_valid = 1
+            ORDER BY priority ASC, updated_at ASC
+            LIMIT 1
+            """,
+            (cloud_name,),
+        )
+        res = cursor.fetchone()
+        if res and res.get("credential"):
+            return res["credential"]
+
+        cursor.execute(
+            """
+            SELECT credential FROM cloud_accounts
+            WHERE cloud_name = ? AND is_active = 1
+            ORDER BY priority ASC, updated_at ASC
+            LIMIT 1
+            """,
+            (cloud_name,),
+        )
+        res = cursor.fetchone()
+        return res["credential"] if res and res.get("credential") else None
     except Error as err:
         logger.error(f"根据云盘名称查询凭证时出错: {err}")
         return None
@@ -62,32 +88,37 @@ def get_cookie_by_cloud_name(cloud_name: str) -> Optional[str]:
 
 def save_cookie(cloud_name: str, cookie: str) -> Tuple[bool, str]:
     """
-    保存或更新云盘凭证配置。
-    如果存在相同的cloud_name，则更新；否则插入新记录。
+    保存或更新云盘凭证配置（直接映射到 cloud_accounts 账号池）。
     """
     conn = get_db_connection()
     if not conn:
         return False, "数据库连接失败"
 
-    # 先检查是否已存在
     existing_cookie = get_cookie_by_cloud_name(cloud_name)
     
     try:
         cursor = conn.cursor()
         if existing_cookie is not None:
-            # 更新现有记录
-            query = "UPDATE cookie_config SET cookie = ? WHERE cloud_name = ?"
+            query = """
+                UPDATE cloud_accounts 
+                SET credential = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = (
+                    SELECT id FROM cloud_accounts 
+                    WHERE cloud_name = ? 
+                    ORDER BY priority ASC, updated_at ASC 
+                    LIMIT 1
+                )
+            """
             params = (cookie, cloud_name)
             action = "更新"
         else:
-            # 插入新记录
-            query = "INSERT INTO cookie_config (cloud_name, cookie) VALUES (?, ?)"
-            params = (cloud_name, cookie)
+            query = "INSERT INTO cloud_accounts (cloud_name, account_name, credential, is_active, is_valid) VALUES (?, ?, ?, 1, 1)"
+            params = (cloud_name, f"{cloud_name}-主号", cookie)
             action = "添加"
         
         cursor.execute(query, params)
         conn.commit()
-        logger.info(f"成功{action}云盘'{cloud_name}'的凭证配置")
+        logger.info(f"成功{action}云盘'{cloud_name}'的凭证配置 (账号池)")
         return True, f"云盘凭证配置{action}成功"
     except Error as err:
         logger.error(f"{action}云盘凭证配置时出错: {err}")
@@ -99,13 +130,21 @@ def save_cookie(cloud_name: str, cookie: str) -> Tuple[bool, str]:
 
 def delete_cookie(cloud_name: str) -> Tuple[bool, str]:
     """
-    根据云盘名称删除凭证配置。
+    根据云盘名称删除凭证配置（直接操作 cloud_accounts 账号池）。
     """
     conn = get_db_connection()
     if not conn:
         return False, "数据库连接失败"
 
-    query = "DELETE FROM cookie_config WHERE cloud_name = ?"
+    query = """
+        DELETE FROM cloud_accounts 
+        WHERE id = (
+            SELECT id FROM cloud_accounts 
+            WHERE cloud_name = ? 
+            ORDER BY priority ASC, updated_at ASC 
+            LIMIT 1
+        )
+    """
 
     try:
         cursor = conn.cursor()

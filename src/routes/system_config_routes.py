@@ -3,6 +3,15 @@ import concurrent.futures
 import json
 
 from src.db.credentials import delete_cookie, get_cookie_by_cloud_name, save_cookie
+from src.db.accounts import (
+    create_account,
+    update_account,
+    delete_account,
+    get_account_by_id,
+    get_all_accounts,
+    get_accounts_by_cloud,
+)
+from src.services.account_pool_manager import AccountPoolManager
 from src.services.system_config_service import (
     get_public_search_api_config,
     get_allow_excel_download_config,
@@ -106,67 +115,39 @@ def _build_dynamic_transfer_statuses():
     statuses = []
     enabled_count = 0
 
+    from src.db.accounts import get_accounts_by_cloud
     for config in DYNAMIC_TRANSFER_STATUS_CONFIGS:
         cloud_name = config["cloud_name"]
         credential_type = config["credential_type"]
-        raw_credential = (get_cookie_by_cloud_name(cloud_name) or "").strip()
+        accounts = get_accounts_by_cloud(cloud_name)
+        active_valid = [a for a in accounts if a.get("is_active") == 1 and a.get("is_valid") == 1]
+        active_invalid = [a for a in accounts if a.get("is_active") == 1 and a.get("is_valid") != 1]
 
-        status = {
-            "cloud_name": cloud_name,
-            "credential_type": credential_type,
-            "status": "missing",
-            "title": "未配置",
-            "description": f"未填写 {credential_type}，动态转存时会回退原始链接。",
-        }
-
-        if cloud_name == "迅雷网盘":
-            if raw_credential:
-                try:
-                    parsed = json.loads(raw_credential)
-                except json.JSONDecodeError:
-                    parsed = {}
-
-                has_rt = bool(str(parsed.get("refresh_token", "")).strip()) if isinstance(parsed, dict) else False
-
-                if has_rt:
-                    status = {
-                        "cloud_name": cloud_name,
-                        "credential_type": credential_type,
-                        "status": "enabled",
-                        "title": "已就绪",
-                        "description": "已检测到可用凭证，支持自动转存与分享（验证码签名由系统全自动计算）。",
-                    }
-                    enabled_count += 1
-                else:
-                    status = {
-                        "cloud_name": cloud_name,
-                        "credential_type": credential_type,
-                        "status": "invalid",
-                        "title": "凭证不完整",
-                        "description": "迅雷网盘需配置有效 refresh_token。",
-                    }
-
-            statuses.append(status)
-            continue
-
-        if raw_credential:
-            if len(raw_credential) >= config["min_length"]:
-                status = {
-                    "cloud_name": cloud_name,
-                    "credential_type": credential_type,
-                    "status": "enabled",
-                    "title": "已就绪",
-                    "description": "已检测到可用凭证，动态查看时会优先生成临时分享链接。",
-                }
-                enabled_count += 1
-            else:
-                status = {
-                    "cloud_name": cloud_name,
-                    "credential_type": credential_type,
-                    "status": "invalid",
-                    "title": "凭证可能失效",
-                    "description": "已保存凭证，但基础校验未通过，建议重新获取后保存。",
-                }
+        if active_valid:
+            status = {
+                "cloud_name": cloud_name,
+                "credential_type": credential_type,
+                "status": "enabled",
+                "title": f"就绪 ({len(active_valid)}号)",
+                "description": f"账号池中有 {len(active_valid)} 个可用转存账号，已纳入动态调度与负载均衡池。",
+            }
+            enabled_count += 1
+        elif active_invalid:
+            status = {
+                "cloud_name": cloud_name,
+                "credential_type": credential_type,
+                "status": "invalid",
+                "title": "待检/失效",
+                "description": f"已添加 {len(active_invalid)} 个账号但已被标记失效，建议前往「网盘账号池」重新测活或更新凭证。",
+            }
+        else:
+            status = {
+                "cloud_name": cloud_name,
+                "credential_type": credential_type,
+                "status": "missing",
+                "title": "未配置",
+                "description": f"账号池中暂无可用账号，动态转存时会回退原始链接。",
+            }
 
         statuses.append(status)
 
@@ -193,10 +174,21 @@ def api_config_page():
 @system_config_bp.route("/admin/frontend-config", methods=["GET"])
 @token_required
 def frontend_config_page():
+    frontend_config = get_frontend_display_netdisk_config()
+    api_mode_config = get_api_mode_config()
+    link_check_config = get_frontend_link_check_config()
+    allow_excel = get_allow_excel_download_config()
+    frontend_link_mode = get_frontend_link_mode()
     return render_template(
         "admin_frontend_config.html",
         frontend_netdisk_options=FRONTEND_DISPLAY_NETDISK_OPTIONS,
         link_check_netdisk_options=LINK_CHECK_NETDISK_OPTIONS,
+        enabled_netdisks=set(frontend_config.get("enabled_netdisks", [])),
+        link_check_netdisks=set(link_check_config.get("enabled_netdisks", [])),
+        enable_link_check=link_check_config.get("enabled", True),
+        enable_frontend=api_mode_config.get("enable_frontend", True),
+        allow_excel_download=allow_excel.get("allow_excel_download", True),
+        frontend_link_mode=frontend_link_mode if isinstance(frontend_link_mode, str) else frontend_link_mode.get("mode", "view"),
         active_page="config_frontend",
     )
 
@@ -416,6 +408,135 @@ def save_credential_config():
         return jsonify({"success": False, "message": message}), 500
 
     return jsonify({"success": True, "message": "云盘凭证保存成功"})
+
+
+# ==================== 多账号池管理 API ====================
+
+@system_config_bp.route("/admin/api/accounts", methods=["GET"])
+@token_required
+def list_accounts_api():
+    cloud_name = request.args.get("cloud_name")
+    accounts = get_all_accounts(cloud_name=cloud_name)
+
+    total_space = sum(int(a.get("total_space_bytes") or 0) for a in accounts)
+    used_space = sum(int(a.get("used_space_bytes") or 0) for a in accounts)
+    left_space = sum(int(a.get("left_space_bytes") or 0) for a in accounts)
+    active_count = sum(1 for a in accounts if a.get("is_active"))
+    valid_count = sum(1 for a in accounts if a.get("is_valid") and a.get("is_active"))
+
+    return jsonify({
+        "success": True,
+        "accounts": accounts,
+        "summary": {
+            "total_count": len(accounts),
+            "active_count": active_count,
+            "valid_count": valid_count,
+            "total_space_bytes": total_space,
+            "used_space_bytes": used_space,
+            "left_space_bytes": left_space,
+        }
+    })
+
+
+@system_config_bp.route("/admin/api/accounts", methods=["POST"])
+@token_required
+def create_account_api():
+    data = request.get_json() or {}
+    cloud_name = str(data.get("cloud_name", "")).strip()
+    credential = str(data.get("credential", "")).strip()
+    account_name = str(data.get("account_name", "")).strip()
+
+    if not cloud_name or not credential:
+        return jsonify({"success": False, "message": "网盘平台与账号凭证不能为空"}), 400
+
+    if not account_name:
+        account_name = f"{cloud_name}-账号"
+        data["account_name"] = account_name
+
+    account_id = create_account(data)
+    if not account_id:
+        return jsonify({"success": False, "message": "创建账号失败"}), 500
+
+    auto_test = data.get("auto_test", True)
+    test_res = {"tested": False}
+    if auto_test:
+        mgr = AccountPoolManager.get_instance()
+        ok, msg, info = mgr.inspect_and_refresh_account(account_id)
+        test_res = {"tested": True, "success": ok, "message": msg, "info": info}
+
+    new_acc = get_account_by_id(account_id)
+    return jsonify({
+        "success": True,
+        "message": "账号创建成功",
+        "account": new_acc,
+        "test_result": test_res,
+    })
+
+
+@system_config_bp.route("/admin/api/accounts/<int:account_id>", methods=["PUT"])
+@token_required
+def update_account_api(account_id: int):
+    data = request.get_json() or {}
+    existing = get_account_by_id(account_id)
+    if not existing:
+        return jsonify({"success": False, "message": "账号不存在"}), 404
+
+    success = update_account(account_id, data)
+    if not success:
+        return jsonify({"success": False, "message": "更新账号失败"}), 500
+
+    if data.get("retest", False) or ("credential" in data and data["credential"] != existing.get("credential")):
+        mgr = AccountPoolManager.get_instance()
+        mgr.inspect_and_refresh_account(account_id)
+
+    updated = get_account_by_id(account_id)
+    return jsonify({"success": True, "message": "账号更新成功", "account": updated})
+
+
+@system_config_bp.route("/admin/api/accounts/<int:account_id>", methods=["DELETE"])
+@token_required
+def delete_account_api(account_id: int):
+    existing = get_account_by_id(account_id)
+    if not existing:
+        return jsonify({"success": False, "message": "账号不存在"}), 404
+
+    success = delete_account(account_id)
+    if not success:
+        return jsonify({"success": False, "message": "删除账号失败"}), 500
+
+    return jsonify({"success": True, "message": "账号删除成功"})
+
+
+@system_config_bp.route("/admin/api/accounts/<int:account_id>/test", methods=["POST"])
+@token_required
+def test_account_api(account_id: int):
+    existing = get_account_by_id(account_id)
+    if not existing:
+        return jsonify({"success": False, "message": "账号不存在"}), 404
+
+    mgr = AccountPoolManager.get_instance()
+    ok, msg, info = mgr.inspect_and_refresh_account(account_id)
+    updated = get_account_by_id(account_id)
+
+    return jsonify({
+        "success": ok,
+        "message": msg,
+        "account": updated,
+        "info": info,
+    })
+
+
+@system_config_bp.route("/admin/api/accounts/keepalive", methods=["POST"])
+@token_required
+def trigger_keepalive_api():
+    mgr = AccountPoolManager.get_instance()
+    res = mgr.keepalive_all_accounts()
+    return jsonify({
+        "success": True,
+        "message": "账号保活与续期任务执行完成",
+        "result": res,
+    })
+
 
 
 @system_config_bp.route("/admin/api/search-scheduler-config", methods=["GET"])

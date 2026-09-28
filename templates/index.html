@@ -37,14 +37,15 @@
                         <p class="result-count mb-0" id="resultCountText"></p>
                         <div class="filter-toolbar-actions">
                             {% if enable_link_check %}
-                            <button class="btn filter-toggle-button me-2" id="hideDeadLinksToggle"
-                                type="button" aria-pressed="false" title="点击过滤：隐藏失效与空资源链接">
-                                <i class="fas fa-shield-halved me-1"></i> <span id="hideDeadLinksText">过滤失效</span>
+                            <button class="btn filter-toggle-button" id="hideDeadLinksToggle" type="button"
+                                aria-pressed="false" title="点击过滤：隐藏失效与空资源链接">
+                                <i class="fas fa-shield-halved"></i><span id="hideDeadLinksText"
+                                    class="btn-text ms-1">过滤失效</span>
                             </button>
                             {% endif %}
-                            <button class="btn filter-toggle-button" id="advancedFilterToggle"
-                                type="button" aria-expanded="false">
-                                <i class="fas fa-sliders-h me-1"></i> 筛选
+                            <button class="btn filter-toggle-button" id="advancedFilterToggle" type="button"
+                                aria-expanded="false" title="展开高级筛选">
+                                <i class="fas fa-sliders-h"></i><span class="btn-text ms-1">筛选</span>
                             </button>
                         </div>
                     </div>
@@ -63,15 +64,17 @@
                                     placeholder="输入排除词（空格分隔）">
                             </div>
                             <div class="filter-actions">
-                                <button class="btn filter-apply-btn" id="applyFilter" type="button">
+                                <button class="btn filter-apply-btn" id="applyFilter" type="button" title="应用关键词筛选">
                                     <i class="fas fa-filter me-1"></i> 应用
                                 </button>
                                 <button class="btn filter-reset-btn d-none" id="resetFilter" type="button" title="重置筛选">
                                     <i class="fas fa-rotate-left me-1"></i> 重置
                                 </button>
                                 {% if allow_excel_download %}
-                                <button class="btn filter-excel-btn" id="exportExcelBtn" type="button" title="导出当前筛选结果到 Excel">
-                                    <i class="fas fa-file-excel me-1 text-emerald"></i> 导出 Excel
+                                <button class="btn filter-excel-btn" id="exportExcelBtn" type="button"
+                                    title="导出当前筛选结果到 Excel">
+                                    <i class="fas fa-file-excel text-emerald"></i><span
+                                        class="btn-text ms-1">导出Excel</span>
                                 </button>
                                 {% endif %}
                             </div>

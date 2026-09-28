@@ -45,7 +45,12 @@ def cleanup_expired_resources(
 
         try:
             # 1. 执行网盘物理删除
-            del_success = del_share({"share_url": share_url, "file_id": file_id})
+            del_success = del_share({
+                "share_url": share_url,
+                "file_id": file_id,
+                "account_id": item.get("account_id"),
+                "cloud_name": item.get("cloud_name"),
+            })
             # 无论网盘物理删除是否成功，都删除过期数据库记录，避免堆积
             delete_resource_by_id(resource_id)
             # 联动将 temp_share 记录标记为已删除

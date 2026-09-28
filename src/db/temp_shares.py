@@ -64,6 +64,7 @@ def create_temp_share_record(
     file_id: str,
     expires_in_hours: Optional[int] = None,
     expires_in_minutes: Optional[int] = None,
+    account_id: Optional[int] = None,
 ) -> Optional[int]:
     conn = get_db_connection()
     if not conn:
@@ -76,22 +77,22 @@ def create_temp_share_record(
             cursor.execute(
                 """
                 INSERT INTO temp_share (
-                  original_url, title, cloud_name, temp_share_url, file_id, status, expires_at, last_accessed_at
+                  original_url, title, cloud_name, temp_share_url, file_id, account_id, status, expires_at, last_accessed_at
                 )
-                VALUES (?, ?, ?, ?, ?, 'active', datetime('now', '+' || ? || ' minutes'), datetime('now'))
+                VALUES (?, ?, ?, ?, ?, ?, 'active', datetime('now', '+' || ? || ' minutes'), datetime('now'))
                 """,
-                (original_url, title, cloud_name, temp_share_url, file_id, mins),
+                (original_url, title, cloud_name, temp_share_url, file_id, account_id, mins),
             )
         else:
             hours = int(expires_in_hours) if expires_in_hours is not None else 6
             cursor.execute(
                 """
                 INSERT INTO temp_share (
-                  original_url, title, cloud_name, temp_share_url, file_id, status, expires_at, last_accessed_at
+                  original_url, title, cloud_name, temp_share_url, file_id, account_id, status, expires_at, last_accessed_at
                 )
-                VALUES (?, ?, ?, ?, ?, 'active', datetime('now', '+' || ? || ' hours'), datetime('now'))
+                VALUES (?, ?, ?, ?, ?, ?, 'active', datetime('now', '+' || ? || ' hours'), datetime('now'))
                 """,
-                (original_url, title, cloud_name, temp_share_url, file_id, hours),
+                (original_url, title, cloud_name, temp_share_url, file_id, account_id, hours),
             )
         conn.commit()
         return cursor.lastrowid
@@ -113,7 +114,7 @@ def list_expired_temp_shares(limit: int = 50) -> List[Dict[str, Any]]:
         cursor = conn.cursor(as_dict=True)
         cursor.execute(
             """
-            SELECT id, original_url, title, cloud_name, temp_share_url, file_id
+            SELECT id, original_url, title, cloud_name, temp_share_url, file_id, account_id
             FROM temp_share
             WHERE status = 'active'
               AND expires_at <= datetime('now')

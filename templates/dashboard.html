@@ -704,7 +704,7 @@
                             </button>
                             <button type="button" id="tabBtnEngineCredentials" onclick="switchEngineTab('credentials')"
                                 class="px-2.5 py-0.5 rounded-md text-xs font-semibold text-slate-500 hover:text-slate-700 transition">
-                                网盘转存
+                                网盘账号池
                             </button>
                         </div>
                     </div>
@@ -797,9 +797,9 @@
                 <!-- Tab 2: 网盘转存凭证就绪状态 -->
                 <div id="tabEngineCredentialsContent" class="mt-4 space-y-3" style="display: none;">
                     <div class="text-[11px] font-semibold text-slate-500 flex items-center justify-between">
-                        <span>网盘就绪凭证状态</span>
+                        <span>网盘账号池就绪状态</span>
                         <span class="text-slate-400 font-mono text-[10px]">{{ summary.credentials.summary.enabled_count
-                            }}/8 就绪</span>
+                            }}/8 平台就绪</span>
                     </div>
 
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
@@ -825,10 +825,10 @@
 
                     <div
                         class="pt-3 flex items-center justify-between text-xs text-slate-400 border-t border-slate-100">
-                        <span>配置 Cookie/Token 以启用转存</span>
-                        <a href="{{ url_for('system_config.system_config_page', tab='credentials') }}"
+                        <span>多账号轮询与动态分流</span>
+                        <a href="{{ url_for('system_config.system_config_page', tab='accounts') }}"
                             class="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center group">
-                            <span>前往凭证配置</span>
+                            <span>前往网盘账号池</span>
                             <i
                                 class="fas fa-arrow-right text-[8px] ml-1 group-hover:translate-x-0.5 transition-transform text-blue-400"></i>
                         </a>
@@ -1071,9 +1071,9 @@
             hintEl.innerHTML = `
                 <div class="flex items-center gap-1.5 truncate">
                     <i class="fas fa-info-circle text-rose-500 flex-shrink-0"></i>
-                    <span class="truncate">已识别到 <strong>${cloudName}</strong> 链接，但未配置可用凭证，将按原始链接入库。</span>
+                    <span class="truncate">已识别到 <strong>${cloudName}</strong> 链接，但账号池中未配置可用账号，将按原始链接入库。</span>
                 </div>
-                <a href="/admin/system-config?tab=credentials" target="_blank" class="text-rose-700 underline font-medium text-xs whitespace-nowrap ml-2 flex-shrink-0">去配置凭证 &rarr;</a>
+                <a href="/admin/system-config?tab=accounts" target="_blank" class="text-rose-700 underline font-medium text-xs whitespace-nowrap ml-2 flex-shrink-0">去添加账号 &rarr;</a>
             `;
             opts.classList.remove('hidden');
         }

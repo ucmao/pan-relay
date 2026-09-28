@@ -60,7 +60,7 @@ function bindFrontendLinkModeEvents() {
 }
 
 function switchSystemTab(target, updateHash = true) {
-    const validTabs = ['storage', 'ads', 'security', 'credentials', 'strategy', 'api', 'frontend'];
+    const validTabs = ['storage', 'ads', 'security', 'accounts', 'strategy', 'api', 'frontend'];
     const normalized = validTabs.includes(target) ? target : 'storage';
     try {
         localStorage.setItem('panrelay_system_tab', normalized);
@@ -76,6 +76,10 @@ function switchSystemTab(target, updateHash = true) {
         pane.classList.toggle('is-active', pane.id === `tab-pane-${normalized}`);
     });
 
+    if (normalized === 'accounts' && typeof loadCloudAccounts === 'function') {
+        loadCloudAccounts();
+    }
+
     if (updateHash && window.history?.replaceState) {
         window.history.replaceState(null, '', `#${normalized}`);
     }
@@ -89,44 +93,13 @@ function bindSystemTabEvents() {
         });
     });
 
-    const hash = (window.location.hash || '').replace('#', '').trim();
     const queryTab = new URLSearchParams(window.location.search).get('tab');
+    const hash = (window.location.hash || '').replace('#', '').trim();
     let savedTab = null;
     try {
         savedTab = localStorage.getItem('panrelay_system_tab');
     } catch (e) {}
-    switchSystemTab(hash || queryTab || savedTab || 'storage', false);
-}
-
-function bindCredentialTabEvents() {
-    document.querySelectorAll('[data-cred-target]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-            const target = btn.getAttribute('data-cred-target');
-            try {
-                localStorage.setItem('panrelay_cred_tab', target);
-            } catch (e) {}
-            document.querySelectorAll('[data-cred-target]').forEach((b) => b.classList.remove('is-active'));
-            document.querySelectorAll('.credential-tab-pane').forEach((pane) => pane.classList.remove('is-active'));
-            btn.classList.add('is-active');
-            const targetPane = document.getElementById(`cred-pane-${target}`);
-            if (targetPane) {
-                targetPane.classList.add('is-active');
-            }
-        });
-    });
-
-    const queryCred = new URLSearchParams(window.location.search).get('cred');
-    let savedCred = null;
-    try {
-        savedCred = localStorage.getItem('panrelay_cred_tab');
-    } catch (e) {}
-    const activeCred = queryCred || savedCred;
-    if (activeCred) {
-        const targetBtn = document.querySelector(`[data-cred-target="${activeCred}"]`);
-        if (targetBtn) {
-            targetBtn.click();
-        }
-    }
+    switchSystemTab(queryTab || hash || savedTab || 'storage', false);
 }
 
 function renderDynamicTransferStatuses(statuses, summary) {
@@ -138,46 +111,24 @@ function renderDynamicTransferStatuses(statuses, summary) {
     const enabledCount = Number(summary?.enabled_count || 0);
     const totalCount = Number(summary?.total_count || safeStatuses.length || 5);
 
-    const credentialsTabBadge = document.getElementById('credentialsTabBadge');
-    if (credentialsTabBadge) {
-        credentialsTabBadge.textContent = String(enabledCount);
-    }
-
     if (summaryEl) {
-        summaryEl.textContent = `(${enabledCount}/${totalCount} 已就绪)`;
+        summaryEl.textContent = `(${enabledCount}/${totalCount} 平台就绪)`;
     }
 
     if (manageLink) {
         manageLink.onclick = (e) => {
-            const credMainTabBtn = document.querySelector('[data-system-tab-target="credentials"]');
-            if (credMainTabBtn) {
+            const accMainTabBtn = document.querySelector('[data-system-tab-target="accounts"]');
+            if (accMainTabBtn) {
                 e.preventDefault();
-                credMainTabBtn.click();
+                accMainTabBtn.click();
             }
         };
     }
 
     if (gridEl) {
-        const cloudTargetMap = {
-            '百度网盘': 'baidu',
-            '夸克网盘': 'quark',
-            '阿里云盘': 'aliyun',
-            'UC网盘': 'uc',
-            '迅雷网盘': 'xunlei',
-            '光鸭云盘': 'guangya',
-            '悟空网盘': 'wukong',
-            '移动云盘': 'caiyun',
-        };
-
         gridEl.innerHTML = safeStatuses.map((item) => {
             const statusClass = item.status || 'missing';
-            const badgeTextMap = {
-                enabled: '已启用',
-                invalid: '异常',
-                missing: '未配置',
-            };
-            const badgeText = badgeTextMap[statusClass] || '未配置';
-            const targetKey = cloudTargetMap[item.cloud_name] || '';
+            const badgeText = item.title || (statusClass === 'enabled' ? '已就绪' : (statusClass === 'invalid' ? '异常' : '未添加'));
             const isEnabled = statusClass === 'enabled';
             const isInvalid = statusClass === 'invalid';
 
@@ -192,7 +143,7 @@ function renderDynamicTransferStatuses(statuses, summary) {
             }
 
             return `
-                <button type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer shadow-2xs ${pillClass}" data-cred-nav="${targetKey}" title="${item.cloud_name}: ${badgeText} (${item.credential_type || ''})，点击前往配置">
+                <button type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer shadow-2xs ${pillClass}" data-cloud-nav="${item.cloud_name}" title="${item.cloud_name}: ${badgeText}，点击进入账号池管理">
                     <span class="w-1.5 h-1.5 rounded-full ${dotClass} flex-shrink-0"></span>
                     <span>${item.cloud_name}</span>
                     <span class="text-[10px] opacity-75 font-normal">${badgeText}</span>
@@ -200,70 +151,22 @@ function renderDynamicTransferStatuses(statuses, summary) {
             `;
         }).join('');
 
-        gridEl.querySelectorAll('[data-cred-nav]').forEach((btn) => {
+        gridEl.querySelectorAll('[data-cloud-nav]').forEach((btn) => {
             btn.addEventListener('click', () => {
-                const targetKey = btn.getAttribute('data-cred-nav');
-                if (!targetKey) return;
-
-                const credMainTabBtn = document.querySelector('[data-system-tab-target="credentials"]');
-                if (credMainTabBtn) {
-                    credMainTabBtn.click();
-                    const credSubTabBtn = document.querySelector(`[data-cred-target="${targetKey}"]`);
-                    if (credSubTabBtn) {
-                        credSubTabBtn.click();
-                    }
-
-                    setTimeout(() => {
-                        const pane = document.getElementById(`cred-pane-${targetKey}`);
-                        if (pane) {
-                            pane.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            const textarea = pane.querySelector('textarea, input');
-                            if (textarea) {
-                                textarea.focus();
-                            }
+                const cloudName = btn.getAttribute('data-cloud-nav');
+                const accMainTabBtn = document.querySelector('[data-system-tab-target="accounts"]');
+                if (accMainTabBtn) {
+                    accMainTabBtn.click();
+                    if (cloudName) {
+                        const filterBtn = document.querySelector(`.account-filter-btn[data-cloud="${cloudName}"]`);
+                        if (filterBtn) {
+                            filterBtn.click();
                         }
-                    }, 120);
-                } else {
-                    window.location.href = `/admin/system-config?tab=credentials&cred=${targetKey}`;
+                    }
                 }
             });
         });
     }
-
-    // 更新网盘 Sub-Tab 的健康状态点与状态文本
-    const cloudKeyMap = {
-        '百度网盘': { dotId: 'dot-baidu', textId: 'baiduStatusText' },
-        '夸克网盘': { dotId: 'dot-quark', textId: 'quarkStatusText' },
-        '阿里云盘': { dotId: 'dot-aliyun', textId: 'aliyunStatusText' },
-        'UC网盘': { dotId: 'dot-uc', textId: 'ucStatusText' },
-        '迅雷网盘': { dotId: 'dot-xunlei', textId: 'xunleiStatusText' },
-        '光鸭云盘': { dotId: 'dot-guangya', textId: 'guangyaStatusText' },
-        '悟空网盘': { dotId: 'dot-wukong', textId: 'wukongStatusText' },
-        '移动云盘': { dotId: 'dot-caiyun', textId: 'caiyunStatusText' },
-    };
-
-    safeStatuses.forEach((item) => {
-        const keyInfo = cloudKeyMap[item.cloud_name];
-        if (!keyInfo) return;
-
-        const dotEl = document.getElementById(keyInfo.dotId);
-        const textEl = document.getElementById(keyInfo.textId);
-        const statusClass = item.status || 'missing';
-
-        if (dotEl) {
-            dotEl.className = `cred-status-dot ${statusClass}`;
-        }
-        if (textEl) {
-            textEl.textContent = item.title || '未配置';
-            if (statusClass === 'enabled') {
-                textEl.className = 'text-[11px] text-emerald-600 font-semibold';
-            } else if (statusClass === 'invalid') {
-                textEl.className = 'text-[11px] text-amber-600 font-semibold';
-            } else {
-                textEl.className = 'text-[11px] text-slate-400 font-medium';
-            }
-        }
-    });
 }
 
 function updateFrontendNetdiskSelectionUI() {
@@ -692,73 +595,14 @@ async function saveFrontendLinkMode() {
     }
 }
 
-async function loadCookieConfig() {
+async function loadDynamicTransferStatus() {
     try {
         const response = await fetch('/admin/api/credential-config');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) return;
         const data = await response.json();
-        const baidu = document.getElementById('baiduCookie');
-        if (baidu) baidu.value = data.baidu_cookie || '';
-        const quark = document.getElementById('quarkCookie');
-        if (quark) quark.value = data.quark_cookie || '';
-        const aliyun = document.getElementById('aliyunToken');
-        if (aliyun) aliyun.value = data.aliyun_token || '';
-        const uc = document.getElementById('ucCookie');
-        if (uc) uc.value = data.uc_cookie || '';
-        const xunleiRefreshToken = document.getElementById('xunleiRefreshToken');
-        if (xunleiRefreshToken) xunleiRefreshToken.value = data.xunlei_refresh_token || '';
-        const xunleiCaptchaSign = document.getElementById('xunleiCaptchaSign');
-        if (xunleiCaptchaSign) xunleiCaptchaSign.value = data.xunlei_captcha_sign || '';
-        const xunleiUserId = document.getElementById('xunleiUserId');
-        if (xunleiUserId) xunleiUserId.value = data.xunlei_user_id || '';
-        const guangyaToken = document.getElementById('guangyaToken');
-        if (guangyaToken) guangyaToken.value = data.guangya_token || '';
-        const wukongCookie = document.getElementById('wukongCookie');
-        if (wukongCookie) wukongCookie.value = data.wukong_cookie || '';
-        const caiyunToken = document.getElementById('caiyunToken');
-        if (caiyunToken) caiyunToken.value = data.caiyun_token || '';
         renderDynamicTransferStatuses(data.dynamic_transfer_statuses, data.dynamic_transfer_summary);
     } catch (error) {
-        console.error('加载云盘凭证失败:', error);
-    }
-}
-
-async function saveCookieConfig() {
-    const saveButton = document.getElementById('saveCookieConfigBtn');
-    const payload = {
-        baidu_cookie: document.getElementById('baiduCookie') ? document.getElementById('baiduCookie').value.trim() : '',
-        quark_cookie: document.getElementById('quarkCookie') ? document.getElementById('quarkCookie').value.trim() : '',
-        aliyun_token: document.getElementById('aliyunToken') ? document.getElementById('aliyunToken').value.trim() : '',
-        uc_cookie: document.getElementById('ucCookie') ? document.getElementById('ucCookie').value.trim() : '',
-        xunlei_refresh_token: document.getElementById('xunleiRefreshToken') ? document.getElementById('xunleiRefreshToken').value.trim() : '',
-        xunlei_captcha_sign: document.getElementById('xunleiCaptchaSign') ? document.getElementById('xunleiCaptchaSign').value.trim() : '',
-        xunlei_user_id: document.getElementById('xunleiUserId') ? document.getElementById('xunleiUserId').value.trim() : '',
-        guangya_token: document.getElementById('guangyaToken') ? document.getElementById('guangyaToken').value.trim() : '',
-        wukong_cookie: document.getElementById('wukongCookie') ? document.getElementById('wukongCookie').value.trim() : '',
-        caiyun_token: document.getElementById('caiyunToken') ? document.getElementById('caiyunToken').value.trim() : '',
-    };
-
-    if (saveButton) saveButton.disabled = true;
-    try {
-        const response = await fetch('/admin/api/credential-config', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || `HTTP error! status: ${response.status}`);
-        }
-
-        showToast(data.message || '云盘凭证保存成功', 'success');
-        await loadCookieConfig();
-    } catch (error) {
-        showToast(`云盘凭证保存失败: ${error.message}`, 'danger');
-    } finally {
-        if (saveButton) saveButton.disabled = false;
+        console.error('加载转存状态失败:', error);
     }
 }
 
@@ -1484,7 +1328,6 @@ async function saveApiModeConfig() {
 
 document.addEventListener('DOMContentLoaded', () => {
     bindSystemTabEvents();
-    bindCredentialTabEvents();
     bindFrontendNetdiskCheckboxEvents();
     bindFrontendLinkModeEvents();
     bindSensitiveWordsTextareaEvents();
@@ -1500,7 +1343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAdFilterConfig();
     loadCustomAdConfig();
     loadStorageCleanupConfig();
-    loadCookieConfig();
+    loadDynamicTransferStatus();
     updateDynamicTransferStatusVisibility();
 
     [
@@ -1544,9 +1387,465 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const saveCookieConfigBtn = document.getElementById('saveCookieConfigBtn');
-    if (saveCookieConfigBtn) {
-        saveCookieConfigBtn.addEventListener('click', saveCookieConfig);
-    }
+    initAccountPoolEvents();
 });
+
+
+// ==================== 网盘多账号池管理 ====================
+
+let _currentCloudFilter = 'ALL';
+let _accountsData = [];
+
+function formatBytes(bytes) {
+    if (!bytes || bytes <= 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+async function loadCloudAccounts(cloud = null) {
+    const tableBody = document.getElementById('accountsTableBody');
+    if (!tableBody) return;
+
+    if (cloud !== null) {
+        _currentCloudFilter = cloud;
+    }
+
+    try {
+        const url = _currentCloudFilter && _currentCloudFilter !== 'ALL'
+            ? `/admin/api/accounts?cloud_name=${encodeURIComponent(_currentCloudFilter)}`
+            : '/admin/api/accounts';
+        const res = await fetch(url, { credentials: 'same-origin' });
+        const data = await res.json();
+
+        if (!data.success) {
+            tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-500 font-medium"><i class="fas fa-triangle-exclamation mr-2"></i>加载失败: ${data.message || '未知错误'}</td></tr>`;
+            return;
+        }
+
+        _accountsData = data.accounts || [];
+        const summary = data.summary || {};
+
+        // 更新头部 KPI
+        const totalEl = document.getElementById('statTotalAccounts');
+        const validEl = document.getElementById('statValidAccounts');
+        const storageEl = document.getElementById('statStorageSpace');
+        const transfersEl = document.getElementById('statTransfers');
+        const badgeEl = document.getElementById('accountsTabBadge');
+
+        if (totalEl) totalEl.textContent = summary.total_count || 0;
+        if (validEl) validEl.textContent = `${summary.valid_count || 0} / ${summary.total_count || 0}`;
+        if (badgeEl) badgeEl.textContent = summary.total_count || 0;
+
+        if (storageEl) {
+            const used = formatBytes(summary.used_space_bytes || 0);
+            const total = summary.total_space_bytes ? formatBytes(summary.total_space_bytes) : '不限量';
+            storageEl.textContent = `${used} / ${total}`;
+        }
+
+        const totalTransfers = _accountsData.reduce((acc, cur) => acc + (cur.transferred_count || 0), 0);
+        if (transfersEl) transfersEl.textContent = `${totalTransfers} 次`;
+
+        renderAccountsTable(_accountsData);
+    } catch (err) {
+        console.error('加载账号池异常:', err);
+        tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-500"><i class="fas fa-circle-exclamation mr-2"></i>网络请求异常</td></tr>`;
+    }
+}
+
+function renderAccountsTable(accounts) {
+    const tableBody = document.getElementById('accountsTableBody');
+    if (!tableBody) return;
+
+    if (!accounts || accounts.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="p-12 text-center text-slate-400 dark:text-slate-500">
+                    <div class="flex flex-col items-center justify-center gap-2">
+                        <i class="fas fa-folder-open text-3xl text-slate-300 dark:text-slate-600 mb-1"></i>
+                        <span class="text-sm font-medium">暂无网盘账号</span>
+                        <span class="text-xs text-slate-400">点击右上角「添加网盘账号」按钮快速接入账号</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const cloudBadgeMap = {
+        '夸克网盘': 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/40 dark:text-indigo-300',
+        '百度网盘': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300',
+        '阿里云盘': 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:text-amber-300',
+        'UC网盘': 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300',
+        '迅雷网盘': 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-900/40 dark:text-sky-300',
+        '光鸭云盘': 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/40 dark:text-rose-300',
+        '悟空网盘': 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300',
+        '移动云盘': 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300',
+    };
+
+    let html = '';
+    accounts.forEach(acc => {
+        const cloudClass = cloudBadgeMap[acc.cloud_name] || 'bg-slate-50 text-slate-700 border-slate-200';
+        const isValid = acc.is_valid === 1;
+        const isActive = acc.is_active === 1;
+
+        // 空间容量展示
+        let spaceHtml = '<span class="text-slate-400">未探测</span>';
+        if (acc.total_space_bytes > 0) {
+            const usedStr = formatBytes(acc.used_space_bytes);
+            const totalStr = formatBytes(acc.total_space_bytes);
+            const pct = Math.min(100, Math.round((acc.used_space_bytes / acc.total_space_bytes) * 100));
+            spaceHtml = `
+                <div class="w-32 space-y-1">
+                    <div class="flex justify-between text-[10px] text-slate-500">
+                        <span>${usedStr}</span>
+                        <span>${pct}%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div class="h-full ${pct > 90 ? 'bg-red-500' : (pct > 75 ? 'bg-amber-500' : 'bg-indigo-500')} rounded-full" style="width: ${pct}%"></div>
+                    </div>
+                    <div class="text-[10px] text-slate-400 text-right">总: ${totalStr}</div>
+                </div>
+            `;
+        }
+
+        // 状态徽章
+        let statusBadge = '';
+        if (!isActive) {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400">已停用</span>';
+        } else if (isValid) {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1 w-max"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>正常就绪</span>';
+        } else {
+            const reason = acc.invalid_reason ? escapeHtml(acc.invalid_reason) : '凭据失效';
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 flex items-center gap-1 w-max cursor-help" title="${reason}"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>失效</span>`;
+        }
+
+        html += `
+            <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
+                <td class="p-3.5 pl-4">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-[10px] font-semibold rounded-md border ${cloudClass}">
+                            ${escapeHtml(acc.cloud_name)}
+                        </span>
+                        <span class="font-bold text-slate-800 dark:text-white">${escapeHtml(acc.account_name)}</span>
+                    </div>
+                </td>
+                <td class="p-3.5 text-slate-600 dark:text-slate-300">
+                    ${acc.username ? `<span class="font-medium">${escapeHtml(acc.username)}</span>` : '<span class="text-slate-400">--</span>'}
+                </td>
+                <td class="p-3.5">
+                    <div class="flex items-center gap-2">
+                        ${statusBadge}
+                        <label class="plugin-switch" title="切换账号启用/停用">
+                            <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleAccountActive(${acc.id}, this.checked)">
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                </td>
+                <td class="p-3.5">
+                    ${spaceHtml}
+                </td>
+                <td class="p-3.5 text-slate-500">
+                    <div class="flex flex-col text-[11px] gap-0.5">
+                        <span>优先级: <strong class="text-indigo-600 dark:text-indigo-400">${acc.priority}</strong></span>
+                        <span>权重: <strong>${acc.weight}</strong></span>
+                    </div>
+                </td>
+                <td class="p-3.5 text-center font-bold text-slate-700 dark:text-slate-200">
+                    ${acc.transferred_count || 0}
+                </td>
+                <td class="p-3.5 text-slate-400 text-[11px]">
+                    <div>用: ${acc.last_used_at ? acc.last_used_at.substring(5, 16) : '未调用'}</div>
+                    <div>保: ${acc.last_keepalive_at ? acc.last_keepalive_at.substring(5, 16) : '未保活'}</div>
+                </td>
+                <td class="p-3.5 pr-4 text-right">
+                    <div class="flex items-center justify-end gap-1.5">
+                        <button class="btn btn-outline-secondary btn-xs" onclick="testAccount(${acc.id})" title="测试连通性与空间">
+                            <i class="fas fa-stethoscope text-indigo-500"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-xs" onclick="openEditAccountModal(${acc.id})" title="编辑账号">
+                            <i class="fas fa-pen-to-square"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-xs" onclick="deleteAccount(${acc.id})" title="删除账号">
+                            <i class="fas fa-trash-can text-red-500"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+}
+
+function openAddAccountModal() {
+    const modal = document.getElementById('accountModal');
+    const form = document.getElementById('accountForm');
+    const title = document.getElementById('accountModalTitle');
+    const idInput = document.getElementById('modalAccountId');
+    const cloudSelect = document.getElementById('modalCloudName');
+
+    if (!modal || !form) return;
+
+    form.reset();
+    idInput.value = '';
+    title.innerHTML = '<i class="fas fa-user-plus text-indigo-600"></i> 添加网盘账号';
+
+    if (_currentCloudFilter && _currentCloudFilter !== 'ALL' && cloudSelect) {
+        cloudSelect.value = _currentCloudFilter;
+    }
+
+    modal.style.display = 'flex';
+}
+
+function openEditAccountModal(accountId) {
+    const account = _accountsData.find(a => a.id === accountId);
+    if (!account) return;
+
+    const modal = document.getElementById('accountModal');
+    const title = document.getElementById('accountModalTitle');
+    const idInput = document.getElementById('modalAccountId');
+    const cloudSelect = document.getElementById('modalCloudName');
+    const nameInput = document.getElementById('modalAccountName');
+    const credInput = document.getElementById('modalCredential');
+    const priorityInput = document.getElementById('modalPriority');
+    const weightInput = document.getElementById('modalWeight');
+    const activeCheck = document.getElementById('modalIsActive');
+
+    if (!modal) return;
+
+    idInput.value = account.id;
+    title.innerHTML = '<i class="fas fa-user-pen text-indigo-600"></i> 编辑网盘账号';
+    if (cloudSelect) cloudSelect.value = account.cloud_name;
+    if (nameInput) nameInput.value = account.account_name;
+    if (credInput) credInput.value = account.credential;
+    if (priorityInput) priorityInput.value = account.priority;
+    if (weightInput) weightInput.value = account.weight;
+    if (activeCheck) activeCheck.checked = account.is_active === 1;
+
+    modal.style.display = 'flex';
+}
+
+function closeAccountModal() {
+    const modal = document.getElementById('accountModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function handleAccountFormSubmit(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('modalAccountId').value;
+    const cloud_name = document.getElementById('modalCloudName').value;
+    const account_name = document.getElementById('modalAccountName').value.trim();
+    const credential = document.getElementById('modalCredential').value.trim();
+    const priority = parseInt(document.getElementById('modalPriority').value) || 0;
+    const weight = parseInt(document.getElementById('modalWeight').value) || 10;
+    const is_active = document.getElementById('modalIsActive').checked ? 1 : 0;
+    const auto_test = document.getElementById('modalAutoTest').checked;
+
+    const submitBtn = document.getElementById('btnSubmitAccountModal');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 保存中...';
+    }
+
+    try {
+        const payload = {
+            cloud_name,
+            account_name,
+            credential,
+            priority,
+            weight,
+            is_active,
+            auto_test,
+        };
+
+        const isEdit = Boolean(id);
+        const url = isEdit ? `/admin/api/accounts/${id}` : '/admin/api/accounts';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            credentials: 'same-origin',
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            if (typeof showToast === 'function') {
+                showToast(data.message || '操作成功', 'success');
+            }
+            closeAccountModal();
+            loadCloudAccounts();
+        } else {
+            alert('保存失败: ' + (data.message || '未知错误'));
+        }
+    } catch (err) {
+        console.error('保存账号异常:', err);
+        alert('网络请求异常: ' + err.message);
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check"></i> 保存账号';
+        }
+    }
+}
+
+async function toggleAccountActive(accountId, isActive) {
+    try {
+        const res = await fetch(`/admin/api/accounts/${accountId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_active: isActive ? 1 : 0 }),
+            credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (typeof showToast === 'function') {
+                showToast(`账号已${isActive ? '启用' : '停用'}`, 'info');
+            }
+            loadCloudAccounts();
+        }
+    } catch (err) {
+        console.error('切换账号状态异常:', err);
+    }
+}
+
+async function testAccount(accountId) {
+    if (typeof showToast === 'function') {
+        showToast('正在向网盘发起健康自检与容量探测...', 'info');
+    }
+    try {
+        const res = await fetch(`/admin/api/accounts/${accountId}/test`, {
+            method: 'POST',
+            credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (typeof showToast === 'function') {
+                showToast(data.message || '测试通过，账号状态健康', 'success');
+            }
+        } else {
+            alert('自测未通过: ' + (data.message || '连接失败'));
+        }
+        loadCloudAccounts();
+    } catch (err) {
+        alert('自测请求异常: ' + err.message);
+    }
+}
+
+async function deleteAccount(accountId) {
+    const acc = _accountsData.find(a => a.id === accountId);
+    const name = acc ? acc.account_name : `ID:${accountId}`;
+    if (!confirm(`确定要彻底删除账号「${name}」吗？删除后该账号不再承接转存任务。`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/admin/api/accounts/${accountId}`, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (typeof showToast === 'function') {
+                showToast('账号已安全删除', 'success');
+            }
+            loadCloudAccounts();
+        } else {
+            alert('删除失败: ' + (data.message || '未知错误'));
+        }
+    } catch (err) {
+        alert('删除请求失败: ' + err.message);
+    }
+}
+
+async function triggerKeepaliveAll() {
+    const btn = document.getElementById('btnKeepaliveAccounts');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 续期保活中...';
+    }
+    if (typeof showToast === 'function') {
+        showToast('正在遍历网盘账号池执行静默续期与保活...', 'info');
+    }
+    try {
+        const res = await fetch('/admin/api/accounts/keepalive', {
+            method: 'POST',
+            credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (data.success) {
+            const r = data.result || {};
+            const msg = `续期完成: 检查 ${r.total_checked || 0} 个账号，成功刷新 ${r.refreshed || 0} 个，失败 ${r.failed || 0} 个`;
+            if (typeof showToast === 'function') {
+                showToast(msg, 'success');
+            }
+            loadCloudAccounts();
+        } else {
+            alert('保活失败: ' + (data.message || '未知异常'));
+        }
+    } catch (err) {
+        alert('保活请求异常: ' + err.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-rotate"></i> 一键全盘续期';
+        }
+    }
+}
+
+function initAccountPoolEvents() {
+    const btnAdd = document.getElementById('btnAddAccount');
+    if (btnAdd) btnAdd.addEventListener('click', openAddAccountModal);
+
+    const btnClose = document.getElementById('btnCloseAccountModal');
+    if (btnClose) btnClose.addEventListener('click', closeAccountModal);
+
+    const btnCancel = document.getElementById('btnCancelAccountModal');
+    if (btnCancel) btnCancel.addEventListener('click', closeAccountModal);
+
+    const modal = document.getElementById('accountModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeAccountModal();
+            }
+        });
+    }
+
+    const form = document.getElementById('accountForm');
+    if (form) form.addEventListener('submit', handleAccountFormSubmit);
+
+    const btnKeepalive = document.getElementById('btnKeepaliveAccounts');
+    if (btnKeepalive) btnKeepalive.addEventListener('click', triggerKeepaliveAll);
+
+    // 平台过滤胶囊标签点击
+    const filterContainer = document.getElementById('accountPlatformFilter');
+    if (filterContainer) {
+        filterContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.account-filter-btn');
+            if (!btn) return;
+            filterContainer.querySelectorAll('.account-filter-btn').forEach(b => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            const cloud = btn.getAttribute('data-cloud');
+            loadCloudAccounts(cloud);
+        });
+    }
+
+    // 监听全局 Tab 切换，切换到 accounts 时自动加载
+    document.querySelectorAll('[data-system-tab-target]').forEach(tabBtn => {
+        tabBtn.addEventListener('click', () => {
+            if (tabBtn.getAttribute('data-system-tab-target') === 'accounts') {
+                loadCloudAccounts();
+            }
+        });
+    });
+
+    // 初始静默加载一次以更新 Badge
+    loadCloudAccounts();
+}
+
 

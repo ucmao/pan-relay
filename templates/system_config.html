@@ -15,18 +15,18 @@
 
     <!-- 分段控制 Tab 导航 -->
     <div class="source-tabs-header">
-        <button class="source-tab-btn is-active" data-system-tab-target="storage" type="button">
+        <button class="source-tab-btn {% if current_tab == 'storage' or not current_tab %}is-active{% endif %}" data-system-tab-target="storage" type="button">
             <i class="fas fa-server"></i> 转存管理
         </button>
-        <button class="source-tab-btn" data-system-tab-target="ads" type="button">
+        <button class="source-tab-btn {% if current_tab == 'ads' %}is-active{% endif %}" data-system-tab-target="ads" type="button">
             <i class="fas fa-bullhorn"></i> 广告管理
         </button>
-        <button class="source-tab-btn" data-system-tab-target="security" type="button">
+        <button class="source-tab-btn {% if current_tab == 'security' %}is-active{% endif %}" data-system-tab-target="security" type="button">
             <i class="fas fa-filter"></i> 搜索过滤
         </button>
-        <button class="source-tab-btn" data-system-tab-target="credentials" type="button">
-            <i class="fas fa-key"></i> 云盘凭证
-            <span class="source-tab-badge" id="credentialsTabBadge">0</span>
+        <button class="source-tab-btn {% if current_tab == 'accounts' %}is-active{% endif %}" data-system-tab-target="accounts" type="button">
+            <i class="fas fa-users-gear"></i> 网盘账号池
+            <span class="source-tab-badge" id="accountsTabBadge">0</span>
         </button>
     </div>
 
@@ -34,7 +34,7 @@
     <div class="system-tab-content">
 
         <!-- TAB 1: 转存管理 -->
-        <div id="tab-pane-storage" class="system-tab-pane is-active space-y-6">
+        <div id="tab-pane-storage" class="system-tab-pane {% if current_tab == 'storage' or not current_tab %}is-active{% endif %} space-y-6">
 
             <!-- 1. 网盘通用转存目录设置 -->
             <section class="admin-panel">
@@ -158,7 +158,7 @@
         </div>
 
         <!-- TAB 2: 广告管理 -->
-        <div id="tab-pane-ads" class="system-tab-pane space-y-6">
+        <div id="tab-pane-ads" class="system-tab-pane {% if current_tab == 'ads' %}is-active{% endif %} space-y-6">
 
             <!-- 广告植入：自定义引流文件植入 -->
             <section class="admin-panel">
@@ -390,7 +390,7 @@
 
 
         <!-- TAB 3: 搜索过滤 -->
-        <div id="tab-pane-security" class="system-tab-pane space-y-6">
+        <div id="tab-pane-security" class="system-tab-pane {% if current_tab == 'security' %}is-active{% endif %} space-y-6">
 
             <!-- 标题匹配模式（顶部独立行） -->
             <section class="admin-panel">
@@ -490,233 +490,212 @@
 
         </div>
 
-        <!-- TAB 3: 云盘凭证 -->
-        <div id="tab-pane-credentials" class="system-tab-pane space-y-6">
+        <!-- TAB: 网盘多账号池 -->
+        <div id="tab-pane-accounts" class="system-tab-pane {% if current_tab == 'accounts' %}is-active{% endif %} space-y-6">
+            <!-- 账号池统计概览与全局操作 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-lg">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">总账号数</div>
+                        <div class="text-xl font-bold text-slate-800 dark:text-white" id="statTotalAccounts">0</div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
+                        <i class="fas fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">健康就绪账号</div>
+                        <div class="text-xl font-bold text-slate-800 dark:text-white" id="statValidAccounts">0</div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+                        <i class="fas fa-hard-drive"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">托管存储空间</div>
+                        <div class="text-xl font-bold text-slate-800 dark:text-white" id="statStorageSpace">--</div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-lg bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-lg">
+                        <i class="fas fa-share-nodes"></i>
+                    </div>
+                    <div>
+                        <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">账号池分流转存</div>
+                        <div class="text-xl font-bold text-slate-800 dark:text-white" id="statTransfers">0 次</div>
+                    </div>
+                </div>
+            </div>
 
-            <!-- 云盘账号凭证与密钥 Tab 容器 -->
+            <!-- 账号池列表管理面板 -->
             <section class="admin-panel">
-                <div class="admin-panel-header">
+                <div class="admin-panel-header flex-wrap gap-3">
                     <div class="admin-panel-title-area">
                         <h2 class="admin-panel-title">
-                            <i class="fas fa-key text-amber-500"></i> 云盘账号凭证与密钥
+                            <i class="fas fa-layer-group text-indigo-600"></i> 网盘多账号矩阵与智能分流池
                         </h2>
-                        <p class="admin-panel-desc">用于后台自动转存与生成私有分享，仅保存在服务端安全数据库中</p>
+                        <p class="admin-panel-desc">同一平台支持添加多个账号，转存时根据剩余容量、优先级与加权轮询自动调度并防封分流</p>
                     </div>
-                    <button class="btn btn-primary btn-sm" id="saveCookieConfigBtn">
-                        <i class="fas fa-save text-[10px]"></i> 保存凭证
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" id="btnKeepaliveAccounts" type="button" title="对所有需要续期的账号执行一次静默刷新">
+                            <i class="fas fa-rotate"></i> 一键全盘续期
+                        </button>
+                        <button class="btn btn-primary btn-sm" id="btnAddAccount" type="button">
+                            <i class="fas fa-plus"></i> 添加网盘账号
+                        </button>
+                    </div>
                 </div>
 
-                <div class="admin-panel-body space-y-5">
-                    <!-- 网盘 Sub-Tabs 导航 -->
-                    <div class="credential-tabs-nav flex flex-wrap gap-2 border-b border-slate-200/80 pb-3">
-                        <button class="credential-tab-btn is-active" data-cred-target="baidu" type="button">
-                            <i class="fas fa-paw text-blue-500"></i> 百度网盘
-                            <span class="cred-status-dot missing" id="dot-baidu"></span>
-                        </button>
-                        <button class="credential-tab-btn" data-cred-target="quark" type="button">
-                            <i class="fas fa-bolt text-indigo-500"></i> 夸克网盘
-                            <span class="cred-status-dot missing" id="dot-quark"></span>
-                        </button>
-                        <button class="credential-tab-btn" data-cred-target="aliyun" type="button">
-                            <i class="fas fa-cloud text-amber-500"></i> 阿里云盘
-                            <span class="cred-status-dot missing" id="dot-aliyun"></span>
-                        </button>
-                        <button class="credential-tab-btn" data-cred-target="uc" type="button">
-                            <i class="fas fa-globe text-orange-500"></i> UC 网盘
-                            <span class="cred-status-dot missing" id="dot-uc"></span>
-                        </button>
-                        <button class="credential-tab-btn" data-cred-target="xunlei" type="button">
-                            <i class="fas fa-bolt-lightning text-sky-500"></i> 迅雷网盘
-                            <span class="cred-status-dot missing" id="dot-xunlei"></span>
-                        </button>
-                        <button class="credential-tab-btn" data-cred-target="guangya" type="button">
-                            <i class="fas fa-feather-pointed text-teal-500"></i> 光鸭云盘
-                            <span class="cred-status-dot missing" id="dot-guangya"></span>
-                        </button>
-                        <button class="credential-tab-btn" data-cred-target="wukong" type="button">
-                            <i class="fas fa-sun text-yellow-500"></i> 悟空网盘
-                            <span class="cred-status-dot missing" id="dot-wukong"></span>
-                        </button>
-                        <button class="credential-tab-btn" data-cred-target="caiyun" type="button">
-                            <i class="fas fa-mobile-screen-button text-cyan-500"></i> 移动云盘
-                            <span class="cred-status-dot missing" id="dot-caiyun"></span>
-                        </button>
+                <div class="admin-panel-body space-y-4">
+                    <!-- 平台过滤胶囊标签 -->
+                    <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-100 dark:border-slate-700/60" id="accountPlatformFilter">
+                        <button class="account-filter-btn is-active" data-cloud="ALL" type="button">全部平台</button>
+                        <button class="account-filter-btn" data-cloud="夸克网盘" type="button">夸克网盘</button>
+                        <button class="account-filter-btn" data-cloud="百度网盘" type="button">百度网盘</button>
+                        <button class="account-filter-btn" data-cloud="阿里云盘" type="button">阿里云盘</button>
+                        <button class="account-filter-btn" data-cloud="UC网盘" type="button">UC网盘</button>
+                        <button class="account-filter-btn" data-cloud="迅雷网盘" type="button">迅雷网盘</button>
+                        <button class="account-filter-btn" data-cloud="光鸭云盘" type="button">光鸭云盘</button>
+                        <button class="account-filter-btn" data-cloud="悟空网盘" type="button">悟空网盘</button>
+                        <button class="account-filter-btn" data-cloud="移动云盘" type="button">移动云盘</button>
                     </div>
 
-                    <!-- Sub-Tab 1: 百度网盘 -->
-                    <div id="cred-pane-baidu" class="credential-tab-pane is-active space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label for="baiduCookie" class="form-label font-bold text-slate-800 text-xs mb-0">百度网盘
-                                Cookie</label>
-                            <span class="text-[11px] text-slate-400 font-medium" id="baiduStatusText">未配置</span>
-                        </div>
-                        <textarea class="form-control font-mono" id="baiduCookie" rows="6"
-                            placeholder="请输入百度网盘网页端抓取的完整 Cookie (如 BDUSS, STOKEN 等)"></textarea>
-                        <div
-                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                            <div>
-                                <span class="font-semibold text-slate-700">获取指引：</span>
-                                登录 <a href="https://pan.baidu.com" target="_blank"
-                                    class="text-blue-600 hover:underline">pan.baidu.com</a>，按 F12 打开开发者工具，在网络 (Network)
-                                请求标头中复制完整 <code>Cookie</code> 粘贴到此处。
-                            </div>
-                        </div>
+                    <!-- 账号数据表格 -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead class="bg-slate-50/80 dark:bg-slate-800/80 text-slate-500 font-semibold border-b border-slate-200/80 dark:border-slate-700">
+                                <tr>
+                                    <th class="p-3.5 pl-4">网盘平台 & 账号备注</th>
+                                    <th class="p-3.5">用户名</th>
+                                    <th class="p-3.5">状态</th>
+                                    <th class="p-3.5">存储空间</th>
+                                    <th class="p-3.5">调度策略</th>
+                                    <th class="p-3.5 text-center">累计转存</th>
+                                    <th class="p-3.5">最近活动</th>
+                                    <th class="p-3.5 pr-4 text-right">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50" id="accountsTableBody">
+                                <tr>
+                                    <td colspan="8" class="p-8 text-center text-slate-400">
+                                        <i class="fas fa-spinner fa-spin text-base mr-2"></i> 加载账号池中...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-
-                    <!-- Sub-Tab 2: 夸克网盘 -->
-                    <div id="cred-pane-quark" class="credential-tab-pane space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label for="quarkCookie" class="form-label font-bold text-slate-800 text-xs mb-0">夸克网盘
-                                Cookie</label>
-                            <span class="text-[11px] text-slate-400 font-medium" id="quarkStatusText">未配置</span>
-                        </div>
-                        <textarea class="form-control font-mono" id="quarkCookie" rows="6"
-                            placeholder="请输入夸克网盘网页端抓取的完整 Cookie"></textarea>
-                        <div
-                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                            <div>
-                                <span class="font-semibold text-slate-700">获取指引：</span>
-                                登录 <a href="https://pan.quark.cn" target="_blank"
-                                    class="text-blue-600 hover:underline">pan.quark.cn</a>，复制 Request Headers 中的
-                                <code>Cookie</code> 字段。
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sub-Tab 3: 阿里云盘 -->
-                    <div id="cred-pane-aliyun" class="credential-tab-pane space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label for="aliyunToken" class="form-label font-bold text-slate-800 text-xs mb-0">阿里云盘
-                                Refresh Token</label>
-                            <span class="text-[11px] text-slate-400 font-medium" id="aliyunStatusText">未配置</span>
-                        </div>
-                        <textarea class="form-control font-mono" id="aliyunToken" rows="5"
-                            placeholder="请输入阿里云盘的 refresh_token"></textarea>
-                        <div
-                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                            <div>
-                                <span class="font-semibold text-slate-700">获取指引：</span>
-                                打开 <a href="https://www.alipan.com" target="_blank"
-                                    class="text-blue-600 hover:underline">alipan.com</a> 开发者工具 Application/Local Storage
-                                中的 <code>token</code> JSON 数据，获取 <code>refresh_token</code> 字符串。
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sub-Tab 4: UC网盘 -->
-                    <div id="cred-pane-uc" class="credential-tab-pane space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label for="ucCookie" class="form-label font-bold text-slate-800 text-xs mb-0">UC 网盘
-                                Cookie</label>
-                            <span class="text-[11px] text-slate-400 font-medium" id="ucStatusText">未配置</span>
-                        </div>
-                        <textarea class="form-control font-mono" id="ucCookie" rows="6"
-                            placeholder="请输入 UC 网盘网页端抓取的完整 Cookie"></textarea>
-                        <div
-                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                            <div>
-                                <span class="font-semibold text-slate-700">获取指引：</span>
-                                登录 <a href="https://drive.uc.cn" target="_blank"
-                                    class="text-blue-600 hover:underline">drive.uc.cn</a>，复制网络请求标头中的完整
-                                <code>Cookie</code>。
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sub-Tab 5: 迅雷网盘 -->
-                    <div id="cred-pane-xunlei" class="credential-tab-pane space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label for="xunleiRefreshToken" class="form-label font-bold text-slate-800 text-xs mb-0">迅雷网盘
-                                Refresh Token</label>
-                            <span class="text-[11px] text-slate-400 font-medium" id="xunleiStatusText">未配置</span>
-                        </div>
-                        <textarea class="form-control font-mono" id="xunleiRefreshToken" rows="5"
-                            placeholder="请输入迅雷网盘 refresh_token"></textarea>
-                        <div
-                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                            <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
-                            <div>
-                                <span class="font-semibold text-slate-700">获取指引：</span>
-                                <div class="mt-0.5"><strong>① 一键提取（推荐，支持 Windows / macOS）</strong>：本地电脑登录官方迅雷客户端后，在项目终端运行 <code>python3 scripts/extract_xunlei_token.py --save</code> 即可自动读取并写入数据库。</div>
-                                <div class="mt-1"><strong>② 手动填入</strong>：填入提取的 JSON 凭证或抓取手机迅雷 APP 登录时 <code>xluser-ssl.xunlei.com/v1/auth/token</code> 返回的 <code>refresh_token</code>（系统将自动动态计算验签并持久化轮换续期）。</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sub-Tab 6: 光鸭云盘 -->
-                    <div id="cred-pane-guangya" class="credential-tab-pane space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label for="guangyaToken" class="form-label font-bold text-slate-800 text-xs mb-0">光鸭云盘
-                                Token / Refresh Token</label>
-                            <span class="text-[11px] text-slate-400 font-medium" id="guangyaStatusText">未配置</span>
-                        </div>
-                        <textarea class="form-control font-mono" id="guangyaToken" rows="5"
-                            placeholder="请输入光鸭云盘 access_token 或包含 refresh_token 的凭证"></textarea>
-                        <div
-                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                            <i class="fas fa-info-circle text-teal-500 mt-0.5"></i>
-                            <div>
-                                <span class="font-semibold text-slate-700">获取指引：</span>
-                                登录 <a href="https://www.guangyapan.com" target="_blank"
-                                    class="text-blue-600 hover:underline">guangyapan.com</a>，在开发者工具网络请求标头中复制
-                                <code>Authorization: Bearer &lt;token&gt;</code> 的 Token 字符串。
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sub-Tab 7: 悟空网盘 -->
-                    <div id="cred-pane-wukong" class="credential-tab-pane space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label for="wukongCookie" class="form-label font-bold text-slate-800 text-xs mb-0">悟空网盘
-                                Cookie / Token</label>
-                            <span class="text-[11px] text-slate-400 font-medium" id="wukongStatusText">未配置</span>
-                        </div>
-                        <textarea class="form-control font-mono" id="wukongCookie" rows="5"
-                            placeholder="请输入悟空网盘/悟空浏览器网页端 Cookie 或 Session Token"></textarea>
-                        <div
-                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                            <i class="fas fa-info-circle text-yellow-500 mt-0.5"></i>
-                            <div>
-                                <span class="font-semibold text-slate-700">获取指引：</span>
-                                打开 <a href="https://pan.wkbrowser.com" target="_blank"
-                                    class="text-blue-600 hover:underline">pan.wkbrowser.com</a>，在网络请求标头中复制
-                                <code>Cookie</code> 或 Token 字符串。
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sub-Tab 8: 移动云盘 -->
-                    <div id="cred-pane-caiyun" class="credential-tab-pane space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label for="caiyunToken" class="form-label font-bold text-slate-800 text-xs mb-0">中国移动云盘
-                                Authorization / Token</label>
-                            <span class="text-[11px] text-slate-400 font-medium" id="caiyunStatusText">未配置</span>
-                        </div>
-                        <textarea class="form-control font-mono" id="caiyunToken" rows="5"
-                            placeholder="请输入移动云盘 (和彩云) 的 Authorization 或 jwtToken"></textarea>
-                        <div
-                            class="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs text-slate-500 flex items-start gap-2">
-                            <i class="fas fa-info-circle text-cyan-500 mt-0.5"></i>
-                            <div>
-                                <span class="font-semibold text-slate-700">获取指引：</span>
-                                登录 <a href="https://yun.139.com" target="_blank"
-                                    class="text-blue-600 hover:underline">yun.139.com</a>，在开发者工具网络请求标头中复制
-                                <code>Authorization</code> 字段内容。
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </section>
-
         </div>
     </div>
+
+<!-- 添加/编辑账号 Modal -->
+<div id="accountModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200" style="display: none;" aria-hidden="true">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2" id="accountModalTitle">
+                <i class="fas fa-user-plus text-indigo-600"></i> 添加网盘账号
+            </h3>
+            <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm" id="btnCloseAccountModal" type="button">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <form id="accountForm" class="p-6 space-y-4 text-xs">
+            <input type="hidden" id="modalAccountId" value="">
+            <div>
+                <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">网盘平台 *</label>
+                <select id="modalCloudName" class="form-control" required>
+                    <option value="夸克网盘">夸克网盘 (Cookie)</option>
+                    <option value="百度网盘">百度网盘 (Cookie)</option>
+                    <option value="阿里云盘">阿里云盘 (Refresh Token)</option>
+                    <option value="UC网盘">UC网盘 (Cookie)</option>
+                    <option value="迅雷网盘">迅雷网盘 (Refresh Token / JSON)</option>
+                    <option value="光鸭云盘">光鸭云盘 (Token)</option>
+                    <option value="悟空网盘">悟空网盘 (Cookie)</option>
+                    <option value="移动云盘">移动云盘 (Authorization)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">账号别名/备注 *</label>
+                <input type="text" id="modalAccountName" class="form-control" placeholder="如：夸克-主盘-01、百度2号" required>
+            </div>
+            <div>
+                <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">凭证内容 (Cookie / Token) *</label>
+                <textarea id="modalCredential" rows="4" class="form-control font-mono" placeholder="请粘贴网盘 Cookie 或 Refresh Token..." required></textarea>
+                <p class="text-[11px] text-slate-400 mt-1" id="modalCredHint">系统保存时将自动清洗首尾空白与换行符</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">优先级 (越小越优先)</label>
+                    <input type="number" id="modalPriority" class="form-control" value="0" min="0" max="100">
+                </div>
+                <div>
+                    <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">轮询权重 (1~100)</label>
+                    <input type="number" id="modalWeight" class="form-control" value="10" min="1" max="100">
+                </div>
+            </div>
+            <div class="flex items-center justify-between pt-1">
+                <label class="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
+                    <input type="checkbox" id="modalIsActive" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked>
+                    <span>启用此账号参与转存分流</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer text-slate-500 text-[11px]">
+                    <input type="checkbox" id="modalAutoTest" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked>
+                    <span>保存后即刻测活</span>
+                </label>
+            </div>
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnCancelAccountModal">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitAccountModal">
+                    <i class="fas fa-check"></i> 保存账号
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<style>
+.account-filter-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 9999px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.account-filter-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+.account-filter-btn.is-active {
+    background: #4f46e5 !important;
+    border-color: #4f46e5 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+.dark .account-filter-btn {
+    background: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+}
+.dark .account-filter-btn:hover {
+    background: #334155;
+    color: #f1f5f9;
+}
+.dark .account-filter-btn.is-active {
+    background: #6366f1 !important;
+    border-color: #6366f1 !important;
+    color: #ffffff !important;
+}
+</style>
 
 <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
 
@@ -724,6 +703,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.4"></script>
-<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.4"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.7"></script>
+<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.7"></script>
 {% endblock %}

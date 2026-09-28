@@ -92,7 +92,28 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # 每日自动执行一次多网盘账号池凭证保活与续期任务
+    scheduler.add_job(
+        scheduled_account_keepalive_job,
+        trigger="interval",
+        hours=24,
+        id="keepalive_cloud_accounts",
+        max_instances=1,
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info(f"定时任务已启动: 每30分钟清理过期动态分享, {desc}清理存储, 每24小时执行资源健康巡检")
+    logger.info(f"定时任务已启动: 每30分钟清理过期动态分享, {desc}清理存储, 每24小时执行资源健康巡检与多账号保活")
     _scheduler = scheduler
     return _scheduler
+
+
+def scheduled_account_keepalive_job():
+    """每日对多账号池中依赖 Token 自动轮转的账号执行保活与自检"""
+    try:
+        from src.services.account_pool_manager import AccountPoolManager
+        res = AccountPoolManager.get_instance().keepalive_all_accounts()
+        logger.info(f"多网盘账号定时保活完成: {res}")
+    except Exception as exc:
+        logger.error(f"多网盘账号定时保活异常: {exc}")
+

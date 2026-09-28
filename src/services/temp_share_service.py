@@ -21,6 +21,9 @@ SUPPORTED_DYNAMIC_NETDISKS = {
     "阿里云盘": "aliyun",
     "UC网盘": "uc",
     "迅雷网盘": "xunlei",
+    "光鸭云盘": "guangya",
+    "悟空网盘": "wukong",
+    "移动云盘": "caiyun",
 }
 
 
@@ -45,7 +48,8 @@ def resolve_view_url(title: str, original_url: str, netdisk_name: str = "") -> D
             "netdisk_name": resolved_netdisk_name,
         }
 
-    if not get_and_validate_credential(resolved_netdisk_name):
+    from src.services.account_pool_manager import AccountPoolManager
+    if not AccountPoolManager.get_instance().get_candidate_accounts(resolved_netdisk_name):
         return fallback
 
     share_result = create_share(
@@ -70,6 +74,7 @@ def resolve_view_url(title: str, original_url: str, netdisk_name: str = "") -> D
     from src.services.system_config_service import get_storage_cleanup_config
     cleanup_cfg = get_storage_cleanup_config()
     expire_minutes = max(30, int(cleanup_cfg.get("retention_minutes", TEMP_SHARE_EXPIRE_HOURS * 60)))
+    account_id = share_result.get("account_id")
 
     create_temp_share_record(
         original_url=original_url,
@@ -78,6 +83,7 @@ def resolve_view_url(title: str, original_url: str, netdisk_name: str = "") -> D
         temp_share_url=new_share_url,
         file_id=file_id,
         expires_in_minutes=expire_minutes,
+        account_id=account_id,
     )
 
     return {
@@ -94,12 +100,14 @@ def cleanup_expired_temp_shares(limit: int = 50) -> int:
     for record in expired_records:
         temp_url = record.get("temp_share_url")
         file_id = record.get("file_id")
+        account_id = record.get("account_id")
         try:
             del_share(
                 {
                     "share_url": temp_url,
                     "file_id": file_id,
                     "cloud_name": record.get("cloud_name"),
+                    "account_id": account_id,
                 }
             )
         except Exception as exc:

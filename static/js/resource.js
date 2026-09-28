@@ -206,9 +206,9 @@ function updateSingleLinkTransferHint() {
         hintEl.innerHTML = `
             <div class="flex items-center gap-1.5 truncate">
                 <i class="fas fa-info-circle text-rose-500 flex-shrink-0"></i>
-                <span class="truncate">已识别到 <strong>${cloudName}</strong> 链接，但未配置可用凭证，将按原始链接入库。</span>
+                <span class="truncate">已识别到 <strong>${cloudName}</strong> 链接，但账号池中未配置可用账号，将按原始链接入库。</span>
             </div>
-            <a href="/admin/system-config" target="_blank" class="text-rose-700 underline font-medium text-xs whitespace-nowrap ml-2 flex-shrink-0">去配置凭证 &rarr;</a>
+            <a href="/admin/system-config#accounts" target="_blank" class="text-rose-700 underline font-medium text-xs whitespace-nowrap ml-2 flex-shrink-0">去添加账号 &rarr;</a>
         `;
         opts.classList.remove('d-none');
     }

@@ -18,6 +18,7 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
     cloud_name = record.get("cloud_name", "")
     resource_type = record.get("type", "")
     remarks = record.get("remarks", "")
+    account_id = record.get("account_id")
     is_replaced = record.get("is_replaced", 1)
     health_status = record.get("health_status", "ok")
 
@@ -26,10 +27,10 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
         return None
 
     sql = """
-    INSERT INTO resources (file_id, name, share_link, cloud_name, type, remarks, is_replaced, health_status, checked_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO resources (file_id, name, share_link, cloud_name, type, remarks, account_id, is_replaced, health_status, checked_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     """
-    params = (file_id, name, share_link, cloud_name, resource_type, remarks, is_replaced, health_status)
+    params = (file_id, name, share_link, cloud_name, resource_type, remarks, account_id, is_replaced, health_status)
 
     conn = get_db_connection()
     if not conn:
@@ -61,12 +62,13 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
                 UPDATE resources
                 SET name = ?, file_id = COALESCE(?, file_id), share_link = ?, cloud_name = ?,
                     type = COALESCE(NULLIF(?, ''), type), remarks = COALESCE(NULLIF(?, ''), remarks),
+                    account_id = COALESCE(?, account_id),
                     is_replaced = ?, health_status = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """
                 cur.execute(
                     update_sql,
-                    (name, file_id, share_link, cloud_name, resource_type, remarks, is_replaced, health_status, res_id),
+                    (name, file_id, share_link, cloud_name, resource_type, remarks, account_id, is_replaced, health_status, res_id),
                 )
                 conn.commit()
                 logger.info(f"成功更新已有资源记录: ID={res_id}, 名称='{name}'")
@@ -103,7 +105,7 @@ def get_resource_by_share_link(share_link: str) -> Optional[Dict[str, Any]]:
         return None
     try:
         cursor = conn.cursor(as_dict=True)
-        sql = "SELECT id, file_id, name, share_link, cloud_name, type, remarks, is_replaced FROM resources WHERE share_link = ?"
+        sql = "SELECT id, file_id, name, share_link, cloud_name, type, remarks, account_id, is_replaced FROM resources WHERE share_link = ?"
         cursor.execute(sql, (share_link,))
         return cursor.fetchone()
     except Error as err:
@@ -287,7 +289,7 @@ def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, 
     try:
         cursor = conn.cursor(as_dict=True)
         sql = """
-        SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, health_status, health_message, checked_at, created_at, updated_at
+        SELECT id, name, share_link, cloud_name, type, remarks, account_id, is_replaced, health_status, health_message, checked_at, created_at, updated_at
         FROM resources WHERE id = ?
         """
         cursor.execute(sql, (resource_id,))
@@ -532,7 +534,7 @@ def list_expired_resources(days: Optional[int] = None, minutes: Optional[int] = 
         cursor = conn.cursor(as_dict=True)
         if minutes is not None:
             sql = """
-            SELECT id, file_id, name, share_link, cloud_name, type, remarks, created_at
+            SELECT id, file_id, name, share_link, cloud_name, type, remarks, account_id, created_at
             FROM resources
             WHERE datetime(created_at) < datetime('now', '-' || ? || ' minutes')
             ORDER BY created_at ASC
@@ -542,7 +544,7 @@ def list_expired_resources(days: Optional[int] = None, minutes: Optional[int] = 
         else:
             days_val = int(days) if days is not None else 15
             sql = """
-            SELECT id, file_id, name, share_link, cloud_name, type, remarks, created_at
+            SELECT id, file_id, name, share_link, cloud_name, type, remarks, account_id, created_at
             FROM resources
             WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
             ORDER BY created_at ASC

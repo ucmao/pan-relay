@@ -37,6 +37,7 @@ if (hideDeadLinksToggle) {
     } else if (isHideDeadLinks) {
         hideDeadLinksToggle.classList.add('active');
         hideDeadLinksToggle.setAttribute('aria-pressed', 'true');
+        hideDeadLinksToggle.setAttribute('title', '已过滤失效（点击显示全部）');
         if (hideDeadLinksText) {
             hideDeadLinksText.textContent = '已过滤失效';
         }
@@ -79,6 +80,7 @@ hideDeadLinksToggle?.addEventListener('click', function () {
     } catch (e) {}
     this.classList.toggle('active', isHideDeadLinks);
     this.setAttribute('aria-pressed', String(isHideDeadLinks));
+    this.setAttribute('title', isHideDeadLinks ? '已过滤失效（点击显示全部）' : '点击过滤：隐藏失效与空资源链接');
     if (hideDeadLinksText) {
         hideDeadLinksText.textContent = isHideDeadLinks ? '已过滤失效' : '过滤失效';
     }
@@ -97,11 +99,13 @@ function setAdvancedFilterOpen(isOpen) {
     const hasActiveFilters = includeKeywords.length > 0 || excludeKeywords.length > 0;
     
     if (isOpen) {
-        advancedFilterToggle.innerHTML = '<i class="fas fa-chevron-up me-1"></i> 收起筛选';
+        advancedFilterToggle.innerHTML = '<i class="fas fa-chevron-up"></i><span class="btn-text ms-1">收起筛选</span>';
+        advancedFilterToggle.setAttribute('title', '收起高级筛选');
     } else {
         advancedFilterToggle.innerHTML = hasActiveFilters
-            ? '<i class="fas fa-filter me-1"></i> 已应用筛选'
-            : '<i class="fas fa-sliders-h me-1"></i> 筛选';
+            ? '<i class="fas fa-filter"></i><span class="btn-text ms-1">已应用筛选</span>'
+            : '<i class="fas fa-sliders-h"></i><span class="btn-text ms-1">筛选</span>';
+        advancedFilterToggle.setAttribute('title', hasActiveFilters ? '已应用筛选（点击展开）' : '展开高级筛选');
     }
 }
 
@@ -705,11 +709,14 @@ function exportFilteredResultsToExcel() {
 
     if (exportExcelBtn) {
         const originalHtml = exportExcelBtn.innerHTML;
+        const originalTitle = exportExcelBtn.getAttribute('title') || '导出当前筛选结果到 Excel';
         exportExcelBtn.disabled = true;
-        exportExcelBtn.innerHTML = `<i class="fas fa-check me-1 text-emerald"></i> 已导出 (${filteredResults.length}条)`;
+        exportExcelBtn.setAttribute('title', `已导出 (${filteredResults.length}条)`);
+        exportExcelBtn.innerHTML = `<i class="fas fa-check text-emerald"></i><span class="btn-text ms-1">已导出 (${filteredResults.length}条)</span>`;
         setTimeout(() => {
             exportExcelBtn.disabled = false;
             exportExcelBtn.innerHTML = originalHtml;
+            exportExcelBtn.setAttribute('title', originalTitle);
         }, 1800);
     }
 }
@@ -1261,8 +1268,9 @@ function updateActiveFilterTagsUI() {
         advancedFilterToggle.classList.toggle('has-active-filters', hasFilters);
         if (!isAdvancedFilterOpen) {
             advancedFilterToggle.innerHTML = hasFilters
-                ? '<i class="fas fa-filter me-1"></i> 已应用筛选'
-                : '<i class="fas fa-sliders-h me-1"></i> 筛选';
+                ? '<i class="fas fa-filter"></i><span class="btn-text ms-1">已应用筛选</span>'
+                : '<i class="fas fa-sliders-h"></i><span class="btn-text ms-1">筛选</span>';
+            advancedFilterToggle.setAttribute('title', hasFilters ? '已应用筛选（点击展开）' : '展开高级筛选');
         }
     }
     

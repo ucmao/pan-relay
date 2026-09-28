@@ -98,6 +98,23 @@ class SQLiteConnectionWrapper:
 _db_initialized = False
 
 
+def _migrate_schema_columns(conn: sqlite3.Connection):
+    """确保 resources 与 temp_share 包含 account_id 字段"""
+    try:
+        # 1. 检查 resources 是否有 account_id
+        res_cols = [row[1] for row in conn.execute("PRAGMA table_info(resources);").fetchall()]
+        if res_cols and "account_id" not in res_cols:
+            conn.execute("ALTER TABLE resources ADD COLUMN account_id INTEGER DEFAULT NULL;")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_resources_account ON resources(account_id);")
+
+        # 2. 检查 temp_share 是否有 account_id
+        temp_cols = [row[1] for row in conn.execute("PRAGMA table_info(temp_share);").fetchall()]
+        if temp_cols and "account_id" not in temp_cols:
+            conn.execute("ALTER TABLE temp_share ADD COLUMN account_id INTEGER DEFAULT NULL;")
+    except Exception as e:
+        logger.warning(f"表结构字段校验异常: {e}")
+
+
 def init_sqlite_db():
     """初始化 SQLite 数据库，自动建表与填充默认配置。"""
     global _db_initialized
@@ -114,9 +131,11 @@ def init_sqlite_db():
         raw_conn.execute("PRAGMA synchronous=NORMAL;")
 
         if os.path.exists(schema_file):
+            _migrate_schema_columns(raw_conn)
             with open(schema_file, "r", encoding="utf-8") as f:
                 schema_sql = f.read()
             raw_conn.executescript(schema_sql)
+            _migrate_schema_columns(raw_conn)
             logger.info("SQLite 数据库初始化与表结构校验完成。")
         else:
             logger.error(f"未找到数据库初始化脚本: {schema_file}")
