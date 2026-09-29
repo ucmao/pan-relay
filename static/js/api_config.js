@@ -325,7 +325,7 @@ function updateApiBatchToolbar() {
     }
 }
 
-async function batchEnableApis(isEnabled) {
+async function batchEnableApis(isEnabled, triggerBtn = null) {
     const ids = Array.from(apiSelectionState.selectedIds);
     const isAll = apiSelectionState.selectMode === 'all';
     const actionStr = isEnabled ? '启用' : '停用';
@@ -336,6 +336,13 @@ async function batchEnableApis(isEnabled) {
     }
 
     const targetIds = isAll ? apiConfigs.map(a => a.id) : ids;
+    const btn = triggerBtn || (window.event && window.event.target ? window.event.target.closest('button') : null);
+    let originalHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin text-[10px]"></i> ${actionStr}中...`;
+    }
 
     try {
         const response = await fetch('/admin/api/configs/batch-toggle', {
@@ -347,16 +354,21 @@ async function batchEnableApis(isEnabled) {
         if (response.ok && data.success) {
             showToast(data.message || `已批量${actionStr} API`, 'success');
             clearApiSelection();
-            loadApiConfigs();
+            await loadApiConfigs();
         } else {
             showToast(data.message || `批量${actionStr}失败`, 'danger');
         }
     } catch (e) {
         showToast(`批量${actionStr}网络请求异常: ${e.message}`, 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 }
 
-async function batchDeleteApis() {
+async function batchDeleteApis(triggerBtn = null) {
     const ids = Array.from(apiSelectionState.selectedIds);
     const isAll = apiSelectionState.selectMode === 'all';
 
@@ -366,8 +378,25 @@ async function batchDeleteApis() {
     }
 
     const targetIds = isAll ? apiConfigs.map(a => a.id) : ids;
-    if (!confirm(`确定要批量删除选中的 ${targetIds.length} 个 API 搜索源吗？该操作不可恢复！`)) {
+    const ok = window.confirmModal
+        ? await window.confirmModal({
+            title: '批量删除 API 搜索源',
+            message: `确定要批量删除选中的 ${targetIds.length} 个 API 搜索源吗？该操作不可恢复！`,
+            confirmText: '确认删除',
+            cancelText: '取消',
+            type: 'danger'
+        })
+        : true;
+    if (!ok) {
         return;
+    }
+
+    const btn = triggerBtn || (window.event && window.event.target ? window.event.target.closest('button') : null);
+    let originalHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 删除中...';
     }
 
     try {
@@ -380,16 +409,21 @@ async function batchDeleteApis() {
         if (response.ok && data.success) {
             showToast(data.message || '已批量删除 API', 'success');
             clearApiSelection();
-            loadApiConfigs();
+            await loadApiConfigs();
         } else {
             showToast(data.message || '批量删除失败', 'danger');
         }
     } catch (e) {
         showToast(`批量删除网络请求异常: ${e.message}`, 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 }
 
-async function batchTestApis(forceAll = false) {
+async function batchTestApis(forceAll = false, triggerBtn = null) {
     const ids = Array.from(apiSelectionState.selectedIds);
     const isAll = forceAll || apiSelectionState.selectMode === 'all';
 
@@ -403,6 +437,15 @@ async function batchTestApis(forceAll = false) {
         showToast('暂无 API 接口可供测试', 'warning');
         return;
     }
+
+    const btn = triggerBtn || (window.event && window.event.target ? window.event.target.closest('button') : null) || (forceAll ? document.getElementById('btnBatchTestApis') : null);
+    let originalHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin text-[10px]"></i> ${forceAll || isAll ? '正在检测...' : '测试中...'}`;
+    }
+
     showToast(`正在后台测试 ${targetIds.length} 个 API 接口，请稍候...`, 'info');
 
     try {
@@ -414,12 +457,17 @@ async function batchTestApis(forceAll = false) {
         const data = await response.json();
         if (response.ok && data.success) {
             showToast(data.message || '批量测试完成', 'success');
-            loadApiConfigs();
+            await loadApiConfigs();
         } else {
             showToast(data.message || '批量测试失败', 'danger');
         }
     } catch (e) {
         showToast(`批量测试网络请求异常: ${e.message}`, 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 }
 
@@ -943,12 +991,12 @@ async function deleteApi(apiId) {
 async function testApi(apiId, triggerButton = null) {
     const { api } = getApiConfigById(apiId);
     if (!api) return;
-    const testButton = triggerButton;
+    const testButton = triggerButton || (window.event && window.event.target ? window.event.target.closest('button') : null);
     const originalButtonHtml = testButton ? testButton.innerHTML : '';
 
     if (testButton) {
         testButton.disabled = true;
-        testButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> 测试中';
+        testButton.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 测试中...';
     }
 
     try {

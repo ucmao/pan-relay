@@ -55,3 +55,15 @@ class BasePanClient(ABC):
         """
         return False
 
+    def get_user_and_space_info(self) -> dict:
+        """
+        探测账号有效性并获取用户信息与空间容量配额。
+        :return: 包含 username, total_space_bytes, used_space_bytes, vip_status 等的字典。
+        """
+        return {
+            "username": "",
+            "total_space_bytes": 0,
+            "used_space_bytes": 0,
+            "vip_status": 0,
+        }
+

@@ -307,3 +307,26 @@ class WukongPanClient(BasePanClient):
 
         logger.error(f"悟空网盘删除失败: {res}")
         return False
+
+    def get_user_and_space_info(self) -> Dict[str, Any]:
+        """
+        获取悟空网盘用户信息与空间容量配额。
+        """
+        info = {
+            "username": "",
+            "total_space_bytes": 0,
+            "used_space_bytes": 0,
+            "vip_status": 0,
+        }
+        res = self._request_api("GET", "/api/v1/user/info")
+        if res:
+            data = res.get("data") or res
+            name = data.get("nickname") or data.get("username") or data.get("name") or ""
+            if name:
+                info["username"] = name
+            space = data.get("space") or {}
+            if space:
+                info["total_space_bytes"] = int(space.get("total") or 0)
+                info["used_space_bytes"] = int(space.get("used") or 0)
+
+        return info

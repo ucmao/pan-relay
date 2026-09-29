@@ -10,7 +10,7 @@
                 <p class="admin-panel-desc">动态加载 Python 采集插件，支持热重载、开关控制与在线单源联调</p>
             </div>
             <div class="flex items-center space-x-2">
-                <button class="btn btn-outline-primary btn-sm" onclick="batchTestPlugins(true)" title="全盘检测所有 Python 插件扩展状态">
+                <button id="btnBatchTestPlugins" class="btn btn-outline-primary btn-sm" onclick="batchTestPlugins(true, this)" title="全盘检测所有 Python 插件扩展状态">
                     <i class="fas fa-stethoscope text-[10px]"></i> 全部检测
                 </button>
             </div>
@@ -28,13 +28,13 @@
                 </button>
             </div>
             <div class="resource-batch-actions">
-                <button class="btn btn-info btn-sm" onclick="batchTestPlugins()" type="button" title="联调测试选中的插件扩展">
+                <button class="btn btn-info btn-sm" onclick="batchTestPlugins(false, this)" type="button" title="联调测试选中的插件扩展">
                     <i class="fas fa-stethoscope"></i> 测试所选
                 </button>
-                <button class="btn btn-primary btn-sm" onclick="batchEnablePlugins(true)" type="button">
+                <button class="btn btn-primary btn-sm" onclick="batchEnablePlugins(true, this)" type="button">
                     <i class="fas fa-play"></i> 批量启用
                 </button>
-                <button class="btn btn-secondary btn-sm" onclick="batchEnablePlugins(false)" type="button">
+                <button class="btn btn-secondary btn-sm" onclick="batchEnablePlugins(false, this)" type="button">
                     <i class="fas fa-ban"></i> 批量停用
                 </button>
             </div>

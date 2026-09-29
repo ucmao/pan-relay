@@ -383,10 +383,42 @@ class AliyunPanClient(BasePanClient):
         response.raise_for_status()
         return response.json()
 
+    def get_user_and_space_info(self) -> Dict[str, Any]:
+        """
+        获取阿里云盘用户信息与空间容量配额。
+        """
+        info = {
+            "username": "",
+            "total_space_bytes": 0,
+            "used_space_bytes": 0,
+            "vip_status": 0,
+        }
+        try:
+            cap_resp = self._request("POST", "https://api.aliyundrive.com/adrive/v1/user/driveCapacityDetails", {})
+            if cap_resp:
+                info["total_space_bytes"] = int(cap_resp.get("drive_total_size") or 0)
+                info["used_space_bytes"] = int(cap_resp.get("drive_used_size") or 0)
+        except Exception as e:
+            logger.warning(f"阿里云盘获取空间容量异常: {e}")
+
+        try:
+            u_resp = self._request("POST", "https://user.aliyundrive.com/v2/user/get", {})
+            if u_resp:
+                name = u_resp.get("display_name") or u_resp.get("nick_name") or u_resp.get("user_name") or ""
+                if name:
+                    info["username"] = name
+                vip_identity = str(u_resp.get("vip_identity") or "").lower()
+                if "svip" in vip_identity:
+                    info["vip_status"] = 2
+                elif "vip" in vip_identity or "member" in vip_identity:
+                    info["vip_status"] = 1
+        except Exception as e:
+            logger.warning(f"阿里云盘获取用户信息异常: {e}")
+
+        return info
+
     @staticmethod
     def _extract_share_id(url: str) -> str:
         match = re.search(r"/s/([a-zA-Z0-9]+)", url)
-        if match:
-            return match.group(1)
-        return ""
+        return match.group(1) if match else ""
 

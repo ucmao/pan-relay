@@ -351,3 +351,28 @@ class CaiyunPanClient(BasePanClient):
 
         logger.error(f"移动云盘删除文件失败: {res}")
         return False
+
+    def get_user_and_space_info(self) -> Dict[str, Any]:
+        """
+        获取移动云盘用户信息与空间容量配额。
+        """
+        info = {
+            "username": "",
+            "total_space_bytes": 0,
+            "used_space_bytes": 0,
+            "vip_status": 0,
+        }
+        if self.account:
+            info["username"] = self.account
+        elif self.auth_token:
+            import base64
+            token_clean = self.auth_token.replace("Basic ", "").replace("basic ", "").strip()
+            try:
+                decoded = base64.b64decode(token_clean + "==").decode("utf-8", errors="ignore")
+                parts = decoded.split(":")
+                if len(parts) >= 2 and parts[1].isdigit() and len(parts[1]) == 11:
+                    info["username"] = parts[1]
+            except Exception:
+                pass
+
+        return info

@@ -18,6 +18,7 @@ from src.db.accounts import (
     get_accounts_by_cloud,
     record_account_keepalive,
     record_account_transfer,
+    update_account,
     update_account_credential,
     update_account_space,
     update_account_status,
@@ -272,47 +273,76 @@ class AccountPoolManager:
         }
 
         try:
-            # 针对不同客户端探测可用性与基本信息
-            # 夸克网盘
-            if cloud_name == "夸克网盘":
-                if hasattr(client, "get_all_file"):
-                    res = client.get_all_file()
-                    update_account_status(account_id, is_valid=True, invalid_reason="")
-                    return True, "凭证有效，连接正常", info
-
-            # 百度网盘
-            elif cloud_name == "百度网盘":
-                if hasattr(client, "get_or_create_dir"):
-                    # 尝试查询根目录状态
-                    test_dir = client.get_or_create_dir("PanRelay_Health")
-                    update_account_status(account_id, is_valid=True, invalid_reason="")
-                    return True, "凭证有效，网盘目录交互正常", info
-
-            # 阿里云盘
-            elif cloud_name == "阿里云盘":
+            # 1. 针对不同客户端的专项刷新与校验
+            if cloud_name == "阿里云盘":
                 if hasattr(client, "_refresh_access_token"):
                     client._refresh_access_token(force=True)
                     if client.refresh_token and client.refresh_token != account.get("credential"):
                         update_account_credential(account_id, client.refresh_token)
-                    update_account_status(account_id, is_valid=True, invalid_reason="")
-                    return True, "Token 刷新成功，状态健康", info
 
-            # 迅雷网盘
             elif cloud_name == "迅雷网盘":
                 if hasattr(client, "_get_access_token"):
                     token = client._get_access_token()
-                    if token:
-                        update_account_status(account_id, is_valid=True, invalid_reason="")
-                        return True, "迅雷 access_token 获取成功", info
+                    if not token:
+                        raise ValueError("迅雷 refresh_token 已过期或无效，请重新授权")
+                    if client.refresh_token:
+                        cred_raw = account.get("credential") or ""
+                        if cred_raw.startswith("{"):
+                            try:
+                                d = json.loads(cred_raw)
+                                if d.get("refresh_token") != client.refresh_token:
+                                    d["refresh_token"] = client.refresh_token
+                                    update_account_credential(account_id, json.dumps(d, ensure_ascii=False))
+                            except Exception:
+                                pass
+                        elif cred_raw != client.refresh_token:
+                            update_account_credential(account_id, client.refresh_token)
 
-            # 其他客户端 (UC、光鸭、悟空、移动)
-            if hasattr(client, "get_or_create_dir"):
+            elif cloud_name == "夸克网盘":
+                if hasattr(client, "get_all_file"):
+                    client.get_all_file()
+
+            elif cloud_name == "百度网盘":
+                if hasattr(client, "get_or_create_dir"):
+                    client.get_or_create_dir("PanRelay_Health")
+
+            elif cloud_name == "光鸭云盘":
+                if hasattr(client, "_get_access_token"):
+                    token = client._get_access_token()
+                    if not token:
+                        raise ValueError("光鸭云盘 Token 已过期或无效，请重新授权")
+
+            elif hasattr(client, "get_or_create_dir"):
                 client.get_or_create_dir("PanRelay_Health")
-                update_account_status(account_id, is_valid=True, invalid_reason="")
-                return True, "网盘测试成功，凭证正常", info
 
-            update_account_status(account_id, is_valid=True, invalid_reason="")
-            return True, "凭证格式校验通过", info
+            # 2. 获取实时用户信息与空间容量配额
+            if hasattr(client, "get_user_and_space_info"):
+                live_info = client.get_user_and_space_info()
+                if live_info:
+                    if live_info.get("username"):
+                        info["username"] = live_info["username"]
+                    if live_info.get("total_space_bytes"):
+                        info["total_space_bytes"] = int(live_info["total_space_bytes"])
+                    if "used_space_bytes" in live_info:
+                        info["used_space_bytes"] = int(live_info["used_space_bytes"])
+                    if "vip_status" in live_info:
+                        info["vip_status"] = int(live_info["vip_status"])
+                    info["left_space_bytes"] = max(0, info["total_space_bytes"] - info["used_space_bytes"])
+
+            # 3. 持久化同步信息至数据库
+            update_data = {
+                "username": info["username"],
+                "total_space_bytes": info["total_space_bytes"],
+                "used_space_bytes": info["used_space_bytes"],
+                "left_space_bytes": info["left_space_bytes"],
+                "vip_status": info["vip_status"],
+                "is_valid": 1,
+                "invalid_reason": "",
+            }
+            update_account(account_id, update_data)
+            record_account_keepalive(account_id)
+
+            return True, "凭证有效，空间配额与账号信息已同步", info
 
         except Exception as exc:
             err_str = str(exc)
@@ -322,28 +352,23 @@ class AccountPoolManager:
 
     def keepalive_all_accounts(self) -> Dict[str, Any]:
         """
-        后台定时保活任务：遍历所有有效账号，对依赖 Token 的平台执行静默续期。
+        后台保活与续期任务：遍历所有启用的账号，执行检测、静默续期并同步空间状态。
         """
-        accounts = get_accounts_by_cloud(cloud_name="", only_active=True, only_valid=True)
-        # 获取所有有效账号
         from src.db.accounts import get_all_accounts
-        all_active = [acc for acc in get_all_accounts() if acc.get("is_active") and acc.get("is_valid")]
+        all_active = [acc for acc in get_all_accounts() if acc.get("is_active")]
 
         refreshed = 0
         failed = 0
 
         for acc in all_active:
-            cloud = acc.get("cloud_name")
-            if cloud in ("迅雷网盘", "阿里云盘", "光鸭云盘", "移动云盘"):
-                try:
-                    success, msg, _ = self.inspect_and_refresh_account(acc["id"])
-                    if success:
-                        record_account_keepalive(acc["id"])
-                        refreshed += 1
-                    else:
-                        failed += 1
-                except Exception as exc:
-                    logger.warning(f"账号保活异常 (id={acc['id']}): {exc}")
+            try:
+                success, msg, _ = self.inspect_and_refresh_account(acc["id"])
+                if success:
+                    refreshed += 1
+                else:
                     failed += 1
+            except Exception as exc:
+                logger.warning(f"账号保活异常 (id={acc['id']}): {exc}")
+                failed += 1
 
         return {"total_checked": len(all_active), "refreshed": refreshed, "failed": failed}

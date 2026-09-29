@@ -879,6 +879,17 @@ body.admin-body::before {
     box-shadow: var(--admin-shadow-2xs);
 }
 
+.btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.btn:disabled,
+.btn.disabled {
+    opacity: 0.65;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
 .btn-primary {
     background: var(--admin-primary);
     color: #ffffff;

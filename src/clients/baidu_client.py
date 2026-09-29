@@ -531,6 +531,37 @@ class BaiduPanClient(BasePanClient):
         response.raise_for_status()
         return response.json()
 
+    def get_user_and_space_info(self) -> Dict[str, Any]:
+        """
+        获取百度网盘用户信息与空间容量配额。
+        """
+        info = {
+            "username": "",
+            "total_space_bytes": 0,
+            "used_space_bytes": 0,
+            "vip_status": 0,
+        }
+        try:
+            quota_resp = self._request("GET", "https://pan.baidu.com/api/quota", params={"checkfree": 1, "checkexpire": 1})
+            if quota_resp and quota_resp.get("errno") == 0:
+                info["total_space_bytes"] = int(quota_resp.get("total") or 0)
+                info["used_space_bytes"] = int(quota_resp.get("used") or 0)
+        except Exception as e:
+            logger.warning(f"百度网盘获取容量配额异常: {e}")
+
+        try:
+            uinfo_resp = self._request("GET", "https://pan.baidu.com/rest/2.0/xpan/nas", params={"method": "uinfo"})
+            if uinfo_resp and uinfo_resp.get("errno") == 0:
+                name = uinfo_resp.get("netdisk_name") or uinfo_resp.get("baidu_name") or ""
+                if name:
+                    info["username"] = name
+                vip_type = int(uinfo_resp.get("vip_type", 0))
+                info["vip_status"] = vip_type
+        except Exception as e:
+            logger.warning(f"百度网盘获取用户信息异常: {e}")
+
+        return info
+
     @staticmethod
     def _to_json(value: Any) -> str:
         import json

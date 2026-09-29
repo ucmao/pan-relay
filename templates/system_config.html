@@ -4,7 +4,7 @@
 {% block title %}系统配置 - Pan-Relay Console{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto space-y-6">
+<div id="systemConfigContainer" class="{{ 'max-w-7xl' if current_tab == 'accounts' else 'max-w-4xl' }} mx-auto space-y-6 transition-[max-width] duration-200">
     <!-- Page Header (ucmao admin_modern style) -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -542,6 +542,12 @@
                         <p class="admin-panel-desc">同一平台支持添加多个账号，转存时根据剩余容量、优先级与加权轮询自动调度并防封分流</p>
                     </div>
                     <div class="flex items-center gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" id="btnExportAccounts" type="button" title="导出当前网盘账号配置为 CSV">
+                            <i class="fas fa-file-export"></i> 导出 CSV
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" id="btnImportAccounts" type="button" title="从 CSV 文件批量导入网盘账号">
+                            <i class="fas fa-file-import"></i> 导入 CSV
+                        </button>
                         <button class="btn btn-outline-secondary btn-sm" id="btnKeepaliveAccounts" type="button" title="对所有需要续期的账号执行一次静默刷新">
                             <i class="fas fa-rotate"></i> 一键全盘续期
                         </button>
@@ -566,23 +572,24 @@
                     </div>
 
                     <!-- 账号数据表格 -->
-                    <div class="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead class="bg-slate-50/80 dark:bg-slate-800/80 text-slate-500 font-semibold border-b border-slate-200/80 dark:border-slate-700">
+                    <div class="account-table-wrap overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+                        <table class="w-full text-left text-xs border-collapse min-w-[1000px]">
+                            <thead class="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 font-semibold border-b border-slate-200/80 dark:border-slate-700">
                                 <tr>
-                                    <th class="p-3.5 pl-4">网盘平台 & 账号备注</th>
-                                    <th class="p-3.5">用户名</th>
-                                    <th class="p-3.5">状态</th>
-                                    <th class="p-3.5">存储空间</th>
-                                    <th class="p-3.5">调度策略</th>
-                                    <th class="p-3.5 text-center">累计转存</th>
-                                    <th class="p-3.5">最近活动</th>
-                                    <th class="p-3.5 pr-4 text-right">操作</th>
+                                    <th class="p-3.5 pl-4 whitespace-nowrap">网盘平台</th>
+                                    <th class="p-3.5 whitespace-nowrap">账号备注</th>
+                                    <th class="p-3.5 whitespace-nowrap">用户名</th>
+                                    <th class="p-3.5 whitespace-nowrap">状态</th>
+                                    <th class="p-3.5 whitespace-nowrap">存储空间</th>
+                                    <th class="p-3.5 whitespace-nowrap">调度策略</th>
+                                    <th class="p-3.5 text-center whitespace-nowrap">累计转存</th>
+                                    <th class="p-3.5 whitespace-nowrap">最近活动</th>
+                                    <th class="p-3.5 pr-4 text-right account-table-sticky-col whitespace-nowrap">操作</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50" id="accountsTableBody">
                                 <tr>
-                                    <td colspan="8" class="p-8 text-center text-slate-400">
+                                    <td colspan="9" class="p-8 text-center text-slate-400">
                                         <i class="fas fa-spinner fa-spin text-base mr-2"></i> 加载账号池中...
                                     </td>
                                 </tr>
@@ -659,6 +666,60 @@
     </div>
 </div>
 
+<!-- 批量导入账号 CSV Modal -->
+<div id="accountImportModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200" style="display: none;" aria-hidden="true">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <i class="fas fa-file-csv text-indigo-600"></i> 批量导入网盘账号 (CSV)
+            </h3>
+            <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm" id="btnCloseAccountImportModal" type="button">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <form id="accountImportForm" class="p-6 space-y-4 text-xs">
+            <!-- 模板下载引导与格式提示 -->
+            <div class="p-3 bg-indigo-50/60 dark:bg-indigo-950/30 rounded-xl border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between gap-3">
+                <div class="text-indigo-900 dark:text-indigo-300 min-w-0">
+                    <span class="font-semibold block mb-0.5">需要标准 CSV 模板？</span>
+                    <span class="text-[11px] text-indigo-600/80 dark:text-indigo-400 block">支持 8 大网盘、批量多账号、权重及优先级定义</span>
+                </div>
+                <a href="/admin/api/accounts/template-csv" class="btn btn-outline-primary btn-xs shrink-0" download="网盘账号导入模板.csv">
+                    <i class="fas fa-download mr-1"></i> 下载模板
+                </a>
+            </div>
+
+            <!-- 文件上传拖拽/选择区 -->
+            <div>
+                <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">选择 CSV 文件 *</label>
+                <div id="accountCsvDropZone" class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-900/30">
+                    <input type="file" id="accountCsvFileInput" accept=".csv,text/csv" class="hidden">
+                    <i class="fas fa-cloud-arrow-up text-3xl text-indigo-500 mb-2 block" id="accountCsvIcon"></i>
+                    <div class="text-xs font-medium text-slate-700 dark:text-slate-300" id="accountCsvFileName">点击选择或将 CSV 文件拖拽至此处</div>
+                    <p class="text-[11px] text-slate-400 mt-1 mb-0" id="accountCsvFileHint">支持 UTF-8, GBK 编码格式 CSV 文件</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+                <label class="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
+                    <input type="checkbox" id="accountImportAutoTest" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked>
+                    <span>导入完成后自动发起账号测活与容量探测</span>
+                </label>
+            </div>
+
+            <!-- 导入结果状态展示区 (初始隐藏) -->
+            <div id="accountImportResult" class="hidden p-3 rounded-xl border text-xs max-h-40 overflow-y-auto space-y-1.5"></div>
+
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                <button type="button" class="btn btn-secondary btn-sm" id="btnCancelAccountImportModal">取消</button>
+                <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitAccountImport">
+                    <i class="fas fa-upload mr-1"></i> 开始导入
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <style>
 .account-filter-btn {
     padding: 0.35rem 0.75rem;
@@ -695,6 +756,36 @@
     border-color: #6366f1 !important;
     color: #ffffff !important;
 }
+
+/* 账号池表格固定列与横向滚动样式 */
+.account-table-wrap {
+    position: relative;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.account-table-sticky-col {
+    position: sticky !important;
+    right: 0;
+    background-color: #ffffff;
+    box-shadow: -6px 0 10px -4px rgba(15, 23, 42, 0.05);
+}
+.dark .account-table-sticky-col {
+    background-color: #1e293b;
+    box-shadow: -6px 0 10px -4px rgba(0, 0, 0, 0.35);
+}
+thead th.account-table-sticky-col {
+    z-index: 20;
+    background-color: #f8fafc;
+}
+.dark thead th.account-table-sticky-col {
+    background-color: #1e293b;
+}
+tr:hover td.account-table-sticky-col {
+    background-color: #f8fafc;
+}
+.dark tr:hover td.account-table-sticky-col {
+    background-color: #334155;
+}
 </style>
 
 <div aria-live="polite" aria-atomic="true" id="toastContainer"></div>
@@ -703,6 +794,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.7"></script>
-<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.7"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.8"></script>
+<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.8"></script>
 {% endblock %}

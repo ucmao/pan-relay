@@ -556,6 +556,36 @@ class XunleiPanClient(BasePanClient):
             logger.error("迅雷网盘接口调用网络异常 (%s): %s", url, exc)
             return None
 
+    def get_user_and_space_info(self) -> Dict[str, Any]:
+        """
+        获取迅雷网盘用户信息与空间容量配额。
+        """
+        info = {
+            "username": f"UID:{self.user_id}" if self.user_id else "",
+            "total_space_bytes": 0,
+            "used_space_bytes": 0,
+            "vip_status": 0,
+        }
+        token = self._get_access_token()
+        if not token:
+            return info
+
+        try:
+            about_resp = self._request_pan("GET", "https://api-pan.xunlei.com/drive/v1/about", action="GET:/drive/v1/about")
+            if about_resp:
+                quota = about_resp.get("quota") or {}
+                space = about_resp.get("space") or {}
+                info["total_space_bytes"] = int(quota.get("limit") or space.get("total") or space.get("total_bytes") or 0)
+                info["used_space_bytes"] = int(quota.get("usage") or space.get("used") or space.get("used_bytes") or 0)
+                user = about_resp.get("user") or {}
+                name = user.get("name") or user.get("nickname") or ""
+                if name:
+                    info["username"] = name
+        except Exception as e:
+            logger.warning(f"迅雷网盘获取空间信息异常: {e}")
+
+        return info
+
     @staticmethod
     def _parse_share_url(url: str) -> Tuple[str, str]:
         share_match = re.search(r"/s/([^?#/]+)", url)

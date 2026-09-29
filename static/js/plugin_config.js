@@ -244,7 +244,7 @@ function updatePluginBatchToolbar() {
     }
 }
 
-async function batchEnablePlugins(isEnabled) {
+async function batchEnablePlugins(isEnabled, triggerBtn = null) {
     const names = Array.from(pluginSelectionState.selectedNames);
     const isAll = pluginSelectionState.selectMode === 'all';
     const actionStr = isEnabled ? '启用' : '停用';
@@ -255,6 +255,13 @@ async function batchEnablePlugins(isEnabled) {
     }
 
     const targetNames = isAll ? currentPluginsData.map(p => p.name) : names;
+    const btn = triggerBtn || (window.event && window.event.target ? window.event.target.closest('button') : null);
+    let originalHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin text-[10px]"></i> ${actionStr}中...`;
+    }
 
     try {
         const response = await fetch('/admin/api/plugins/batch-toggle', {
@@ -266,16 +273,21 @@ async function batchEnablePlugins(isEnabled) {
         if (response.ok && data.success) {
             showToast(data.message || `已批量${actionStr}插件`, 'success');
             clearPluginSelection();
-            loadPlugins();
+            await loadPlugins();
         } else {
             showToast(data.message || `批量${actionStr}失败`, 'danger');
         }
     } catch (e) {
         showToast(`批量${actionStr}网络请求异常: ${e.message}`, 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 }
 
-async function batchTestPlugins(forceAll = false) {
+async function batchTestPlugins(forceAll = false, triggerBtn = null) {
     const names = Array.from(pluginSelectionState.selectedNames);
     const isAll = forceAll || pluginSelectionState.selectMode === 'all';
 
@@ -289,6 +301,15 @@ async function batchTestPlugins(forceAll = false) {
         showToast('暂无 Python 插件可供测试', 'warning');
         return;
     }
+
+    const btn = triggerBtn || (window.event && window.event.target ? window.event.target.closest('button') : null) || (forceAll ? document.getElementById('btnBatchTestPlugins') : null);
+    let originalHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin text-[10px]"></i> ${forceAll || isAll ? '正在检测...' : '测试中...'}`;
+    }
+
     showToast(`正在后台检测 ${targetNames.length} 个 Python 插件，请稍候...`, 'info');
 
     try {
@@ -300,12 +321,17 @@ async function batchTestPlugins(forceAll = false) {
         const data = await response.json();
         if (response.ok && data.success) {
             showToast(data.message || '批量测试插件完成', 'success');
-            loadPlugins();
+            await loadPlugins();
         } else {
             showToast(data.message || '批量测试插件失败', 'danger');
         }
     } catch (e) {
         showToast(`批量测试网络请求异常: ${e.message}`, 'danger');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     }
 }
 
@@ -659,7 +685,12 @@ async function runPluginTest() {
         return;
     }
 
-    if (btn) btn.disabled = true;
+    let originalBtnHtml = '';
+    if (btn) {
+        btn.disabled = true;
+        originalBtnHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 检索中...';
+    }
     if (resultArea) resultArea.classList.remove('d-none');
     if (statusAlert) {
         statusAlert.className = 'alert alert-info py-2 px-3 small mb-2';
@@ -719,7 +750,10 @@ async function runPluginTest() {
             statusAlert.innerHTML = `<i class="fas fa-times-circle me-1"></i> 请求异常: ${escapeHtml(err.message)}`;
         }
     } finally {
-        if (btn) btn.disabled = false;
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnHtml;
+        }
     }
 }
 

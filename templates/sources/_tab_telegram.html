@@ -7,7 +7,7 @@
                 <p class="admin-panel-desc">逐个管理频道状态；检测结果只更新健康状态，不会自动停用频道</p>
             </div>
             <div class="flex items-center space-x-2 flex-wrap">
-                <button class="btn btn-outline-primary btn-sm" onclick="batchTestTgChannels(true)" title="全盘检测所有 Telegram 频道连通性">
+                <button id="btnBatchTestTgChannels" class="btn btn-outline-primary btn-sm" onclick="batchTestTgChannels(true, this)" title="全盘检测所有 Telegram 频道连通性">
                     <i class="fas fa-stethoscope text-[10px]"></i> 全部检测
                 </button>
                 <button class="btn btn-primary btn-sm" data-ui-modal-target="#addTgChannelModal"><i
@@ -27,16 +27,16 @@
                 </button>
             </div>
             <div class="resource-batch-actions">
-                <button class="btn btn-info btn-sm" onclick="batchTestTgChannels()" type="button" title="测试选中的 Telegram 频道连通性">
+                <button class="btn btn-info btn-sm" onclick="batchTestTgChannels(false, this)" type="button" title="测试选中的 Telegram 频道连通性">
                     <i class="fas fa-stethoscope"></i> 测试所选
                 </button>
-                <button class="btn btn-primary btn-sm" onclick="batchEnableTgChannels(true)" type="button">
+                <button class="btn btn-primary btn-sm" onclick="batchEnableTgChannels(true, this)" type="button">
                     <i class="fas fa-play"></i> 批量启用
                 </button>
-                <button class="btn btn-secondary btn-sm" onclick="batchEnableTgChannels(false)" type="button">
+                <button class="btn btn-secondary btn-sm" onclick="batchEnableTgChannels(false, this)" type="button">
                     <i class="fas fa-ban"></i> 批量停用
                 </button>
-                <button class="btn btn-danger btn-sm" onclick="batchDeleteTgChannels()" type="button">
+                <button class="btn btn-danger btn-sm" onclick="batchDeleteTgChannels(this)" type="button">
                     <i class="fas fa-trash-alt"></i> 批量删除
                 </button>
             </div>

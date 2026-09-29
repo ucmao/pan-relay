@@ -21,7 +21,8 @@ class GuangyaPanClient(BasePanClient):
     提供转存 (store)、创建新分享与文件删除 (del_file) 功能。
     """
     api_base = "https://api.guangyapan.com"
-    client_id = "guangya_web"
+    auth_base = "https://account.guangyapan.com"
+    client_id = "aMe-8VSlkrbQXpUR"
 
     def __init__(self, credential: Union[str, Dict[str, Any]]) -> None:
         self.raw_credential = credential
@@ -69,8 +70,12 @@ class GuangyaPanClient(BasePanClient):
             # 刷新 Token
             try:
                 resp = self.session.post(
-                    f"{self.api_base}/drive/v1/auth/token",
-                    json={"grant_type": "refresh_token", "refresh_token": self.refresh_token},
+                    f"{self.auth_base}/v1/auth/token",
+                    json={
+                        "grant_type": "refresh_token",
+                        "refresh_token": self.refresh_token,
+                        "client_id": self.client_id,
+                    },
                     timeout=10,
                 )
                 if resp.status_code == 200:
@@ -351,3 +356,44 @@ class GuangyaPanClient(BasePanClient):
 
         logger.error(f"光鸭云盘删除文件失败: {res}")
         return False
+
+    def get_user_and_space_info(self) -> Dict[str, Any]:
+        """
+        获取光鸭云盘用户信息与空间容量配额。
+        """
+        info = {
+            "username": "",
+            "total_space_bytes": 0,
+            "used_space_bytes": 0,
+            "vip_status": 0,
+        }
+        token = self._get_access_token()
+        if not token:
+            return info
+
+        # 尝试从 JWT payload 中提取 UID
+        try:
+            import base64
+            parts = token.split(".")
+            if len(parts) >= 2:
+                payload_b64 = parts[1] + "=="
+                payload_data = json.loads(base64.urlsafe_b64decode(payload_b64.encode("utf-8")).decode("utf-8", errors="ignore"))
+                sub = payload_data.get("sub")
+                if sub:
+                    info["username"] = f"UID:{sub}"
+        except Exception:
+            pass
+
+        try:
+            res = self._request_api("POST", "/assets/v1/get_assets", payload={})
+            if res and res.get("code") == 0:
+                data = res.get("data") or {}
+                info["total_space_bytes"] = int(data.get("totalSpaceSize") or 0)
+                if data.get("svipStatus") == 1:
+                    info["vip_status"] = 2
+                elif data.get("vipStatus") == 1:
+                    info["vip_status"] = 1
+        except Exception as e:
+            logger.warning(f"光鸭云盘获取空间信息异常: {e}")
+
+        return info

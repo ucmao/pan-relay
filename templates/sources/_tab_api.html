@@ -10,7 +10,7 @@
                 <p class="admin-panel-desc">配置外部搜索接口与 JMESPath 提取规则，支持在线自检与全局启停</p>
             </div>
             <div class="flex items-center space-x-2">
-                <button class="btn btn-outline-primary btn-sm" onclick="batchTestApis(true)" title="全盘检测试验所有 API 接口健康状态">
+                <button id="btnBatchTestApis" class="btn btn-outline-primary btn-sm" onclick="batchTestApis(true, this)" title="全盘检测试验所有 API 接口健康状态">
                     <i class="fas fa-stethoscope text-[10px]"></i> 全部检测
                 </button>
                 <button class="btn btn-primary btn-sm" data-ui-modal-target="#addApiModal">
@@ -31,16 +31,16 @@
                 </button>
             </div>
             <div class="resource-batch-actions">
-                <button class="btn btn-info btn-sm" onclick="batchTestApis()" type="button" title="联调测试选中的 API 接口">
+                <button class="btn btn-info btn-sm" onclick="batchTestApis(false, this)" type="button" title="联调测试选中的 API 接口">
                     <i class="fas fa-stethoscope"></i> 测试所选
                 </button>
-                <button class="btn btn-primary btn-sm" onclick="batchEnableApis(true)" type="button">
+                <button class="btn btn-primary btn-sm" onclick="batchEnableApis(true, this)" type="button">
                     <i class="fas fa-play"></i> 批量启用
                 </button>
-                <button class="btn btn-secondary btn-sm" onclick="batchEnableApis(false)" type="button">
+                <button class="btn btn-secondary btn-sm" onclick="batchEnableApis(false, this)" type="button">
                     <i class="fas fa-ban"></i> 批量停用
                 </button>
-                <button class="btn btn-danger btn-sm" onclick="batchDeleteApis()" type="button">
+                <button class="btn btn-danger btn-sm" onclick="batchDeleteApis(this)" type="button">
                     <i class="fas fa-trash-alt"></i> 批量删除
                 </button>
             </div>

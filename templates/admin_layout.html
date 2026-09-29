@@ -407,17 +407,30 @@
             container.appendChild(bubble);
         };
 
-        window.confirmModal = function ({
-            title = '操作确认',
-            message = '确定继续执行此操作吗？',
-            confirmText = '确定',
-            cancelText = '取消',
-            type = 'danger'
-        } = {}) {
+        window.confirmModal = function (optionsOrMessage = {}, maybeType = 'danger', maybeTitle = '操作确认') {
+            let options = {};
+            if (typeof optionsOrMessage === 'string') {
+                options = {
+                    message: optionsOrMessage,
+                    type: maybeType || 'danger',
+                    title: maybeTitle || '操作确认'
+                };
+            } else {
+                options = optionsOrMessage || {};
+            }
+
+            const {
+                title = '操作确认',
+                message = '确定继续执行此操作吗？',
+                confirmText = '确定',
+                cancelText = '取消',
+                type = 'danger'
+            } = options;
+
             return new Promise((resolve) => {
                 const backdrop = document.getElementById('confirm-modal-backdrop');
                 if (!backdrop) {
-                    resolve(window.confirm(message));
+                    resolve(true);
                     return;
                 }
 

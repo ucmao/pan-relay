@@ -436,9 +436,41 @@ class UcPanClient(BasePanClient):
         response.raise_for_status()
         return response.json()
 
+    def get_user_and_space_info(self) -> Dict[str, Any]:
+        """
+        获取UC网盘用户信息与空间容量配额。
+        """
+        info = {
+            "username": "",
+            "total_space_bytes": 0,
+            "used_space_bytes": 0,
+            "vip_status": 0,
+        }
+        try:
+            member_resp = self._request("GET", "https://pc-api.uc.cn/1/clouddrive/member", params={"pr": "UCBrowser", "fr": "pc"})
+            m_data = (member_resp or {}).get("data") or {}
+            info["total_space_bytes"] = int(m_data.get("total_capacity") or m_data.get("secret_total_capacity") or 0)
+            info["used_space_bytes"] = int(m_data.get("use_capacity") or m_data.get("secret_use_capacity") or 0)
+            m_type = str(m_data.get("member_type") or "").upper()
+            if "SVIP" in m_type or "SUPER" in m_type:
+                info["vip_status"] = 2
+            elif "VIP" in m_type:
+                info["vip_status"] = 1
+        except Exception as e:
+            logger.warning(f"UC网盘获取容量信息异常: {e}")
+
+        try:
+            user_resp = self._request("GET", "https://drive.uc.cn/account/info")
+            u_data = (user_resp or {}).get("data") or {}
+            nickname = u_data.get("nickname") or u_data.get("username") or ""
+            if nickname:
+                info["username"] = nickname
+        except Exception as e:
+            logger.warning(f"UC网盘获取用户信息异常: {e}")
+
+        return info
+
     @staticmethod
     def _extract_pwd_id(url: str) -> str:
         match = re.search(r"/s/([a-zA-Z0-9]+)", url)
-        if match:
-            return match.group(1)
-        return ""
+        return match.group(1) if match else ""

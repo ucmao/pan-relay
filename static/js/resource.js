@@ -1385,7 +1385,7 @@ function initResourcePage() {
                     cancelText: '取消',
                     type: 'primary'
                 })
-                : (typeof showConfirm === 'function' ? await showConfirm(confirmPrompt, 'primary', '批量巡检确认') : confirm(confirmPrompt));
+                : true;
 
             if (!ok) return;
 
@@ -1463,7 +1463,7 @@ function initResourcePage() {
                     cancelText: '取消',
                     type: 'danger'
                 })
-                : confirm(confirmPrompt);
+                : true;
 
             if (!ok) {
                 return;

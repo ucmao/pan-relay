@@ -88,12 +88,15 @@ flowchart TD
 ### 6. 光鸭云盘 (Guangya)
 * **凭证类型**：`Access Token` / `Refresh Token`
 * **获取方法**：
-  1. 登录网页版，从接口请求标头提取 `Authorization: Bearer <token>` 或本地存储中的 Token。
+  1. 登录网页版[guangyapan.com](https://www.guangyapan.com/)
+  2. `F12` 开发者工具 -> **应用 (Application)** -> **本地存储 (Local Storage)**。
+  3. 找到 `token` 键，展开 JSON 对象复制其中的 `access_token` `refresh_token`。
 
 ### 7. 悟空网盘 (Wukong)
 * **凭证类型**：`Cookie` / `Session Token`
 * **获取方法**：
-  1. 登录悟空网盘网页端，从开发者工具网络请求中复制完整 `Cookie`。
+  1. 登录网页端[pan.wkbrowser.com](https://pan.wkbrowser.com/)
+  2. 从开发者工具网络请求中复制完整 `Cookie`。
 
 ### 8. 移动云盘 (139 / Caiyun)
 * **凭证类型**：`Authorization Token`
@@ -106,5 +109,20 @@ flowchart TD
 ## 🧪 账号自检与故障排查
 
 1. **单个账号在线测试**：在后台网盘账号池列表中，点击账号操作列中的 **【测试】** 按钮，系统会立即发起一次沙箱接口握手测试，并更新其有效状态及最新可用空间。
-2. **全池一键保活**：点击列表顶部的 **【一键全量保活】** 按钮，系统会即时并发巡检所有已激活账号并自动续期凭证。
+2. **全池一键保活**：点击列表顶部的 **【一键全盘续期】** 按钮，系统会即时并发巡检所有已激活账号并自动续期凭证。
 3. **禁用与隔离**：当某个账号由于欠费或官方风控被封禁时，可直接在后台将“启用开关”关闭，调度器将即时将其剔除出可用池，不影响其他正常账号。
+
+---
+
+## 📊 CSV 批量导入与导出
+
+为方便管理大规模账号池与进行冷备份，控制台提供了完整的 CSV 导入导出支持：
+
+1. **批量导出 (`GET /admin/api/accounts/export-csv`)**：
+   - 点击右上角 **【导出 CSV】**，系统将自动将当前（或已筛选平台）的所有账号配置导出为带 UTF-8 BOM 的标准 CSV 文件（Excel/WPS 完美支持无乱码）。
+2. **模板下载 (`GET /admin/api/accounts/template-csv`)**：
+   - 在导入弹窗中点击 **【下载模板】** 即可获取包含 8 大主流网盘示例的标准 CSV 模板。
+3. **批量导入 (`POST /admin/api/accounts/import-csv`)**：
+   - 点击 **【导入 CSV】**，支持拖拽或选择 `.csv` 文件进行批量入库。
+   - 兼容中英文表头、平台别名智能归一化，并支持导入后自动发起健康测活与空间探测。
+

@@ -1,6 +1,14 @@
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, Response, jsonify, render_template, request
 import concurrent.futures
+import datetime
 import json
+import urllib.parse
+
+from src.services.account_csv_service import (
+    export_accounts_csv,
+    generate_accounts_template_csv,
+    import_accounts_from_csv,
+)
 
 from src.db.credentials import delete_cookie, get_cookie_by_cloud_name, save_cookie
 from src.db.accounts import (
@@ -536,6 +544,68 @@ def trigger_keepalive_api():
         "message": "账号保活与续期任务执行完成",
         "result": res,
     })
+
+
+@system_config_bp.route("/admin/api/accounts/export-csv", methods=["GET"])
+@token_required
+def export_accounts_csv_api():
+    """导出网盘账号池列表为 CSV"""
+    cloud_name = request.args.get("cloud_name")
+    csv_text = export_accounts_csv(cloud_name=cloud_name)
+    now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    prefix = f"{cloud_name}_" if cloud_name and cloud_name != "ALL" else ""
+    ascii_filename = f"pan_relay_accounts_{prefix}{now_str}.csv"
+    utf8_filename = urllib.parse.quote(f"网盘账号池_{prefix}{now_str}.csv")
+
+    response = Response(csv_text, mimetype="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{utf8_filename}"
+    return response
+
+
+@system_config_bp.route("/admin/api/accounts/template-csv", methods=["GET"])
+@token_required
+def template_accounts_csv_api():
+    """下载网盘账号批量导入 CSV 模板"""
+    csv_text = generate_accounts_template_csv()
+    ascii_filename = "pan_relay_accounts_template.csv"
+    utf8_filename = urllib.parse.quote("网盘账号导入模板.csv")
+
+    response = Response(csv_text, mimetype="text/csv; charset=utf-8")
+    response.headers["Content-Disposition"] = f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{utf8_filename}"
+    return response
+
+
+@system_config_bp.route("/admin/api/accounts/import-csv", methods=["POST"])
+@token_required
+def import_accounts_csv_api():
+    """批量从 CSV 导入网盘账号"""
+    auto_test = True
+    if "auto_test" in request.args:
+        auto_test = request.args.get("auto_test", "true").lower() in ("true", "1", "yes")
+    elif "auto_test" in request.form:
+        auto_test = request.form.get("auto_test", "true").lower() in ("true", "1", "yes")
+
+    csv_data = None
+    if "file" in request.files:
+        file = request.files["file"]
+        if not file or not file.filename:
+            return jsonify({"success": False, "message": "未选择任何 CSV 文件"}), 400
+        csv_data = file.read()
+    elif request.is_json:
+        data = request.get_json() or {}
+        csv_data = data.get("csv_content", "")
+        if "auto_test" in data:
+            auto_test = bool(data.get("auto_test"))
+    elif request.form and "csv_content" in request.form:
+        csv_data = request.form.get("csv_content", "")
+
+    if not csv_data:
+        return jsonify({"success": False, "message": "上传的 CSV 数据为空"}), 400
+
+    result = import_accounts_from_csv(csv_data, auto_test=auto_test)
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
+
 
 
 

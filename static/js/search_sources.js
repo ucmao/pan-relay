@@ -291,7 +291,7 @@
         }
     }
 
-    async function batchEnableTgChannels(isEnabled) {
+    async function batchEnableTgChannels(isEnabled, triggerBtn = null) {
         const channels = Array.from(tgSelectionState.selectedChannels);
         const isAll = tgSelectionState.selectMode === 'all';
         const actionStr = isEnabled ? '启用' : '停用';
@@ -302,10 +302,17 @@
         }
 
         const targetChannels = isAll ? tgChannels.map(item => item.channel) : channels;
+        const btn = triggerBtn || (window.event && window.event.target ? window.event.target.closest('button') : null);
+        let originalHtml = '';
+        if (btn) {
+            btn.disabled = true;
+            originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-[10px]"></i> ${actionStr}中...`;
+        }
 
         try {
             const response = await fetch('/admin/api/tg-channels/batch-toggle', {
-                method: 'PUT',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ channels: targetChannels, is_enabled: isEnabled })
             });
@@ -313,16 +320,21 @@
             if (response.ok && data.success) {
                 showToast(data.message || `已批量${actionStr}频道`, 'success');
                 clearTgSelection();
-                loadTgChannels();
+                await loadTgChannels();
             } else {
                 showToast(data.message || `批量${actionStr}失败`, 'danger');
             }
         } catch (e) {
             showToast(`批量${actionStr}网络请求异常: ${e.message}`, 'danger');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
     }
 
-    async function batchDeleteTgChannels() {
+    async function batchDeleteTgChannels(triggerBtn = null) {
         const channels = Array.from(tgSelectionState.selectedChannels);
         const isAll = tgSelectionState.selectMode === 'all';
 
@@ -332,8 +344,25 @@
         }
 
         const targetChannels = isAll ? tgChannels.map(item => item.channel) : channels;
-        if (!confirm(`确定要批量删除选中的 ${targetChannels.length} 个 Telegram 频道吗？该操作不可恢复！`)) {
+        const ok = window.confirmModal
+            ? await window.confirmModal({
+                title: '批量删除 Telegram 频道',
+                message: `确定要批量删除选中的 ${targetChannels.length} 个 Telegram 频道吗？该操作不可恢复！`,
+                confirmText: '确认删除',
+                cancelText: '取消',
+                type: 'danger'
+            })
+            : true;
+        if (!ok) {
             return;
+        }
+
+        const btn = triggerBtn || (window.event && window.event.target ? window.event.target.closest('button') : null);
+        let originalHtml = '';
+        if (btn) {
+            btn.disabled = true;
+            originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 删除中...';
         }
 
         try {
@@ -346,16 +375,21 @@
             if (response.ok && data.success) {
                 showToast(data.message || '已批量删除频道', 'success');
                 clearTgSelection();
-                loadTgChannels();
+                await loadTgChannels();
             } else {
                 showToast(data.message || '批量删除失败', 'danger');
             }
         } catch (e) {
             showToast(`批量删除网络请求异常: ${e.message}`, 'danger');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
     }
 
-    async function batchTestTgChannels(forceAll = false) {
+    async function batchTestTgChannels(forceAll = false, triggerBtn = null) {
         const channels = Array.from(tgSelectionState.selectedChannels);
         const isAll = forceAll || tgSelectionState.selectMode === 'all';
 
@@ -370,6 +404,14 @@
             return;
         }
 
+        const btn = triggerBtn || (window.event && window.event.target ? window.event.target.closest('button') : null) || (forceAll ? document.getElementById('btnBatchTestTgChannels') : null);
+        let originalHtml = '';
+        if (btn) {
+            btn.disabled = true;
+            originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-[10px]"></i> ${forceAll || isAll ? '正在检测...' : '测试中...'}`;
+        }
+
         showToast(`正在后台测试 ${targetChannels.length} 个 Telegram 频道，请稍候...`, 'info');
 
         try {
@@ -381,12 +423,17 @@
             const data = await response.json();
             if (response.ok && data.success) {
                 showToast(data.message || '批量测试完成', 'success');
-                loadTgChannels();
+                await loadTgChannels();
             } else {
                 showToast(data.message || '批量测试失败', 'danger');
             }
         } catch (e) {
             showToast(`批量测试网络请求异常: ${e.message}`, 'danger');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
     }
 
@@ -719,7 +766,13 @@
 
     async function testTgChannel(encodedChannel, triggerButton = null) {
         const channel = decodeURIComponent(encodedChannel);
-        if (triggerButton) triggerButton.disabled = true;
+        const btn = triggerButton || (window.event && window.event.target ? window.event.target.closest('button') : null);
+        let originalHtml = '';
+        if (btn) {
+            btn.disabled = true;
+            originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 测试中...';
+        }
         document.getElementById('tgTestTitle').textContent = `测试频道 @${channel}`;
         document.getElementById('tgTestStatusAlert').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> 正在轮询测试关键词，请稍候...';
         document.getElementById('tgTestTableBody').innerHTML = '';
@@ -735,7 +788,10 @@
         } catch (error) {
             renderTgTestResult({ success: false, message: error.message, latency_ms: 0, results: [] });
         } finally {
-            if (triggerButton) triggerButton.disabled = false;
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
     }
 

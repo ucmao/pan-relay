@@ -76,6 +76,17 @@ function switchSystemTab(target, updateHash = true) {
         pane.classList.toggle('is-active', pane.id === `tab-pane-${normalized}`);
     });
 
+    const container = document.getElementById('systemConfigContainer');
+    if (container) {
+        if (normalized === 'accounts') {
+            container.classList.remove('max-w-4xl');
+            container.classList.add('max-w-7xl');
+        } else {
+            container.classList.remove('max-w-7xl');
+            container.classList.add('max-w-4xl');
+        }
+    }
+
     if (normalized === 'accounts' && typeof loadCloudAccounts === 'function') {
         loadCloudAccounts();
     }
@@ -1123,7 +1134,7 @@ async function runStorageCleanupNow() {
             cancelText: '取消',
             type: 'danger'
         })
-        : confirm(confirmPrompt);
+        : true;
 
     if (!ok) return;
 
@@ -1420,7 +1431,7 @@ async function loadCloudAccounts(cloud = null) {
         const data = await res.json();
 
         if (!data.success) {
-            tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-500 font-medium"><i class="fas fa-triangle-exclamation mr-2"></i>加载失败: ${data.message || '未知错误'}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500 font-medium"><i class="fas fa-triangle-exclamation mr-2"></i>加载失败: ${data.message || '未知错误'}</td></tr>`;
             return;
         }
 
@@ -1450,8 +1461,77 @@ async function loadCloudAccounts(cloud = null) {
         renderAccountsTable(_accountsData);
     } catch (err) {
         console.error('加载账号池异常:', err);
-        tableBody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-500"><i class="fas fa-circle-exclamation mr-2"></i>网络请求异常</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-red-500"><i class="fas fa-circle-exclamation mr-2"></i>网络请求异常</td></tr>`;
     }
+}
+
+function renderStorageRingHtml(acc) {
+    const unsupportedSpaceClouds = ['悟空网盘', '移动云盘'];
+    if (unsupportedSpaceClouds.includes(acc.cloud_name)) {
+        return `
+            <div class="flex items-center gap-2.5">
+                <div class="relative inline-flex items-center justify-center flex-shrink-0" style="width: 34px; height: 34px;">
+                    <svg class="w-full h-full" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="14.5" fill="none" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="2.8" stroke-dasharray="3 3"></circle>
+                    </svg>
+                    <span class="absolute text-[9px] font-medium text-slate-400">--</span>
+                </div>
+                <div class="flex flex-col text-[11px] leading-tight">
+                    <span class="text-[11px] font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700/60 px-2 py-0.5 rounded-md w-max">不支持容量</span>
+                </div>
+            </div>
+        `;
+    }
+
+    if (!acc.total_space_bytes || acc.total_space_bytes <= 0) {
+        return `
+            <div class="flex items-center gap-2.5">
+                <div class="relative inline-flex items-center justify-center flex-shrink-0" style="width: 34px; height: 34px;">
+                    <svg class="w-full h-full" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="14.5" fill="none" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="2.8"></circle>
+                    </svg>
+                    <span class="absolute text-[9px] font-medium text-slate-400">--</span>
+                </div>
+                <div class="flex flex-col text-[11px] leading-tight">
+                    <span class="text-slate-400">未探测</span>
+                </div>
+            </div>
+        `;
+    }
+
+    const usedStr = formatBytes(acc.used_space_bytes || 0);
+    const totalStr = formatBytes(acc.total_space_bytes);
+    const pct = Math.min(100, Math.round(((acc.used_space_bytes || 0) / acc.total_space_bytes) * 100));
+
+    // SVG 圆环周长: 2 * Math.PI * 14.5 ≈ 91.1
+    const circumference = 91.1;
+    const offset = Math.max(0, (circumference - (pct / 100) * circumference)).toFixed(1);
+
+    let strokeColor = '#4f46e5';
+    let textColor = 'text-indigo-600 dark:text-indigo-400';
+    if (pct > 90) {
+        strokeColor = '#f43f5e';
+        textColor = 'text-rose-600 dark:text-rose-400';
+    } else if (pct > 75) {
+        strokeColor = '#f59e0b';
+        textColor = 'text-amber-600 dark:text-amber-400';
+    }
+
+    return `
+        <div class="flex items-center gap-2.5">
+            <div class="relative inline-flex items-center justify-center flex-shrink-0" style="width: 36px; height: 36px;">
+                <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14.5" fill="none" class="stroke-slate-100 dark:stroke-slate-700" stroke-width="3"></circle>
+                    <circle cx="18" cy="18" r="14.5" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-dasharray="91.1" stroke-dashoffset="${offset}" stroke-linecap="round" class="transition-all duration-300"></circle>
+                </svg>
+                <span class="absolute text-[9px] font-bold ${textColor}">${pct}%</span>
+            </div>
+            <div class="flex flex-col text-[11px] leading-tight">
+                <span class="font-semibold text-slate-700 dark:text-slate-200">${usedStr}</span>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">总 ${totalStr}</span>
+            </div>
+        </div>
+    `;
 }
 
 function renderAccountsTable(accounts) {
@@ -1461,7 +1541,7 @@ function renderAccountsTable(accounts) {
     if (!accounts || accounts.length === 0) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="8" class="p-12 text-center text-slate-400 dark:text-slate-500">
+                <td colspan="9" class="p-12 text-center text-slate-400 dark:text-slate-500">
                     <div class="flex flex-col items-center justify-center gap-2">
                         <i class="fas fa-folder-open text-3xl text-slate-300 dark:text-slate-600 mb-1"></i>
                         <span class="text-sm font-medium">暂无网盘账号</span>
@@ -1490,25 +1570,8 @@ function renderAccountsTable(accounts) {
         const isValid = acc.is_valid === 1;
         const isActive = acc.is_active === 1;
 
-        // 空间容量展示
-        let spaceHtml = '<span class="text-slate-400">未探测</span>';
-        if (acc.total_space_bytes > 0) {
-            const usedStr = formatBytes(acc.used_space_bytes);
-            const totalStr = formatBytes(acc.total_space_bytes);
-            const pct = Math.min(100, Math.round((acc.used_space_bytes / acc.total_space_bytes) * 100));
-            spaceHtml = `
-                <div class="w-32 space-y-1">
-                    <div class="flex justify-between text-[10px] text-slate-500">
-                        <span>${usedStr}</span>
-                        <span>${pct}%</span>
-                    </div>
-                    <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div class="h-full ${pct > 90 ? 'bg-red-500' : (pct > 75 ? 'bg-amber-500' : 'bg-indigo-500')} rounded-full" style="width: ${pct}%"></div>
-                    </div>
-                    <div class="text-[10px] text-slate-400 text-right">总: ${totalStr}</div>
-                </div>
-            `;
-        }
+        // 圆形环形空间容量展示
+        const spaceHtml = renderStorageRingHtml(acc);
 
         // 状态徽章
         let statusBadge = '';
@@ -1523,18 +1586,18 @@ function renderAccountsTable(accounts) {
 
         html += `
             <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                <td class="p-3.5 pl-4">
-                    <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 text-[10px] font-semibold rounded-md border ${cloudClass}">
-                            ${escapeHtml(acc.cloud_name)}
-                        </span>
-                        <span class="font-bold text-slate-800 dark:text-white">${escapeHtml(acc.account_name)}</span>
-                    </div>
+                <td class="p-3.5 pl-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-1 text-[11px] font-semibold rounded-lg border ${cloudClass} shadow-2xs">
+                        ${escapeHtml(acc.cloud_name)}
+                    </span>
                 </td>
-                <td class="p-3.5 text-slate-600 dark:text-slate-300">
-                    ${acc.username ? `<span class="font-medium">${escapeHtml(acc.username)}</span>` : '<span class="text-slate-400">--</span>'}
+                <td class="p-3.5 whitespace-nowrap">
+                    <div class="font-bold text-slate-800 dark:text-white text-xs">${escapeHtml(acc.account_name)}</div>
                 </td>
-                <td class="p-3.5">
+                <td class="p-3.5 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    ${acc.username ? `<span class="font-medium text-xs">${escapeHtml(acc.username)}</span>` : '<span class="text-slate-400">--</span>'}
+                </td>
+                <td class="p-3.5 whitespace-nowrap">
                     <div class="flex items-center gap-2">
                         ${statusBadge}
                         <label class="plugin-switch" title="切换账号启用/停用">
@@ -1543,23 +1606,23 @@ function renderAccountsTable(accounts) {
                         </label>
                     </div>
                 </td>
-                <td class="p-3.5">
+                <td class="p-3.5 whitespace-nowrap">
                     ${spaceHtml}
                 </td>
-                <td class="p-3.5 text-slate-500">
+                <td class="p-3.5 text-slate-500 whitespace-nowrap">
                     <div class="flex flex-col text-[11px] gap-0.5">
                         <span>优先级: <strong class="text-indigo-600 dark:text-indigo-400">${acc.priority}</strong></span>
                         <span>权重: <strong>${acc.weight}</strong></span>
                     </div>
                 </td>
-                <td class="p-3.5 text-center font-bold text-slate-700 dark:text-slate-200">
+                <td class="p-3.5 text-center font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">
                     ${acc.transferred_count || 0}
                 </td>
-                <td class="p-3.5 text-slate-400 text-[11px]">
+                <td class="p-3.5 text-slate-400 text-[11px] whitespace-nowrap">
                     <div>用: ${acc.last_used_at ? acc.last_used_at.substring(5, 16) : '未调用'}</div>
                     <div>保: ${acc.last_keepalive_at ? acc.last_keepalive_at.substring(5, 16) : '未保活'}</div>
                 </td>
-                <td class="p-3.5 pr-4 text-right">
+                <td class="p-3.5 pr-4 text-right account-table-sticky-col whitespace-nowrap">
                     <div class="flex items-center justify-end gap-1.5">
                         <button class="btn btn-outline-secondary btn-xs" onclick="testAccount(${acc.id})" title="测试连通性与空间">
                             <i class="fas fa-stethoscope text-indigo-500"></i>
@@ -1680,11 +1743,11 @@ async function handleAccountFormSubmit(e) {
             closeAccountModal();
             loadCloudAccounts();
         } else {
-            alert('保存失败: ' + (data.message || '未知错误'));
+            showToast(data.message || '保存失败: 未知错误', 'danger');
         }
     } catch (err) {
         console.error('保存账号异常:', err);
-        alert('网络请求异常: ' + err.message);
+        showToast('网络请求异常: ' + err.message, 'danger');
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -1703,20 +1766,19 @@ async function toggleAccountActive(accountId, isActive) {
         });
         const data = await res.json();
         if (data.success) {
-            if (typeof showToast === 'function') {
-                showToast(`账号已${isActive ? '启用' : '停用'}`, 'info');
-            }
+            showToast(`账号已${isActive ? '启用' : '停用'}`, 'info');
             loadCloudAccounts();
+        } else {
+            showToast(data.message || '切换账号状态失败', 'danger');
         }
     } catch (err) {
         console.error('切换账号状态异常:', err);
+        showToast('切换账号状态异常: ' + err.message, 'danger');
     }
 }
 
 async function testAccount(accountId) {
-    if (typeof showToast === 'function') {
-        showToast('正在向网盘发起健康自检与容量探测...', 'info');
-    }
+    showToast('正在向网盘发起健康自检与容量探测...', 'info');
     try {
         const res = await fetch(`/admin/api/accounts/${accountId}/test`, {
             method: 'POST',
@@ -1724,24 +1786,32 @@ async function testAccount(accountId) {
         });
         const data = await res.json();
         if (data.success) {
-            if (typeof showToast === 'function') {
-                showToast(data.message || '测试通过，账号状态健康', 'success');
-            }
+            showToast(data.message || '测试通过，账号状态健康', 'success');
         } else {
-            alert('自测未通过: ' + (data.message || '连接失败'));
+            showToast(data.message || '自测未通过: 连接失败', 'warning');
         }
         loadCloudAccounts();
     } catch (err) {
-        alert('自测请求异常: ' + err.message);
+        showToast('自测请求异常: ' + err.message, 'danger');
     }
 }
 
 async function deleteAccount(accountId) {
     const acc = _accountsData.find(a => a.id === accountId);
     const name = acc ? acc.account_name : `ID:${accountId}`;
-    if (!confirm(`确定要彻底删除账号「${name}」吗？删除后该账号不再承接转存任务。`)) {
-        return;
-    }
+    const cloud = acc ? acc.cloud_name : '网盘';
+
+    const confirmed = window.confirmModal
+        ? await window.confirmModal({
+            title: '删除网盘账号',
+            message: `确定要彻底删除 ${cloud} 账号「${name}」吗？删除后该账号将不再参与任何转存与分流任务。`,
+            confirmText: '确认删除',
+            cancelText: '取消',
+            type: 'danger'
+        })
+        : true;
+
+    if (!confirmed) return;
 
     try {
         const res = await fetch(`/admin/api/accounts/${accountId}`, {
@@ -1750,15 +1820,13 @@ async function deleteAccount(accountId) {
         });
         const data = await res.json();
         if (data.success) {
-            if (typeof showToast === 'function') {
-                showToast('账号已安全删除', 'success');
-            }
+            showToast('账号已安全删除', 'success');
             loadCloudAccounts();
         } else {
-            alert('删除失败: ' + (data.message || '未知错误'));
+            showToast('删除失败: ' + (data.message || '未知错误'), 'danger');
         }
     } catch (err) {
-        alert('删除请求失败: ' + err.message);
+        showToast('删除请求失败: ' + err.message, 'danger');
     }
 }
 
@@ -1768,9 +1836,7 @@ async function triggerKeepaliveAll() {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 续期保活中...';
     }
-    if (typeof showToast === 'function') {
-        showToast('正在遍历网盘账号池执行静默续期与保活...', 'info');
-    }
+    showToast('正在遍历网盘账号池执行静默续期与保活...', 'info');
     try {
         const res = await fetch('/admin/api/accounts/keepalive', {
             method: 'POST',
@@ -1780,21 +1846,251 @@ async function triggerKeepaliveAll() {
         if (data.success) {
             const r = data.result || {};
             const msg = `续期完成: 检查 ${r.total_checked || 0} 个账号，成功刷新 ${r.refreshed || 0} 个，失败 ${r.failed || 0} 个`;
-            if (typeof showToast === 'function') {
-                showToast(msg, 'success');
-            }
+            showToast(msg, 'success');
             loadCloudAccounts();
         } else {
-            alert('保活失败: ' + (data.message || '未知异常'));
+            showToast('保活失败: ' + (data.message || '未知异常'), 'warning');
         }
     } catch (err) {
-        alert('保活请求异常: ' + err.message);
+        showToast('保活请求异常: ' + err.message, 'danger');
     } finally {
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-rotate"></i> 一键全盘续期';
         }
     }
+}
+
+async function exportAccountsCsv() {
+    const cloud = (_currentCloudFilter && _currentCloudFilter !== 'ALL') ? _currentCloudFilter : '';
+    const url = cloud ? `/admin/api/accounts/export-csv?cloud_name=${encodeURIComponent(cloud)}` : '/admin/api/accounts/export-csv';
+    const btn = document.getElementById('btnExportAccounts');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 导出中...';
+    }
+    showToast(`正在导出${cloud ? ` [${cloud}] ` : '全部'}网盘账号配置...`, 'info');
+
+    try {
+        const res = await fetch(url, { credentials: 'same-origin' });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            showToast(data.message || '导出失败: 服务器异常', 'danger');
+            return;
+        }
+
+        const blob = await res.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+
+        // 获取或构建文件名
+        let filename = '';
+        const disposition = res.headers.get('content-disposition');
+        if (disposition && disposition.includes('filename*=')) {
+            const parts = disposition.split("filename*=");
+            if (parts.length > 1) {
+                const encName = parts[1].replace(/UTF-8''/i, '').replace(/["']/g, '').trim();
+                try {
+                    filename = decodeURIComponent(encName);
+                } catch (e) {}
+            }
+        }
+        if (!filename && disposition && disposition.includes('filename=')) {
+            const match = disposition.match(/filename="?([^";]+)"?/i);
+            if (match && match[1]) filename = match[1].trim();
+        }
+        if (!filename) {
+            const nowStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const filterStr = cloud ? `_${cloud}` : '';
+            filename = `网盘账号池${filterStr}_${nowStr}.csv`;
+        }
+
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+
+        setTimeout(() => {
+            window.URL.revokeObjectURL(downloadUrl);
+            a.remove();
+        }, 1000);
+
+        showToast('导出成功，文件已开始下载', 'success');
+    } catch (err) {
+        console.error('导出异常:', err);
+        // Fallback: direct window.open
+        window.open(url, '_blank');
+        showToast('已唤起浏览器下载', 'info');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-file-export"></i> 导出 CSV';
+        }
+    }
+}
+
+let _selectedCsvFile = null;
+
+function openAccountImportModal() {
+    const modal = document.getElementById('accountImportModal');
+    const form = document.getElementById('accountImportForm');
+    const resultDiv = document.getElementById('accountImportResult');
+    const fileInput = document.getElementById('accountCsvFileInput');
+    const fileNameEl = document.getElementById('accountCsvFileName');
+    const iconEl = document.getElementById('accountCsvIcon');
+
+    if (!modal || !form) return;
+
+    form.reset();
+    _selectedCsvFile = null;
+    if (fileInput) fileInput.value = '';
+    if (fileNameEl) fileNameEl.textContent = '点击选择或将 CSV 文件拖拽至此处';
+    if (iconEl) iconEl.className = 'fas fa-cloud-arrow-up text-3xl text-indigo-500 mb-2 block';
+    if (resultDiv) {
+        resultDiv.className = 'hidden';
+        resultDiv.innerHTML = '';
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeAccountImportModal() {
+    const modal = document.getElementById('accountImportModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function handleCsvFileSelect(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
+        showToast('请选择 .csv 格式的文件', 'warning');
+        return;
+    }
+    _selectedCsvFile = file;
+    const fileNameEl = document.getElementById('accountCsvFileName');
+    const iconEl = document.getElementById('accountCsvIcon');
+    if (fileNameEl) {
+        fileNameEl.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400 font-semibold">${escapeHtml(file.name)}</span> <span class="text-slate-400 text-[11px]">(${formatBytes(file.size)})</span>`;
+    }
+    if (iconEl) {
+        iconEl.className = 'fas fa-file-csv text-3xl text-emerald-500 mb-2 block';
+    }
+}
+
+async function handleAccountImportSubmit(e) {
+    e.preventDefault();
+    if (!_selectedCsvFile) {
+        showToast('请先选择要导入的 CSV 文件', 'warning');
+        return;
+    }
+
+    const autoTest = document.getElementById('accountImportAutoTest')?.checked ?? true;
+    const submitBtn = document.getElementById('btnSubmitAccountImport');
+    const resultDiv = document.getElementById('accountImportResult');
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 正在导入解析...';
+    }
+    if (resultDiv) {
+        resultDiv.className = 'hidden';
+        resultDiv.innerHTML = '';
+    }
+
+    const formData = new FormData();
+    formData.append('file', _selectedCsvFile);
+    formData.append('auto_test', autoTest ? 'true' : 'false');
+
+    try {
+        const res = await fetch('/admin/api/accounts/import-csv', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(data.message || '导入完成', 'success');
+            loadCloudAccounts();
+
+            if (data.errors && data.errors.length > 0) {
+                if (resultDiv) {
+                    resultDiv.className = 'p-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 text-xs max-h-40 overflow-y-auto space-y-1';
+                    let errHtml = `<div class="font-bold text-amber-800 dark:text-amber-400 flex items-center gap-1.5"><i class="fas fa-triangle-exclamation"></i> 导入报告：成功 ${data.imported} 个，失败/跳过 ${data.failed} 条</div><ul class="list-disc pl-4 space-y-0.5 text-slate-600 dark:text-slate-400">`;
+                    data.errors.forEach(err => {
+                        errHtml += `<li>第 ${err.row} 行: ${escapeHtml(err.error)}</li>`;
+                    });
+                    errHtml += '</ul>';
+                    resultDiv.innerHTML = errHtml;
+                }
+            } else {
+                setTimeout(() => {
+                    closeAccountImportModal();
+                }, 800);
+            }
+        } else {
+            showToast(data.message || '导入失败', 'danger');
+            if (resultDiv) {
+                resultDiv.className = 'p-3 rounded-xl border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 text-xs max-h-40 overflow-y-auto space-y-1';
+                let errHtml = `<div class="font-bold text-red-700 dark:text-red-400"><i class="fas fa-circle-xmark mr-1"></i> ${escapeHtml(data.message || '导入失败')}</div>`;
+                if (data.errors && data.errors.length > 0) {
+                    errHtml += '<ul class="list-disc pl-4 space-y-0.5 text-slate-600 dark:text-slate-400 mt-1">';
+                    data.errors.forEach(err => {
+                        errHtml += `<li>第 ${err.row} 行: ${escapeHtml(err.error)}</li>`;
+                    });
+                    errHtml += '</ul>';
+                }
+                resultDiv.innerHTML = errHtml;
+            }
+        }
+    } catch (err) {
+        console.error('导入账号异常:', err);
+        showToast('上传请求异常: ' + err.message, 'danger');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload mr-1"></i> 开始导入';
+        }
+    }
+}
+
+function initAccountCsvDropZone() {
+    const dropZone = document.getElementById('accountCsvDropZone');
+    const fileInput = document.getElementById('accountCsvFileInput');
+    if (!dropZone || !fileInput) return;
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleCsvFileSelect(e.target.files[0]);
+        }
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-50/50', 'dark:bg-indigo-950/30');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50/50', 'dark:bg-indigo-950/30');
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt?.files;
+        if (files && files.length > 0) {
+            handleCsvFileSelect(files[0]);
+        }
+    });
 }
 
 function initAccountPoolEvents() {
@@ -1822,6 +2118,33 @@ function initAccountPoolEvents() {
     const btnKeepalive = document.getElementById('btnKeepaliveAccounts');
     if (btnKeepalive) btnKeepalive.addEventListener('click', triggerKeepaliveAll);
 
+    // 导出与导入 CSV 按钮
+    const btnExport = document.getElementById('btnExportAccounts');
+    if (btnExport) btnExport.addEventListener('click', exportAccountsCsv);
+
+    const btnImport = document.getElementById('btnImportAccounts');
+    if (btnImport) btnImport.addEventListener('click', openAccountImportModal);
+
+    const btnCloseImport = document.getElementById('btnCloseAccountImportModal');
+    if (btnCloseImport) btnCloseImport.addEventListener('click', closeAccountImportModal);
+
+    const btnCancelImport = document.getElementById('btnCancelAccountImportModal');
+    if (btnCancelImport) btnCancelImport.addEventListener('click', closeAccountImportModal);
+
+    const importModal = document.getElementById('accountImportModal');
+    if (importModal) {
+        importModal.addEventListener('click', (e) => {
+            if (e.target === importModal) {
+                closeAccountImportModal();
+            }
+        });
+    }
+
+    const importForm = document.getElementById('accountImportForm');
+    if (importForm) importForm.addEventListener('submit', handleAccountImportSubmit);
+
+    initAccountCsvDropZone();
+
     // 平台过滤胶囊标签点击
     const filterContainer = document.getElementById('accountPlatformFilter');
     if (filterContainer) {
@@ -1847,5 +2170,6 @@ function initAccountPoolEvents() {
     // 初始静默加载一次以更新 Badge
     loadCloudAccounts();
 }
+
 
 
