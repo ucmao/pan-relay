@@ -3,11 +3,15 @@ import logging
 from typing import Any, Dict, List
 
 from src.db.system_configs import get_config_value, set_config_value
-from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS
+from src.utils.netdisk_utils import (
+    FRONTEND_DISPLAY_NETDISK_OPTIONS,
+    DYNAMIC_TRANSFER_NETDISK_OPTIONS,
+)
 
 logger = logging.getLogger(__name__)
 
 FRONTEND_DISPLAY_NETDISKS_KEY = "frontend_display_netdisks"
+DYNAMIC_TRANSFER_NETDISKS_KEY = "dynamic_transfer_netdisks"
 FRONTEND_LINK_MODE_KEY = "frontend_link_mode"
 PUBLIC_SEARCH_API_KEY = "public_search_api"
 ALLOW_EXCEL_DOWNLOAD_KEY = "allow_excel_download"
@@ -121,6 +125,51 @@ def save_frontend_link_mode(mode: str) -> bool:
         FRONTEND_LINK_MODE_KEY,
         {"mode": mode},
     )
+
+
+def _default_dynamic_transfer_config() -> Dict[str, List[str]]:
+    return {"enabled_netdisks": DYNAMIC_TRANSFER_NETDISK_OPTIONS.copy()}
+
+
+def get_dynamic_transfer_netdisk_config() -> Dict[str, List[str]]:
+    raw_value = get_config_value(DYNAMIC_TRANSFER_NETDISKS_KEY)
+    default_config = _default_dynamic_transfer_config()
+
+    if not raw_value:
+        return default_config
+
+    try:
+        parsed = json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("动态转存网盘配置格式无效，已回退到默认值")
+        return default_config
+
+    enabled_netdisks = parsed.get("enabled_netdisks", [])
+    if not isinstance(enabled_netdisks, list):
+        return default_config
+
+    valid_enabled = [name for name in enabled_netdisks if name in DYNAMIC_TRANSFER_NETDISK_OPTIONS]
+    return {"enabled_netdisks": valid_enabled}
+
+
+def save_dynamic_transfer_netdisk_config(enabled_netdisks: List[str]) -> bool:
+    if not isinstance(enabled_netdisks, list):
+        return False
+
+    valid_enabled = []
+    for name in enabled_netdisks:
+        if name in DYNAMIC_TRANSFER_NETDISK_OPTIONS and name not in valid_enabled:
+            valid_enabled.append(name)
+
+    return set_config_value(
+        DYNAMIC_TRANSFER_NETDISKS_KEY,
+        {"enabled_netdisks": valid_enabled},
+    )
+
+
+def get_allowed_dynamic_transfer_netdisks() -> set:
+    return set(get_dynamic_transfer_netdisk_config()["enabled_netdisks"])
+
 
 
 def get_public_search_api_config() -> Dict[str, bool]:

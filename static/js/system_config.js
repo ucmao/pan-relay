@@ -3,7 +3,7 @@ function getFrontendDisplayNetdiskCheckboxes() {
 }
 
 function updateDynamicTransferStatusVisibility() {
-    const panel = document.getElementById('dynamicTransferStatusPanel');
+    const netdisksWrapper = document.getElementById('dynamicTransferNetdisksWrapper');
     const select = document.getElementById('frontendLinkModeSelect');
     const badge = document.getElementById('frontendLinkModeBadge');
     const kpiEl = document.getElementById('kpiDeliveryMode');
@@ -22,9 +22,10 @@ function updateDynamicTransferStatusVisibility() {
         badge.textContent = isView ? '动态转存模式' : '原始链接模式';
         badge.className = `badge ${isView ? 'badge-warning' : 'badge-info'} text-[10px]`;
     }
-    if (panel) {
-        panel.classList.toggle('d-none', !isView);
+    if (netdisksWrapper) {
+        netdisksWrapper.classList.toggle('d-none', !isView);
     }
+    updateEnabledDynamicTransferPansCount();
 
     // 联动处理 Excel 下载导出配置
     if (excelToggle && excelSwitchLabel) {
@@ -115,15 +116,14 @@ function bindSystemTabEvents() {
 
 function renderDynamicTransferStatuses(statuses, summary) {
     const summaryEl = document.getElementById('dynamicTransferStatusSummary');
-    const gridEl = document.getElementById('dynamicTransferStatusGrid');
     const manageLink = document.getElementById('dynamicTransferManageLink');
 
     const safeStatuses = Array.isArray(statuses) ? statuses : [];
     const enabledCount = Number(summary?.enabled_count || 0);
-    const totalCount = Number(summary?.total_count || safeStatuses.length || 5);
+    const totalCount = Number(summary?.total_count || safeStatuses.length || 8);
 
     if (summaryEl) {
-        summaryEl.textContent = `(${enabledCount}/${totalCount} 平台就绪)`;
+        summaryEl.textContent = `${enabledCount}/${totalCount} 凭证就绪`;
     }
 
     if (manageLink) {
@@ -136,48 +136,30 @@ function renderDynamicTransferStatuses(statuses, summary) {
         };
     }
 
-    if (gridEl) {
-        gridEl.innerHTML = safeStatuses.map((item) => {
-            const statusClass = item.status || 'missing';
-            const badgeText = item.title || (statusClass === 'enabled' ? '已就绪' : (statusClass === 'invalid' ? '异常' : '未添加'));
-            const isEnabled = statusClass === 'enabled';
-            const isInvalid = statusClass === 'invalid';
+    safeStatuses.forEach((item) => {
+        const badgeEl = document.querySelector(`.dynamic-card-status-badge[data-cloud-badge="${item.cloud_name}"]`);
+        if (!badgeEl) return;
 
-            let pillClass = 'bg-slate-100/90 text-slate-500 border-slate-200/70 hover:bg-slate-200/70';
-            let dotClass = 'bg-slate-400';
-            if (isEnabled) {
-                pillClass = 'bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100/80';
-                dotClass = 'bg-emerald-500';
-            } else if (isInvalid) {
-                pillClass = 'bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100/80';
-                dotClass = 'bg-amber-500';
-            }
+        const statusClass = item.status || 'missing';
+        const badgeText = item.title || (statusClass === 'enabled' ? '已就绪' : (statusClass === 'invalid' ? '异常' : '未配置'));
+        const isEnabled = statusClass === 'enabled';
+        const isInvalid = statusClass === 'invalid';
 
-            return `
-                <button type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer shadow-2xs ${pillClass}" data-cloud-nav="${item.cloud_name}" title="${item.cloud_name}: ${badgeText}，点击进入账号池管理">
-                    <span class="w-1.5 h-1.5 rounded-full ${dotClass} flex-shrink-0"></span>
-                    <span>${item.cloud_name}</span>
-                    <span class="text-[10px] opacity-75 font-normal">${badgeText}</span>
-                </button>
-            `;
-        }).join('');
+        badgeEl.className = 'dynamic-card-status-badge';
+        if (isEnabled) {
+            badgeEl.classList.add('status-ok');
+        } else if (isInvalid) {
+            badgeEl.classList.add('status-invalid');
+        } else {
+            badgeEl.classList.add('status-missing');
+        }
 
-        gridEl.querySelectorAll('[data-cloud-nav]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const cloudName = btn.getAttribute('data-cloud-nav');
-                const accMainTabBtn = document.querySelector('[data-system-tab-target="accounts"]');
-                if (accMainTabBtn) {
-                    accMainTabBtn.click();
-                    if (cloudName) {
-                        const filterBtn = document.querySelector(`.account-filter-btn[data-cloud="${cloudName}"]`);
-                        if (filterBtn) {
-                            filterBtn.click();
-                        }
-                    }
-                }
-            });
-        });
-    }
+        badgeEl.setAttribute('title', `${item.cloud_name}: ${item.description || badgeText}`);
+        badgeEl.innerHTML = `
+            <span class="status-dot"></span>
+            <span class="status-text">${badgeText}</span>
+        `;
+    });
 }
 
 function updateFrontendNetdiskSelectionUI() {
@@ -439,6 +421,78 @@ async function saveFrontendLinkCheckConfig() {
         await loadFrontendLinkCheckConfig();
     }
 }
+
+function updateEnabledDynamicTransferPansCount() {
+    const checkBoxes = document.querySelectorAll('.dynamic-transfer-netdisk-checkbox');
+    const countEl = document.getElementById('enabledDynamicTransferPansCount');
+    const toggleBtn = document.getElementById('toggleAllDynamicTransferNetdisksButton');
+    const checkedCount = Array.from(checkBoxes).filter(cb => cb.checked).length;
+    if (countEl) {
+        countEl.textContent = String(checkedCount);
+    }
+    if (toggleBtn) {
+        toggleBtn.textContent = (checkBoxes.length > 0 && checkedCount === checkBoxes.length) ? '取消全选' : '全选';
+    }
+}
+
+async function toggleAllDynamicTransferNetdisks() {
+    const checkBoxes = Array.from(document.querySelectorAll('.dynamic-transfer-netdisk-checkbox'));
+    if (!checkBoxes.length) return;
+    const allChecked = checkBoxes.every(cb => cb.checked);
+    checkBoxes.forEach(cb => {
+        cb.checked = !allChecked;
+    });
+    await saveDynamicTransferNetdisksConfig();
+}
+
+async function saveDynamicTransferNetdisksConfig() {
+    const enabled_netdisks = Array.from(document.querySelectorAll('.dynamic-transfer-netdisk-checkbox:checked')).map(cb => cb.value);
+    updateEnabledDynamicTransferPansCount();
+
+    try {
+        const response = await fetch('/admin/api/dynamic-transfer-netdisks', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled_netdisks })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '动态转存生效网盘配置保存成功', 'success');
+        if (data.data && Array.isArray(data.data.enabled_netdisks)) {
+            const checkBoxes = document.querySelectorAll('.dynamic-transfer-netdisk-checkbox');
+            checkBoxes.forEach(cb => {
+                cb.checked = data.data.enabled_netdisks.includes(cb.value);
+            });
+            updateEnabledDynamicTransferPansCount();
+        }
+    } catch (error) {
+        console.error('保存动态转存生效网盘配置失败:', error);
+        showToast(`保存动态转存生效网盘配置失败: ${error.message}`, 'danger');
+        await loadDynamicTransferNetdisksConfig();
+    }
+}
+
+async function loadDynamicTransferNetdisksConfig() {
+    try {
+        const response = await fetch('/admin/api/dynamic-transfer-netdisks');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.success && Array.isArray(data.enabled_netdisks)) {
+            const checkBoxes = document.querySelectorAll('.dynamic-transfer-netdisk-checkbox');
+            checkBoxes.forEach(cb => {
+                cb.checked = data.enabled_netdisks.includes(cb.value);
+            });
+            updateEnabledDynamicTransferPansCount();
+        }
+    } catch (error) {
+        console.error('加载动态转存生效网盘配置失败:', error);
+    }
+}
+
 
 async function loadTransferTargetDirConfig() {
     try {
@@ -1350,6 +1404,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTransferTargetDirConfig();
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();
+    loadDynamicTransferNetdisksConfig();
     loadSensitiveWordsConfig();
     loadAdFilterConfig();
     loadCustomAdConfig();

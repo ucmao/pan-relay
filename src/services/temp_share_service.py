@@ -39,6 +39,16 @@ def resolve_view_url(title: str, original_url: str, netdisk_name: str = "") -> D
     if not save_to_key:
         return fallback
 
+    from src.services.system_config_service import (
+        get_frontend_link_mode,
+        get_allowed_dynamic_transfer_netdisks,
+    )
+    if get_frontend_link_mode() != "view":
+        return fallback
+
+    if resolved_netdisk_name not in get_allowed_dynamic_transfer_netdisks():
+        return fallback
+
     active_record = get_active_temp_share(original_url, resolved_netdisk_name)
     if active_record:
         touch_temp_share(active_record["id"])

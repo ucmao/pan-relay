@@ -73,24 +73,56 @@
                         </div>
                     </div>
 
-                    <!-- 动态转存凭证微型状态栏 -->
-                    <div class="dynamic-transfer-status-bar d-none mt-2 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
-                        id="dynamicTransferStatusPanel">
-                        <div class="flex items-center gap-2.5 flex-wrap">
-                            <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-700 flex-shrink-0">
-                                <i class="fas fa-key text-blue-500 text-[11px]"></i>
-                                <span>转存凭证状态:</span>
+                    <!-- 统一动态转存控制面板 (整合网盘勾选与凭据就绪状态) -->
+                    <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 d-none transition-all duration-200"
+                        id="dynamicTransferNetdisksWrapper">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 flex-wrap text-xs">
+                                <div class="flex items-center gap-1.5 font-semibold text-slate-700 flex-shrink-0">
+                                    <i class="fas fa-arrows-split-up-and-left text-blue-500 text-[11px]"></i>
+                                    <span>转存生效网盘与凭证:</span>
+                                </div>
+                                <span class="text-slate-500 text-[11px]">
+                                    仅对勾选网盘转存，未勾选自动出原始链接。已选 <span id="enabledDynamicTransferPansCount" class="font-bold text-blue-600">{{
+                                        dynamic_transfer_netdisks|length if dynamic_transfer_netdisks else
+                                        dynamic_transfer_netdisk_options|length }}</span> / {{
+                                    dynamic_transfer_netdisk_options|length }}
+                                    <span class="text-slate-400 mx-1">·</span>
+                                    <span class="text-slate-500" id="dynamicTransferStatusSummary"></span>
+                                </span>
                             </div>
-                            <div class="flex items-center gap-1.5 flex-wrap" id="dynamicTransferStatusGrid"></div>
+                            <div class="flex items-center space-x-2.5 flex-shrink-0 text-xs">
+                                <button class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-xs"
+                                    id="toggleAllDynamicTransferNetdisksButton" type="button"
+                                    onclick="toggleAllDynamicTransferNetdisks()">
+                                    全选 / 反选
+                                </button>
+                                <a href="{{ url_for('system_config.system_config_page', tab='accounts') }}"
+                                    class="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors"
+                                    id="dynamicTransferManageLink">
+                                    管理账号池 <i class="fas fa-chevron-right text-[9px]"></i>
+                                </a>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2.5 text-xs flex-shrink-0">
-                            <span class="text-slate-400 text-[11px] hidden md:inline"
-                                id="dynamicTransferStatusSummary"></span>
-                            <a href="{{ url_for('system_config.system_config_page', tab='accounts') }}"
-                                class="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors"
-                                id="dynamicTransferManageLink">
-                                管理账号池 <i class="fas fa-chevron-right text-[9px]"></i>
-                            </a>
+                        <div class="dynamic-transfer-grid" id="dynamicTransferNetdisksGroup">
+                            {% for netdisk_name in dynamic_transfer_netdisk_options %}
+                            <label class="dynamic-transfer-netdisk-card" for="dynamicTransferNetdisk{{ loop.index }}" data-cloud-card="{{ netdisk_name }}">
+                                <input class="dynamic-transfer-netdisk-checkbox" type="checkbox"
+                                    id="dynamicTransferNetdisk{{ loop.index }}" value="{{ netdisk_name }}"
+                                    onchange="saveDynamicTransferNetdisksConfig()" {% if not dynamic_transfer_netdisks or
+                                    netdisk_name in dynamic_transfer_netdisks %}checked{% endif %}>
+                                <span class="whitespace-nowrap">{{ netdisk_name }}</span>
+                                <div class="flex items-center gap-2 ml-auto">
+                                    <span class="dynamic-card-status-badge status-missing" data-cloud-badge="{{ netdisk_name }}" title="{{ netdisk_name }}: 加载状态中...">
+                                        <span class="status-dot"></span>
+                                        <span class="status-text">未配置</span>
+                                    </span>
+                                    <span class="dynamic-transfer-netdisk-card-check-box">
+                                        <i class="fas fa-check"></i>
+                                    </span>
+                                </div>
+                            </label>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>

@@ -1200,6 +1200,126 @@ textarea.form-control.font-mono {
     color: #ffffff;
 }
 
+/* 动态转存生效网盘范围 (合并状态指示 - 5列布局) */
+.dynamic-transfer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+}
+
+@media (min-width: 600px) {
+    .dynamic-transfer-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 820px) {
+    .dynamic-transfer-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
+.dynamic-transfer-netdisk-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 6px 8px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #334155;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+.dynamic-transfer-netdisk-card:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+    transform: translateY(-1px);
+}
+
+.dynamic-transfer-netdisk-card:has(input:checked) {
+    background: linear-gradient(135deg, #f0f6ff 0%, #f8fafc 100%);
+    border-color: #60a5fa;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08), inset 0 0 0 0.5px rgba(96, 165, 250, 0.15);
+}
+
+.dynamic-transfer-netdisk-card:has(input:checked):hover {
+    background: linear-gradient(135deg, #e8f2ff 0%, #f1f5f9 100%);
+    border-color: #3b82f6;
+    transform: translateY(-1px);
+}
+
+.dynamic-transfer-netdisk-checkbox {
+    display: none;
+}
+
+.dynamic-transfer-netdisk-card-check-box {
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    border: 1px solid #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    background: #ffffff;
+    color: transparent;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.dynamic-transfer-netdisk-card:has(input:checked) .dynamic-transfer-netdisk-card-check-box {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+.dynamic-card-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.dynamic-card-status-badge .status-dot {
+    width: 5.5px;
+    height: 5.5px;
+    border-radius: 9999px;
+    flex-shrink: 0;
+}
+
+.dynamic-card-status-badge.status-ok {
+    color: #059669;
+}
+.dynamic-card-status-badge.status-ok .status-dot {
+    background-color: #10b981;
+}
+
+.dynamic-card-status-badge.status-invalid {
+    color: #d97706;
+}
+.dynamic-card-status-badge.status-invalid .status-dot {
+    background-color: #f59e0b;
+}
+
+.dynamic-card-status-badge.status-missing {
+    color: #94a3b8;
+}
+.dynamic-card-status-badge.status-missing .status-dot {
+    background-color: #cbd5e1;
+}
+
 /* --------------------------------------------------------------------------
    Resource Toolbars & Pagination
    -------------------------------------------------------------------------- */

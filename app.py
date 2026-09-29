@@ -21,6 +21,7 @@ from src.services.scheduler_service import start_scheduler
 from src.services.system_config_service import (
     get_frontend_link_mode,
     get_frontend_link_check_config,
+    get_dynamic_transfer_netdisk_config,
     is_excel_download_enabled,
     is_frontend_enabled,
     is_api_only_enabled,
@@ -78,6 +79,7 @@ def search_index():
 
     link_mode = get_frontend_link_mode()
     link_check_config = get_frontend_link_check_config()
+    dynamic_transfer_config = get_dynamic_transfer_netdisk_config()
 
     return render_template(
         'index.html',
@@ -85,6 +87,7 @@ def search_index():
         allow_excel_download=(link_mode != "view") and is_excel_download_enabled(),
         enable_link_check=link_check_config.get("enable_link_check", True),
         enabled_check_pans=link_check_config.get("enabled_check_pans", []),
+        enabled_dynamic_transfer_pans=dynamic_transfer_config.get("enabled_netdisks", []),
     )
 
 

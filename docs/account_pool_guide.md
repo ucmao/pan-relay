@@ -14,15 +14,14 @@ flowchart TD
 
     subgraph 账号池智能调度核心
         Req --> Pool["AccountPoolManager (单例调度引擎)"]
-        Pool --> Step1["1. 平台候选账号过滤 (is_active=1 且 is_valid=1)"]
-        Step1 --> Step2["2. 剩余空间容量检测 (空间不足自动熔断跳过)"]
-        Step2 --> Step3["3. 优先级分组 (Priority 越小越优先)"]
-        Step3 --> Step4["4. 同级轮询负载均衡 (Round-Robin 分流)"]
-        Step4 --> Step5["5. 故障无缝容灾切换 (账号异常自动降级至备选账号)"]
+        Pool --> Step1["1. 账号有效性与容量自检 (过滤异常及满容账号)"]
+        Step1 --> Step2["2. 优先级分组决策 (Priority 越小越优先)"]
+        Step2 --> Step3["3. 轮询负载均衡 (Round-Robin 分流)"]
+        Step3 --> Step4["4. 故障无缝容灾切换 (自动降级至备选账号)"]
     end
 
     subgraph 执行与运维
-        Step5 --> Exec["物理网盘客户端 API 执行"]
+        Step4 --> Exec["物理网盘客户端 API 执行"]
         Exec --> Report["执行结果上报 (更新使用次数、空间与有效状态)"]
         Worker["后台定时保活 Worker (每24小时静默刷新 Token)"] -.-> Pool
     end

@@ -29,6 +29,7 @@ BAIDU_ERRNO_MAP: Dict[int, str] = {
     20: "百度网盘容量不足",
     105: "所访问的分享页面不存在",
     115: "该文件涉及敏感违规，禁止分享",
+    200025: "提取码验证失败或已失效",
 }
 
 
@@ -267,8 +268,10 @@ class BaiduPanClient(BasePanClient):
             params = {
                 "a": "commit",
                 "channel": "chunlei",
-                "clienttype": 8,
+                "clienttype": 0,
+                "web": 1,
                 "app_id": 250528,
+                "bdstoken": self.bdstoken,
             }
             payload = {
                 "path": clean_path,
@@ -336,7 +339,9 @@ class BaiduPanClient(BasePanClient):
             if data.get("errno") == 0:
                 raw_randsk = data.get("randsk", "")
                 if raw_randsk:
-                    self.randsk = urllib.parse.unquote(raw_randsk)
+                    self.randsk = raw_randsk
+                    self.session.cookies.set("BDCLND", raw_randsk, domain=".baidu.com")
+                    self.session.cookies.set("BDCLND", raw_randsk, domain="pan.baidu.com")
                 return True
             errno = data.get("errno")
             logger.warning("百度网盘提取码校验失败: %s (%s)", get_baidu_errno_message(errno), data)
@@ -362,8 +367,6 @@ class BaiduPanClient(BasePanClient):
             "clienttype": "0",
             "app_id": "250528",
         }
-        if self.randsk:
-            params["sekey"] = self.randsk
 
         try:
             headers = {"Referer": f"https://pan.baidu.com/s/1{surl}", "Accept-Encoding": "identity"}
@@ -417,8 +420,6 @@ class BaiduPanClient(BasePanClient):
             "web": 1,
             "app_id": 250528,
         }
-        if self.randsk:
-            params["sekey"] = self.randsk
         payload = {
             "fsidlist": f"[{','.join(str(item) for item in fs_id_list)}]",
             "path": to_path,

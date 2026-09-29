@@ -2,7 +2,7 @@
 
 <img src="static/images/hero_search_top.webp" width="480" height="auto" alt="Pan-Relay Logo">
 
-**基于 Python 的多网盘聚合中继、多账号池调度与自动化变现管理系统**
+**基于 Python 的多网盘聚合与自动化变现管理系统**
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![Framework](https://img.shields.io/badge/Framework-Flask-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#-部署指南) [![REST API](https://img.shields.io/badge/REST__API-v1.0-purple.svg)](#-开放-rest-api-与无头部署) [![Account Pool](https://img.shields.io/badge/Account__Pool-Multi--Cloud-orange.svg)](#-网盘多账号池体系) [![Support](https://img.shields.io/badge/Support-8%20Major%20Clouds-brightgreen.svg)](#-支持的网盘矩阵)
 
@@ -10,17 +10,15 @@
   <a href="#-核心业务逻辑">业务逻辑</a> •
   <a href="#-网盘多账号池体系">多账号池</a> •
   <a href="#-支持的网盘矩阵">支持网盘</a> •
-  <a href="#-网盘凭据快速配置">凭据配置</a> •
   <a href="#-部署指南">部署指南</a> •
   <a href="#-开放-rest-api-与无头部署">开放 API</a> •
+  <a href="#-网盘凭据快速配置">凭据配置</a> •
   <a href="#-联系作者">联系作者</a>
 </p>
 
 Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化收益与聚合分发系统**。
 
 通过“资源聚合 → 智能号池调度 → 自动转存 → 换链变现 → 优先分发”全链路闭环，将全网外部公开资源高效转换为您的专属收益链接，成倍放大拉新与转存收益。
-
-**支持本地资源库、第三方 API、Telegram 公开频道与可扩展 Python 插件聚合搜索。支持完全解耦的开放 REST API 与微信小程序、Flutter / React Native APP 快速无缝对接。**
 
 </div>
 
@@ -45,13 +43,11 @@ Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化�
 
 ## ✨ 项目核心亮点
 
-* **网盘多账号池中枢**：同网盘多账号优先级管理、容量自动检测熔断、加权轮询并发分流、故障自动转移降级与后台静默保活。
-* **8大网盘能力全覆盖**：全量支持目录自动归档、上游垃圾广告文件智能过滤、以及专属引流文件自动植入。
-* **前后端完全解耦**：前台搜索界面与开放 API 服务完全解耦，可按需独立启闭，支持作为纯后端中转服务运行（无头模式）。
-* **开箱即用**：内置 SQLite 数据库，启动时自动初始化表结构及预置 10+ API、115+ TG 频道和 26+ 插件搜索源，支持 Docker 一键拉起。
-* **免凭证TG搜索**：直接抓取 Telegram 公开频道预览，无需 Bot Token，自动提取网盘链接与提取码。
-* **免登录链接实时测活**：搜索结果自动异步免登录探测死链与失效状态，大幅降低无效请求与风控概率。
-* **容器化部署**：提供标准 Dockerfile 与 Docker Compose，支持数据持久化和健康检查。
+* **多账号池智能中枢**：支持 8 大主流网盘，内置加权轮询负载均衡、容量熔断、自动故障转移与后台静默保活。
+* **自动化转存与净网**：转存时自动归档、智能过滤上游垃圾广告引流文件，并支持无感植入站长专属引流信息。
+* **全网多源聚合搜索**：内置私有库、10+外部API、115+TG公开频道（免Token）与Python插件源，支持异步免登录实时测活。
+* **完全解耦与开放API**：标准RESTful API（支持SSE流式推流与分步转存），支持无头模式，秒级对接小程序、APP与TGBot。
+* **极简轻量开箱即用**：零外部数据库依赖（内置SQLite），预置海量搜索规则与 Docker一键编排，开箱即跑。
 
 ---
 
@@ -71,18 +67,17 @@ flowchart TD
         A1 --> Core["账号池智能调度中枢"]
         A2 --> Core
         A3 --> Core
-        Core --> F1["1. 激活与有效性自检"]
-        F1 --> F2["2. 剩余空间容量检测"]
-        F2 --> F3["3. 优先级分组调度"]
-        F3 --> F4["4. 同级轮询负载均衡 (并发分流)"]
-        F4 --> F5["5. 故障自动降级切换备选账号"]
+        Core --> F1["1. 账号有效性与容量自检"]
+        F1 --> F2["2. 优先级分组决策"]
+        F2 --> F3["3. 轮询负载均衡 (并发分流)"]
+        F3 --> F4["4. 故障自动降级与容灾"]
     end
 
     subgraph 网盘矩阵落盘
-        F5 --> Q["夸克 (账号1/账号2/...)"]
-        F5 --> B["百度 (主号/备用号/...)"]
-        F5 --> A["阿里 (Token轮换/...)"]
-        F5 --> X["迅雷 / UC / 移动 / 光鸭 / 悟空"]
+        F4 --> Q["夸克 (账号1/账号2/...)"]
+        F4 --> B["百度 (主号/备用号/...)"]
+        F4 --> A["阿里 (Token轮换/...)"]
+        F4 --> X["迅雷 / UC / 移动 / 光鸭 / 悟空"]
     end
 ```
 
@@ -90,7 +85,7 @@ flowchart TD
 
 ## 💾 支持的网盘矩阵
 
-| &emsp;&emsp;网盘平台&emsp;&emsp; | 自动转存 | 号池调度 | 链接测活 | 凭据保活 | 容量熔断 | 广告净化 | 引流植入 | 过期清理 |
+| 网盘平台 | 自动转存 | 号池调度 | 链接测活 | 凭据保活 | 容量熔断 | 广告净化 | 引流植入 | 过期清理 |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **夸克网盘** | ✓ | ✓ | ✓ | - | ✓ | ✓ | ✓ | ✓ |
 | **UC 网盘** | ✓ | ✓ | ✓ | - | ✓ | ✓ | ✓ | ✓ |
@@ -105,22 +100,6 @@ flowchart TD
 | **天翼云盘** | - | - | ✓ | - | - | - | - | - |
 | **联通云盘** | - | - | ✓ | - | - | - | - | - |
 
----
-
-## ⚙️ 网盘凭据快速配置
-
-登录管理后台（`/admin`）进入 **系统配置 → 网盘账号池** 点击 **【+ 添加账号】** 即可配置各网盘登录态：
-
-* **夸克 / 百度 / UC网盘**：登录网页版，从浏览器开发者工具（`F12`）网络请求标头中复制完整 `Cookie` 填入。
-* **阿里云盘**：从登录会话本地存储（Local Storage）中提取并填入 `refresh_token`。
-* **迅雷网盘**：
-  * **一键提取（推荐，支持 Win / Mac / Linux）**：电脑登录官方迅雷客户端后，在项目根目录运行 `python3 scripts/extract_xunlei_token.py` 即可自动读取并导出。
-  * **手动配置**：填入提取的 JSON 凭证或移动端抓包获取的 `refresh_token`。
-* **光鸭云盘**：登录网页版提取 `access_token` 或填入 `refresh_token` 凭证。
-* **悟空网盘**：从网页端开发者工具中复制网络请求标头中的 `Cookie` 或 Token。
-* **移动云盘**：登录 `yun.139.com` 网页版，从请求标头中复制 `Authorization`。
-
-> 📖 详细的多账号配置步骤、完整抓包图文教程与故障自愈机制，详见 [网盘多账号池配置指南](docs/account_pool_guide.md)。
 
 ---
 
@@ -211,6 +190,23 @@ X-API-Key: your_transfer_key
 ```
 
 > 📖 完整的 OpenAPI 接口参数、流式 SSE 搜索推流与响应 Payload 字典，详见 [REST API 开发者接入规范](docs/api_v1_docs.md)。
+
+---
+
+## ⚙️ 网盘凭据快速配置
+
+登录管理后台（`/admin`）进入 **系统配置 → 网盘账号池** 点击 **【+ 添加账号】** 即可配置各网盘登录态：
+
+* **夸克 / 百度 / UC网盘**：登录网页版，从浏览器开发者工具（`F12`）网络请求标头中复制完整 `Cookie` 填入。
+* **阿里云盘**：从登录会话本地存储（Local Storage）中提取并填入 `refresh_token`。
+* **迅雷网盘**：
+  * **一键提取（推荐，支持 Win / Mac / Linux）**：电脑登录官方迅雷客户端后，在项目根目录运行 `python3 scripts/extract_xunlei_token.py` 即可自动读取并导出。
+  * **手动配置**：填入提取的 JSON 凭证或移动端抓包获取的 `refresh_token`。
+* **光鸭云盘**：登录网页版提取 `access_token` 或填入 `refresh_token` 凭证。
+* **悟空网盘**：从网页端开发者工具中复制网络请求标头中的 `Cookie` 或 Token。
+* **移动云盘**：登录 `yun.139.com` 网页版，从请求标头中复制 `Authorization`。
+
+> 📖 详细的多账号配置步骤、完整抓包图文教程与故障自愈机制，详见 [网盘多账号池配置指南](docs/account_pool_guide.md)。
 
 ---
 

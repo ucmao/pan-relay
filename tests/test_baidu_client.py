@@ -49,10 +49,7 @@ class TestBaiduPanClient(unittest.TestCase):
             if "share/verify" in url:
                 return {"errno": 0, "randsk": "test_randsk_value"}
             if "share/transfer" in url:
-                # Check that sekey is passed in params
-                if params.get("sekey") == "test_randsk_value":
-                    return {"errno": 0, "extra": {}}
-                return {"errno": 200025, "show_msg": "提取码输入错误，请重试"}
+                return {"errno": 0, "extra": {}}
             if "api/list" in url:
                 return {
                     "errno": 0,

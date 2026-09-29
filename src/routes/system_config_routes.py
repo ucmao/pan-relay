@@ -25,6 +25,7 @@ from src.services.system_config_service import (
     get_allow_excel_download_config,
     get_frontend_link_check_config,
     get_frontend_display_netdisk_config,
+    get_dynamic_transfer_netdisk_config,
     get_frontend_link_mode,
     get_transfer_target_dir,
     get_sensitive_words_config,
@@ -38,6 +39,7 @@ from src.services.system_config_service import (
     save_allow_excel_download_config,
     save_frontend_link_check_config,
     save_frontend_display_netdisk_config,
+    save_dynamic_transfer_netdisk_config,
     save_frontend_link_mode,
     save_transfer_target_dir,
     save_sensitive_words_config,
@@ -57,7 +59,11 @@ from src.services.telegram_channel_service import (
 )
 from src.services.telegram_search_service import test_telegram_connection
 from src.utils.auth_utils import token_required
-from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS, LINK_CHECK_NETDISK_OPTIONS
+from src.utils.netdisk_utils import (
+    FRONTEND_DISPLAY_NETDISK_OPTIONS,
+    LINK_CHECK_NETDISK_OPTIONS,
+    DYNAMIC_TRANSFER_NETDISK_OPTIONS,
+)
 
 system_config_bp = Blueprint("system_config", __name__)
 
@@ -185,14 +191,17 @@ def frontend_config_page():
     frontend_config = get_frontend_display_netdisk_config()
     api_mode_config = get_api_mode_config()
     link_check_config = get_frontend_link_check_config()
+    dynamic_transfer_config = get_dynamic_transfer_netdisk_config()
     allow_excel = get_allow_excel_download_config()
     frontend_link_mode = get_frontend_link_mode()
     return render_template(
         "admin_frontend_config.html",
         frontend_netdisk_options=FRONTEND_DISPLAY_NETDISK_OPTIONS,
         link_check_netdisk_options=LINK_CHECK_NETDISK_OPTIONS,
+        dynamic_transfer_netdisk_options=DYNAMIC_TRANSFER_NETDISK_OPTIONS,
         enabled_netdisks=set(frontend_config.get("enabled_netdisks", [])),
         link_check_netdisks=set(link_check_config.get("enabled_netdisks", [])),
+        dynamic_transfer_netdisks=set(dynamic_transfer_config.get("enabled_netdisks", [])),
         enable_link_check=link_check_config.get("enabled", True),
         enable_frontend=api_mode_config.get("enable_frontend", True),
         allow_excel_download=allow_excel.get("allow_excel_download", True),
@@ -238,6 +247,41 @@ def update_frontend_display_netdisks():
     return jsonify({"success": True, "message": "前端显示网盘配置保存成功"})
 
 
+@system_config_bp.route("/admin/api/dynamic-transfer-netdisks", methods=["GET"])
+@token_required
+def get_dynamic_transfer_netdisks():
+    config = get_dynamic_transfer_netdisk_config()
+    return jsonify(
+        {
+            "success": True,
+            "options": DYNAMIC_TRANSFER_NETDISK_OPTIONS,
+            "enabled_netdisks": config["enabled_netdisks"],
+        }
+    )
+
+
+@system_config_bp.route("/admin/api/dynamic-transfer-netdisks", methods=["PUT"])
+@token_required
+def update_dynamic_transfer_netdisks():
+    data = request.get_json() or {}
+    enabled_netdisks = data.get("enabled_netdisks", [])
+
+    if not isinstance(enabled_netdisks, list):
+        return jsonify({"success": False, "message": "动态转存网盘配置格式错误"}), 400
+
+    if not save_dynamic_transfer_netdisk_config(enabled_netdisks):
+        return jsonify({"success": False, "message": "动态转存网盘配置保存失败"}), 400
+
+    return jsonify({
+        "success": True,
+        "message": "动态转存生效网盘配置保存成功",
+        "data": {
+            "options": DYNAMIC_TRANSFER_NETDISK_OPTIONS,
+            "enabled_netdisks": enabled_netdisks,
+        }
+    })
+
+
 @system_config_bp.route("/admin/api/frontend-link-mode", methods=["GET"])
 @token_required
 def get_frontend_link_mode_config():
@@ -254,6 +298,7 @@ def update_frontend_link_mode_config():
         return jsonify({"success": False, "message": "前端出链模式保存失败"}), 400
 
     return jsonify({"success": True, "message": "前端出链模式保存成功"})
+
 
 
 @system_config_bp.route("/admin/api/public-search-api-config", methods=["GET"])

@@ -41,6 +41,11 @@ LINK_CHECK_NETDISK_OPTIONS = [
     "123云盘", "115网盘", "天翼云盘", "联通云盘"
 ]
 
+DYNAMIC_TRANSFER_NETDISK_OPTIONS = [
+    "百度网盘", "夸克网盘", "阿里云盘", "UC网盘", "迅雷网盘", "光鸭云盘", "悟空网盘", "移动云盘"
+]
+
+
 
 def match_netdisk_link(link: str) -> str:
     """

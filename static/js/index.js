@@ -10,6 +10,14 @@ let currentFilter = '全部';
 let includeKeywords = [];
 let excludeKeywords = [];
 const isViewModeEnabled = window.SEARCH_LINK_MODE === 'view';
+const enabledDynamicTransferPans = Array.isArray(window.ENABLED_DYNAMIC_TRANSFER_PANS) ? window.ENABLED_DYNAMIC_TRANSFER_PANS : null;
+
+function isDynamicTransferEnabledForNetdisk(netdiskName) {
+    if (!isViewModeEnabled) return false;
+    if (!netdiskName) return false;
+    if (!enabledDynamicTransferPans) return true;
+    return enabledDynamicTransferPans.includes(netdiskName);
+}
 
 // 网盘链接健康检测状态
 const isLinkCheckEnabled = window.ENABLE_LINK_CHECK !== false;
@@ -793,14 +801,15 @@ function renderResults(reset = false) {
             }
         }
 
-        let actionBtnClass = isViewModeEnabled ? 'view-button' : 'copy-button';
+        const isItemDynamicTransfer = isDynamicTransferEnabledForNetdisk(netdiskName);
+        let actionBtnClass = isItemDynamicTransfer ? 'view-button' : 'copy-button';
         if (deadItemClass === 'is-dead-link') {
             actionBtnClass += ' dead-btn';
         }
         const actionBtnHtml = `
             <div class="action-btn-wrapper">
                 <button class="btn btn-sm ${actionBtnClass}" data-title="${escapeHtml(titleText)}" data-url="${escapeHtml(urlLink)}" data-netdisk="${escapeHtml(netdiskName)}">
-                    ${isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
+                    ${isItemDynamicTransfer ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
                 </button>
             </div>`;
 
@@ -814,7 +823,7 @@ function renderResults(reset = false) {
                         <span class="netdisk-badge ${finalBadgeClass}">${escapeHtml(netdiskName)}</span>
                         <span class="result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
                     </div>
-                    <div class="result-url-line ${isViewModeEnabled ? 'd-none' : ''}">
+                    <div class="result-url-line ${isItemDynamicTransfer ? 'd-none' : ''}">
                         ${linkIconHtml}
                         <a href="${urlLink}" target="_blank" title="${urlLink}">${escapeHtml(urlLink)}</a>
                     </div>
@@ -1034,22 +1043,23 @@ function updateHealthBadgeInDOM(res) {
             const urlLink = item.querySelector('.result-url-line a')?.getAttribute('href') || item.getAttribute('data-url') || '';
             const netdiskName = item.querySelector('.netdisk-badge')?.textContent.trim() || '';
 
+            const isItemDynamicTransfer = isDynamicTransferEnabledForNetdisk(netdiskName);
             btn = document.createElement('button');
-            btn.className = `btn btn-sm ${isViewModeEnabled ? 'view-button' : 'copy-button'}`;
+            btn.className = `btn btn-sm ${isItemDynamicTransfer ? 'view-button' : 'copy-button'}`;
             btn.setAttribute('data-title', titleText);
             btn.setAttribute('data-url', urlLink);
             btn.setAttribute('data-netdisk', netdiskName);
-            btn.innerHTML = isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制';
+            btn.innerHTML = isItemDynamicTransfer ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制';
 
             btn.addEventListener('click', function () {
-                if (isViewModeEnabled) {
+                if (isItemDynamicTransfer) {
                     handleViewButtonClick(this);
                 } else {
                     const textToCopy = `标题: ${titleText}\n链接: ${urlLink}`;
                     copyTextToClipboard(textToCopy).then(success => {
                         if (success) {
                             this.innerHTML = '<i class="fas fa-check"></i> 已复制';
-                            setTimeout(() => { this.innerHTML = isViewModeEnabled ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'; }, 1500);
+                            setTimeout(() => { this.innerHTML = isItemDynamicTransfer ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'; }, 1500);
                         } else {
                             showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
                         }
