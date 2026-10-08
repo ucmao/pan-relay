@@ -18,7 +18,11 @@ from src.services.link_checker import (
     STATE_BAD,
 )
 from src.services.security_service import check_request_security, IPConcurrencyGuard
-from src.services.system_config_service import is_public_search_api_enabled, get_security_config
+from src.services.system_config_service import (
+    is_public_search_api_enabled,
+    is_frontend_enabled,
+    get_security_config,
+)
 from src.services.log_service import record_log, get_current_client_ip
 from src.services.temp_share_service import cleanup_expired_temp_shares, resolve_view_url
 from src.utils.auth_utils import token_required
@@ -34,6 +38,9 @@ def search_stream():
     """
     使用 Server-Sent Events (SSE) 实时流式返回搜索结果。
     """
+    if not is_frontend_enabled():
+        return jsonify({"error": "前台 Web 搜索界面当前已关闭"}), 403
+
     keyword = (request.args.get("keyword") or "").strip()
     if not keyword:
         return jsonify({"error": "请提供搜索关键词"}), 400
@@ -246,6 +253,9 @@ def del_share_route():
 
 @search_bp.route("/api/view-link", methods=["POST"])
 def resolve_view_link():
+    if not is_frontend_enabled():
+        return jsonify({"success": False, "message": "前台 Web 搜索界面当前已关闭"}), 403
+
     start_time = time.time()
     data = request.get_json() or {}
     original_url = data.get("url", "")

@@ -98,5 +98,15 @@
     "status": "unknown",
     "response_time_ms": 0,
     "is_enabled": 1
+  },
+  {
+    "name": "极客盘 API",
+    "url": "https://b.funletu.com/search",
+    "method": "post",
+    "request": "{\"keyword\": \"[[keyword]]\", \"categoryid\": 0, \"filetypeid\": 0, \"courseid\": 1, \"page\": 1, \"pageSize\": 15, \"sortBy\": \"sort\", \"order\": \"desc\", \"offset\": 0}",
+    "response": "data.list[*].[title, url]",
+    "status": "unknown",
+    "response_time_ms": 0,
+    "is_enabled": 1
   }
 ]

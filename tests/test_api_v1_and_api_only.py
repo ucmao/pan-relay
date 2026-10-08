@@ -178,11 +178,25 @@ class ApiV1AndApiOnlyTest(unittest.TestCase):
     # --- 3. UI 屏蔽与重定向测试 ---
 
     def test_frontend_disabled_interception(self):
-        # 关闭前台时，访问根路径 / 自动重定向到后台管理登录页
+        # 1. 开启前台时，调用 /api/search_stream 应当正常响应
+        save_api_mode_config(enable_frontend=True)
+        resp_stream_enabled = self.client.get("/api/search_stream?keyword=黑神话")
+        self.assertEqual(200, resp_stream_enabled.status_code)
+
+        # 2. 关闭前台时，访问根路径 / 自动重定向到后台管理登录页
         save_api_mode_config(enable_frontend=False)
         resp = self.client.get("/")
         self.assertEqual(302, resp.status_code)
         self.assertIn(resp.headers.get("Location", ""), ["/admin", "/login"])
+
+        # 3. 关闭前台时，前台依赖的 /api/search_stream 与 /api/view-link 应当返回 403 阻断
+        resp_stream = self.client.get("/api/search_stream?keyword=黑神话")
+        self.assertEqual(403, resp_stream.status_code)
+        self.assertIn("前台 Web 搜索界面当前已关闭", resp_stream.get_json()["error"])
+
+        resp_view = self.client.post("/api/view-link", json={"url": "https://pan.quark.cn/s/123"})
+        self.assertEqual(403, resp_view.status_code)
+        self.assertIn("前台 Web 搜索界面当前已关闭", resp_view.get_json()["message"])
 
     # --- 4. 管理后台 API 模式配置 CRUD 接口测试 ---
 

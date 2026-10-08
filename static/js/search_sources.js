@@ -320,7 +320,7 @@
             if (response.ok && data.success) {
                 showToast(data.message || `已批量${actionStr}频道`, 'success');
                 clearTgSelection();
-                await loadTgChannels();
+                await loadTgSearchConfig();
             } else {
                 showToast(data.message || `批量${actionStr}失败`, 'danger');
             }
@@ -375,7 +375,7 @@
             if (response.ok && data.success) {
                 showToast(data.message || '已批量删除频道', 'success');
                 clearTgSelection();
-                await loadTgChannels();
+                await loadTgSearchConfig();
             } else {
                 showToast(data.message || '批量删除失败', 'danger');
             }
@@ -423,7 +423,7 @@
             const data = await response.json();
             if (response.ok && data.success) {
                 showToast(data.message || '批量测试完成', 'success');
-                await loadTgChannels();
+                await loadTgSearchConfig();
             } else {
                 showToast(data.message || '批量测试失败', 'danger');
             }
