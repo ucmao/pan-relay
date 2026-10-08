@@ -765,7 +765,77 @@ function bindSensitiveWordsTextareaEvents() {
     }
 }
 
+async function loadSecurityConfig() {
+    try {
+        const response = await fetch('/admin/api/security-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        const config = data.config || {};
+
+        const minLenInput = document.getElementById('secMinKeywordLenInput');
+        const rateLimitInput = document.getElementById('secRateLimitInput');
+        const maxConcurrentInput = document.getElementById('secMaxConcurrentInput');
+        const textarea = document.getElementById('secIpBlacklistTextarea');
+        const countEl = document.getElementById('secIpBlacklistCount');
+
+        if (minLenInput) minLenInput.value = config.min_keyword_length ?? 2;
+        if (rateLimitInput) rateLimitInput.value = config.rate_limit_per_minute ?? 5;
+        if (maxConcurrentInput) maxConcurrentInput.value = config.max_concurrent_searches ?? 1;
+
+        const blacklist = Array.isArray(config.ip_blacklist) ? config.ip_blacklist : [];
+        if (textarea) textarea.value = blacklist.join('\n');
+        if (countEl) countEl.textContent = String(blacklist.length);
+    } catch (error) {
+        console.error('加载安全防护配置失败:', error);
+    }
+}
+
+async function saveSecurityConfig() {
+    const minLenInput = document.getElementById('secMinKeywordLenInput');
+    const rateLimitInput = document.getElementById('secRateLimitInput');
+    const maxConcurrentInput = document.getElementById('secMaxConcurrentInput');
+    const textarea = document.getElementById('secIpBlacklistTextarea');
+    const countEl = document.getElementById('secIpBlacklistCount');
+
+    const blacklistRaw = textarea ? textarea.value : '';
+    const ip_blacklist = blacklistRaw
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+    if (countEl) countEl.textContent = String(ip_blacklist.length);
+
+    const payload = {
+        min_keyword_length: parseInt(minLenInput ? minLenInput.value : 2, 10) || 2,
+        rate_limit_per_minute: parseInt(rateLimitInput ? rateLimitInput.value : 5, 10) || 5,
+        max_concurrent_searches: parseInt(maxConcurrentInput ? maxConcurrentInput.value : 1, 10) || 1,
+        ip_blacklist: ip_blacklist,
+    };
+
+    try {
+        const response = await fetch('/admin/api/security-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '安全防护配置保存成功', 'success');
+        await loadSecurityConfig();
+    } catch (error) {
+        console.error('保存安全防护配置失败:', error);
+        showToast(`保存安全防护配置失败: ${error.message}`, 'danger');
+    }
+}
+
 async function loadAdFilterConfig() {
+
     try {
         const response = await fetch('/admin/api/ad-filter-config');
         if (!response.ok) {
@@ -1406,7 +1476,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFrontendLinkMode();
     loadDynamicTransferNetdisksConfig();
     loadSensitiveWordsConfig();
+    loadSecurityConfig();
     loadAdFilterConfig();
+
     loadCustomAdConfig();
     loadStorageCleanupConfig();
     loadDynamicTransferStatus();

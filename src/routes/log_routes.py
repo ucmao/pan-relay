@@ -227,3 +227,23 @@ def export_logs_api():
     response = Response(csv_content, mimetype="text/csv; charset=utf-8")
     response.headers["Content-Disposition"] = "attachment; filename=pan_relay_logs.csv"
     return response
+
+
+@log_bp.route("/admin/api/logs/block_ip", methods=["POST"])
+@token_required
+def block_ip_from_logs_api():
+    """
+    在日志管理页面快速一键封禁特定 IP
+    """
+    from src.services.system_config_service import add_ip_to_blacklist
+    data = request.get_json(silent=True) or {}
+    ip = str(data.get("ip", "")).strip()
+
+    if not ip:
+        return jsonify({"success": False, "message": "缺少有效的 IP 地址"}), 400
+
+    success = add_ip_to_blacklist(ip)
+    if success:
+        return jsonify({"success": True, "message": f"客户端 IP {ip} 已成功加入黑名单封禁列表"})
+    return jsonify({"success": False, "message": "封禁 IP 失败，请检查数据库配置"}), 500
+

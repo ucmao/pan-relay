@@ -972,11 +972,51 @@
                         <a href="/?keyword=${encodeURIComponent(log.keyword)}" target="_blank" class="px-2 py-1 rounded-lg text-[11px] text-blue-600 hover:bg-blue-50 font-semibold transition" title="前往前台验证此搜索">
                             前台试搜
                         </a>
+                        <button type="button" onclick="blockIpFromLogs('${escapeHtml(log.client_ip || '')}')" class="px-2 py-1 rounded-lg text-[11px] text-rose-600 hover:bg-rose-50 font-semibold transition ml-1" title="快捷将此 IP 加入黑名单封禁">
+                            封禁 IP
+                        </button>
                     </td>
                 </tr>
             `;
         }).join('');
     }
+
+    async function blockIpFromLogs(ip) {
+        if (!ip || ip === '-' || ip === 'None') {
+            showToast('无效的客户端 IP 地址', 'danger');
+            return;
+        }
+
+        const confirmMsg = `确定要将 IP ${ip} 加入黑名单并禁止搜索吗？`;
+        const ok = window.confirmModal
+            ? await window.confirmModal({
+                title: '一键封禁 IP 确认',
+                message: confirmMsg,
+                confirmText: '确定封禁',
+                type: 'danger',
+            })
+            : false;
+
+        if (!ok) return;
+
+
+        try {
+            const response = await fetch('/admin/api/logs/block_ip', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip: ip }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || '封禁 IP 失败');
+            }
+            showToast(data.message || `已成功封禁 IP ${ip}`, 'success');
+        } catch (err) {
+            showToast(`封禁失败: ${err.message}`, 'danger');
+        }
+    }
+
+
 
     function renderSearchPagination() {
         const container = document.getElementById('searchLogsPagination');

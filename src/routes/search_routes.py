@@ -17,7 +17,9 @@ from src.services.link_checker import (
     check_links_batch,
     STATE_BAD,
 )
-from src.services.system_config_service import is_public_search_api_enabled
+from src.services.security_service import check_request_security, IPConcurrencyGuard
+from src.services.system_config_service import is_public_search_api_enabled, get_security_config
+from src.services.log_service import record_log, get_current_client_ip
 from src.services.temp_share_service import cleanup_expired_temp_shares, resolve_view_url
 from src.utils.auth_utils import token_required
 from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS, parse_netdisk_names
@@ -32,15 +34,26 @@ def search_stream():
     """
     使用 Server-Sent Events (SSE) 实时流式返回搜索结果。
     """
-    keyword = request.args.get("keyword")
+    keyword = (request.args.get("keyword") or "").strip()
     if not keyword:
         return jsonify({"error": "请提供搜索关键词"}), 400
 
-    logger.info(f"用户 SSE 搜索关键词: {keyword}")
+    sec_cfg = get_security_config()
+    min_len = sec_cfg.get("min_keyword_length", 2)
+    if len(keyword) < min_len:
+        return jsonify({"error": f"搜索关键词过短，请至少输入 {min_len} 个字符"}), 400
+
+    allowed, err_msg, status_code = check_request_security()
+    if not allowed:
+        return jsonify({"error": err_msg}), status_code
+
+    client_ip = get_current_client_ip()
+    logger.info(f"用户 SSE 搜索关键词: {keyword} (IP: {client_ip})")
 
     def generate_events():
-        for payload in generate_search_stream_events(keyword, action="search.web"):
-            yield f"data: {payload}\n\n"
+        with IPConcurrencyGuard(client_ip):
+            for payload in generate_search_stream_events(keyword, action="search.web"):
+                yield f"data: {payload}\n\n"
 
     return Response(stream_with_context(generate_events()), mimetype="text/event-stream")
 
@@ -53,7 +66,20 @@ def search_api():
     if not is_public_search_api_enabled():
         return jsonify({"success": False, "message": "公开聚合接口当前已关闭"}), 403
 
-    keyword = request.args.get("keyword", "", type=str)
+    keyword = (request.args.get("keyword", "", type=str) or "").strip()
+    if not keyword:
+        return jsonify({"success": False, "message": "请提供搜索关键词"}), 400
+
+    sec_cfg = get_security_config()
+    min_len = sec_cfg.get("min_keyword_length", 2)
+    if len(keyword) < min_len:
+        return jsonify({"success": False, "message": f"搜索关键词过短，请至少输入 {min_len} 个字符"}), 400
+
+    allowed, err_msg, status_code = check_request_security()
+    if not allowed:
+        return jsonify({"success": False, "message": err_msg}), status_code
+
+    client_ip = get_current_client_ip()
     limit = request.args.get("limit", 100, type=int)
     raw_clouds = request.args.getlist("cloud_name") + request.args.getlist("cloud_names")
     target_clouds = parse_netdisk_names(raw_clouds)
@@ -73,17 +99,19 @@ def search_api():
         else (target_clouds if target_clouds else "")
     )
 
-    success, message, results = search_public_resources(
-        keyword=keyword,
-        limit=limit,
-        cloud_name=passed_cloud,
-    )
+    with IPConcurrencyGuard(client_ip):
+        success, message, results = search_public_resources(
+            keyword=keyword,
+            limit=limit,
+            cloud_name=passed_cloud,
+        )
 
     if not success:
         status_code = 400 if "请提供搜索关键词" in message else 500
         return jsonify({"success": False, "message": message}), status_code
 
     return jsonify({"success": True, "total": len(results), "results": results})
+
 
 
 @search_bp.route("/api/check/links", methods=["POST"])

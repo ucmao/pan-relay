@@ -27,8 +27,12 @@ from src.services.system_config_service import (
     get_search_api_limit_lock,
     get_transfer_api_key,
     is_public_search_api_enabled,
+    get_security_config,
 )
+from src.services.security_service import check_request_security, IPConcurrencyGuard
+from src.services.log_service import record_log, get_current_client_ip
 from src.utils.netdisk_utils import FRONTEND_DISPLAY_NETDISK_OPTIONS, parse_netdisk_names
+
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +115,7 @@ def api_search():
         return jsonify({"success": False, "message": "公开聚合查询接口已被关闭"}), 403
 
     opts = _resolve_search_api_options(request)
-    keyword = opts["keyword"]
+    keyword = (opts["keyword"] or "").strip()
     limit = opts["limit"]
     target_clouds = opts["target_clouds"]
     scope = opts["scope"]
@@ -125,6 +129,17 @@ def api_search():
             error_message="缺少必填参数: keyword",
         )
         return jsonify({"success": False, "message": "缺少必填参数: keyword"}), 400
+
+    sec_cfg = get_security_config()
+    min_len = sec_cfg.get("min_keyword_length", 2)
+    if len(keyword) < min_len:
+        return jsonify({"success": False, "message": f"搜索关键词过短，请至少输入 {min_len} 个字符"}), 400
+
+    allowed, err_msg, status_code = check_request_security()
+    if not allowed:
+        return jsonify({"success": False, "message": err_msg}), status_code
+
+    client_ip = get_current_client_ip()
 
     invalid_clouds = [c for c in target_clouds if c not in FRONTEND_DISPLAY_NETDISK_OPTIONS]
     if invalid_clouds:
@@ -178,11 +193,12 @@ def api_search():
         else (target_clouds if target_clouds else "")
     )
 
-    success, message, results = search_public_resources(
-        keyword=keyword,
-        limit=limit,
-        cloud_name=passed_cloud,
-    )
+    with IPConcurrencyGuard(client_ip):
+        success, message, results = search_public_resources(
+            keyword=keyword,
+            limit=limit,
+            cloud_name=passed_cloud,
+        )
 
     if not success:
         return jsonify({"success": False, "message": message}), 500
@@ -204,7 +220,7 @@ def api_search_stream():
         return jsonify({"success": False, "message": "公开聚合查询接口已被关闭"}), 403
 
     opts = _resolve_search_api_options(request)
-    keyword = opts["keyword"]
+    keyword = (opts["keyword"] or "").strip()
     limit = opts["limit"]
     target_clouds = opts["target_clouds"]
     scope = opts["scope"]
@@ -212,17 +228,30 @@ def api_search_stream():
     if not keyword:
         return jsonify({"success": False, "message": "缺少必填参数: keyword"}), 400
 
+    sec_cfg = get_security_config()
+    min_len = sec_cfg.get("min_keyword_length", 2)
+    if len(keyword) < min_len:
+        return jsonify({"success": False, "message": f"搜索关键词过短，请至少输入 {min_len} 个字符"}), 400
+
+    allowed, err_msg, status_code = check_request_security()
+    if not allowed:
+        return jsonify({"success": False, "message": err_msg}), status_code
+
+    client_ip = get_current_client_ip()
+
     def generate_events():
-        for payload in generate_search_stream_events(
-            keyword,
-            action="search.api.v1",
-            limit=limit,
-            target_clouds=target_clouds,
-            scope=scope,
-        ):
-            yield f"data: {payload}\n\n"
+        with IPConcurrencyGuard(client_ip):
+            for payload in generate_search_stream_events(
+                keyword,
+                action="search.api.v1",
+                limit=limit,
+                target_clouds=target_clouds,
+                scope=scope,
+            ):
+                yield f"data: {payload}\n\n"
 
     return Response(stream_with_context(generate_events()), mimetype="text/event-stream")
+
 
 
 @api_v1_bp.route("/transfer", methods=["POST"])

@@ -428,8 +428,69 @@
                 </div>
             </section>
 
+            <!-- 安全防御与 IP 频控 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-user-shield text-indigo-600"></i> 安全防御与 IP 频控
+                        </h2>
+                        <p class="admin-panel-desc">限制单 IP 限速、并发数上限、最小搜索字符数与 IP 封禁黑名单</p>
+                    </div>
+                </div>
+                <div class="admin-panel-body space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <!-- 搜索关键词最小长度 -->
+                        <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200/60 space-y-1">
+                            <label class="block font-bold text-slate-800 text-xs">搜索词最小字符数</label>
+                            <span class="text-[10px] text-slate-500 block">拦截单字/空词搜索拖库</span>
+                            <div class="flex items-center gap-2 pt-1">
+                                <input type="number" id="secMinKeywordLenInput" class="form-control form-control-sm text-xs font-semibold flex-1 min-w-0" min="1" max="20" value="2" onchange="saveSecurityConfig()">
+                                <span class="text-xs text-slate-400 whitespace-nowrap shrink-0">字符</span>
+                            </div>
+                        </div>
+
+                        <!-- 单 IP 每分钟限制频次 -->
+                        <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200/60 space-y-1">
+                            <label class="block font-bold text-slate-800 text-xs">单 IP 搜索频次上限</label>
+                            <span class="text-[10px] text-slate-500 block">每分钟最多允许搜索次数</span>
+                            <div class="flex items-center gap-2 pt-1">
+                                <input type="number" id="secRateLimitInput" class="form-control form-control-sm text-xs font-semibold flex-1 min-w-0" min="1" max="600" value="5" onchange="saveSecurityConfig()">
+                                <span class="text-xs text-slate-400 whitespace-nowrap shrink-0">次/分</span>
+                            </div>
+                        </div>
+
+                        <!-- 单 IP 最大并发数 -->
+                        <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200/60 space-y-1">
+                            <label class="block font-bold text-slate-800 text-xs">单 IP 最大并发搜索</label>
+                            <span class="text-[10px] text-slate-500 block">同时运行的搜索任务上限</span>
+                            <div class="flex items-center gap-2 pt-1">
+                                <input type="number" id="secMaxConcurrentInput" class="form-control form-control-sm text-xs font-semibold flex-1 min-w-0" min="1" max="20" value="1" onchange="saveSecurityConfig()">
+                                <span class="text-xs text-slate-400 whitespace-nowrap shrink-0">个</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- IP 封禁黑名单 -->
+                    <div class="space-y-2 pt-2">
+                        <div class="flex items-center justify-between">
+                            <label for="secIpBlacklistTextarea" class="form-label font-bold text-slate-800 text-xs mb-0">
+                                IP 封禁黑名单 (每行一个 IP)
+                            </label>
+                            <span class="text-xs text-slate-500">已封禁：<strong id="secIpBlacklistCount" class="text-red-600">0</strong> 个 IP</span>
+                        </div>
+                        <textarea class="form-control font-mono text-xs" id="secIpBlacklistTextarea"
+                            style="height: 140px; min-height: 140px;" placeholder="请输入需封禁的客户端 IP 地址，每行一个（例如：182.149.235.13）"
+                            onblur="saveSecurityConfig()"></textarea>
+                        <p class="text-[11px] text-slate-400 mb-0">修改数值或离开输入框后系统将自动保存并即时生效。</p>
+                    </div>
+                </div>
+            </section>
+
             <!-- 敏感词过滤与风控 -->
             <section class="admin-panel">
+
                 <div class="admin-panel-header">
                     <div class="admin-panel-title-area">
                         <h2 class="admin-panel-title">

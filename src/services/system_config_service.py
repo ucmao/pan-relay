@@ -25,6 +25,8 @@ SEARCH_API_SCOPE_LOCK_KEY = "search_api_scope_lock"
 SEARCH_API_LIMIT_LOCK_KEY = "search_api_limit_lock"
 TRANSFER_API_KEY_KEY = "transfer_api_key"
 FRONTEND_LINK_CHECK_CONFIG_KEY = "frontend_link_check_config"
+SECURITY_CONFIG_KEY = "security_config"
+
 
 
 
@@ -1034,5 +1036,69 @@ def get_transfer_api_key() -> str:
 
 def save_transfer_api_key(api_key: str) -> bool:
     return set_config_value(TRANSFER_API_KEY_KEY, {"api_key": str(api_key or "").strip()})
+
+
+DEFAULT_SECURITY_CONFIG = {
+    "min_keyword_length": 2,
+    "rate_limit_per_minute": 5,
+    "max_concurrent_searches": 1,
+    "ip_blacklist": ["182.149.235.13"],
+}
+
+
+def get_security_config() -> Dict[str, Any]:
+    raw_value = get_config_value(SECURITY_CONFIG_KEY)
+    if not raw_value:
+        return DEFAULT_SECURITY_CONFIG.copy()
+    try:
+        parsed = json.loads(raw_value)
+        merged = DEFAULT_SECURITY_CONFIG.copy()
+        if isinstance(parsed, dict):
+            merged.update(parsed)
+            # 确保 ip_blacklist 是列表且经去重/去空格处理
+            if isinstance(merged.get("ip_blacklist"), list):
+                merged["ip_blacklist"] = list(dict.fromkeys([str(ip).strip() for ip in merged["ip_blacklist"] if str(ip).strip()]))
+            else:
+                merged["ip_blacklist"] = DEFAULT_SECURITY_CONFIG["ip_blacklist"].copy()
+        return merged
+    except (TypeError, json.JSONDecodeError):
+        return DEFAULT_SECURITY_CONFIG.copy()
+
+
+def save_security_config(config: Dict[str, Any]) -> bool:
+    clean_config = {
+        "min_keyword_length": max(1, min(int(config.get("min_keyword_length", 2)), 50)),
+        "rate_limit_per_minute": max(1, min(int(config.get("rate_limit_per_minute", 5)), 600)),
+        "max_concurrent_searches": max(1, min(int(config.get("max_concurrent_searches", 1)), 20)),
+        "ip_blacklist": list(dict.fromkeys([str(ip).strip() for ip in config.get("ip_blacklist", []) if str(ip).strip()])),
+    }
+    return set_config_value(SECURITY_CONFIG_KEY, clean_config)
+
+
+def add_ip_to_blacklist(ip: str) -> bool:
+    clean_ip = (ip or "").strip()
+    if not clean_ip:
+        return False
+    cfg = get_security_config()
+    blacklist = cfg.get("ip_blacklist", [])
+    if clean_ip not in blacklist:
+        blacklist.append(clean_ip)
+        cfg["ip_blacklist"] = blacklist
+        return save_security_config(cfg)
+    return True
+
+
+def remove_ip_from_blacklist(ip: str) -> bool:
+    clean_ip = (ip or "").strip()
+    if not clean_ip:
+        return False
+    cfg = get_security_config()
+    blacklist = cfg.get("ip_blacklist", [])
+    if clean_ip in blacklist:
+        blacklist.remove(clean_ip)
+        cfg["ip_blacklist"] = blacklist
+        return save_security_config(cfg)
+    return True
+
 
 

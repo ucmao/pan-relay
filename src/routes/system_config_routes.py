@@ -35,7 +35,12 @@ from src.services.system_config_service import (
     get_search_scheduler_config,
     get_api_mode_config,
     save_api_mode_config,
+    get_security_config,
+    save_security_config,
+    add_ip_to_blacklist,
+    remove_ip_from_blacklist,
     save_public_search_api_config,
+
     save_allow_excel_download_config,
     save_frontend_link_check_config,
     save_frontend_display_netdisk_config,
@@ -1083,6 +1088,58 @@ def update_api_mode_config_api():
         "message": "API 模式与默认检索配置保存成功",
         "config": get_api_mode_config(),
     })
+
+
+@system_config_bp.route("/admin/api/security-config", methods=["GET"])
+@token_required
+def get_security_config_api():
+    """获取安全防护配置（IP 黑名单、频控、最小关键词长度等）"""
+    config = get_security_config()
+    return jsonify({"success": True, "config": config})
+
+
+@system_config_bp.route("/admin/api/security-config", methods=["PUT", "POST"])
+@token_required
+def update_security_config_api():
+    """更新安全防护配置"""
+    data = request.get_json(silent=True) or {}
+    success = save_security_config(data)
+    if not success:
+        return jsonify({"success": False, "message": "安全防护配置保存失败"}), 400
+    return jsonify({
+        "success": True,
+        "message": "安全防护配置保存成功",
+        "config": get_security_config(),
+    })
+
+
+@system_config_bp.route("/admin/api/ip-blacklist/add", methods=["POST"])
+@token_required
+def add_ip_blacklist_api():
+    """快捷添加 IP 到黑名单"""
+    data = request.get_json(silent=True) or {}
+    ip = str(data.get("ip", "")).strip()
+    if not ip:
+        return jsonify({"success": False, "message": "缺少有效的 IP 参数"}), 400
+    success = add_ip_to_blacklist(ip)
+    if success:
+        return jsonify({"success": True, "message": f"IP {ip} 已成功加入封禁黑名单", "config": get_security_config()})
+    return jsonify({"success": False, "message": "添加黑名单失败"}), 500
+
+
+@system_config_bp.route("/admin/api/ip-blacklist/remove", methods=["POST", "DELETE"])
+@token_required
+def remove_ip_blacklist_api():
+    """从黑名单中移除 IP"""
+    data = request.get_json(silent=True) or {}
+    ip = str(data.get("ip", "")).strip()
+    if not ip:
+        return jsonify({"success": False, "message": "缺少有效的 IP 参数"}), 400
+    success = remove_ip_from_blacklist(ip)
+    if success:
+        return jsonify({"success": True, "message": f"IP {ip} 已从黑名单解封", "config": get_security_config()})
+    return jsonify({"success": False, "message": "解封 IP 失败"}), 500
+
 
 
 
