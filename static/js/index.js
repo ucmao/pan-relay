@@ -51,7 +51,7 @@ const hideDeadLinksText = document.getElementById('hideDeadLinksText');
 // 初始化过滤失效按钮显隐与默认状态
 if (hideDeadLinksToggle) {
     if (!isLinkCheckEnabled) {
-        hideDeadLinksToggle.classList.add('d-none');
+        hideDeadLinksToggle.classList.add('hidden');
     } else if (isHideDeadLinks) {
         hideDeadLinksToggle.classList.add('active');
         hideDeadLinksToggle.setAttribute('aria-pressed', 'true');
@@ -121,7 +121,7 @@ function setAdvancedFilterOpen(isOpen) {
     isAdvancedFilterOpen = isOpen;
     if (!advancedFilterPanel || !advancedFilterToggle) return;
 
-    advancedFilterPanel.classList.toggle('d-none', !isOpen);
+    advancedFilterPanel.classList.toggle('hidden', !isOpen);
     advancedFilterToggle.setAttribute('aria-expanded', String(isOpen));
     
     const hasActiveFilters = includeKeywords.length > 0 || excludeKeywords.length > 0;
@@ -301,10 +301,10 @@ function updateFilterButtons() {
     if (!filterBar) return;
 
     if (allResults.length === 0) {
-        filterBar.classList.add('d-none');
+        filterBar.classList.add('hidden');
         return;
     }
-    filterBar.classList.remove('d-none');
+    filterBar.classList.remove('hidden');
 
     // 1. 统计各网盘符合条件数量 (支持高级筛选关键词过滤与失效链接过滤)
     const baseList = allResults.filter(result => {
@@ -435,7 +435,7 @@ function performSearch() {
 
     // 1. 初始化状态和界面
     if (searchShell) {
-        searchShell.classList.remove('d-none');
+        searchShell.classList.remove('hidden');
     }
     isSearchRunning = true;
     isFullyLoaded = false;
@@ -449,23 +449,23 @@ function performSearch() {
     searchButton.classList.add('searching');
 
     if (statusBar) {
-        statusBar.classList.remove('d-none');
+        statusBar.classList.remove('hidden');
         void statusBar.offsetWidth;
         statusBar.classList.remove('toast-hidden');
         statusBar.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> 正在持续搜索更多资源...';
     }
 
-    resultCountText.classList.add('d-none');
-    loadingMore.classList.add('d-none');
+    resultCountText.classList.add('hidden');
+    loadingMore.classList.add('hidden');
 
     allResults = [];
     currentPage = 1;
     currentFilter = '全部';
     checkQueue = [];
     pendingCheckKeys.clear();
-    filterBar.classList.add('d-none');
+    filterBar.classList.add('hidden');
     if (filterAndCountContainer) {
-        filterAndCountContainer.classList.add('d-none');
+        filterAndCountContainer.classList.add('hidden');
     }
 
     // 重置筛选框
@@ -498,7 +498,7 @@ function performSearch() {
 
                 if (allResults.length > 0) {
                     if (filterAndCountContainer) {
-                        filterAndCountContainer.classList.remove('d-none');
+                        filterAndCountContainer.classList.remove('hidden');
                     }
                 }
 
@@ -539,7 +539,7 @@ function finalizeSearch(hasError = false) {
         statusBar.classList.add('toast-hidden');
         setTimeout(() => {
             if (!isSearchRunning) {
-                statusBar.classList.add('d-none');
+                statusBar.classList.add('hidden');
             }
         }, 300);
     }
@@ -553,10 +553,10 @@ function finalizeSearch(hasError = false) {
                 </div>
                 <h3 class="mt-3 text-muted">未找到相关结果，请尝试其他关键词</h3>
             </div>`;
-        loadingMore.classList.add('d-none');
+        loadingMore.classList.add('hidden');
         // 即使没有结果也显示计数
         if (filterAndCountContainer) {
-            filterAndCountContainer.classList.remove('d-none');
+            filterAndCountContainer.classList.remove('hidden');
         }
         resultCountText.textContent = `共找到 0 个结果 (${currentFilter})`;
 
@@ -566,7 +566,7 @@ function finalizeSearch(hasError = false) {
         updateFilterButtons();
         // 显示筛选和计数容器
         if (filterAndCountContainer) {
-            filterAndCountContainer.classList.remove('d-none');
+            filterAndCountContainer.classList.remove('hidden');
         }
         renderResults(true);
 
@@ -768,7 +768,7 @@ function renderResults(reset = false) {
 
     // 总是显示结果计数，即使为0
     resultCountText.textContent = `共找到 ${filteredResults.length} 个结果 (${currentFilter})`;
-    resultCountText.classList.remove('d-none');
+    resultCountText.classList.remove('hidden');
 
     if (filteredResults.length > 0) {
         resultContainer.querySelector('p.text-center.text-muted')?.remove();
@@ -829,7 +829,7 @@ function renderResults(reset = false) {
         const actionBtnHtml = `
             <div class="action-btn-wrapper">
                 <button class="btn btn-sm ${actionBtnClass}" data-title="${escapeHtml(titleText)}" data-url="${escapeHtml(urlLink)}" data-netdisk="${escapeHtml(netdiskName)}">
-                    ${isItemViewMode ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
+                    ${isItemViewMode ? '<i class="fas fa-eye"></i>查看' : '<i class="far fa-copy"></i>复制'}
                 </button>
             </div>`;
 
@@ -843,7 +843,7 @@ function renderResults(reset = false) {
                         <span class="netdisk-badge ${finalBadgeClass}">${escapeHtml(netdiskName)}</span>
                         <span class="result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
                     </div>
-                    <div class="result-url-line ${isItemViewMode ? 'd-none' : ''}">
+                    <div class="result-url-line ${isItemViewMode ? 'hidden' : ''}">
                         ${linkIconHtml}
                         <a href="${urlLink}" target="_blank" title="${urlLink}">${escapeHtml(urlLink)}</a>
                     </div>
@@ -874,7 +874,7 @@ function renderResults(reset = false) {
             copyTextToClipboard(textToCopy).then(success => {
                 if (success) {
                     this.innerHTML = '<i class="fas fa-check"></i> 已复制';
-                    setTimeout(() => { this.innerHTML = '<i class="far fa-copy"></i> 复制'; }, 1500);
+                    setTimeout(() => { this.innerHTML = '<i class="far fa-copy"></i>复制'; }, 1500);
                 } else {
                     showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
                 }
@@ -893,15 +893,15 @@ function renderResults(reset = false) {
     if (endIndex >= filteredResults.length) {
         if (isSearchRunning) {
             isFullyLoaded = false;
-            loadingMore.classList.add('d-none');
+            loadingMore.classList.add('hidden');
         } else {
             isFullyLoaded = true;
-            loadingMore.classList.add('d-none');
+            loadingMore.classList.add('hidden');
             loadingMore.textContent = '已加载全部结果。';
         }
     } else {
         isFullyLoaded = false;
-        loadingMore.classList.remove('d-none');
+        loadingMore.classList.remove('hidden');
         loadingMore.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div>加载更多结果...';
     }
 
@@ -1069,7 +1069,7 @@ function updateHealthBadgeInDOM(res) {
             btn.setAttribute('data-title', titleText);
             btn.setAttribute('data-url', urlLink);
             btn.setAttribute('data-netdisk', netdiskName);
-            btn.innerHTML = isItemViewMode ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制';
+            btn.innerHTML = isItemViewMode ? '<i class="fas fa-eye"></i>查看' : '<i class="far fa-copy"></i>复制';
 
             btn.addEventListener('click', function () {
                 if (isItemViewMode) {
@@ -1078,8 +1078,8 @@ function updateHealthBadgeInDOM(res) {
                     const textToCopy = `标题: ${titleText}\n链接: ${urlLink}`;
                     copyTextToClipboard(textToCopy).then(success => {
                         if (success) {
-                            this.innerHTML = '<i class="fas fa-check"></i> 已复制';
-                            setTimeout(() => { this.innerHTML = '<i class="far fa-copy"></i> 复制'; }, 1500);
+                            this.innerHTML = '<i class="fas fa-check"></i>已复制';
+                            setTimeout(() => { this.innerHTML = '<i class="far fa-copy"></i>复制'; }, 1500);
                         } else {
                             showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
                         }
@@ -1148,7 +1148,7 @@ const infiniteScrollHandler = () => {
 
 function loadNextPage() {
     isLoadingNextBatch = true;
-    loadingMore.classList.remove('d-none');
+    loadingMore.classList.remove('hidden');
 
     setTimeout(() => {
         renderResults(false);
@@ -1212,7 +1212,7 @@ function showViewResultLoading(title, netdiskName) {
     const shouldShowQr = shouldShowPcQrCode(netdiskName);
 
     if (viewResultModalLabel) {
-        viewResultModalLabel.textContent = shouldShowQr ? '获取资源' : '资源链接';
+        viewResultModalLabel.textContent = '获取资源';
     }
     if (viewResultTitle) {
         viewResultTitle.textContent = title || '';
@@ -1222,50 +1222,86 @@ function showViewResultLoading(title, netdiskName) {
         viewResultLink.href = '#';
     }
     if (viewResultLoadingText) {
-        viewResultLoadingText.textContent = shouldShowQr
-            ? '正在自动转存至网盘并生成二维码，请稍候...'
-            : '正在获取可访问链接，请稍候...';
+        viewResultLoadingText.textContent = '正在为您获取资源，请稍等！';
     }
     if (viewResultLoadingSubtext) {
-        if (shouldShowQr) {
-            viewResultLoadingSubtext.classList.remove('d-none');
-        } else {
-            viewResultLoadingSubtext.classList.add('d-none');
-        }
+        viewResultLoadingSubtext.textContent = '系统正在处理资源链接，请勿关闭当前窗口。';
+        viewResultLoadingSubtext.classList.remove('hidden');
     }
     if (viewResultModalFooter) {
         if (shouldShowQr) {
-            viewResultModalFooter.classList.add('d-none');
+            viewResultModalFooter.classList.add('hidden');
         } else {
-            viewResultModalFooter.classList.remove('d-none');
+            viewResultModalFooter.classList.remove('hidden');
         }
     }
 
-    viewResultLoadingState?.classList.remove('d-none');
-    viewResultContentState?.classList.add('d-none');
+    viewResultLoadingState?.classList.remove('hidden');
+    viewResultContentState?.classList.add('hidden');
     copyViewResultButton?.setAttribute('disabled', 'disabled');
 }
 
-function renderQrCodeToImg(targetUrl, imgElement) {
+function renderQrCodeToImg(targetUrl, imgElement, onReadyCallback) {
     if (!targetUrl || !imgElement) return;
 
-    imgElement.src = '';
+    const qrLoading = document.getElementById('viewResultQrLoading');
 
-    // 1. 优先使用 npm qrcode 库的 toDataURL
-    if (typeof QRCode !== 'undefined' && typeof QRCode.toDataURL === 'function') {
-        QRCode.toDataURL(targetUrl, {
-            width: 240,
-            margin: 1,
-            color: { dark: '#000000', light: '#ffffff' }
-        }, function (error, dataUrl) {
-            if (!error && dataUrl) {
-                imgElement.src = dataUrl;
-            } else {
-                console.warn('QRCode.toDataURL 失败，降级备用二维码服务:', error);
-                imgElement.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(targetUrl)}`;
+    let isFinished = false;
+    const finishLoading = () => {
+        if (isFinished) return;
+        isFinished = true;
+        if (qrLoading) {
+            qrLoading.classList.remove('is-active');
+        }
+        if (typeof onReadyCallback === 'function') {
+            onReadyCallback();
+            onReadyCallback = null;
+        }
+    };
+
+    const showQrImage = (src) => {
+        if (!src) return;
+
+        imgElement.onload = finishLoading;
+        imgElement.onerror = () => {
+            if (qrLoading) {
+                qrLoading.classList.add('is-active');
+                qrLoading.innerHTML = '<span class="qr-text" style="color: #ef4444;">二维码生成失败</span>';
             }
-        });
-        return;
+            if (typeof onReadyCallback === 'function') {
+                onReadyCallback();
+                onReadyCallback = null;
+            }
+        };
+
+        imgElement.src = src;
+
+        // Base64 或已完成图片直接触发隐藏
+        if (src.startsWith('data:') || imgElement.complete) {
+            finishLoading();
+        }
+    };
+
+    // 1. 优先使用 npm qrcode 库的 toDataURL (毫秒级本地生成)
+    if (typeof QRCode !== 'undefined' && typeof QRCode.toDataURL === 'function') {
+        try {
+            QRCode.toDataURL(targetUrl, {
+                width: 240,
+                margin: 1,
+                color: { dark: '#000000', light: '#ffffff' }
+            }, function (error, dataUrl) {
+                if (!error && dataUrl) {
+                    showQrImage(dataUrl);
+                } else {
+                    console.warn('QRCode.toDataURL 失败，降级备用二维码服务:', error);
+                    if (qrLoading) qrLoading.classList.add('is-active');
+                    showQrImage(`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(targetUrl)}`);
+                }
+            });
+            return;
+        } catch (e) {
+            console.warn('QRCode.toDataURL 异常:', e);
+        }
     }
 
     // 2. 如果 window.QRCode 是构造函数 (standard qrcode.js)
@@ -1273,17 +1309,30 @@ function renderQrCodeToImg(targetUrl, imgElement) {
         try {
             const tempDiv = document.createElement('div');
             new QRCode(tempDiv, { text: targetUrl, width: 240, height: 240 });
+            
+            // 检查是否已同步生成 canvas/img
+            const canvas = tempDiv.querySelector('canvas');
+            const img = tempDiv.querySelector('img');
+            if (canvas) {
+                showQrImage(canvas.toDataURL('image/png'));
+                return;
+            } else if (img && img.src) {
+                showQrImage(img.src);
+                return;
+            }
+
+            if (qrLoading) qrLoading.classList.add('is-active');
             setTimeout(() => {
                 const generatedImg = tempDiv.querySelector('img');
                 const generatedCanvas = tempDiv.querySelector('canvas');
-                if (generatedImg && generatedImg.src) {
-                    imgElement.src = generatedImg.src;
-                } else if (generatedCanvas) {
-                    imgElement.src = generatedCanvas.toDataURL('image/png');
+                if (generatedCanvas) {
+                    showQrImage(generatedCanvas.toDataURL('image/png'));
+                } else if (generatedImg && generatedImg.src) {
+                    showQrImage(generatedImg.src);
                 } else {
-                    imgElement.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(targetUrl)}`;
+                    showQrImage(`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(targetUrl)}`);
                 }
-            }, 50);
+            }, 30);
             return;
         } catch (e) {
             console.warn('new QRCode 失败，降级备用二维码服务:', e);
@@ -1291,7 +1340,8 @@ function renderQrCodeToImg(targetUrl, imgElement) {
     }
 
     // 3. 兜底在线二维码图片 API
-    imgElement.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(targetUrl)}`;
+    if (qrLoading) qrLoading.classList.add('is-active');
+    showQrImage(`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(targetUrl)}`);
 }
 
 function showViewResultContent(title, url, netdiskName) {
@@ -1299,10 +1349,16 @@ function showViewResultContent(title, url, netdiskName) {
 
     const shouldShowQr = shouldShowPcQrCode(netdiskName);
 
+    const activateContentState = () => {
+        viewResultLoadingState?.classList.add('hidden');
+        viewResultContentState?.classList.remove('hidden');
+        copyViewResultButton?.removeAttribute('disabled');
+    };
+
     if (shouldShowQr) {
-        viewResultStandardState?.classList.add('d-none');
-        viewResultQrState?.classList.remove('d-none');
-        viewResultModalFooter?.classList.add('d-none');
+        viewResultStandardState?.classList.add('hidden');
+        viewResultQrState?.classList.remove('hidden');
+        viewResultModalFooter?.classList.add('hidden');
 
         if (viewResultModalLabel) {
             viewResultModalLabel.textContent = '获取资源';
@@ -1320,14 +1376,16 @@ function showViewResultContent(title, url, netdiskName) {
             viewResultQrLink.title = url;
         }
 
-        // 渲染二维码至 <img>
+        // 渲染二维码，就绪后再切换展示界面，杜绝空白卡顿与残影
         if (viewResultQrImg) {
-            renderQrCodeToImg(url, viewResultQrImg);
+            renderQrCodeToImg(url, viewResultQrImg, activateContentState);
+        } else {
+            activateContentState();
         }
     } else {
-        viewResultQrState?.classList.add('d-none');
-        viewResultStandardState?.classList.remove('d-none');
-        viewResultModalFooter?.classList.remove('d-none');
+        viewResultQrState?.classList.add('hidden');
+        viewResultStandardState?.classList.remove('hidden');
+        viewResultModalFooter?.classList.remove('hidden');
 
         if (viewResultModalLabel) {
             viewResultModalLabel.textContent = '资源链接';
@@ -1340,11 +1398,9 @@ function showViewResultContent(title, url, netdiskName) {
             viewResultLink.href = url;
             viewResultLink.title = url;
         }
-    }
 
-    viewResultLoadingState?.classList.add('d-none');
-    viewResultContentState?.classList.remove('d-none');
-    copyViewResultButton?.removeAttribute('disabled');
+        activateContentState();
+    }
 }
 
 copyViewResultButton?.addEventListener('click', async function () {
@@ -1414,7 +1470,7 @@ function updateActiveFilterTagsUI() {
     const hasFilters = includeKeywords.length > 0 || excludeKeywords.length > 0;
     
     if (resetFilterButton) {
-        resetFilterButton.classList.toggle('d-none', !hasFilters);
+        resetFilterButton.classList.toggle('hidden', !hasFilters);
     }
     
     if (advancedFilterToggle) {
@@ -1430,12 +1486,12 @@ function updateActiveFilterTagsUI() {
     if (!activeFilterTags) return;
     
     if (!hasFilters) {
-        activeFilterTags.classList.add('d-none');
+        activeFilterTags.classList.add('hidden');
         activeFilterTags.innerHTML = '';
         return;
     }
     
-    activeFilterTags.classList.remove('d-none');
+    activeFilterTags.classList.remove('hidden');
     let html = '';
     
     includeKeywords.forEach(kw => {

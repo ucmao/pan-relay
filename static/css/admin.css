@@ -1251,14 +1251,14 @@ textarea.form-control.font-mono {
 }
 
 .dynamic-transfer-netdisk-card:has(input:checked) {
-    background: linear-gradient(135deg, #f0f6ff 0%, #f8fafc 100%);
+    background: #eff6ff;
     border-color: #60a5fa;
     color: #0f172a;
     box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08), inset 0 0 0 0.5px rgba(96, 165, 250, 0.15);
 }
 
 .dynamic-transfer-netdisk-card:has(input:checked):hover {
-    background: linear-gradient(135deg, #e8f2ff 0%, #f1f5f9 100%);
+    background: #dbeafe;
     border-color: #3b82f6;
     transform: translateY(-1px);
 }
@@ -1739,6 +1739,7 @@ legend {
 /* --------------------------------------------------------------------------
    Standalone Utilities & Fallbacks (Zero Bootstrap Dependency)
    -------------------------------------------------------------------------- */
+.hidden { display: none !important; }
 .d-none { display: none !important; }
 .d-block { display: block !important; }
 .d-inline-block { display: inline-block !important; }

@@ -185,7 +185,7 @@ function updateSingleLinkTransferHint() {
 
     // 未开启转存 或 尚未输入有效链接：静默隐藏，保持卡片极致精简
     if (!isTransferEnabled || !link) {
-        opts.classList.add('d-none');
+        opts.classList.add('hidden');
         hintEl.innerHTML = '';
         return;
     }
@@ -196,11 +196,11 @@ function updateSingleLinkTransferHint() {
     if (!cred || cloudName === '其他') {
         hintEl.className = 'text-xs p-2.5 rounded-lg bg-amber-50/90 text-amber-800 border border-amber-200/80 flex items-center gap-1.5';
         hintEl.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-500 flex-shrink-0"></i> <span>当前识别为「${cloudName}」，暂不支持自动转存，将按原始链接直接入库。</span>`;
-        opts.classList.remove('d-none');
+        opts.classList.remove('hidden');
     } else if (cred.status === 'enabled') {
         hintEl.className = 'text-xs p-2.5 rounded-lg bg-emerald-50/90 text-emerald-800 border border-emerald-200/80 flex items-center gap-1.5';
         hintEl.innerHTML = `<i class="fas fa-check-circle text-emerald-500 flex-shrink-0"></i> <span>已识别到 <strong>${cloudName}</strong> 链接，且凭证已就绪。提交后将自动转存生成专属链接。</span>`;
-        opts.classList.remove('d-none');
+        opts.classList.remove('hidden');
     } else {
         hintEl.className = 'text-xs p-2.5 rounded-lg bg-rose-50/90 text-rose-800 border border-rose-200/80 flex items-center justify-between gap-1.5';
         hintEl.innerHTML = `
@@ -210,7 +210,7 @@ function updateSingleLinkTransferHint() {
             </div>
             <a href="/admin/system-config#accounts" target="_blank" class="text-rose-700 underline font-medium text-xs whitespace-nowrap ml-2 flex-shrink-0">去添加账号 &rarr;</a>
         `;
-        opts.classList.remove('d-none');
+        opts.classList.remove('hidden');
     }
 }
 
@@ -349,7 +349,7 @@ function renderTable() {
             <td>${resource.type || '-'}</td>
             <td>${renderHealthStatusBadge(resource.health_status, resource.health_message, resource.checked_at)}</td>
             <td>${resource.is_replaced ? '<span class="status-synced">已同步</span>' : '-'}</td>
-            <td class="action-buttons d-flex justify-content-center align-items-center">
+            <td class="action-buttons flex justify-center items-center">
                 <button class="btn btn-secondary btn-sm copy-btn" data-id="${resource.id}" title="复制标题与链接">
                     <i class="fas fa-copy"></i> 复制
                 </button>
@@ -1051,7 +1051,7 @@ function toggleBatchTransferOptions(enabled) {
     const opts = document.getElementById('batchTransferOptions');
     const saveBtn = document.getElementById('batchSaveResourceBtn');
     if (opts) {
-        opts.classList.toggle('d-none', !enabled);
+        opts.classList.toggle('hidden', !enabled);
     }
     if (saveBtn) {
         saveBtn.innerHTML = enabled

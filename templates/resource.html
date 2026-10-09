@@ -189,11 +189,11 @@
                         </div>
                         <div>
                             <label for="resourceShareLink" class="form-label">
-                                链接 <span class="text-danger">*</span>
+                                链接 <span class="text-rose-500">*</span>
                             </label>
                             <input type="text" class="form-control" id="resourceShareLink" placeholder="例如：https://pan.quark.cn/s/..." required>
                         </div>
-                        <div class="d-none">
+                        <div class="hidden">
                             <label for="resourceCloudName" class="form-label">云盘名称</label>
                             <input type="text" class="form-control" id="resourceCloudName">
                         </div>
@@ -219,7 +219,7 @@
                                 </label>
                             </div>
 
-                            <div id="singleTransferOptions" class="d-none pt-2.5 border-t border-slate-200/60">
+                            <div id="singleTransferOptions" class="hidden pt-2.5 border-t border-slate-200/60">
                                 <div id="singleLinkTransferHint" class="text-xs p-2.5 rounded-lg bg-blue-50/70 text-blue-700 border border-blue-100/80">
                                     <!-- 动态提示当前链接是否匹配已就绪凭证 -->
                                 </div>
@@ -252,17 +252,17 @@
                         <input type="hidden" id="editResourceId">
                         <div>
                             <label for="editResourceName" class="form-label">
-                                资源标题 <span class="text-danger">*</span>
+                                资源标题 <span class="text-rose-500">*</span>
                             </label>
                             <input type="text" class="form-control" id="editResourceName" required>
                         </div>
                         <div>
                             <label for="editResourceShareLink" class="form-label">
-                                链接 <span class="text-danger">*</span>
+                                链接 <span class="text-rose-500">*</span>
                             </label>
                             <input type="text" class="form-control" id="editResourceShareLink" required>
                         </div>
-                        <div class="d-none">
+                        <div class="hidden">
                             <label for="editResourceCloudName" class="form-label">云盘名称</label>
                             <input type="text" class="form-control" id="editResourceCloudName">
                         </div>
@@ -338,7 +338,7 @@
                                 </label>
                             </div>
 
-                            <div id="batchTransferOptions" class="d-none pt-2.5 border-t border-slate-200/60 space-y-2">
+                            <div id="batchTransferOptions" class="hidden pt-2.5 border-t border-slate-200/60 space-y-2">
                                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                                     <div class="flex items-center gap-1.5" id="batchReadyCloudsSummary">
                                         <span class="text-slate-500 font-medium">就绪转存平台：</span>

@@ -23,7 +23,7 @@ function updateDynamicTransferStatusVisibility() {
         badge.className = `badge ${isView ? 'badge-warning' : 'badge-info'} text-[10px]`;
     }
     if (netdisksWrapper) {
-        netdisksWrapper.classList.toggle('d-none', !isView);
+        netdisksWrapper.classList.toggle('hidden', !isView);
     }
     updateEnabledDynamicTransferPansCount();
 
@@ -386,9 +386,9 @@ function updateLinkCheckPanelState() {
     if (!wrapper || !checkToggle) return;
 
     if (checkToggle.checked) {
-        wrapper.classList.remove('d-none');
+        wrapper.classList.remove('hidden');
     } else {
-        wrapper.classList.add('d-none');
+        wrapper.classList.add('hidden');
     }
 }
 

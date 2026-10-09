@@ -24,15 +24,15 @@
                 </div>
             </div>
 
-            <section class="search-shell d-none" id="searchShell">
-                <div id="netdisk-filter-bar" class="d-none">
+            <section class="search-shell hidden" id="searchShell">
+                <div id="netdisk-filter-bar" class="hidden">
                     <button class="filter-btn active" data-netdisk="全部">
                         <span class="filter-name">全部</span>
                         <span class="filter-count">0</span>
                     </button>
                 </div>
 
-                <div class="filter-and-count-container d-none mt-3">
+                <div class="filter-and-count-container hidden mt-3">
                     <div class="filter-toolbar">
                         <p class="result-count mb-0" id="resultCountText"></p>
                         <div class="filter-toolbar-actions">
@@ -49,7 +49,7 @@
                             </button>
                         </div>
                     </div>
-                    <div id="advancedFilterPanel" class="advanced-filter-panel d-none">
+                    <div id="advancedFilterPanel" class="advanced-filter-panel hidden">
                         <div class="advanced-filter-grid">
                             <div class="filter-input-wrapper">
                                 <span class="filter-input-icon text-emerald"><i class="fas fa-plus-circle"></i></span>
@@ -67,7 +67,7 @@
                                 <button class="btn filter-apply-btn" id="applyFilter" type="button" title="应用关键词筛选">
                                     <i class="fas fa-filter me-1"></i> 应用
                                 </button>
-                                <button class="btn filter-reset-btn d-none" id="resetFilter" type="button" title="重置筛选">
+                                <button class="btn filter-reset-btn hidden" id="resetFilter" type="button" title="重置筛选">
                                     <i class="fas fa-rotate-left me-1"></i> 重置
                                 </button>
                                 {% if allow_excel_download %}
@@ -79,14 +79,14 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div id="activeFilterTags" class="active-filter-tags d-none"></div>
+                        <div id="activeFilterTags" class="active-filter-tags hidden"></div>
                     </div>
                 </div>
 
                 <div id="scrollableResults">
                     <div id="resultContainer"></div>
 
-                    <div id="loadingMore" class="d-none text-center p-3">
+                    <div id="loadingMore" class="hidden text-center p-3">
                         <div class="spinner-border spinner-border-sm me-2" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
@@ -94,7 +94,7 @@
                     </div>
                 </div>
             </section>
-            <div id="statusBar" class="search-status-toast d-none toast-hidden"></div>
+            <div id="statusBar" class="search-status-toast hidden toast-hidden"></div>
         </div>
     </div>
 </div>
@@ -103,41 +103,50 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content view-result-modal">
             <div class="modal-header">
-                <h5 class="modal-title" id="viewResultModalLabel">资源链接</h5>
+                <h5 class="modal-title" id="viewResultModalLabel">获取资源</h5>
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body">
-                <div id="viewResultLoadingState" class="view-result-loading text-center py-4">
-                    <div class="spinner-border text-primary mb-3" role="status">
+                <div id="viewResultLoadingState" class="view-result-loading text-center">
+                    <div class="view-result-spinner" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="mb-0 text-dark font-semibold text-sm" id="viewResultLoadingText">正在获取可访问链接，请稍候...</p>
-                    <p class="text-xs text-slate-400 mt-1 d-none" id="viewResultLoadingSubtext">正在为您生成专属极速保存通道</p>
+                    <h4 class="fw-bold text-slate-900 mb-2" id="viewResultLoadingText"
+                        style="font-size: 1.15rem; font-weight: 700;">正在为您获取资源，请稍等！</h4>
+                    <p class="text-xs text-slate-500" id="viewResultLoadingSubtext">系统正在处理资源链接，请勿关闭当前窗口。</p>
                 </div>
-                <div id="viewResultContentState" class="d-none">
+                <div id="viewResultContentState" class="hidden">
                     <!-- 扫码转存引导模式界面 (对齐基准UI比例) -->
-                    <div id="viewResultQrState" class="d-none text-center py-1">
+                    <div id="viewResultQrState" class="hidden text-center py-1">
                         <div class="mb-3">
-                            <h4 class="fw-bold text-slate-900 mb-1" style="font-size: 1.35rem; font-weight: 800;">已转存，请扫码保存</h4>
-                            <p class="text-slate-500 text-xs mb-0">打开<span id="viewResultNetdiskAppName">网盘</span>APP，使用扫码功能访问资源。</p>
+                            <h4 class="fw-bold text-slate-900 mb-1" style="font-size: 1.35rem; font-weight: 800;">
+                                已转存，请扫码保存</h4>
+                            <p class="text-slate-500 text-xs mb-0">打开<span
+                                    id="viewResultNetdiskAppName">网盘</span>APP，使用扫码功能访问资源。</p>
                         </div>
-                        <div class="d-flex justify-content-center mb-3">
-                            <div class="p-2.5 bg-white rounded-2xl shadow-sm border border-slate-200/80" style="display: inline-block;">
-                                <img id="viewResultQrImg" src="" alt="转存二维码" style="width: 170px; height: 170px; display: block; border: 0; border-radius: 10px;" />
+                        <div class="flex justify-center mb-3">
+                            <div class="view-result-qr-box">
+                                <div id="viewResultQrLoading" class="view-result-qr-loading">
+                                    <div class="qr-spinner" role="status"></div>
+                                    <span class="qr-text">生成中...</span>
+                                </div>
+                                <img id="viewResultQrImg" class="view-result-qr-img" src="" alt="转存二维码" />
                             </div>
                         </div>
                         <div class="px-2 pt-1 pb-4">
-                            <div class="fw-bold text-slate-900 text-sm view-result-qr-title mb-1.5" id="viewResultQrTitle"></div>
-                            <div class="text-xs text-slate-500 text-break">
-                                <span>资源地址：</span><a href="#" target="_blank" rel="noopener" id="viewResultQrLink" class="text-blue-600 underline font-mono hover:text-blue-700"></a>
+                            <div class="fw-bold text-slate-900 text-sm view-result-qr-title mb-1.5"
+                                id="viewResultQrTitle"></div>
+                            <div class="text-xs text-slate-500 break-all view-result-qr-address">
+                                <span>资源地址：</span><a href="#" target="_blank" rel="noopener" id="viewResultQrLink"
+                                    class="text-blue-600 underline font-mono break-all hover:text-blue-700"></a>
                             </div>
                         </div>
                     </div>
 
                     <!-- 标准链接复制界面 -->
-                    <div id="viewResultStandardState" class="d-none">
+                    <div id="viewResultStandardState" class="hidden">
                         <div class="view-result-field mb-3">
-                            <div class="view-result-label">名称</div>
+                            <div class="view-result-label">标题</div>
                             <div class="view-result-title" id="viewResultTitle"></div>
                         </div>
                         <div class="view-result-field">

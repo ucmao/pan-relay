@@ -68,12 +68,16 @@ code {
     color: #0f172a;
 }
 
-.d-none {
+.d-flex {
+    display: flex !important;
+}
+
+.hidden {
     display: none !important;
 }
 
-.d-flex {
-    display: flex !important;
+.d-none {
+    display: none !important;
 }
 
 .flex-wrap {

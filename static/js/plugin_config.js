@@ -659,7 +659,7 @@ function openTestModal(name, displayName, timeout) {
     document.getElementById('modalPluginTimeout').textContent = timeout;
 
     const resultArea = document.getElementById('pluginTestResultArea');
-    if (resultArea) resultArea.classList.add('d-none');
+    if (resultArea) resultArea.classList.add('hidden');
 
     const modalEl = document.getElementById('testPluginModal');
     if (window.UIModal) {
@@ -691,7 +691,7 @@ async function runPluginTest() {
         originalBtnHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 检索中...';
     }
-    if (resultArea) resultArea.classList.remove('d-none');
+    if (resultArea) resultArea.classList.remove('hidden');
     if (statusAlert) {
         statusAlert.className = 'alert alert-info py-2 px-3 small mb-2';
         statusAlert.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> 正在调用插件 [${escapeHtml(pluginName)}] 执行多关键词测试，优先词: "<strong>${escapeHtml(keyword)}</strong>"...`;
