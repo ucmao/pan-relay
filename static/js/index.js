@@ -11,6 +11,7 @@ let includeKeywords = [];
 let excludeKeywords = [];
 const isViewModeEnabled = window.SEARCH_LINK_MODE === 'view';
 const enabledDynamicTransferPans = Array.isArray(window.ENABLED_DYNAMIC_TRANSFER_PANS) ? window.ENABLED_DYNAMIC_TRANSFER_PANS : null;
+const isPcQrCodeEnabled = window.ENABLE_PC_QR_CODE !== false;
 
 function isDynamicTransferEnabledForNetdisk(netdiskName) {
     if (!isViewModeEnabled) return false;
@@ -18,6 +19,15 @@ function isDynamicTransferEnabledForNetdisk(netdiskName) {
     if (!enabledDynamicTransferPans) return true;
     return enabledDynamicTransferPans.includes(netdiskName);
 }
+
+function shouldShowPcQrCode(netdiskName) {
+    if (typeof isMobileDevice === 'function' && isMobileDevice()) {
+        return false;
+    }
+    if (!isPcQrCodeEnabled) return false;
+    return isDynamicTransferEnabledForNetdisk(netdiskName);
+}
+
 
 // 网盘链接健康检测状态
 const isLinkCheckEnabled = window.ENABLE_LINK_CHECK !== false;
@@ -73,7 +83,17 @@ const viewResultLoadingState = document.getElementById('viewResultLoadingState')
 const viewResultContentState = document.getElementById('viewResultContentState');
 const viewResultTitle = document.getElementById('viewResultTitle');
 const viewResultLink = document.getElementById('viewResultLink');
+const viewResultLoadingText = document.getElementById('viewResultLoadingText');
+const viewResultLoadingSubtext = document.getElementById('viewResultLoadingSubtext');
+const viewResultModalLabel = document.getElementById('viewResultModalLabel');
+const viewResultQrState = document.getElementById('viewResultQrState');
+const viewResultStandardState = document.getElementById('viewResultStandardState');
+const viewResultNetdiskAppName = document.getElementById('viewResultNetdiskAppName');
+const viewResultQrTitle = document.getElementById('viewResultQrTitle');
+const viewResultQrLink = document.getElementById('viewResultQrLink');
+const viewResultQrImg = document.getElementById('viewResultQrImg');
 const copyViewResultButton = document.getElementById('copyViewResultButton');
+const viewResultModalFooter = viewResultModalElement?.querySelector('.modal-footer');
 const viewResultModal = viewResultModalElement ? {
     show: () => window.AppUI.openModal(viewResultModalElement),
     hide: () => window.AppUI.closeModal(viewResultModalElement),
@@ -801,15 +821,15 @@ function renderResults(reset = false) {
             }
         }
 
-        const isItemDynamicTransfer = isDynamicTransferEnabledForNetdisk(netdiskName);
-        let actionBtnClass = isItemDynamicTransfer ? 'view-button' : 'copy-button';
+        const isItemViewMode = isViewModeEnabled;
+        let actionBtnClass = isItemViewMode ? 'view-button' : 'copy-button';
         if (deadItemClass === 'is-dead-link') {
             actionBtnClass += ' dead-btn';
         }
         const actionBtnHtml = `
             <div class="action-btn-wrapper">
                 <button class="btn btn-sm ${actionBtnClass}" data-title="${escapeHtml(titleText)}" data-url="${escapeHtml(urlLink)}" data-netdisk="${escapeHtml(netdiskName)}">
-                    ${isItemDynamicTransfer ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
+                    ${isItemViewMode ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'}
                 </button>
             </div>`;
 
@@ -823,7 +843,7 @@ function renderResults(reset = false) {
                         <span class="netdisk-badge ${finalBadgeClass}">${escapeHtml(netdiskName)}</span>
                         <span class="result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
                     </div>
-                    <div class="result-url-line ${isItemDynamicTransfer ? 'd-none' : ''}">
+                    <div class="result-url-line ${isItemViewMode ? 'd-none' : ''}">
                         ${linkIconHtml}
                         <a href="${urlLink}" target="_blank" title="${urlLink}">${escapeHtml(urlLink)}</a>
                     </div>
@@ -1043,23 +1063,23 @@ function updateHealthBadgeInDOM(res) {
             const urlLink = item.querySelector('.result-url-line a')?.getAttribute('href') || item.getAttribute('data-url') || '';
             const netdiskName = item.querySelector('.netdisk-badge')?.textContent.trim() || '';
 
-            const isItemDynamicTransfer = isDynamicTransferEnabledForNetdisk(netdiskName);
+            const isItemViewMode = isViewModeEnabled;
             btn = document.createElement('button');
-            btn.className = `btn btn-sm ${isItemDynamicTransfer ? 'view-button' : 'copy-button'}`;
+            btn.className = `btn btn-sm ${isItemViewMode ? 'view-button' : 'copy-button'}`;
             btn.setAttribute('data-title', titleText);
             btn.setAttribute('data-url', urlLink);
             btn.setAttribute('data-netdisk', netdiskName);
-            btn.innerHTML = isItemDynamicTransfer ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制';
+            btn.innerHTML = isItemViewMode ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制';
 
             btn.addEventListener('click', function () {
-                if (isItemDynamicTransfer) {
+                if (isItemViewMode) {
                     handleViewButtonClick(this);
                 } else {
                     const textToCopy = `标题: ${titleText}\n链接: ${urlLink}`;
                     copyTextToClipboard(textToCopy).then(success => {
                         if (success) {
                             this.innerHTML = '<i class="fas fa-check"></i> 已复制';
-                            setTimeout(() => { this.innerHTML = isItemDynamicTransfer ? '<i class="fas fa-eye"></i> 查看' : '<i class="far fa-copy"></i> 复制'; }, 1500);
+                            setTimeout(() => { this.innerHTML = '<i class="far fa-copy"></i> 复制'; }, 1500);
                         } else {
                             showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
                         }
@@ -1142,8 +1162,19 @@ async function handleViewButtonClick(button) {
     const url = button.getAttribute('data-url');
     const netdiskName = button.getAttribute('data-netdisk');
 
+    const shouldTransfer = isDynamicTransferEnabledForNetdisk(netdiskName);
+
+    // 若当前网盘未开启/不支持动态转存，无需发送后端请求，直接在弹窗中展现标准链接界面
+    if (!shouldTransfer) {
+        if (viewResultModal) {
+            showViewResultContent(title, url, netdiskName);
+            viewResultModal.show();
+        }
+        return;
+    }
+
     if (viewResultModal) {
-        showViewResultLoading(title);
+        showViewResultLoading(title, netdiskName);
         viewResultModal.show();
     }
 
@@ -1166,6 +1197,7 @@ async function handleViewButtonClick(button) {
             finalUrl = data.url || url;
         }
 
+        // 使用转存完成后的专属链接 (finalUrl) 生成二维码并展现
         showViewResultContent(title, finalUrl, netdiskName);
     } catch (error) {
         console.error('查看模式生成链接失败:', error);
@@ -1175,8 +1207,13 @@ async function handleViewButtonClick(button) {
     }
 }
 
-function showViewResultLoading(title) {
+function showViewResultLoading(title, netdiskName) {
     currentResolvedViewResult = null;
+    const shouldShowQr = shouldShowPcQrCode(netdiskName);
+
+    if (viewResultModalLabel) {
+        viewResultModalLabel.textContent = shouldShowQr ? '获取资源' : '资源链接';
+    }
     if (viewResultTitle) {
         viewResultTitle.textContent = title || '';
     }
@@ -1184,21 +1221,127 @@ function showViewResultLoading(title) {
         viewResultLink.textContent = '';
         viewResultLink.href = '#';
     }
+    if (viewResultLoadingText) {
+        viewResultLoadingText.textContent = shouldShowQr
+            ? '正在自动转存至网盘并生成二维码，请稍候...'
+            : '正在获取可访问链接，请稍候...';
+    }
+    if (viewResultLoadingSubtext) {
+        if (shouldShowQr) {
+            viewResultLoadingSubtext.classList.remove('d-none');
+        } else {
+            viewResultLoadingSubtext.classList.add('d-none');
+        }
+    }
+    if (viewResultModalFooter) {
+        if (shouldShowQr) {
+            viewResultModalFooter.classList.add('d-none');
+        } else {
+            viewResultModalFooter.classList.remove('d-none');
+        }
+    }
+
     viewResultLoadingState?.classList.remove('d-none');
     viewResultContentState?.classList.add('d-none');
     copyViewResultButton?.setAttribute('disabled', 'disabled');
 }
 
+function renderQrCodeToImg(targetUrl, imgElement) {
+    if (!targetUrl || !imgElement) return;
+
+    imgElement.src = '';
+
+    // 1. 优先使用 npm qrcode 库的 toDataURL
+    if (typeof QRCode !== 'undefined' && typeof QRCode.toDataURL === 'function') {
+        QRCode.toDataURL(targetUrl, {
+            width: 240,
+            margin: 1,
+            color: { dark: '#000000', light: '#ffffff' }
+        }, function (error, dataUrl) {
+            if (!error && dataUrl) {
+                imgElement.src = dataUrl;
+            } else {
+                console.warn('QRCode.toDataURL 失败，降级备用二维码服务:', error);
+                imgElement.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(targetUrl)}`;
+            }
+        });
+        return;
+    }
+
+    // 2. 如果 window.QRCode 是构造函数 (standard qrcode.js)
+    if (typeof QRCode === 'function') {
+        try {
+            const tempDiv = document.createElement('div');
+            new QRCode(tempDiv, { text: targetUrl, width: 240, height: 240 });
+            setTimeout(() => {
+                const generatedImg = tempDiv.querySelector('img');
+                const generatedCanvas = tempDiv.querySelector('canvas');
+                if (generatedImg && generatedImg.src) {
+                    imgElement.src = generatedImg.src;
+                } else if (generatedCanvas) {
+                    imgElement.src = generatedCanvas.toDataURL('image/png');
+                } else {
+                    imgElement.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(targetUrl)}`;
+                }
+            }, 50);
+            return;
+        } catch (e) {
+            console.warn('new QRCode 失败，降级备用二维码服务:', e);
+        }
+    }
+
+    // 3. 兜底在线二维码图片 API
+    imgElement.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(targetUrl)}`;
+}
+
 function showViewResultContent(title, url, netdiskName) {
     currentResolvedViewResult = { title, url, netdiskName };
-    if (viewResultTitle) {
-        viewResultTitle.textContent = title;
+
+    const shouldShowQr = shouldShowPcQrCode(netdiskName);
+
+    if (shouldShowQr) {
+        viewResultStandardState?.classList.add('d-none');
+        viewResultQrState?.classList.remove('d-none');
+        viewResultModalFooter?.classList.add('d-none');
+
+        if (viewResultModalLabel) {
+            viewResultModalLabel.textContent = '获取资源';
+        }
+        if (viewResultNetdiskAppName) {
+            viewResultNetdiskAppName.textContent = netdiskName || '网盘';
+        }
+        if (viewResultQrTitle) {
+            viewResultQrTitle.textContent = title;
+            viewResultQrTitle.title = title;
+        }
+        if (viewResultQrLink) {
+            viewResultQrLink.textContent = url;
+            viewResultQrLink.href = url;
+            viewResultQrLink.title = url;
+        }
+
+        // 渲染二维码至 <img>
+        if (viewResultQrImg) {
+            renderQrCodeToImg(url, viewResultQrImg);
+        }
+    } else {
+        viewResultQrState?.classList.add('d-none');
+        viewResultStandardState?.classList.remove('d-none');
+        viewResultModalFooter?.classList.remove('d-none');
+
+        if (viewResultModalLabel) {
+            viewResultModalLabel.textContent = '资源链接';
+        }
+        if (viewResultTitle) {
+            viewResultTitle.textContent = title;
+        }
+        if (viewResultLink) {
+            viewResultLink.textContent = url;
+            viewResultLink.href = url;
+            viewResultLink.title = url;
+        }
     }
-    if (viewResultLink) {
-        viewResultLink.textContent = url;
-        viewResultLink.href = url;
-        viewResultLink.title = url;
-    }
+
     viewResultLoadingState?.classList.add('d-none');
     viewResultContentState?.classList.remove('d-none');
     copyViewResultButton?.removeAttribute('disabled');

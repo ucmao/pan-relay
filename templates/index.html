@@ -111,16 +111,39 @@
                     <div class="spinner-border text-primary mb-3" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="mb-0 text-muted">正在获取可访问链接，请稍候...</p>
+                    <p class="mb-0 text-dark font-semibold text-sm" id="viewResultLoadingText">正在获取可访问链接，请稍候...</p>
+                    <p class="text-xs text-slate-400 mt-1 d-none" id="viewResultLoadingSubtext">正在为您生成专属极速保存通道</p>
                 </div>
                 <div id="viewResultContentState" class="d-none">
-                    <div class="view-result-field mb-3">
-                        <div class="view-result-label">名称</div>
-                        <div class="view-result-title" id="viewResultTitle"></div>
+                    <!-- 扫码转存引导模式界面 (对齐基准UI比例) -->
+                    <div id="viewResultQrState" class="d-none text-center py-1">
+                        <div class="mb-3">
+                            <h4 class="fw-bold text-slate-900 mb-1" style="font-size: 1.35rem; font-weight: 800;">已转存，请扫码保存</h4>
+                            <p class="text-slate-500 text-xs mb-0">打开<span id="viewResultNetdiskAppName">网盘</span>APP，使用扫码功能访问资源。</p>
+                        </div>
+                        <div class="d-flex justify-content-center mb-3">
+                            <div class="p-2.5 bg-white rounded-2xl shadow-sm border border-slate-200/80" style="display: inline-block;">
+                                <img id="viewResultQrImg" src="" alt="转存二维码" style="width: 170px; height: 170px; display: block; border: 0; border-radius: 10px;" />
+                            </div>
+                        </div>
+                        <div class="px-2 pt-1 pb-4">
+                            <div class="fw-bold text-slate-900 text-sm view-result-qr-title mb-1.5" id="viewResultQrTitle"></div>
+                            <div class="text-xs text-slate-500 text-break">
+                                <span>资源地址：</span><a href="#" target="_blank" rel="noopener" id="viewResultQrLink" class="text-blue-600 underline font-mono hover:text-blue-700"></a>
+                            </div>
+                        </div>
                     </div>
-                    <div class="view-result-field">
-                        <div class="view-result-label">链接</div>
-                        <a href="#" target="_blank" rel="noopener" class="view-result-link" id="viewResultLink"></a>
+
+                    <!-- 标准链接复制界面 -->
+                    <div id="viewResultStandardState" class="d-none">
+                        <div class="view-result-field mb-3">
+                            <div class="view-result-label">名称</div>
+                            <div class="view-result-title" id="viewResultTitle"></div>
+                        </div>
+                        <div class="view-result-field">
+                            <div class="view-result-label">链接</div>
+                            <a href="#" target="_blank" rel="noopener" class="view-result-link" id="viewResultLink"></a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -141,6 +164,7 @@
     window.ENABLE_LINK_CHECK = {{ 'true' if enable_link_check else 'false' }};
     window.ENABLED_CHECK_PANS = {{ enabled_check_pans | tojson }};
     window.ENABLED_DYNAMIC_TRANSFER_PANS = {{ enabled_dynamic_transfer_pans | tojson }};
+    window.ENABLE_PC_QR_CODE = {{ 'true' if enable_pc_qr_code else 'false' }};
 </script>
 <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
 <script src="{{ url_for('static', filename='js/index.js') }}"></script>

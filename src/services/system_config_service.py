@@ -26,6 +26,8 @@ SEARCH_API_LIMIT_LOCK_KEY = "search_api_limit_lock"
 TRANSFER_API_KEY_KEY = "transfer_api_key"
 FRONTEND_LINK_CHECK_CONFIG_KEY = "frontend_link_check_config"
 SECURITY_CONFIG_KEY = "security_config"
+ENABLE_PC_QR_CODE_KEY = "enable_pc_qr_code"
+
 
 
 
@@ -222,6 +224,32 @@ def save_allow_excel_download_config(enabled: bool) -> bool:
         ALLOW_EXCEL_DOWNLOAD_KEY,
         {"enabled": bool(enabled)},
     )
+
+
+def get_pc_qr_code_config() -> Dict[str, bool]:
+    raw_value = get_config_value(ENABLE_PC_QR_CODE_KEY)
+    if not raw_value:
+        return {"enabled": True}
+
+    try:
+        parsed = json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("PC转存二维码引导配置格式无效，已回退到默认值")
+        return {"enabled": True}
+
+    return {"enabled": bool(parsed.get("enabled", True))}
+
+
+def is_pc_qr_code_enabled() -> bool:
+    return get_pc_qr_code_config()["enabled"]
+
+
+def save_pc_qr_code_config(enabled: bool) -> bool:
+    return set_config_value(
+        ENABLE_PC_QR_CODE_KEY,
+        {"enabled": bool(enabled)},
+    )
+
 
 
 def get_frontend_link_check_config() -> Dict[str, Any]:

@@ -275,3 +275,16 @@ function showConfirm(message, type = 'primary', title = '确认操作') {
         window.AppUI.openModal(modalContainer);
     });
 }
+
+/**
+ * 判断当前客户端是否为移动端设备/浏览器
+ * @returns {boolean}
+ */
+function isMobileDevice() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera || '';
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS|FxiOS/i.test(userAgent);
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const isSmallScreen = window.innerWidth <= 768;
+    return isMobileUA || (isSmallScreen && isTouchDevice);
+}
+

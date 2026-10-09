@@ -313,6 +313,48 @@ async function saveAllowExcelDownloadConfig() {
     }
 }
 
+async function loadPcQrCodeConfig() {
+    try {
+        const response = await fetch('/admin/api/pc-qr-code-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const toggle = document.getElementById('enablePcQrCodeToggle');
+        if (toggle) {
+            toggle.checked = Boolean(data.enabled);
+        }
+    } catch (error) {
+        console.error('加载 PC 转存二维码引导配置失败:', error);
+    }
+}
+
+async function savePcQrCodeConfig() {
+    const toggle = document.getElementById('enablePcQrCodeToggle');
+    const enabled = toggle ? toggle.checked : true;
+
+    try {
+        const response = await fetch('/admin/api/pc-qr-code-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '配置已保存', 'success');
+    } catch (error) {
+        console.error('保存 PC 转存二维码引导配置失败:', error);
+        showToast(`保存配置失败: ${error.message}`, 'danger');
+        await loadPcQrCodeConfig();
+    }
+}
+
+
 async function loadFrontendLinkCheckConfig() {
     try {
         const response = await fetch('/admin/api/frontend-link-check-config');
@@ -1470,6 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadApiModeConfig();
     loadPublicSearchApiConfig();
     loadAllowExcelDownloadConfig();
+    loadPcQrCodeConfig();
     loadFrontendLinkCheckConfig();
     loadTransferTargetDirConfig();
     loadFrontendDisplayNetdisks();

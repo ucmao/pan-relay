@@ -1115,11 +1115,16 @@ textarea.form-control.font-mono {
 }
 
 .frontend-netdisk-card:has(input:checked) {
-    background: #eff6ff;
-    border-color: #3b82f6;
-    color: #1d4ed8;
-    font-weight: 600;
-    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
+    background: #f0f7ff;
+    border-color: #93c5fd;
+    color: #2563eb;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
+}
+
+.frontend-netdisk-card:has(input:checked):hover {
+    background: #e5f1ff;
+    border-color: #60a5fa;
 }
 
 .frontend-display-netdisk-checkbox,
@@ -1143,9 +1148,10 @@ textarea.form-control.font-mono {
 }
 
 .frontend-netdisk-card:has(input:checked) .frontend-netdisk-card-check-box {
-    background: #2563eb;
-    border-color: #2563eb;
+    background: #3b82f6;
+    border-color: #3b82f6;
     color: #ffffff;
+    opacity: 0.9;
 }
 
 /* 测活生效网盘范围 (较弱淡雅绿/灰样式) */

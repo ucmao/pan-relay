@@ -124,6 +124,25 @@
                             </label>
                             {% endfor %}
                         </div>
+
+                        <!-- PC端扫码转存引导开关 (仅动态转存模式生效) -->
+                        <div class="pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-4 mt-1" id="pcQrCodeSettingContainer">
+                            <div class="space-y-0.5 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap text-xs">
+                                    <span class="font-semibold text-slate-800 text-xs">PC 端扫码转存引导（生成二维码）</span>
+                                    <span class="help-tooltip" data-tooltip="开启后，前台 PC 端访客点击转存资源时将弹窗生成二维码，强引导访客使用手机 APP 扫码转存以获取更高移动转存收益（仅对勾选了动态转存的网盘生效）。">
+                                        <i class="far fa-circle-question text-xs"></i>
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-slate-500">动态转存模式下弹出二维码引导扫码保存，最大化移动端转存收益</p>
+                            </div>
+                            <div class="flex items-center flex-shrink-0">
+                                <label class="plugin-switch" title="切换 PC 端扫码转存引导">
+                                    <input type="checkbox" id="enablePcQrCodeToggle" onchange="savePcQrCodeConfig()" {% if enable_pc_qr_code %}checked{% endif %}>
+                                    <span class="plugin-switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
