@@ -423,7 +423,8 @@ function setupCustomSelect(select) {
     // 计算并更新浮层绝对视口定位 (Fixed) 彻底解决 parent card overflow:hidden 裁切问题
     function updateDropdownPosition() {
         const rect = trigger.getBoundingClientRect();
-        const dropdownWidth = Math.max(rect.width, 140);
+        // 下拉框宽度至少与 trigger 等宽，若 trigger 较窄则给予至少 240px 宽度以防选项文字被挤压
+        const dropdownWidth = Math.max(rect.width, 240);
         const spaceBelow = window.innerHeight - rect.bottom;
         const spaceAbove = rect.top;
         const isDropUp = (spaceBelow < 220 && spaceAbove > spaceBelow);
@@ -434,7 +435,7 @@ function setupCustomSelect(select) {
             leftPos = Math.max(10, window.innerWidth - dropdownWidth - 10);
         }
         dropdown.style.left = `${Math.max(10, leftPos)}px`;
-        dropdown.style.width = `${dropdownWidth}px`;
+        dropdown.style.width = `${Math.max(rect.width, dropdownWidth)}px`;
         dropdown.style.minWidth = `${rect.width}px`;
 
         if (isDropUp) {
@@ -624,8 +625,13 @@ window.addEventListener('resize', () => {
         const dropdown = openWrapper.querySelector('.custom-select-dropdown');
         if (trigger && dropdown) {
             const rect = trigger.getBoundingClientRect();
-            dropdown.style.left = `${Math.max(10, rect.left)}px`;
-            dropdown.style.width = `${Math.max(rect.width, 140)}px`;
+            const dropdownWidth = Math.max(rect.width, 240);
+            let leftPos = rect.left;
+            if (leftPos + dropdownWidth > window.innerWidth - 10) {
+                leftPos = Math.max(10, window.innerWidth - dropdownWidth - 10);
+            }
+            dropdown.style.left = `${Math.max(10, leftPos)}px`;
+            dropdown.style.width = `${Math.max(rect.width, dropdownWidth)}px`;
             if (openWrapper.classList.contains('drop-up')) {
                 dropdown.style.bottom = `${window.innerHeight - rect.top + 4}px`;
             } else {

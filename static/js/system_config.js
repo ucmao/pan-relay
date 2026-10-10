@@ -66,7 +66,7 @@ function switchSystemTab(target, updateHash = true) {
     const normalized = validTabs.includes(target) ? target : 'storage';
     try {
         localStorage.setItem('panrelay_system_tab', normalized);
-    } catch (e) {}
+    } catch (e) { }
 
     const tabBtns = document.querySelectorAll('[data-system-tab-target]');
     if (tabBtns.length === 0) return;
@@ -111,7 +111,7 @@ function bindSystemTabEvents() {
     let savedTab = null;
     try {
         savedTab = localStorage.getItem('panrelay_system_tab');
-    } catch (e) {}
+    } catch (e) { }
     switchSystemTab(queryTab || hash || savedTab || 'storage', false);
 }
 
@@ -1628,6 +1628,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let _currentCloudFilter = 'ALL';
 let _accountsData = [];
+const _testingAccountIds = new Set();
 
 function formatBytes(bytes) {
     if (!bytes || bytes <= 0) return '0 B';
@@ -1687,19 +1688,17 @@ async function loadCloudAccounts(cloud = null) {
     }
 }
 
-function renderStorageRingHtml(acc) {
-    const unsupportedSpaceClouds = ['悟空网盘', '移动云盘'];
+function renderStorageBarHtml(acc) {
+    const unsupportedSpaceClouds = ['悟空网盘', '移动云盘', '迅雷网盘', '迅雷'];
     if (unsupportedSpaceClouds.includes(acc.cloud_name)) {
         return `
-            <div class="flex items-center gap-2.5">
-                <div class="relative inline-flex items-center justify-center flex-shrink-0" style="width: 34px; height: 34px;">
-                    <svg class="w-full h-full" viewBox="0 0 36 36">
-                        <circle cx="18" cy="18" r="14.5" fill="none" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="2.8" stroke-dasharray="3 3"></circle>
-                    </svg>
-                    <span class="absolute text-[9px] font-medium text-slate-400">--</span>
+            <div class="w-40 flex flex-col gap-1.5 py-0.5" title="该网盘平台暂不支持接口探测容量">
+                <div class="flex items-center justify-between text-[11px] leading-tight">
+                    <span class="text-slate-400 dark:text-slate-500 font-medium">不支持容量</span>
+                    <span class="text-[10px] text-slate-400">--</span>
                 </div>
-                <div class="flex flex-col text-[11px] leading-tight">
-                    <span class="text-[11px] font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700/60 px-2 py-0.5 rounded-md w-max">不支持容量</span>
+                <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-700/60 rounded-full overflow-hidden">
+                    <div class="h-full bg-slate-200 dark:bg-slate-600/40 rounded-full" style="width: 100%;"></div>
                 </div>
             </div>
         `;
@@ -1707,15 +1706,13 @@ function renderStorageRingHtml(acc) {
 
     if (!acc.total_space_bytes || acc.total_space_bytes <= 0) {
         return `
-            <div class="flex items-center gap-2.5">
-                <div class="relative inline-flex items-center justify-center flex-shrink-0" style="width: 34px; height: 34px;">
-                    <svg class="w-full h-full" viewBox="0 0 36 36">
-                        <circle cx="18" cy="18" r="14.5" fill="none" class="stroke-slate-200 dark:stroke-slate-700" stroke-width="2.8"></circle>
-                    </svg>
-                    <span class="absolute text-[9px] font-medium text-slate-400">--</span>
+            <div class="w-40 flex flex-col gap-1.5 py-0.5" title="尚未成功探测空间，请点击操作栏中的体检按钮">
+                <div class="flex items-center justify-between text-[11px] leading-tight">
+                    <span class="text-slate-400 dark:text-slate-500 font-medium">未探测容量</span>
+                    <span class="text-[10px] text-slate-400">--</span>
                 </div>
-                <div class="flex flex-col text-[11px] leading-tight">
-                    <span class="text-slate-400">未探测</span>
+                <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-700/60 rounded-full overflow-hidden">
+                    <div class="h-full bg-slate-200 dark:bg-slate-600/30 rounded-full" style="width: 0%;"></div>
                 </div>
             </div>
         `;
@@ -1725,35 +1722,31 @@ function renderStorageRingHtml(acc) {
     const totalStr = formatBytes(acc.total_space_bytes);
     const pct = Math.min(100, Math.round(((acc.used_space_bytes || 0) / acc.total_space_bytes) * 100));
 
-    // SVG 圆环周长: 2 * Math.PI * 14.5 ≈ 91.1
-    const circumference = 91.1;
-    const offset = Math.max(0, (circumference - (pct / 100) * circumference)).toFixed(1);
-
-    let strokeColor = '#4f46e5';
+    let barColorClass = 'bg-indigo-600 dark:bg-indigo-500';
     let textColor = 'text-indigo-600 dark:text-indigo-400';
     if (pct > 90) {
-        strokeColor = '#f43f5e';
+        barColorClass = 'bg-rose-500 dark:bg-rose-500';
         textColor = 'text-rose-600 dark:text-rose-400';
     } else if (pct > 75) {
-        strokeColor = '#f59e0b';
+        barColorClass = 'bg-amber-500 dark:bg-amber-500';
         textColor = 'text-amber-600 dark:text-amber-400';
     }
 
     return `
-        <div class="flex items-center gap-2.5">
-            <div class="relative inline-flex items-center justify-center flex-shrink-0" style="width: 36px; height: 36px;">
-                <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="14.5" fill="none" class="stroke-slate-100 dark:stroke-slate-700" stroke-width="3"></circle>
-                    <circle cx="18" cy="18" r="14.5" fill="none" stroke="${strokeColor}" stroke-width="3" stroke-dasharray="91.1" stroke-dashoffset="${offset}" stroke-linecap="round" class="transition-all duration-300"></circle>
-                </svg>
-                <span class="absolute text-[9px] font-bold ${textColor}">${pct}%</span>
+        <div class="w-40 flex flex-col gap-1.5 py-0.5" title="已用: ${usedStr} / 总量: ${totalStr} (${pct}%)">
+            <div class="flex items-center justify-between text-[11px] leading-tight">
+                <span class="font-semibold text-slate-700 dark:text-slate-200 truncate mr-1.5">${usedStr} <span class="font-normal text-slate-400 dark:text-slate-500 text-[10px]">/ ${totalStr}</span></span>
+                <span class="font-bold text-[11px] ${textColor} flex-shrink-0">${pct}%</span>
             </div>
-            <div class="flex flex-col text-[11px] leading-tight">
-                <span class="font-semibold text-slate-700 dark:text-slate-200">${usedStr}</span>
-                <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">总 ${totalStr}</span>
+            <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-700/80 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-300 ${barColorClass}" style="width: ${pct}%;"></div>
             </div>
         </div>
     `;
+}
+
+function renderStorageRingHtml(acc) {
+    return renderStorageBarHtml(acc);
 }
 
 function renderAccountsTable(accounts) {
@@ -1789,6 +1782,7 @@ function renderAccountsTable(accounts) {
     let html = '';
     accounts.forEach(acc => {
         const cloudClass = cloudBadgeMap[acc.cloud_name] || 'bg-slate-50 text-slate-700 border-slate-200';
+        const isTesting = _testingAccountIds.has(acc.id);
         const isValid = acc.is_valid === 1;
         const isActive = acc.is_active === 1;
 
@@ -1797,7 +1791,9 @@ function renderAccountsTable(accounts) {
 
         // 状态徽章
         let statusBadge = '';
-        if (!isActive) {
+        if (isTesting) {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center gap-1 w-max"><i class="fas fa-spinner fa-spin text-[9px]"></i>测活中...</span>';
+        } else if (!isActive) {
             statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400">已停用</span>';
         } else if (isValid) {
             statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1 w-max"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>正常就绪</span>';
@@ -1834,7 +1830,7 @@ function renderAccountsTable(accounts) {
                 <td class="p-3.5 text-slate-500 whitespace-nowrap">
                     <div class="flex flex-col text-[11px] gap-0.5">
                         <span>优先级: <strong class="text-indigo-600 dark:text-indigo-400">${acc.priority}</strong></span>
-                        <span>权重: <strong>${acc.weight}</strong></span>
+                        <span>权  重: <strong>${acc.weight}</strong></span>
                     </div>
                 </td>
                 <td class="p-3.5 text-center font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">
@@ -1846,8 +1842,8 @@ function renderAccountsTable(accounts) {
                 </td>
                 <td class="p-3.5 pr-4 text-right account-table-sticky-col whitespace-nowrap">
                     <div class="flex items-center justify-end gap-1.5">
-                        <button class="btn btn-outline-secondary btn-xs" onclick="testAccount(${acc.id})" title="测试连通性与空间">
-                            <i class="fas fa-stethoscope text-indigo-500"></i>
+                        <button class="btn btn-outline-secondary btn-xs account-test-btn" data-account-id="${acc.id}" onclick="testAccount(${acc.id}, this)" title="${isTesting ? '正在测活与探测容量...' : '测试连通性与空间'}" ${isTesting ? 'disabled' : ''}>
+                            <i class="fas ${isTesting ? 'fa-spinner fa-spin text-indigo-600' : 'fa-stethoscope text-indigo-500'}"></i>
                         </button>
                         <button class="btn btn-outline-secondary btn-xs" onclick="openEditAccountModal(${acc.id})" title="编辑账号">
                             <i class="fas fa-pen-to-square"></i>
@@ -1862,6 +1858,44 @@ function renderAccountsTable(accounts) {
     });
 
     tableBody.innerHTML = html;
+}
+
+function updateModalCredentialHintAndPlaceholder(cloudName) {
+    const credInput = document.getElementById('modalCredential');
+    const hintEl = document.getElementById('modalCredHint');
+    if (!credInput || !hintEl) return;
+
+    if (cloudName === '迅雷网盘') {
+        credInput.rows = 5;
+        credInput.placeholder = '{\n  "refresh_token": "a1.xxxx...",\n  "client_id": "YBJdb1UyFQJwh_nS",\n  "user_id": "1409868053",\n  "device_id": "2rvk4e3gkdnl7u1kl0k"\n}';
+        hintEl.innerHTML = `
+            <div class="mt-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 leading-relaxed text-[11px]">
+                <div class="font-bold flex items-center gap-1.5 mb-1">
+                    <i class="fas fa-triangle-exclamation text-amber-500"></i>
+                    <span>迅雷网盘需填入完整 JSON 凭据</span>
+                </div>
+                <div class="whitespace-nowrap overflow-x-auto text-slate-600 dark:text-slate-400">
+                    建议在终端运行 <code class="bg-amber-100/80 dark:bg-amber-900/60 px-1 py-0.5 rounded text-amber-900 dark:text-amber-200 font-mono select-all">python3 scripts/extract_xunlei_token.py</code> 并粘贴。
+                </div>
+            </div>
+        `;
+    } else if (cloudName === '阿里云盘') {
+        credInput.rows = 4;
+        credInput.placeholder = '请粘贴阿里云盘 Refresh Token...';
+        hintEl.innerHTML = '<span class="text-slate-400">系统保存时将自动清洗首尾空白与换行符</span>';
+    } else if (cloudName === '光鸭云盘') {
+        credInput.rows = 4;
+        credInput.placeholder = '请粘贴光鸭云盘 Access Token 或 Refresh Token...';
+        hintEl.innerHTML = '<span class="text-slate-400">系统保存时将自动清洗首尾空白与换行符</span>';
+    } else if (cloudName === '移动云盘') {
+        credInput.rows = 4;
+        credInput.placeholder = '请粘贴移动云盘 Authorization 或 Token...';
+        hintEl.innerHTML = '<span class="text-slate-400">系统保存时将自动清洗首尾空白与换行符</span>';
+    } else {
+        credInput.rows = 4;
+        credInput.placeholder = '请粘贴网盘 Cookie 或 Refresh Token...';
+        hintEl.innerHTML = '<span class="text-slate-400">系统保存时将自动清洗首尾空白与换行符</span>';
+    }
 }
 
 function openAddAccountModal() {
@@ -1880,6 +1914,8 @@ function openAddAccountModal() {
     if (_currentCloudFilter && _currentCloudFilter !== 'ALL' && cloudSelect) {
         cloudSelect.value = _currentCloudFilter;
     }
+
+    updateModalCredentialHintAndPlaceholder(cloudSelect ? cloudSelect.value : '');
 
     modal.style.display = 'flex';
 }
@@ -1909,6 +1945,8 @@ function openEditAccountModal(accountId) {
     if (weightInput) weightInput.value = account.weight;
     if (activeCheck) activeCheck.checked = account.is_active === 1;
 
+    updateModalCredentialHintAndPlaceholder(account.cloud_name);
+
     modal.style.display = 'flex';
 }
 
@@ -1923,7 +1961,20 @@ async function handleAccountFormSubmit(e) {
     const id = document.getElementById('modalAccountId').value;
     const cloud_name = document.getElementById('modalCloudName').value;
     const account_name = document.getElementById('modalAccountName').value.trim();
-    const credential = document.getElementById('modalCredential').value.trim();
+    let credential = document.getElementById('modalCredential').value.trim();
+
+    // 容错处理：若迅雷网盘用户只输入了纯 refresh_token 字符串，自动包装为规范 JSON
+    if (cloud_name === '迅雷网盘' && credential && !credential.startsWith('{')) {
+        try {
+            credential = JSON.stringify({
+                refresh_token: credential,
+                client_id: 'YBJdb1UyFQJwh_nS',
+                user_id: '',
+                device_id: ''
+            });
+        } catch (_) { }
+    }
+
     const priority = parseInt(document.getElementById('modalPriority').value) || 0;
     const weight = parseInt(document.getElementById('modalWeight').value) || 10;
     const is_active = document.getElementById('modalIsActive').checked ? 1 : 0;
@@ -1959,11 +2010,21 @@ async function handleAccountFormSubmit(e) {
         const data = await res.json();
 
         if (data.success) {
-            if (typeof showToast === 'function') {
-                showToast(data.message || '操作成功', 'success');
-            }
+            // 立即秒关弹窗，不再等待第三方网盘网络响应
             closeAccountModal();
-            loadCloudAccounts();
+
+            const savedAcc = data.account;
+            const savedId = savedAcc ? savedAcc.id : (id ? parseInt(id) : null);
+
+            if (auto_test && savedId) {
+                _testingAccountIds.add(savedId);
+                showToast(data.message || '账号保存成功，已在后台启动自动测活与容量探测', 'info');
+                await loadCloudAccounts();
+                pollAccountTestResult(savedId);
+            } else {
+                showToast(data.message || '操作成功', 'success');
+                await loadCloudAccounts();
+            }
         } else {
             showToast(data.message || '保存失败: 未知错误', 'danger');
         }
@@ -1999,7 +2060,21 @@ async function toggleAccountActive(accountId, isActive) {
     }
 }
 
-async function testAccount(accountId) {
+async function testAccount(accountId, btnEl = null) {
+    if (_testingAccountIds.has(accountId)) return;
+    _testingAccountIds.add(accountId);
+
+    // 立即给按钮和该行呈现加载中反馈
+    if (!btnEl) {
+        btnEl = document.querySelector(`.account-test-btn[data-account-id="${accountId}"]`);
+    }
+    if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.setAttribute('title', '正在测活与探测容量...');
+        btnEl.innerHTML = '<i class="fas fa-spinner fa-spin text-indigo-600"></i>';
+    }
+    renderAccountsTable(_accountsData);
+
     showToast('正在向网盘发起健康自检与容量探测...', 'info');
     try {
         const res = await fetch(`/admin/api/accounts/${accountId}/test`, {
@@ -2012,10 +2087,53 @@ async function testAccount(accountId) {
         } else {
             showToast(data.message || '自测未通过: 连接失败', 'warning');
         }
-        loadCloudAccounts();
     } catch (err) {
         showToast('自测请求异常: ' + err.message, 'danger');
+    } finally {
+        _testingAccountIds.delete(accountId);
+        await loadCloudAccounts();
     }
+}
+window.testAccount = testAccount;
+
+function pollAccountTestResult(accountId, maxAttempts = 8) {
+    let attempts = 0;
+    const interval = setInterval(async () => {
+        attempts++;
+        try {
+            const res = await fetch('/admin/api/accounts', { credentials: 'same-origin' });
+            const data = await res.json();
+            if (data.success && Array.isArray(data.accounts)) {
+                _accountsData = data.accounts;
+                const acc = _accountsData.find(a => a.id === accountId);
+                const isTested = acc && (
+                    (acc.total_space_bytes && acc.total_space_bytes > 0) ||
+                    (acc.is_valid === 0 && acc.invalid_reason) ||
+                    (acc.last_keepalive_at || acc.last_used_at)
+                );
+
+                if (isTested || attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    _testingAccountIds.delete(accountId);
+                    renderAccountsTable(_accountsData);
+                    if (acc) {
+                        const isValid = acc.is_valid === 1;
+                        showToast(`账号「${acc.account_name}」后台测活完成：${isValid ? '正常就绪' : (acc.invalid_reason || '凭据异常')}`, isValid ? 'success' : 'warning');
+                    }
+                    return;
+                }
+                renderAccountsTable(_accountsData);
+            }
+        } catch (e) {
+            console.warn('轮询账号测活状态异常:', e);
+        }
+
+        if (attempts >= maxAttempts) {
+            clearInterval(interval);
+            _testingAccountIds.delete(accountId);
+            renderAccountsTable(_accountsData);
+        }
+    }, 1800);
 }
 
 async function deleteAccount(accountId) {
@@ -2117,7 +2235,7 @@ async function exportAccountsCsv() {
                 const encName = parts[1].replace(/UTF-8''/i, '').replace(/["']/g, '').trim();
                 try {
                     filename = decodeURIComponent(encName);
-                } catch (e) {}
+                } catch (e) { }
             }
         }
         if (!filename && disposition && disposition.includes('filename=')) {
@@ -2336,6 +2454,13 @@ function initAccountPoolEvents() {
 
     const form = document.getElementById('accountForm');
     if (form) form.addEventListener('submit', handleAccountFormSubmit);
+
+    const cloudSelect = document.getElementById('modalCloudName');
+    if (cloudSelect) {
+        cloudSelect.addEventListener('change', (e) => {
+            updateModalCredentialHintAndPlaceholder(e.target.value);
+        });
+    }
 
     const btnKeepalive = document.getElementById('btnKeepaliveAccounts');
     if (btnKeepalive) btnKeepalive.addEventListener('click', triggerKeepaliveAll);

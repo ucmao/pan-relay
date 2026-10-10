@@ -341,7 +341,8 @@ class AccountPoolManager:
             }
             update_account(account_id, update_data)
             record_account_keepalive(account_id)
-
+            if cloud_name in ("悟空网盘", "移动云盘", "迅雷网盘", "迅雷"):
+                return True, "凭证有效，账号状态就绪（该平台暂不支持容量探测）", info
             return True, "凭证有效，空间配额与账号信息已同步", info
 
         except Exception as exc:

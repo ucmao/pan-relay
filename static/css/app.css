@@ -1218,6 +1218,14 @@ select.custom-select-native-hidden {
     cursor: pointer;
     transition: background-color 0.12s ease, color 0.12s ease;
     user-select: none;
+    white-space: nowrap;
+}
+
+.custom-select-option-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
 }
 
 .custom-select-wrapper.form-select-sm .custom-select-option,

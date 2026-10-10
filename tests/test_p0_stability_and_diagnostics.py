@@ -26,11 +26,14 @@ class TestP0StabilityAndDiagnostics(unittest.TestCase):
         _XUNLEI_ACCESS_TOKEN_CACHE.clear()
         _XUNLEI_CAPTCHA_TOKEN_CACHE.clear()
         _ALIYUN_ACCESS_TOKEN_CACHE.clear()
+        self.original_xunlei_cred = get_cookie_by_cloud_name("迅雷网盘")
         delete_cookie("迅雷网盘")
 
     def tearDown(self):
-        # 清理测试写入的凭证，防止污染实际生产数据库
+        # 清理测试写入的凭证，并恢复生产真实凭证
         delete_cookie("迅雷网盘")
+        if self.original_xunlei_cred:
+            save_cookie("迅雷网盘", self.original_xunlei_cred)
 
     def test_update_xunlei_refresh_token_db(self):
         """测试迅雷 refresh_token 在数据库层面的轮换持久化"""

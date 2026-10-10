@@ -677,7 +677,7 @@
             <input type="hidden" id="modalAccountId" value="">
             <div>
                 <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">网盘平台 *</label>
-                <select id="modalCloudName" class="form-control" required>
+                <select id="modalCloudName" class="form-control w-80 max-w-full" required>
                     <option value="夸克网盘">夸克网盘 (Cookie)</option>
                     <option value="百度网盘">百度网盘 (Cookie)</option>
                     <option value="阿里云盘">阿里云盘 (Refresh Token)</option>
@@ -855,6 +855,6 @@ tr:hover td.account-table-sticky-col {
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.8"></script>
-<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.8"></script>
+<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.1.5"></script>
+<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.1.5"></script>
 {% endblock %}

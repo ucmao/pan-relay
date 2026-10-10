@@ -2,7 +2,11 @@ from flask import Blueprint, Response, jsonify, render_template, request
 import concurrent.futures
 import datetime
 import json
+import logging
+import threading
 import urllib.parse
+
+logger = logging.getLogger(__name__)
 
 from src.services.account_csv_service import (
     export_accounts_csv,
@@ -564,18 +568,23 @@ def create_account_api():
         return jsonify({"success": False, "message": "创建账号失败"}), 500
 
     auto_test = data.get("auto_test", True)
-    test_res = {"tested": False}
     if auto_test:
-        mgr = AccountPoolManager.get_instance()
-        ok, msg, info = mgr.inspect_and_refresh_account(account_id)
-        test_res = {"tested": True, "success": ok, "message": msg, "info": info}
+        def _bg_test(acc_id):
+            try:
+                mgr = AccountPoolManager.get_instance()
+                mgr.inspect_and_refresh_account(acc_id)
+            except Exception as e:
+                logger.error(f"后台自动测活异常 account_id={acc_id}: {e}")
+
+        threading.Thread(target=_bg_test, args=(account_id,), daemon=True).start()
 
     new_acc = get_account_by_id(account_id)
     return jsonify({
         "success": True,
-        "message": "账号创建成功",
+        "message": "账号保存成功" + ("，已在后台启动自动测活与容量探测" if auto_test else ""),
         "account": new_acc,
-        "test_result": test_res,
+        "is_testing": bool(auto_test),
+        "test_result": {"tested": False, "async": bool(auto_test)},
     })
 
 
@@ -591,12 +600,24 @@ def update_account_api(account_id: int):
     if not success:
         return jsonify({"success": False, "message": "更新账号失败"}), 500
 
-    if data.get("retest", False) or ("credential" in data and data["credential"] != existing.get("credential")):
-        mgr = AccountPoolManager.get_instance()
-        mgr.inspect_and_refresh_account(account_id)
+    auto_test = data.get("auto_test", False) or data.get("retest", False) or ("credential" in data and data["credential"] != existing.get("credential"))
+    if auto_test:
+        def _bg_test(acc_id):
+            try:
+                mgr = AccountPoolManager.get_instance()
+                mgr.inspect_and_refresh_account(acc_id)
+            except Exception as e:
+                logger.error(f"后台自动测活异常 account_id={acc_id}: {e}")
+
+        threading.Thread(target=_bg_test, args=(account_id,), daemon=True).start()
 
     updated = get_account_by_id(account_id)
-    return jsonify({"success": True, "message": "账号更新成功", "account": updated})
+    return jsonify({
+        "success": True,
+        "message": "账号更新成功" + ("，已在后台启动自动测活与容量探测" if auto_test else ""),
+        "account": updated,
+        "is_testing": bool(auto_test),
+    })
 
 
 @system_config_bp.route("/admin/api/accounts/<int:account_id>", methods=["DELETE"])
