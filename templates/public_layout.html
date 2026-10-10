@@ -358,6 +358,7 @@
             <!-- 预留左侧区域，保持搜索区干净居中 -->
         </div>
         <div class="public-nav-right flex items-center gap-2">
+            {% if enable_frontend_github %}
             <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="github-star-pill" title="前往 Pan-Relay GitHub 仓库" aria-label="前往 Pan-Relay GitHub 仓库，点亮 Star">
                 <span class="github-pill-left">
                     <i class="fab fa-github" aria-hidden="true"></i>
@@ -367,6 +368,7 @@
                     <span id="githubStarCount" class="github-star-count">...</span>
                 </span>
             </a>
+            {% endif %}
             {% if is_logged_in %}
             <a href="{{ url_for('resources.resources_page') }}" class="admin-nav-link" title="进入管理后台">
                 <i class="fas fa-cog"></i>
@@ -383,10 +385,12 @@
     <div class="container-fluid-custom">
         <div class="footer-copyright">
             <a id="disclaimerLink">&copy; Pan-Relay</a>
+            {% if enable_frontend_github %}
             <span class="footer-divider">|</span>
             <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer">
                 <i class="fab fa-github me-1"></i>GitHub
             </a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -399,7 +403,8 @@
                 <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body disclaimer-modal-body">
-                <p class="disclaimer-intro">Pan-Relay 是一款基于多源 API 的自动化检索与网盘中继工具，本项目已在 GitHub 完全开源。</p>
+                <p class="disclaimer-intro">Pan-Relay 是一款基于多源 API 的自动化检索与网盘中继工具{% if enable_frontend_github %}，本项目已在 GitHub 完全开源{% endif %}。</p>
+                {% if enable_frontend_github %}
                 <div class="disclaimer-star-box">
                     <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="disclaimer-repo-link" title="前往 GitHub 查看源码">
                         <i class="fab fa-github fa-lg"></i>
@@ -410,6 +415,7 @@
                         <span>Star 支持</span>
                     </a>
                 </div>
+                {% endif %}
                 <div class="disclaimer-note-block">
                     <ol class="disclaimer-list">
                         <li>本工具仅作为资源检索辅助工具，所有搜索结果均实时调用第三方公开 API 自动生成，本站<strong>不存储、不上传、不分发</strong>任何实质资源内容。</li>
@@ -427,6 +433,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+{% if enable_frontend_github %}
 <script>
     // GitHub Star 计数器异步加载与缓存
     (function () {
@@ -471,6 +478,8 @@
             });
     })();
 </script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.8"></script>
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {

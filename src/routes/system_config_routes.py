@@ -26,6 +26,9 @@ from src.services.system_config_service import (
     get_pc_qr_code_config,
     is_pc_qr_code_enabled,
     save_pc_qr_code_config,
+    get_frontend_github_config,
+    is_frontend_github_enabled,
+    save_frontend_github_config,
     get_frontend_link_check_config,
 
     get_frontend_display_netdisk_config,
@@ -215,6 +218,7 @@ def frontend_config_page():
         enable_frontend=api_mode_config.get("enable_frontend", True),
         allow_excel_download=allow_excel.get("allow_excel_download", True),
         enable_pc_qr_code=is_pc_qr_code_enabled(),
+        enable_frontend_github=is_frontend_github_enabled(),
         frontend_link_mode=frontend_link_mode if isinstance(frontend_link_mode, str) else frontend_link_mode.get("mode", "view"),
         active_page="config_frontend",
     )
@@ -327,6 +331,25 @@ def update_pc_qr_code_api():
         return jsonify({"success": False, "message": "PC转存二维码引导配置保存失败"}), 400
 
     return jsonify({"success": True, "message": f"PC转存二维码引导已{'开启' if enabled else '关闭'}"})
+
+
+@system_config_bp.route("/admin/api/frontend-github-config", methods=["GET"])
+@token_required
+def get_frontend_github_api():
+    config = get_frontend_github_config()
+    return jsonify({"success": True, "enabled": config["enabled"]})
+
+
+@system_config_bp.route("/admin/api/frontend-github-config", methods=["PUT"])
+@token_required
+def update_frontend_github_api():
+    data = request.get_json() or {}
+    enabled = bool(data.get("enabled", True))
+
+    if not save_frontend_github_config(enabled):
+        return jsonify({"success": False, "message": "前台 GitHub 标识配置保存失败"}), 400
+
+    return jsonify({"success": True, "message": f"前台 GitHub 标识展示已{'开启' if enabled else '关闭'}"})
 
 
 

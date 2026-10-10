@@ -28,8 +28,18 @@ class TestTransferAndResourcePersistence(unittest.TestCase):
         self.token = create_jwt_token()
         self.client.set_cookie("token", self.token)
         self._clean_test_db()
+        self.mock_acc = {"id": 1, "account_name": "test_acc"}
+        self.mock_cli = MagicMock()
+        self.mock_cli.transfer_file.return_value = "mock_fid"
+        self.mock_cli.create_share.return_value = "https://pan.quark.cn/s/new_test_123"
+        self.patch_candidates = patch("src.services.account_pool_manager.AccountPoolManager.get_candidate_accounts", return_value=[self.mock_acc])
+        self.patch_select = patch("src.services.account_pool_manager.AccountPoolManager.select_account_for_transfer", return_value=(self.mock_acc, self.mock_cli))
+        self.patch_candidates.start()
+        self.patch_select.start()
 
     def tearDown(self):
+        self.patch_candidates.stop()
+        self.patch_select.stop()
         self._clean_test_db()
 
     def _clean_test_db(self):

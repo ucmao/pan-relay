@@ -51,7 +51,8 @@
                 </div>
 
                 <!-- 开关 2: 搜索出链与动态转存策略 (前台专属) -->
-                <div class="setting-item-row flex-col items-stretch">
+                <div class="setting-item-row flex-col items-stretch {% if not enable_frontend %}hidden{% endif %}"
+                    id="frontendLinkStrategyContainer">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="space-y-1 min-w-0 pr-4">
                             <div class="flex items-center gap-2 flex-wrap">
@@ -73,8 +74,32 @@
                         </div>
                     </div>
 
+                    <!-- 原始链接模式专属控制面板 (搜索结果 Excel 导出) -->
+                    <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 {% if frontend_link_mode != 'copy' %}hidden{% endif %} transition-all duration-200"
+                        id="rawLinkSettingsWrapper">
+                        <div class="flex items-center justify-between gap-4" id="excelDownloadSettingContainer">
+                            <div class="space-y-0.5 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap text-xs">
+                                    <span class="font-semibold text-slate-800 text-xs">搜索结果 Excel 导出</span>
+                                    <span class="help-tooltip" data-tooltip="控制前台搜索结果列表顶部工具栏中是否展示“导出Excel”操作按钮">
+                                        <i class="far fa-circle-question text-xs"></i>
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-slate-500" id="excelDownloadDesc">允许访客将前台搜索列表结果导出为表格</p>
+                            </div>
+                            <div class="flex items-center flex-shrink-0">
+                                <label class="plugin-switch" title="切换 Excel 导出按钮" id="allowExcelDownloadSwitchLabel">
+                                    <input type="checkbox" id="allowExcelDownloadToggle"
+                                        onchange="saveAllowExcelDownloadConfig()" {% if allow_excel_download %}checked{%
+                                        endif %}>
+                                    <span class="plugin-switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 统一动态转存控制面板 (整合网盘勾选与凭据就绪状态) -->
-                    <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 hidden transition-all duration-200"
+                    <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 {% if frontend_link_mode != 'view' %}hidden{% endif %} transition-all duration-200"
                         id="dynamicTransferNetdisksWrapper">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div class="flex items-center gap-2 flex-wrap text-xs">
@@ -83,7 +108,8 @@
                                     <span>转存生效网盘与凭证:</span>
                                 </div>
                                 <span class="text-slate-500 text-[11px]">
-                                    仅对勾选网盘转存，未勾选自动出原始链接。已选 <span id="enabledDynamicTransferPansCount" class="font-bold text-blue-600">{{
+                                    仅对勾选网盘转存，未勾选自动出原始链接。已选 <span id="enabledDynamicTransferPansCount"
+                                        class="font-bold text-blue-600">{{
                                         dynamic_transfer_netdisks|length if dynamic_transfer_netdisks else
                                         dynamic_transfer_netdisk_options|length }}</span> / {{
                                     dynamic_transfer_netdisk_options|length }}
@@ -106,14 +132,16 @@
                         </div>
                         <div class="dynamic-transfer-grid" id="dynamicTransferNetdisksGroup">
                             {% for netdisk_name in dynamic_transfer_netdisk_options %}
-                            <label class="dynamic-transfer-netdisk-card" for="dynamicTransferNetdisk{{ loop.index }}" data-cloud-card="{{ netdisk_name }}">
+                            <label class="dynamic-transfer-netdisk-card" for="dynamicTransferNetdisk{{ loop.index }}"
+                                data-cloud-card="{{ netdisk_name }}">
                                 <input class="dynamic-transfer-netdisk-checkbox" type="checkbox"
                                     id="dynamicTransferNetdisk{{ loop.index }}" value="{{ netdisk_name }}"
-                                    onchange="saveDynamicTransferNetdisksConfig()" {% if not dynamic_transfer_netdisks or
-                                    netdisk_name in dynamic_transfer_netdisks %}checked{% endif %}>
+                                    onchange="saveDynamicTransferNetdisksConfig()" {% if not dynamic_transfer_netdisks
+                                    or netdisk_name in dynamic_transfer_netdisks %}checked{% endif %}>
                                 <span class="whitespace-nowrap">{{ netdisk_name }}</span>
                                 <div class="flex items-center gap-2 ml-auto">
-                                    <span class="dynamic-card-status-badge status-missing" data-cloud-badge="{{ netdisk_name }}" title="{{ netdisk_name }}: 加载状态中...">
+                                    <span class="dynamic-card-status-badge status-missing"
+                                        data-cloud-badge="{{ netdisk_name }}" title="{{ netdisk_name }}: 加载状态中...">
                                         <span class="status-dot"></span>
                                         <span class="status-text">未配置</span>
                                     </span>
@@ -126,11 +154,13 @@
                         </div>
 
                         <!-- PC端扫码转存引导开关 (仅动态转存模式生效) -->
-                        <div class="pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-4 mt-1" id="pcQrCodeSettingContainer">
+                        <div class="pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-4 mt-1"
+                            id="pcQrCodeSettingContainer">
                             <div class="space-y-0.5 min-w-0 pr-4">
                                 <div class="flex items-center gap-2 flex-wrap text-xs">
                                     <span class="font-semibold text-slate-800 text-xs">PC 端扫码转存引导（生成二维码）</span>
-                                    <span class="help-tooltip" data-tooltip="开启后，前台 PC 端访客点击转存资源时将弹窗生成二维码，强引导访客使用手机 APP 扫码转存以获取更高移动转存收益（仅对勾选了动态转存的网盘生效）。">
+                                    <span class="help-tooltip"
+                                        data-tooltip="开启后，前台 PC 端访客点击转存资源时将弹窗生成二维码，强引导访客使用手机 APP 扫码转存以获取更高移动转存收益（仅对勾选了动态转存的网盘生效）。">
                                         <i class="far fa-circle-question text-xs"></i>
                                     </span>
                                 </div>
@@ -138,32 +168,12 @@
                             </div>
                             <div class="flex items-center flex-shrink-0">
                                 <label class="plugin-switch" title="切换 PC 端扫码转存引导">
-                                    <input type="checkbox" id="enablePcQrCodeToggle" onchange="savePcQrCodeConfig()" {% if enable_pc_qr_code %}checked{% endif %}>
+                                    <input type="checkbox" id="enablePcQrCodeToggle" onchange="savePcQrCodeConfig()" {%
+                                        if enable_pc_qr_code %}checked{% endif %}>
                                     <span class="plugin-switch-slider"></span>
                                 </label>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- 开关 3: 前台 Excel 下载与导出 -->
-                <div class="setting-item-row" id="excelDownloadSettingContainer">
-                    <div class="space-y-1 min-w-0 pr-4">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-semibold text-slate-800 text-sm">搜索结果 Excel 导出</span>
-                            <span class="help-tooltip" data-tooltip="控制前台搜索结果列表顶部工具栏中是否展示“导出Excel”操作按钮">
-                                <i class="far fa-circle-question text-xs"></i>
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500" id="excelDownloadDesc">允许访客将前台搜索列表结果导出为表格</p>
-                    </div>
-                    <div class="flex items-center flex-shrink-0">
-                        <label class="plugin-switch" title="切换 Excel 导出按钮" id="allowExcelDownloadSwitchLabel">
-                            <input type="checkbox" id="allowExcelDownloadToggle"
-                                onchange="saveAllowExcelDownloadConfig()" {% if allow_excel_download %}checked{% endif
-                                %}>
-                            <span class="plugin-switch-slider"></span>
-                        </label>
                     </div>
                 </div>
             </div>
@@ -171,7 +181,8 @@
     </section>
 
     <!-- 2. 链接测活与品质净化 -->
-    <section class="admin-panel">
+    <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
+        id="linkCheckPanel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
@@ -252,8 +263,9 @@
         </div>
     </section>
 
-    <!-- 2. 前台展示网盘类型 (Tag 网格) -->
-    <section class="admin-panel">
+    <!-- 3. 前台展示网盘类型 (Tag 网格) -->
+    <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
+        id="frontendDisplayNetdisksPanel">
         <div class="admin-panel-header">
             <div class="admin-panel-title-area">
                 <h2 class="admin-panel-title">
@@ -288,6 +300,42 @@
                     </span>
                 </label>
                 {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. 页面元素与品牌展示 -->
+    <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
+        id="frontendBrandPanel">
+        <div class="admin-panel-header">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fab fa-github text-slate-700"></i> 页面元素与品牌展示
+                </h2>
+                <p class="admin-panel-desc">控制前台 Web 页面的开源标识、外部链接及版权信息展示</p>
+            </div>
+        </div>
+        <div class="admin-panel-body">
+            <div class="divide-y divide-slate-100">
+                <div class="setting-item-row" id="frontendGithubSettingContainer">
+                    <div class="space-y-1 min-w-0 pr-4">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-slate-800 text-sm">GitHub 徽章与开源外链</span>
+                            <span class="help-tooltip"
+                                data-tooltip="控制前台 Web 顶部右侧 GitHub 徽章、底部页脚 GitHub 外链及免责声明中的 GitHub 仓库展示。关闭后前台将完全隐藏开源外链。">
+                                <i class="far fa-circle-question text-xs"></i>
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500">前台界面展示 GitHub 仓库入口、Star 计数与底部开源外链（去白标化可关闭）</p>
+                    </div>
+                    <div class="flex items-center flex-shrink-0">
+                        <label class="plugin-switch" title="切换 GitHub 标识展示">
+                            <input type="checkbox" id="enableFrontendGithubToggle" onchange="saveFrontendGithubConfig()"
+                                {% if enable_frontend_github %}checked{% endif %}>
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </section>

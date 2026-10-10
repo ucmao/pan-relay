@@ -75,6 +75,11 @@ function showToast(message, type = 'success', delay = 3000) {
         document.body.appendChild(toastContainer);
     }
 
+    // 防重复提示：若已有相同内容的激活提示，避免重复堆叠
+    const existing = Array.from(toastContainer.querySelectorAll('.admin-toast:not(.admin-toast-hiding) .admin-toast-message'))
+        .find(el => el.textContent === message);
+    if (existing) return;
+
     const iconMap = {
         success: 'fas fa-check-circle',
         danger: 'fas fa-times-circle',
@@ -287,4 +292,378 @@ function isMobileDevice() {
     const isSmallScreen = window.innerWidth <= 768;
     return isMobileUA || (isSmallScreen && isTouchDevice);
 }
+
+/**
+ * ==========================================================================
+ * 现代化自定义下拉选择框增强器 (Custom Select Component)
+ * 自动识别并美化页面上所有的 <select> 标签，支持双向同步、响应式事件触发、动态 DOM 监听与键盘无障碍导航
+ * ==========================================================================
+ */
+
+function setupCustomSelect(select) {
+    if (!select || select.dataset.customSelectReady === 'true') return;
+    if (select.dataset.nativeSelect !== undefined || select.dataset.noCustom !== undefined) return;
+    select.dataset.customSelectReady = 'true';
+
+    // 创建外层包装容器
+    const wrapper = document.createElement('div');
+    wrapper.className = 'custom-select-wrapper';
+    
+    // 继承相关类名与尺寸
+    if (select.classList.contains('form-select-sm') || select.classList.contains('input-sm') || select.classList.contains('text-xs')) {
+        wrapper.classList.add('form-select-sm');
+    }
+    if (select.classList.contains('w-full')) {
+        wrapper.classList.add('w-full');
+    }
+    if (select.classList.contains('flex-1')) {
+        wrapper.classList.add('flex-1');
+    }
+    // 拷贝所有以 w-、min-w-、max-w-、sm:w- 等开头的布局类名
+    Array.from(select.classList).forEach(cls => {
+        if (/^(w-|sm:w-|md:w-|lg:w-|min-w-|max-w-)/.test(cls)) {
+            wrapper.classList.add(cls);
+        }
+    });
+
+    if (select.disabled) {
+        wrapper.classList.add('is-disabled');
+    }
+    // 继承行内宽度或特殊样式
+    if (select.style.width) wrapper.style.width = select.style.width;
+    if (select.style.minWidth) wrapper.style.minWidth = select.style.minWidth;
+    if (select.style.maxWidth) wrapper.style.maxWidth = select.style.maxWidth;
+
+    // 创建 Trigger 触发按钮
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'custom-select-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    if (select.disabled) trigger.disabled = true;
+
+    const label = document.createElement('span');
+    label.className = 'custom-select-label';
+
+    const arrow = document.createElement('i');
+    arrow.className = 'fas fa-chevron-down custom-select-arrow';
+
+    trigger.appendChild(label);
+    trigger.appendChild(arrow);
+
+    // 创建下拉菜单浮层
+    const dropdown = document.createElement('div');
+    dropdown.className = 'custom-select-dropdown';
+    dropdown.setAttribute('role', 'listbox');
+
+    // 组装 DOM
+    select.parentNode.insertBefore(wrapper, select);
+    select.classList.add('custom-select-native-hidden');
+    wrapper.appendChild(select);
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(dropdown);
+
+    // 同步选项与显示
+    function syncFromNative() {
+        const selectedOption = select.options[select.selectedIndex];
+        label.textContent = selectedOption ? selectedOption.text : (select.getAttribute('placeholder') || '请选择');
+        if (!selectedOption || !selectedOption.value) {
+            label.classList.toggle('is-placeholder', !selectedOption?.text);
+        } else {
+            label.classList.remove('is-placeholder');
+        }
+
+        wrapper.classList.toggle('is-disabled', Boolean(select.disabled));
+        trigger.disabled = Boolean(select.disabled);
+
+        // 重建下拉选项
+        dropdown.innerHTML = '';
+        Array.from(select.options).forEach((opt, idx) => {
+            const optEl = document.createElement('div');
+            optEl.className = 'custom-select-option';
+            if (idx === select.selectedIndex) {
+                optEl.classList.add('is-selected');
+            }
+            if (opt.disabled) {
+                optEl.classList.add('is-disabled');
+            }
+            optEl.dataset.value = opt.value;
+            optEl.dataset.index = String(idx);
+
+            const optText = document.createElement('span');
+            optText.className = 'custom-select-option-text';
+            optText.textContent = opt.text;
+
+            const optCheck = document.createElement('i');
+            optCheck.className = 'fas fa-check custom-select-option-check';
+
+            optEl.appendChild(optText);
+            optEl.appendChild(optCheck);
+
+            optEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (opt.disabled || select.disabled) return;
+                
+                const changed = select.selectedIndex !== idx;
+                select.selectedIndex = idx;
+                select.value = opt.value;
+                syncFromNative();
+                closeDropdown();
+
+                if (changed) {
+                    select.dispatchEvent(new Event('input', { bubbles: true }));
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+
+            dropdown.appendChild(optEl);
+        });
+    }
+
+    // 计算并更新浮层绝对视口定位 (Fixed) 彻底解决 parent card overflow:hidden 裁切问题
+    function updateDropdownPosition() {
+        const rect = trigger.getBoundingClientRect();
+        const dropdownWidth = Math.max(rect.width, 140);
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        const isDropUp = (spaceBelow < 220 && spaceAbove > spaceBelow);
+
+        // 左右位置防溢出
+        let leftPos = rect.left;
+        if (leftPos + dropdownWidth > window.innerWidth - 10) {
+            leftPos = Math.max(10, window.innerWidth - dropdownWidth - 10);
+        }
+        dropdown.style.left = `${Math.max(10, leftPos)}px`;
+        dropdown.style.width = `${dropdownWidth}px`;
+        dropdown.style.minWidth = `${rect.width}px`;
+
+        if (isDropUp) {
+            dropdown.style.top = 'auto';
+            dropdown.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+            wrapper.classList.add('drop-up');
+        } else {
+            dropdown.style.bottom = 'auto';
+            dropdown.style.top = `${rect.bottom + 4}px`;
+            wrapper.classList.remove('drop-up');
+        }
+    }
+
+    // 打开/关闭下拉
+    function openDropdown() {
+        if (select.disabled || wrapper.classList.contains('is-disabled')) return;
+        
+        // 先关闭页面上其他所有打开的下拉
+        document.querySelectorAll('.custom-select-wrapper.is-open').forEach(w => {
+            if (w !== wrapper) {
+                w.classList.remove('is-open', 'drop-up');
+                w.querySelector('.custom-select-trigger')?.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        updateDropdownPosition();
+        wrapper.classList.add('is-open');
+        trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeDropdown() {
+        wrapper.classList.remove('is-open', 'drop-up');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleDropdown() {
+        if (wrapper.classList.contains('is-open')) {
+            closeDropdown();
+        } else {
+            openDropdown();
+        }
+    }
+
+    trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleDropdown();
+    });
+
+    // 监听键盘事件 (Enter, Space, ArrowUp, ArrowDown, Escape)
+    trigger.addEventListener('keydown', (e) => {
+        if (select.disabled) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleDropdown();
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!wrapper.classList.contains('is-open')) {
+                openDropdown();
+            } else if (select.selectedIndex < select.options.length - 1) {
+                select.selectedIndex += 1;
+                syncFromNative();
+                select.dispatchEvent(new Event('input', { bubbles: true }));
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!wrapper.classList.contains('is-open')) {
+                openDropdown();
+            } else if (select.selectedIndex > 0) {
+                select.selectedIndex -= 1;
+                syncFromNative();
+                select.dispatchEvent(new Event('input', { bubbles: true }));
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } else if (e.key === 'Escape') {
+            closeDropdown();
+        }
+    });
+
+    // 拦截 select 的 value 与 selectedIndex 的原生 setter，确保 JS 动态赋值时实时同步 UI
+    try {
+        const proto = HTMLSelectElement.prototype;
+        const origValueDescriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+        const origIndexDescriptor = Object.getOwnPropertyDescriptor(proto, 'selectedIndex');
+
+        Object.defineProperty(select, 'value', {
+            get: function () {
+                return origValueDescriptor.get.call(this);
+            },
+            set: function (val) {
+                origValueDescriptor.set.call(this, val);
+                syncFromNative();
+            },
+            configurable: true
+        });
+
+        Object.defineProperty(select, 'selectedIndex', {
+            get: function () {
+                return origIndexDescriptor.get.call(this);
+            },
+            set: function (idx) {
+                origIndexDescriptor.set.call(this, idx);
+                syncFromNative();
+            },
+            configurable: true
+        });
+    } catch (e) {
+        console.warn('CustomSelect setter intercept warning:', e);
+    }
+
+    // 监听原生 select 的变更事件
+    select.addEventListener('change', syncFromNative);
+
+    // MutationObserver 监听属性 (disabled, class) 及子元素 (<option>) 动态变更
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                syncFromNative();
+            }
+        });
+    });
+    observer.observe(select, { attributes: true, childList: true, subtree: true });
+
+    // 初始化渲染
+    syncFromNative();
+}
+
+function initCustomSelects(root = document) {
+    if (!root || !root.querySelectorAll) return;
+
+    const selects = root.querySelectorAll('select:not([data-custom-select-ready]):not([data-native-select]):not([data-no-custom])');
+    selects.forEach(select => {
+        setupCustomSelect(select);
+    });
+}
+
+window.initCustomSelects = initCustomSelects;
+window.setupCustomSelect = setupCustomSelect;
+
+// 全局点击空白处关闭所有自定义下拉菜单
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-select-wrapper')) {
+        document.querySelectorAll('.custom-select-wrapper.is-open').forEach(w => {
+            w.classList.remove('is-open', 'drop-up');
+            w.querySelector('.custom-select-trigger')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.custom-select-wrapper.is-open').forEach(w => {
+            w.classList.remove('is-open', 'drop-up');
+            w.querySelector('.custom-select-trigger')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+});
+
+// 全局滚动/缩放时动态更新打开下拉框的位置（或视口超出时自动关闭）
+window.addEventListener('scroll', () => {
+    const openWrapper = document.querySelector('.custom-select-wrapper.is-open');
+    if (openWrapper) {
+        const trigger = openWrapper.querySelector('.custom-select-trigger');
+        const dropdown = openWrapper.querySelector('.custom-select-dropdown');
+        if (trigger && dropdown) {
+            const rect = trigger.getBoundingClientRect();
+            if (rect.bottom < 0 || rect.top > window.innerHeight) {
+                openWrapper.classList.remove('is-open', 'drop-up');
+                trigger.setAttribute('aria-expanded', 'false');
+            } else {
+                dropdown.style.left = `${Math.max(10, rect.left)}px`;
+                if (openWrapper.classList.contains('drop-up')) {
+                    dropdown.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+                } else {
+                    dropdown.style.top = `${rect.bottom + 4}px`;
+                }
+            }
+        }
+    }
+}, { passive: true, capture: true });
+
+window.addEventListener('resize', () => {
+    const openWrapper = document.querySelector('.custom-select-wrapper.is-open');
+    if (openWrapper) {
+        const trigger = openWrapper.querySelector('.custom-select-trigger');
+        const dropdown = openWrapper.querySelector('.custom-select-dropdown');
+        if (trigger && dropdown) {
+            const rect = trigger.getBoundingClientRect();
+            dropdown.style.left = `${Math.max(10, rect.left)}px`;
+            dropdown.style.width = `${Math.max(rect.width, 140)}px`;
+            if (openWrapper.classList.contains('drop-up')) {
+                dropdown.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+            } else {
+                dropdown.style.top = `${rect.bottom + 4}px`;
+            }
+        }
+    }
+}, { passive: true });
+
+// 页面加载及监听动态插入的 DOM 元素
+if (typeof MutationObserver !== 'undefined') {
+    const globalSelectObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    if (node.matches && node.matches('select')) {
+                        setupCustomSelect(node);
+                    } else if (node.querySelectorAll) {
+                        initCustomSelects(node);
+                    }
+                }
+            }
+        }
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            initCustomSelects(document);
+            if (document.body) {
+                globalSelectObserver.observe(document.body, { childList: true, subtree: true });
+            }
+        });
+    } else {
+        initCustomSelects(document);
+        if (document.body) {
+            globalSelectObserver.observe(document.body, { childList: true, subtree: true });
+        }
+    }
+}
+
 

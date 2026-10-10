@@ -244,17 +244,17 @@
                     <!-- 渠道筛选 -->
                     <select id="searchLogsChannelFilter" onchange="handleSearchFilterChange()"
                         class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
-                        <option value="">全部渠道 (Web + API)</option>
-                        <option value="web">Web 前台搜索 (SSE)</option>
-                        <option value="api">开放 API 搜索 (REST)</option>
+                        <option value="">全部渠道</option>
+                        <option value="web">Web前台搜索</option>
+                        <option value="api">开放API搜索</option>
                     </select>
 
                     <!-- 结果命中筛选 -->
                     <select id="searchLogsResultFilter" onchange="handleSearchFilterChange()"
                         class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
                         <option value="">全部结果状态</option>
-                        <option value="has_results">有命中结果 (&gt;0条)</option>
-                        <option value="zero_results">零结果无资源 (0条)</option>
+                        <option value="has_results">有资源(&gt;0条)</option>
+                        <option value="zero_results">无资源(0条)</option>
                     </select>
 
                     <!-- 日期范围 -->
@@ -289,15 +289,21 @@
                         <tr>
                             <th class="w-10 px-3 py-3 text-center">
                                 <div class="batch-select-dropdown" id="searchBatchSelectDropdown">
-                                    <input type="checkbox" id="searchSelectAllCheckbox" onchange="toggleSearchSelectAll(this)"
+                                    <input type="checkbox" id="searchSelectAllCheckbox"
+                                        onchange="toggleSearchSelectAll(this)"
                                         class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
                                         title="全选当前页">
-                                    <button type="button" class="batch-dropdown-trigger" onclick="toggleBatchDropdown('searchBatchSelectDropdown', event)" title="选择范围" aria-label="选择范围">
+                                    <button type="button" class="batch-dropdown-trigger"
+                                        onclick="toggleBatchDropdown('searchBatchSelectDropdown', event)" title="选择范围"
+                                        aria-label="选择范围">
                                         <i class="fas fa-chevron-down text-[9px]"></i>
                                     </button>
                                     <div class="batch-dropdown-menu">
-                                        <button type="button" class="batch-dropdown-item" onclick="selectCurrentPage('analytics')">选择当前页</button>
-                                        <button type="button" class="batch-dropdown-item" onclick="selectAllFiltered('analytics')">选择全部 (<span id="searchDropdownTotal">0</span> 条)</button>
+                                        <button type="button" class="batch-dropdown-item"
+                                            onclick="selectCurrentPage('analytics')">选择当前页</button>
+                                        <button type="button" class="batch-dropdown-item"
+                                            onclick="selectAllFiltered('analytics')">选择全部 (<span
+                                                id="searchDropdownTotal">0</span> 条)</button>
                                     </div>
                                 </div>
                             </th>
@@ -506,12 +512,17 @@
                                     <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"
                                         class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
                                         title="全选当前页">
-                                    <button type="button" class="batch-dropdown-trigger" onclick="toggleBatchDropdown('auditBatchSelectDropdown', event)" title="选择范围" aria-label="选择范围">
+                                    <button type="button" class="batch-dropdown-trigger"
+                                        onclick="toggleBatchDropdown('auditBatchSelectDropdown', event)" title="选择范围"
+                                        aria-label="选择范围">
                                         <i class="fas fa-chevron-down text-[9px]"></i>
                                     </button>
                                     <div class="batch-dropdown-menu">
-                                        <button type="button" class="batch-dropdown-item" onclick="selectCurrentPage('audit')">选择当前页</button>
-                                        <button type="button" class="batch-dropdown-item" onclick="selectAllFiltered('audit')">选择全部 (<span id="auditDropdownTotal">0</span> 条)</button>
+                                        <button type="button" class="batch-dropdown-item"
+                                            onclick="selectCurrentPage('audit')">选择当前页</button>
+                                        <button type="button" class="batch-dropdown-item"
+                                            onclick="selectAllFiltered('audit')">选择全部 (<span
+                                                id="auditDropdownTotal">0</span> 条)</button>
                                     </div>
                                 </div>
                             </th>
@@ -601,7 +612,8 @@
     <div class="resource-batch-summary">
         <i class="fas fa-check-circle text-blue-600"></i>
         <span><span id="batchToolbarSummaryText">已选 <strong id="selectedCountBadge">0</strong> 项</span></span>
-        <button class="resource-batch-scope-link" id="batchScopeToggleLink" onclick="toggleActiveSelectAllMode()" type="button" style="display: none;"></button>
+        <button class="resource-batch-scope-link" id="batchScopeToggleLink" onclick="toggleActiveSelectAllMode()"
+            type="button" style="display: none;"></button>
         <span class="resource-batch-summary-divider"></span>
         <button class="resource-batch-btn-clear" onclick="clearActiveSelection()" type="button" title="清空选择">
             <i class="fas fa-times"></i> 清空
@@ -761,7 +773,7 @@
         activeLogTab = targetTab === 'audit' ? 'audit' : 'analytics';
         try {
             localStorage.setItem('panrelay_logs_tab', activeLogTab);
-        } catch (e) {}
+        } catch (e) { }
 
         document.querySelectorAll('[data-log-tab-target]').forEach(btn => {
             const isTarget = btn.getAttribute('data-log-tab-target') === activeLogTab;
@@ -1081,7 +1093,7 @@
         try {
             localStorage.setItem('panrelay_search_logs_channel', searchLogsState.channel);
             localStorage.setItem('panrelay_search_logs_result_filter', searchLogsState.resultFilter);
-        } catch (e) {}
+        } catch (e) { }
         searchLogsState.page = 1;
         searchLogsState.selectedIds.clear();
         searchLogsState.selectMode = 'page';
@@ -1097,7 +1109,7 @@
         try {
             localStorage.removeItem('panrelay_search_logs_channel');
             localStorage.removeItem('panrelay_search_logs_result_filter');
-        } catch (e) {}
+        } catch (e) { }
         searchLogsState.q = '';
         searchLogsState.channel = '';
         searchLogsState.resultFilter = '';
@@ -1119,7 +1131,7 @@
         searchLogsState.pageSize = parseInt(newSize, 10) || 15;
         try {
             localStorage.setItem('panrelay_search_logs_pagesize', String(searchLogsState.pageSize));
-        } catch (e) {}
+        } catch (e) { }
         searchLogsState.page = 1;
         loadSearchLogs();
     }
@@ -1187,7 +1199,7 @@
         let savedTab = null;
         try {
             savedTab = localStorage.getItem('panrelay_logs_tab');
-        } catch (e) {}
+        } catch (e) { }
 
         if (urlTab) {
             switchLogTab(urlTab, false);
@@ -1443,7 +1455,7 @@
         try {
             localStorage.setItem('panrelay_system_logs_type', currentLogsState.logType);
             localStorage.setItem('panrelay_system_logs_status', currentLogsState.status);
-        } catch (e) {}
+        } catch (e) { }
         currentLogsState.page = 1;
         currentLogsState.selectedIds.clear();
         currentLogsState.selectMode = 'page';
@@ -1459,7 +1471,7 @@
         try {
             localStorage.removeItem('panrelay_system_logs_type');
             localStorage.removeItem('panrelay_system_logs_status');
-        } catch (e) {}
+        } catch (e) { }
         currentLogsState.q = '';
         currentLogsState.logType = '';
         currentLogsState.status = '';
@@ -1481,7 +1493,7 @@
         currentLogsState.pageSize = parseInt(newSize, 10) || 15;
         try {
             localStorage.setItem('panrelay_system_logs_pagesize', String(currentLogsState.pageSize));
-        } catch (e) {}
+        } catch (e) { }
         currentLogsState.page = 1;
         loadLogs();
     }

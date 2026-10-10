@@ -11,6 +11,10 @@ from src.services.system_config_service import (
     save_frontend_link_mode,
     DYNAMIC_TRANSFER_NETDISKS_KEY,
     FRONTEND_LINK_MODE_KEY,
+    ENABLE_FRONTEND_GITHUB_KEY,
+    get_frontend_github_config,
+    save_frontend_github_config,
+    is_frontend_github_enabled,
 )
 from src.utils.netdisk_utils import DYNAMIC_TRANSFER_NETDISK_OPTIONS
 from src.db.system_configs import get_config_value, set_config_value
@@ -25,6 +29,8 @@ class DynamicTransferConfigTest(unittest.TestCase):
         self.client.set_cookie("token", self.token)
         self.orig_dynamic_cfg = get_config_value(DYNAMIC_TRANSFER_NETDISKS_KEY)
         self.orig_link_mode = get_config_value(FRONTEND_LINK_MODE_KEY)
+        self.orig_frontend_github = get_config_value(ENABLE_FRONTEND_GITHUB_KEY)
+        save_frontend_github_config(True)
 
     def tearDown(self):
         if self.orig_dynamic_cfg is not None:
@@ -44,6 +50,15 @@ class DynamicTransferConfigTest(unittest.TestCase):
                 pass
         else:
             save_frontend_link_mode("view")
+
+        if self.orig_frontend_github is not None:
+            try:
+                parsed = json.loads(self.orig_frontend_github)
+                set_config_value(ENABLE_FRONTEND_GITHUB_KEY, parsed)
+            except Exception:
+                pass
+        else:
+            save_frontend_github_config(True)
 
     def test_service_get_and_save_config(self):
         # Save a subset of netdisks
@@ -139,9 +154,62 @@ class DynamicTransferConfigTest(unittest.TestCase):
         resp_admin = self.client.get("/admin/frontend-config")
         self.assertEqual(200, resp_admin.status_code)
         self.assertIn("dynamicTransferNetdisksWrapper", resp_admin.text)
+        self.assertIn("rawLinkSettingsWrapper", resp_admin.text)
+        self.assertIn("excelDownloadSettingContainer", resp_admin.text)
+        self.assertIn("frontendLinkStrategyContainer", resp_admin.text)
+        self.assertIn("linkCheckPanel", resp_admin.text)
+        self.assertIn("frontendDisplayNetdisksPanel", resp_admin.text)
         self.assertIn("dynamicTransferNetdisksGroup", resp_admin.text)
         self.assertIn("dynamic-transfer-netdisk-checkbox", resp_admin.text)
+        self.assertIn("frontendGithubSettingContainer", resp_admin.text)
+        self.assertIn("enableFrontendGithubToggle", resp_admin.text)
+        self.assertIn("frontendBrandPanel", resp_admin.text)
+
+    def test_frontend_github_config_service_and_api(self):
+        # Default should be enabled
+        self.assertTrue(is_frontend_github_enabled())
+        self.assertEqual(get_frontend_github_config(), {"enabled": True})
+
+        # Save disabled
+        self.assertTrue(save_frontend_github_config(False))
+        self.assertFalse(is_frontend_github_enabled())
+        self.assertEqual(get_frontend_github_config(), {"enabled": False})
+
+        # GET API
+        resp_get = self.client.get("/admin/api/frontend-github-config")
+        self.assertEqual(200, resp_get.status_code)
+        data = resp_get.get_json()
+        self.assertTrue(data["success"])
+        self.assertFalse(data["enabled"])
+
+        # PUT API
+        resp_put = self.client.put("/admin/api/frontend-github-config", json={"enabled": True})
+        self.assertEqual(200, resp_put.status_code)
+        data_put = resp_put.get_json()
+        self.assertTrue(data_put["success"])
+        self.assertTrue(is_frontend_github_enabled())
+
+    def test_frontend_github_rendering(self):
+        # 1. When enabled: index page should contain github pill, star count ID, and repo URL
+        save_frontend_github_config(True)
+        resp_enabled = self.client.get("/")
+        self.assertEqual(200, resp_enabled.status_code)
+        self.assertIn('id="githubStarCount"', resp_enabled.text)
+        self.assertIn("https://github.com/ucmao/pan-relay", resp_enabled.text)
+        self.assertIn('<div class="disclaimer-star-box">', resp_enabled.text)
+        self.assertIn('class="fab fa-github', resp_enabled.text)
+
+        # 2. When disabled: index page should NOT contain any github links, pill elements, or star count
+        save_frontend_github_config(False)
+        resp_disabled = self.client.get("/")
+        self.assertEqual(200, resp_disabled.status_code)
+        self.assertNotIn('id="githubStarCount"', resp_disabled.text)
+        self.assertNotIn("https://github.com/ucmao/pan-relay", resp_disabled.text)
+        self.assertNotIn('<div class="disclaimer-star-box">', resp_disabled.text)
+        self.assertNotIn('class="fab fa-github', resp_disabled.text)
 
 
 if __name__ == "__main__":
     unittest.main()
+
+

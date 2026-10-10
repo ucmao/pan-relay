@@ -4,13 +4,10 @@ function getFrontendDisplayNetdiskCheckboxes() {
 
 function updateDynamicTransferStatusVisibility() {
     const netdisksWrapper = document.getElementById('dynamicTransferNetdisksWrapper');
+    const rawLinkWrapper = document.getElementById('rawLinkSettingsWrapper');
     const select = document.getElementById('frontendLinkModeSelect');
     const badge = document.getElementById('frontendLinkModeBadge');
     const kpiEl = document.getElementById('kpiDeliveryMode');
-    const excelToggle = document.getElementById('allowExcelDownloadToggle');
-    const excelSwitchLabel = document.getElementById('allowExcelDownloadSwitchLabel');
-    const excelDesc = document.getElementById('excelDownloadDesc');
-    const excelContainer = document.getElementById('excelDownloadSettingContainer');
 
     const mode = select ? select.value : 'copy';
     const isView = mode === 'view';
@@ -25,32 +22,36 @@ function updateDynamicTransferStatusVisibility() {
     if (netdisksWrapper) {
         netdisksWrapper.classList.toggle('hidden', !isView);
     }
+    if (rawLinkWrapper) {
+        rawLinkWrapper.classList.toggle('hidden', isView);
+    }
     updateEnabledDynamicTransferPansCount();
+}
 
-    // 联动处理 Excel 下载导出配置
-    if (excelToggle && excelSwitchLabel) {
-        if (isView) {
-            excelToggle.disabled = true;
-            excelSwitchLabel.style.opacity = '0.55';
-            excelSwitchLabel.style.cursor = 'not-allowed';
-            excelSwitchLabel.setAttribute('title', '动态转存模式下已自动停用 Excel 批量导出');
+function updateFrontendConfigPanelsState(enabled) {
+    const strategyContainer = document.getElementById('frontendLinkStrategyContainer');
+    if (strategyContainer) {
+        strategyContainer.classList.toggle('hidden', !enabled);
+    }
+    const grayPanels = [
+        document.getElementById('linkCheckPanel'),
+        document.getElementById('frontendDisplayNetdisksPanel'),
+        document.getElementById('frontendBrandPanel')
+    ];
+    grayPanels.forEach(panel => {
+        if (!panel) return;
+        if (enabled) {
+            panel.classList.remove('opacity-50', 'pointer-events-none', 'select-none');
+            panel.querySelectorAll('input, select, button').forEach(el => {
+                el.disabled = false;
+            });
         } else {
-            excelToggle.disabled = false;
-            excelSwitchLabel.style.opacity = '1';
-            excelSwitchLabel.style.cursor = '';
-            excelSwitchLabel.setAttribute('title', '切换 Excel 导出按钮');
+            panel.classList.add('opacity-50', 'pointer-events-none', 'select-none');
+            panel.querySelectorAll('input, select, button').forEach(el => {
+                el.disabled = true;
+            });
         }
-    }
-    if (excelDesc) {
-        if (isView) {
-            excelDesc.innerHTML = '<span class="text-amber-600 dark:text-amber-500 font-medium inline-flex items-center gap-1.5"><i class="fas fa-lock text-[11px]"></i>当前为动态转存模式，为保障单条资源转存收益，已自动禁用导出</span>';
-        } else {
-            excelDesc.textContent = '允许访客将前台搜索列表结果导出为表格';
-        }
-    }
-    if (excelContainer) {
-        excelContainer.classList.toggle('opacity-90', isView);
-    }
+    });
 }
 
 function bindFrontendLinkModeEvents() {
@@ -351,6 +352,47 @@ async function savePcQrCodeConfig() {
         console.error('保存 PC 转存二维码引导配置失败:', error);
         showToast(`保存配置失败: ${error.message}`, 'danger');
         await loadPcQrCodeConfig();
+    }
+}
+
+async function loadFrontendGithubConfig() {
+    try {
+        const response = await fetch('/admin/api/frontend-github-config');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const toggle = document.getElementById('enableFrontendGithubToggle');
+        if (toggle) {
+            toggle.checked = Boolean(data.enabled);
+        }
+    } catch (error) {
+        console.error('加载前台 GitHub 标识配置失败:', error);
+    }
+}
+
+async function saveFrontendGithubConfig() {
+    const toggle = document.getElementById('enableFrontendGithubToggle');
+    const enabled = toggle ? toggle.checked : true;
+
+    try {
+        const response = await fetch('/admin/api/frontend-github-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+
+        showToast(data.message || '配置已保存', 'success');
+    } catch (error) {
+        console.error('保存前台 GitHub 标识配置失败:', error);
+        showToast(`保存配置失败: ${error.message}`, 'danger');
+        await loadFrontendGithubConfig();
     }
 }
 
@@ -1424,7 +1466,10 @@ async function loadApiModeConfig() {
             apiOnlyBadge.className = cfg.api_only ? 'badge badge-warning text-[10px]' : 'badge badge-secondary text-[10px]';
         }
 
-        if (enableFrontendToggle) enableFrontendToggle.checked = Boolean(cfg.enable_frontend);
+        if (enableFrontendToggle) {
+            enableFrontendToggle.checked = Boolean(cfg.enable_frontend);
+            updateFrontendConfigPanelsState(Boolean(cfg.enable_frontend));
+        }
         if (enableFrontendBadge) {
             enableFrontendBadge.textContent = cfg.enable_frontend ? '已开启' : '已禁用';
             enableFrontendBadge.className = cfg.enable_frontend ? 'badge badge-success text-[10px]' : 'badge badge-secondary text-[10px]';
@@ -1470,11 +1515,13 @@ async function saveApiModeConfig() {
 
     const transferApiKeyInput = document.getElementById('transferApiKeyInput');
 
+    const enabledFrontend = enableFrontendToggle ? enableFrontendToggle.checked : true;
+    updateFrontendConfigPanelsState(enabledFrontend);
     updateApiLivePreview();
 
     const payload = {
         api_only: apiOnlyToggle ? apiOnlyToggle.checked : false,
-        enable_frontend: enableFrontendToggle ? enableFrontendToggle.checked : true,
+        enable_frontend: enabledFrontend,
         search_scope: searchScopeSelect ? searchScopeSelect.value : 'all',
         search_limit: searchApiLimitInput ? (parseInt(searchApiLimitInput.value, 10) || 50) : 50,
         search_scope_lock: searchScopeLockToggle ? searchScopeLockToggle.checked : false,
@@ -1509,10 +1556,15 @@ document.addEventListener('DOMContentLoaded', () => {
     bindFrontendLinkModeEvents();
     bindSensitiveWordsTextareaEvents();
     bindAdFilterTextareaEvents();
+    const enableFrontendToggle = document.getElementById('enableFrontendToggle');
+    if (enableFrontendToggle) {
+        updateFrontendConfigPanelsState(enableFrontendToggle.checked);
+    }
     loadApiModeConfig();
     loadPublicSearchApiConfig();
     loadAllowExcelDownloadConfig();
     loadPcQrCodeConfig();
+    loadFrontendGithubConfig();
     loadFrontendLinkCheckConfig();
     loadTransferTargetDirConfig();
     loadFrontendDisplayNetdisks();

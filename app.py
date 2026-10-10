@@ -24,6 +24,7 @@ from src.services.system_config_service import (
     get_dynamic_transfer_netdisk_config,
     is_excel_download_enabled,
     is_pc_qr_code_enabled,
+    is_frontend_github_enabled,
     is_frontend_enabled,
     is_api_only_enabled,
 )
@@ -60,7 +61,10 @@ def inject_login_status():
             is_logged_in = True
     except Exception:
         pass
-    return {'is_logged_in': is_logged_in}
+    return {
+        'is_logged_in': is_logged_in,
+        'enable_frontend_github': is_frontend_github_enabled(),
+    }
 
 
 @app.before_request
@@ -90,6 +94,7 @@ def search_index():
         enabled_check_pans=link_check_config.get("enabled_check_pans", []),
         enabled_dynamic_transfer_pans=dynamic_transfer_config.get("enabled_netdisks", []),
         enable_pc_qr_code=is_pc_qr_code_enabled(),
+        enable_frontend_github=is_frontend_github_enabled(),
     )
 
 
