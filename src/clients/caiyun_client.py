@@ -1,3 +1,6 @@
+"""中国移动云盘新版转存与分享客户端。"""
+
+import base64
 import json
 import logging
 import re
@@ -7,372 +10,312 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import requests
 
 from src.clients.base_client import BasePanClient
+from src.clients.caiyun_protocol import (
+    CREATE_SHARE_URL, PERSONAL_API_BASE, SHARE_API_BASE, TASK_PATH, TRANSFER_PATH,
+    decode_share_response, encode_share_payload, mcloud_sign,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class CaiyunPanClient(BasePanClient):
-    """
-    中国移动云盘 (和彩云 / 139云盘) 客户端实现
-    提供转存 (store)、创建新分享与文件删除 (del_file) 功能。
-    """
-    api_base = "https://api.caiyun.feixin.10086.cn"
-    orches_base = "https://orches.yun.139.com"
-
     def __init__(self, credential: Union[str, Dict[str, Any]]) -> None:
-        self.raw_credential = credential
-        self.auth_token = ""
-        self.account = ""
-        self.cookie = ""
-
+        if isinstance(credential, str):
+            try:
+                parsed = json.loads(credential)
+                if isinstance(parsed, dict):
+                    credential = parsed
+            except ValueError:
+                pass
         if isinstance(credential, dict):
             self.auth_token = str(credential.get("auth_token") or credential.get("authorization") or credential.get("token") or "").strip()
             self.account = str(credential.get("account") or credential.get("phone") or "").strip()
             self.cookie = str(credential.get("cookie") or credential.get("Cookie") or "").strip()
-        elif isinstance(credential, str):
-            clean_cred = credential.strip()
-            if clean_cred.startswith("{") and clean_cred.endswith("}"):
-                try:
-                    data = json.loads(clean_cred)
-                    if isinstance(data, dict):
-                        self.auth_token = str(data.get("auth_token") or data.get("authorization") or data.get("token") or "").strip()
-                        self.account = str(data.get("account") or data.get("phone") or "").strip()
-                        self.cookie = str(data.get("cookie") or data.get("Cookie") or "").strip()
-                except Exception:
-                    self.auth_token = clean_cred
-            else:
-                self.auth_token = clean_cred
-
+        else:
+            self.auth_token = str(credential or "").strip()
+            self.account = ""
+            self.cookie = ""
+        if not self.account and self.auth_token:
+            try:
+                token = re.sub(r"^Basic\s+", "", self.auth_token, flags=re.I)
+                self.account = base64.b64decode(token).decode("utf-8").split(":")[1]
+            except (IndexError, UnicodeError, ValueError):
+                pass
         self.session = requests.Session()
-        headers = {
+        self.session.headers.update({
             "Accept": "application/json, text/plain, */*",
             "Content-Type": "application/json;charset=UTF-8",
-            "mcloud-client": "10701",
-            "mcloud-channel": "1000101",
-            "mcloud-sign": "PC",
             "Origin": "https://yun.139.com",
-            "Referer": "https://yun.139.com/",
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/139.0.0.0 Safari/537.36"
-            ),
-        }
-        if self.auth_token:
-            if not self.auth_token.lower().startswith("bearer ") and not self.auth_token.lower().startswith("basic "):
-                headers["Authorization"] = f"Bearer {self.auth_token}"
-            else:
-                headers["Authorization"] = self.auth_token
+            "Referer": "https://yun.139.com/shareweb/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/139.0.0.0 Safari/537.36",
+        })
         if self.cookie:
-            headers["Cookie"] = self.cookie
-        if self.account:
-            headers["mcloud-account"] = self.account
+            self.session.headers["Cookie"] = self.cookie
 
-        self.session.headers.update(headers)
+    @property
+    def _authorization(self) -> str:
+        token = re.sub(r"^Basic\s+", "", self.auth_token, flags=re.I)
+        return f"Basic {token}" if token else ""
 
     def _parse_share_url(self, share_url: str) -> Tuple[Optional[str], Optional[str]]:
-        """从移动云盘分享链接中提取 share_id 与提取码"""
         if not share_url:
             return None, None
-
         match = re.search(
             r"(?:yun\.139\.com/shareweb/#/w/i/|caiyun\.139\.com/w/i/|caiyun\.139\.com/m/i\?|pan\.10086\.cn/s/|/w/i/)([a-zA-Z0-9_-]+)",
-            share_url,
-            re.IGNORECASE,
-        )
+            share_url, re.I,
+        ) or re.search(r"linkId=([a-zA-Z0-9_-]+)", share_url, re.I)
         if not match:
-            # 兼容 query 参数 linkID
-            q_match = re.search(r"linkId=([a-zA-Z0-9_-]+)", share_url, re.IGNORECASE)
-            if q_match:
-                share_id = q_match.group(1)
-            else:
-                return None, None
-        else:
-            share_id = match.group(1)
+            return None, None
+        password = re.search(r"(?:[?&]pwd=|提取码[:：=\s]*|密码[:：=\s]*)([a-zA-Z0-9]{4,6})", share_url, re.I)
+        return match.group(1), password.group(1) if password else None
 
-        pwd_match = re.search(r"(?:[?&]pwd=|提取码[:：=\s]*|密码[:：=\s]*)([a-zA-Z0-9]{4,6})", share_url, re.IGNORECASE)
-        pwd = pwd_match.group(1) if pwd_match else None
-        return share_id, pwd
+    @staticmethod
+    def _ok(result: Optional[Dict[str, Any]]) -> bool:
+        # 服务端在业务错误时也可能返回 success=true。
+        return bool(result and str(result.get("code", result.get("resultCode", ""))) in ("0", "0000") and result.get("success") is not False)
 
-    def _request_api(
-        self,
-        method: str,
-        path: str,
-        params: Optional[Dict[str, Any]] = None,
-        payload: Optional[Dict[str, Any]] = None,
-        timeout: int = 15,
-    ) -> Optional[Dict[str, Any]]:
-        url = f"{self.api_base}{path}" if path.startswith("/") else path
+    def _request_share_api(self, path: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        headers = {
+            "X-Yun-Api-Version": "v1",
+            "X-Deviceinfo": "||9|12.27.0|chrome|139.0.0.0|||windows 10||zh-CN|||",
+            "hcy-cool-flag": "1", "CMS-DEVICE": "default", "x-m4c-caller": "PC",
+        }
+        if self._authorization:
+            headers["Authorization"] = self._authorization
         try:
-            resp = self.session.request(
-                method=method,
-                url=url,
-                params=params,
-                json=payload,
-                timeout=timeout,
-            )
-            if resp.status_code in (200, 201):
-                return resp.json()
-            else:
-                logger.error(f"移动云盘 API 响应异常 [{resp.status_code}]: {resp.text}")
-                return None
-        except Exception as exc:
-            logger.error(f"移动云盘 API 请求错误: {exc}")
+            response = self.session.post(SHARE_API_BASE + path, data=encode_share_payload(payload), headers=headers, timeout=20)
+            response.raise_for_status()
+            result = decode_share_response(response.content)
+            if self._ok(result):
+                return result
+            logger.error("移动云盘分享接口失败: %s %s", result.get("code"), result.get("desc"))
+        except (requests.RequestException, ValueError) as exc:
+            logger.error("移动云盘分享接口请求错误: %s", exc)
+        return None
+
+    def _request_signed_api(self, url: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        if not self._authorization:
+            logger.error("移动云盘缺少 Basic 授权令牌")
             return None
-
-    def store(
-        self, share_url: str, to_pdir_path: str = "/"
-    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        """
-        转存移动云盘分享链接并生成新分享。
-        """
-        share_id, pwd = self._parse_share_url(share_url)
-        if not share_id:
-            logger.error(f"移动云盘链接解析失败: {share_url}")
-            return None, None, None
-
-        # 1. 获取分享内容信息
-        share_info = self._request_api(
-            "POST",
-            "/orchestration/personalCloud/share/v1.0/getShareInfo",
-            payload={
-                "linkID": share_id,
-                "password": pwd or "",
-            },
-        )
-        if not share_info or not share_info.get("success", False):
-            # 尝试备用或简单响应格式
-            if not share_info or share_info.get("code") not in ("0", 0, "0000", 200, None):
-                logger.error(f"移动云盘获取分享信息失败: {share_info}")
-                return None, None, None
-
-        data = share_info.get("data") or share_info
-        from src.services.ad_filter_service import is_ad_filename
-
-        raw_content_list = data.get("contentList") or data.get("fileList") or []
-        content_list = [
-            item for item in raw_content_list
-            if not is_ad_filename(item.get("contentName") or item.get("name") or "")
-        ]
-        if not content_list:
-            logger.warning(f"移动云盘分享内容全为广告，已终止转存与分享: {share_url}")
-            return None, None, None
-
-        first_item = content_list[0]
-        file_name = first_item.get("contentName") or data.get("shareTitle") or "移动云盘转存文件"
-
-        content_ids = []
-        for item in content_list:
-            cid = item.get("contentID") or item.get("id") or item.get("caID")
-            if cid:
-                content_ids.append(cid)
-
-        # 2. 执行批量转存
-        target_dir = to_pdir_path if to_pdir_path not in ("/", "") else "root"
-        restore_res = self._request_api(
-            "POST",
-            "/orchestration/personalCloud/batch/v1.0/createBatch",
-            payload={
-                "action": "restore",
-                "linkID": share_id,
-                "contentIDs": content_ids,
-                "targetDirID": target_dir,
-            },
-        )
-        if not restore_res or not (restore_res.get("success", True) or restore_res.get("code") in ("0", 0, "0000")):
-            logger.error(f"移动云盘转存失败: {restore_res}")
-            return None, None, None
-
-        saved_data = restore_res.get("data") or restore_res
-        saved_file_ids = saved_data.get("contentIDs") or content_ids
-
-        # 尝试植入个人自定义引流广告 (若已配置并启用)
-        for fid in saved_file_ids:
-            try:
-                self.add_ad(fid)
-            except Exception:
-                pass
-
-
-        # 3. 创建新分享链接
-        share_create_res = self._request_api(
-            "POST",
-            "/orchestration/personalCloud/share/v1.0/createShare",
-            payload={
-                "contentIDs": saved_file_ids,
-                "shareType": 1,
-                "period": 0,  # 永久
-                "shareTitle": file_name,
-            },
-        )
-        new_share_url = None
-        if share_create_res:
-            res_data = share_create_res.get("data") or share_create_res
-            new_share_url = res_data.get("shareUrl") or res_data.get("linkUrl")
-            new_link_id = res_data.get("linkID") or res_data.get("id")
-            if not new_share_url and new_link_id:
-                new_share_url = f"https://yun.139.com/shareweb/#/w/i/{new_link_id}"
-                new_pwd = res_data.get("password")
-                if new_pwd:
-                    new_share_url += f"?pwd={new_pwd}"
-
-        saved_file_id_str = json.dumps(saved_file_ids, ensure_ascii=False) if isinstance(saved_file_ids, list) else str(saved_file_ids)
-        return saved_file_id_str, file_name, new_share_url
-
-
-    def get_or_create_dir(self, dir_name: str, parent_id: str = "root") -> str:
-        """获取或创建移动云盘目标目录"""
-        if not dir_name or dir_name.strip() in ("", "/"):
-            return parent_id or "root"
-        clean_name = dir_name.strip().strip("/")
+        headers = {
+            "Authorization": self._authorization, "CMS-DEVICE": "default", "Caller": "web",
+            "mcloud-channel": "1000101", "mcloud-client": "10701",
+            "mcloud-route": "001", "mcloud-sign": mcloud_sign(payload), "mcloud-version": "7.14.0",
+            "x-DeviceInfo": "||9|7.14.0|chrome|120.0.0.0|||windows 10||zh-CN|||",
+            "x-huawei-channelSrc": "10000034", "x-inner-ntwk": "2",
+            "x-m4c-caller": "PC", "x-m4c-src": "10002", "x-SvcType": "1",
+            "X-Yun-Api-Version": "v1", "X-Yun-App-Channel": "10000034",
+            "X-Yun-Channel-Source": "10000034",
+            "X-Yun-Client-Info": "||9|7.14.0|chrome|120.0.0.0|||windows 10||zh-CN|||dW5kZWZpbmVk||",
+            "X-Yun-Module-Type": "100", "X-Yun-Svc-Type": "1",
+        }
         try:
-            res = self._request_api(
-                "POST",
-                "/orchestration/personalCloud/catalog/v1.0/createCatalog",
-                payload={"parentCatalogID": parent_id or "root", "catalogName": clean_name},
-            )
-            if res:
-                data = res.get("data") or res
-                cat_id = data.get("catalogID") or data.get("id")
-                if cat_id:
-                    logger.info(f"移动云盘新建/确认目录 [{clean_name}]: {cat_id}")
-                    return str(cat_id)
-        except Exception as exc:
-            logger.error(f"移动云盘创建目录异常: {exc}")
-        return parent_id or "root"
+            response = self.session.post(url, json=payload, headers=headers, timeout=20)
+            response.raise_for_status()
+            result = response.json()
+            if self._ok(result):
+                return result
+            logger.error("移动云盘个人接口失败: %s %s", result.get("code"), result.get("message"))
+        except (requests.RequestException, ValueError) as exc:
+            logger.error("移动云盘个人接口请求错误: %s", exc)
+        return None
 
-    def _clean_ad_files_and_folders(self, file_ids: List[str]) -> List[str]:
-        """清理移动云盘转存文件中的广告引流文件"""
-        from src.services.ad_filter_service import is_ad_filename
-
-        valid_ids = []
-        ad_ids = []
-        for fid in file_ids:
-            try:
-                info = self._request_api(
-                    "POST",
-                    "/orchestration/personalCloud/catalog/v1.0/getContentInfo",
-                    payload={"contentID": fid},
-                )
-                data = (info or {}).get("data") or info or {}
-                name = data.get("contentName") or data.get("name") or ""
-                if name and is_ad_filename(name):
-                    logger.info(f"移动云盘转存项命中广告关键词: {name} ({fid})")
-                    ad_ids.append(fid)
-                else:
-                    valid_ids.append(fid)
-            except Exception:
-                valid_ids.append(fid)
-
-        if ad_ids:
-            try:
-                self.del_file(ad_ids)
-                logger.info(f"移动云盘已清理广告文件 {len(ad_ids)} 项")
-            except Exception as exc:
-                logger.error(f"移动云盘清理广告失败: {exc}")
-
-        return valid_ids
-
-    def add_ad(self, target_dir_id: str, ad_share_url: Optional[str] = None) -> bool:
-        """向移动云盘指定的目录植入个人自定义引流/宣传文件"""
-        target_url = (ad_share_url or "").strip()
-        if not target_url:
-            from src.services.system_config_service import get_ad_share_url_for_disk
-            target_url = get_ad_share_url_for_disk("caiyun")
-
-        if not target_url:
-            return False
-
-        share_id, pwd = self._parse_share_url(target_url)
+    def get_share_items(self, share_url: str, parent_id: str = "root", start: int = 1) -> Optional[Dict[str, Any]]:
+        share_id, password = self._parse_share_url(share_url)
         if not share_id:
-            logger.warning(f"移动云盘广告植入链接无效: {target_url}")
+            return None
+        return self._request_share_api("/richlifeApp/devapp/IOutLink/getOutLinkInfoV6", {
+            "getOutLinkInfoReq": {
+                "account": self.account, "linkID": share_id, "passwd": password or "",
+                "caSrt": 0, "coSrt": 0, "srtDr": 1, "bNum": start,
+                "pCaID": parent_id, "eNum": start + 199,
+            },
+        })
+
+    def _share_entries(self, share_url: str) -> Optional[Tuple[Dict[str, Any], List[Dict[str, Any]]]]:
+        entries: List[Dict[str, Any]] = []
+        info: Dict[str, Any] = {}
+        for start in range(1, 10002, 200):
+            result = self.get_share_items(share_url, start=start)
+            if not result or not isinstance(result.get("data"), dict):
+                return None
+            data = result["data"]
+            if not info:
+                info = data
+            page = (data.get("caLst") or []) + (data.get("coLst") or [])
+            entries.extend(page)
+            if len(page) < 200:
+                break
+        return info, entries
+
+    def _list_personal(self, parent_id: str) -> Optional[List[Dict[str, Any]]]:
+        items: List[Dict[str, Any]] = []
+        cursor = ""
+        for _ in range(100):
+            result = self._request_signed_api(PERSONAL_API_BASE + "/file/list", {
+                "pageInfo": {"pageSize": 100, "pageCursor": cursor or None},
+                "orderBy": "updated_at", "orderDirection": "DESC",
+                "parentFileId": parent_id, "imageThumbnailStyleList": ["Small", "Large"],
+            })
+            if not result:
+                return None
+            data = result.get("data") or {}
+            items.extend(data.get("items") or [])
+            next_cursor = data.get("nextPageCursor")
+            if not next_cursor or next_cursor == cursor:
+                break
+            cursor = next_cursor
+        return items
+
+    def _transfer(self, share_url: str, target_dir: str, entries: List[Dict[str, Any]], info: Dict[str, Any]) -> bool:
+        share_id, password = self._parse_share_url(share_url)
+        if not share_id or not self.account:
+            logger.error("移动云盘转存需要有效 Basic 令牌和账号")
             return False
-
-        try:
-            share_info = self._request_api(
-                "POST",
-                "/orchestration/personalCloud/share/v1.0/getShareInfo",
-                payload={"linkID": share_id, "password": pwd or ""},
-            )
-            data = (share_info or {}).get("data") or share_info or {}
-            content_list = data.get("contentList") or data.get("fileList") or []
-            if not content_list:
+        catalogs = [x.get("path") for x in entries if x.get("caID")]
+        contents = [x.get("path") for x in entries if x.get("coID")]
+        if not all(catalogs + contents):
+            logger.error("移动云盘分享项缺少转存所需的 path")
+            return False
+        task_info = {
+            "linkID": share_id, "contentInfoList": contents, "catalogInfoList": catalogs,
+            "newCatalogID": target_dir, "newCatalogName": "全部",
+            "needPassword": bool(password),
+        }
+        result = self._request_share_api(TRANSFER_PATH, {
+            "createOuterLinkBatchOprTaskReq": {
+                "msisdn": self.account, "ownerAccount": info.get("owner") or info.get("creator") or "",
+                "taskType": 1, "taskInfo": task_info, "linkID": share_id,
+                "needPassword": bool(password),
+            },
+        })
+        data = (result or {}).get("data") or {}
+        task_id = data.get("taskID") or data.get("taskId") or (data.get("createBatchOprTaskRes") or {}).get("taskID")
+        if not task_id:
+            logger.error("移动云盘转存接口未返回任务 ID")
+            return False
+        for _ in range(20):
+            detail = self._request_share_api(TASK_PATH, {
+                "queryBatchOprTaskDetailReq": {"taskID": task_id, "msisdn": self.account},
+            })
+            if not detail:
                 return False
-
-            first_cid = content_list[0].get("contentID") or content_list[0].get("id") or content_list[0].get("caID")
-            if not first_cid:
-                return False
-
-            restore_res = self._request_api(
-                "POST",
-                "/orchestration/personalCloud/batch/v1.0/createBatch",
-                payload={
-                    "action": "restore",
-                    "linkID": share_id,
-                    "contentIDs": [first_cid],
-                    "targetDirID": target_dir_id or "root",
-                },
-            )
-            if restore_res and (restore_res.get("success", False) or restore_res.get("code") in ("0", 0, "0000")):
-                logger.info(f"移动云盘已向目录 {target_dir_id} 成功植入自定义引流文件 (share_id={share_id})")
+            task = (detail.get("data") or {}).get("queryBatchOprTaskDetailRes") or detail.get("data") or {}
+            status = task.get("batchOprTask") or task.get("taskInfo") or {}
+            state = status.get("taskStatus", status.get("status"))
+            if state in (2, "Succeed", "PartialSucceed", "Failed"):
+                if state == "Failed" or str(status.get("taskResultCode", "1")) in ("2", "3"):
+                    logger.error("移动云盘转存任务失败: %s", status)
+                    return False
                 return True
-        except Exception as exc:
-            logger.error(f"移动云盘植入自定义广告异常: {exc}")
+            time.sleep(1)
+        logger.error("移动云盘转存任务超时: %s", task_id)
         return False
 
+    def _create_share(self, file_ids: List[str], folder_ids: List[str], title: str) -> Optional[str]:
+        if not self.account:
+            return None
+        result = self._request_signed_api(CREATE_SHARE_URL, {"getOutLinkReq": {
+            "subLinkType": 0, "encrypt": 0, "coIDLst": file_ids, "caIDLst": folder_ids,
+            "pubType": 1, "dedicatedName": title, "periodUnit": 1,
+            "viewerLst": [], "extInfo": {"isWatermark": 0, "shareChannel": "3001"},
+            "commonAccountInfo": {"account": self.account, "accountType": 1},
+        }})
+        data = (result or {}).get("data") or {}
+        shares = (data.get("getOutLinkRes") or {}).get("getOutLinkResSet") or []
+        if not shares:
+            logger.error("移动云盘创建分享响应缺少链接")
+            return None
+        share = shares[0]
+        return share.get("linkUrl") or (f"https://yun.139.com/shareweb/#/w/i/{share['linkID']}" if share.get("linkID") else None)
+
+    def store(self, share_url: str, to_pdir_path: str = "/") -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        parsed = self._share_entries(share_url)
+        if not parsed:
+            return None, None, None
+        info, entries = parsed
+        from src.services.ad_filter_service import is_ad_filename
+        entries = [x for x in entries if not is_ad_filename(x.get("caName") or x.get("coName") or "")]
+        if not entries:
+            logger.warning("移动云盘分享内容为空或全部为广告")
+            return None, None, None
+        target = to_pdir_path if to_pdir_path not in ("", "root") else "/"
+        before = self._list_personal(target)
+        if before is None or not self._transfer(share_url, target, entries, info):
+            return None, None, None
+        previous_ids = {x.get("fileId") for x in before}
+        expected_names = {x.get("caName") or x.get("coName") for x in entries}
+        saved: List[Dict[str, Any]] = []
+        for _ in range(8):
+            after = self._list_personal(target)
+            if after is None:
+                break
+            new_items = [x for x in after if x.get("fileId") not in previous_ids]
+            saved = [x for x in new_items if x.get("name") in expected_names]
+            # 重复转存时服务端可能自动给同名文件追加序号。
+            if len(saved) < len(entries):
+                renamed = [x for x in new_items if x not in saved and any(
+                    str(x.get("name") or "").startswith(name + suffix)
+                    for name in expected_names for suffix in ("(", "（", "_") if name
+                )]
+                saved.extend(renamed[:len(entries) - len(saved)])
+            if len(saved) >= len(entries):
+                break
+            time.sleep(1)
+        if len(saved) < len(entries):
+            logger.error("移动云盘转存成功，但未在目标目录找到全部新文件")
+            return None, None, None
+        file_ids = [x["fileId"] for x in saved if x.get("type") != "folder"]
+        folder_ids = [x["fileId"] for x in saved if x.get("type") == "folder"]
+        for folder_id in folder_ids:
+            try:
+                self.add_ad(folder_id)
+            except Exception as exc:
+                logger.warning("移动云盘植入自定义文件失败: %s", exc)
+        title = info.get("lkName") or entries[0].get("caName") or entries[0].get("coName") or "移动云盘转存文件"
+        new_url = self._create_share(file_ids, folder_ids, title)
+        if not new_url:
+            logger.error("移动云盘转存成功，但创建分享失败")
+        return json.dumps(file_ids + folder_ids, ensure_ascii=False), title, new_url
+
+    def get_or_create_dir(self, dir_name: str, parent_id: str = "root") -> str:
+        parent = "/" if parent_id in ("", "root") else parent_id
+        name = (dir_name or "").strip().strip("/")
+        if not name:
+            return parent
+        items = self._list_personal(parent)
+        if items is None:
+            return parent
+        for item in items:
+            if item.get("type") == "folder" and item.get("name") == name:
+                return item["fileId"]
+        result = self._request_signed_api(PERSONAL_API_BASE + "/file/create", {
+            "parentFileId": parent, "name": name, "description": "",
+            "type": "folder", "fileRenameMode": "force_rename",
+        })
+        return str(((result or {}).get("data") or {}).get("fileId") or parent)
+
+    def add_ad(self, target_dir_id: str, ad_share_url: Optional[str] = None) -> bool:
+        if not ad_share_url:
+            from src.services.system_config_service import get_ad_share_url_for_disk
+            ad_share_url = get_ad_share_url_for_disk("caiyun")
+        if not ad_share_url:
+            return False
+        parsed = self._share_entries(ad_share_url)
+        return bool(parsed and parsed[1] and self._transfer(ad_share_url, target_dir_id, parsed[1][:1], parsed[0]))
 
     def del_file(self, file_ids: Union[str, List[str]]) -> bool:
-        """从移动云盘中删除文件"""
         if not file_ids:
             return True
-
         if isinstance(file_ids, str):
-            if file_ids.startswith("["):
-                try:
-                    targets = json.loads(file_ids)
-                except Exception:
-                    targets = [file_ids]
-            else:
+            try:
+                decoded = json.loads(file_ids)
+                targets = decoded if isinstance(decoded, list) else [file_ids]
+            except ValueError:
                 targets = [file_ids]
         else:
             targets = list(file_ids)
-
-        res = self._request_api(
-            "POST",
-            "/orchestration/personalCloud/batch/v1.0/createBatch",
-            payload={
-                "action": "delete",
-                "contentIDs": targets,
-            },
-        )
-        if res and (res.get("success", False) or res.get("code") in ("0", 0, "0000", 200, None)):
-            logger.info(f"移动云盘删除文件成功: {targets}")
-            return True
-
-        logger.error(f"移动云盘删除文件失败: {res}")
-        return False
+        return bool(self._request_signed_api(PERSONAL_API_BASE + "/recyclebin/batchTrash", {"fileIds": targets}))
 
     def get_user_and_space_info(self) -> Dict[str, Any]:
-        """
-        获取移动云盘用户信息与空间容量配额。
-        """
-        info = {
-            "username": "",
-            "total_space_bytes": 0,
-            "used_space_bytes": 0,
-            "vip_status": 0,
-        }
-        if self.account:
-            info["username"] = self.account
-        elif self.auth_token:
-            import base64
-            token_clean = self.auth_token.replace("Basic ", "").replace("basic ", "").strip()
-            try:
-                decoded = base64.b64decode(token_clean + "==").decode("utf-8", errors="ignore")
-                parts = decoded.split(":")
-                if len(parts) >= 2 and parts[1].isdigit() and len(parts[1]) == 11:
-                    info["username"] = parts[1]
-            except Exception:
-                pass
-
-        return info
+        return {"username": self.account, "total_space_bytes": 0, "used_space_bytes": 0, "vip_status": 0}

@@ -78,6 +78,7 @@ class TestResourceHealthAudit(unittest.TestCase):
                 "share_link": "https://pan.quark.cn/s/dead",
                 "cloud_name": "夸克网盘",
                 "file_id": "fid_dead_1",
+                "origin_type": "relay",
                 "health_message": "资源已失效或为空",
             }
         ]
@@ -88,12 +89,31 @@ class TestResourceHealthAudit(unittest.TestCase):
         self.assertEqual(1, dry_res["cleaned_count"])
         mock_delete_id.assert_not_called()
 
-        # 2. actual delete
+        # 2. actual delete - 系统转存资源 (relay) 执行网盘物理删除
         res = cleanup_dead_resources(dry_run=False)
         self.assertEqual(1, res["total_found"])
         self.assertEqual(1, res["cleaned_count"])
         mock_del_share.assert_called_once()
         mock_delete_id.assert_called_once_with(101)
+
+        # 3. manual / batch_import 资源仅清理本地记录，不调用网盘 del_share
+        mock_del_share.reset_mock()
+        mock_delete_id.reset_mock()
+        mock_get_dead.return_value = [
+            {
+                "id": 102,
+                "name": "用户手动录入资源",
+                "share_link": "https://pan.quark.cn/s/user_dead",
+                "cloud_name": "夸克网盘",
+                "file_id": "fid_user_dead",
+                "origin_type": "manual",
+                "health_message": "链接失效",
+            }
+        ]
+        res_manual = cleanup_dead_resources(dry_run=False)
+        self.assertEqual(1, res_manual["cleaned_count"])
+        mock_del_share.assert_not_called()
+        mock_delete_id.assert_called_once_with(102)
 
     @patch("src.services.resource_health_service.count_resources_by_health")
     def test_get_resource_health_overview(self, mock_count):

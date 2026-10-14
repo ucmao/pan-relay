@@ -301,6 +301,7 @@ function updateResourceSortIcons() {
         'cloud_name': 'resourceSortIconCloudName',
         'type': 'resourceSortIconType',
         'health_status': 'resourceSortIconHealthStatus',
+        'origin_type': 'resourceSortIconOriginType',
         'is_replaced': 'resourceSortIconIsReplaced'
     };
 
@@ -319,6 +320,15 @@ function updateResourceSortIcons() {
 
 window.handleResourceSort = handleResourceSort;
 
+function renderOriginTypeBadge(origin) {
+    if (origin === 'batch_import') {
+        return '<span class="origin-badge origin-badge-batch" title="批量导入资源（免定时物理删除）"><span class="origin-dot"></span>批量导入</span>';
+    } else if (origin === 'relay') {
+        return '<span class="origin-badge origin-badge-relay" title="系统转存资源（受保留期物理删除管控）"><span class="origin-dot"></span>自动转存</span>';
+    }
+    return '<span class="origin-badge origin-badge-manual" title="手动录入资源（免定时物理删除）"><span class="origin-dot"></span>手动录入</span>';
+}
+
 // 渲染表格
 function renderTable() {
     if (!resourcesTableBody) return;
@@ -326,7 +336,7 @@ function renderTable() {
 
     if (!resourcesData || resourcesData.length === 0) {
         const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = '<td colspan="9" class="text-center">暂无数据</td>';
+        emptyRow.innerHTML = '<td colspan="10" class="text-center">暂无数据</td>';
         resourcesTableBody.appendChild(emptyRow);
         return;
     }
@@ -348,34 +358,37 @@ function renderTable() {
             <td>${resource.cloud_name || '-'}</td>
             <td>${resource.type || '-'}</td>
             <td>${renderHealthStatusBadge(resource.health_status, resource.health_message, resource.checked_at)}</td>
+            <td>${renderOriginTypeBadge(resource.origin_type)}</td>
             <td>${resource.is_replaced ? '<span class="status-synced">已同步</span>' : '-'}</td>
-            <td class="action-buttons flex justify-center items-center">
-                <button class="btn btn-secondary btn-sm copy-btn" data-id="${resource.id}" title="复制标题与链接">
-                    <i class="fas fa-copy"></i> 复制
-                </button>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
-                        data-ui-dropdown-toggle aria-expanded="false" title="更多操作">
-                        <i class="fas fa-ellipsis-v"></i>
+            <td class="col-sticky-action text-center">
+                <div class="action-buttons">
+                    <button class="btn btn-secondary btn-sm copy-btn" data-id="${resource.id}" title="复制标题与链接">
+                        <i class="fas fa-copy"></i> 复制
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a class="dropdown-item check-health-btn" href="javascript:void(0)" data-id="${resource.id}">
-                                <i class="fas fa-heartbeat me-2 text-info"></i> 检测健康
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item edit-btn" href="javascript:void(0)" data-id="${resource.id}">
-                                <i class="fas fa-edit me-2"></i> 编辑
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item text-danger delete-btn" href="javascript:void(0)" data-id="${resource.id}">
-                                <i class="fas fa-trash me-2"></i> 删除
-                            </a>
-                        </li>
-                    </ul>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
+                            data-ui-dropdown-toggle aria-expanded="false" title="更多操作">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item check-health-btn" href="javascript:void(0)" data-id="${resource.id}">
+                                    <i class="fas fa-heartbeat me-2 text-info"></i> 检测健康
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item edit-btn" href="javascript:void(0)" data-id="${resource.id}">
+                                    <i class="fas fa-edit me-2"></i> 编辑
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger delete-btn" href="javascript:void(0)" data-id="${resource.id}">
+                                    <i class="fas fa-trash me-2"></i> 删除
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </td>
         `;
@@ -878,6 +891,7 @@ async function saveResource() {
         cloud_name: cloudName,
         type: document.getElementById('resourceType').value,
         remarks: document.getElementById('resourceRemarks').value.trim(),
+        origin_type: 'manual',
         save_to_netdisk: saveToNetdisk
     };
 
@@ -1129,6 +1143,7 @@ async function batchSaveResources() {
                 cloud_name: res.cloud_name || matchNetdiskLink(res.share_link),
                 type: res.type || commonType,
                 remarks: res.remarks || commonRemarks,
+                origin_type: 'batch_import',
                 save_to_netdisk: saveToNetdisk
             };
 

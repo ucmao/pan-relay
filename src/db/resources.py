@@ -20,6 +20,7 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
     remarks = record.get("remarks", "")
     account_id = record.get("account_id")
     is_replaced = record.get("is_replaced", 1)
+    origin_type = record.get("origin_type", "relay")
     health_status = record.get("health_status", "ok")
 
     if not share_link:
@@ -27,10 +28,10 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
         return None
 
     sql = """
-    INSERT INTO resources (file_id, name, share_link, cloud_name, type, remarks, account_id, is_replaced, health_status, checked_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO resources (file_id, name, share_link, cloud_name, type, remarks, account_id, is_replaced, origin_type, health_status, checked_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     """
-    params = (file_id, name, share_link, cloud_name, resource_type, remarks, account_id, is_replaced, health_status)
+    params = (file_id, name, share_link, cloud_name, resource_type, remarks, account_id, is_replaced, origin_type, health_status)
 
     conn = get_db_connection()
     if not conn:
@@ -63,12 +64,12 @@ def insert_resource(record: Dict[str, Any]) -> Optional[int]:
                 SET name = ?, file_id = COALESCE(?, file_id), share_link = ?, cloud_name = ?,
                     type = COALESCE(NULLIF(?, ''), type), remarks = COALESCE(NULLIF(?, ''), remarks),
                     account_id = COALESCE(?, account_id),
-                    is_replaced = ?, health_status = ?, updated_at = CURRENT_TIMESTAMP
+                    is_replaced = ?, origin_type = ?, health_status = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """
                 cur.execute(
                     update_sql,
-                    (name, file_id, share_link, cloud_name, resource_type, remarks, account_id, is_replaced, health_status, res_id),
+                    (name, file_id, share_link, cloud_name, resource_type, remarks, account_id, is_replaced, origin_type, health_status, res_id),
                 )
                 conn.commit()
                 logger.info(f"成功更新已有资源记录: ID={res_id}, 名称='{name}'")
@@ -105,7 +106,7 @@ def get_resource_by_share_link(share_link: str) -> Optional[Dict[str, Any]]:
         return None
     try:
         cursor = conn.cursor(as_dict=True)
-        sql = "SELECT id, file_id, name, share_link, cloud_name, type, remarks, account_id, is_replaced FROM resources WHERE share_link = ?"
+        sql = "SELECT id, file_id, name, share_link, cloud_name, type, remarks, account_id, is_replaced, origin_type FROM resources WHERE share_link = ?"
         cursor.execute(sql, (share_link,))
         return cursor.fetchone()
     except Error as err:
@@ -238,6 +239,7 @@ def list_resources(
             "type": "type",
             "health_status": "health_status",
             "is_replaced": "is_replaced",
+            "origin_type": "origin_type",
             "checked_at": "checked_at",
             "created_at": "created_at",
             "updated_at": "updated_at",
@@ -246,7 +248,7 @@ def list_resources(
         sort_order = "ASC" if order and order.lower() == "asc" else "DESC"
 
         query_sql = f"""
-        SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, health_status, health_message, checked_at, created_at, updated_at
+        SELECT id, name, share_link, cloud_name, type, remarks, is_replaced, origin_type, health_status, health_message, checked_at, created_at, updated_at
         FROM resources
         {where_clause}
         ORDER BY {sort_field} {sort_order}, id DESC
@@ -289,7 +291,7 @@ def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, 
     try:
         cursor = conn.cursor(as_dict=True)
         sql = """
-        SELECT id, name, share_link, cloud_name, type, remarks, account_id, is_replaced, health_status, health_message, checked_at, created_at, updated_at
+        SELECT id, name, share_link, cloud_name, type, remarks, account_id, is_replaced, origin_type, health_status, health_message, checked_at, created_at, updated_at
         FROM resources WHERE id = ?
         """
         cursor.execute(sql, (resource_id,))
@@ -323,9 +325,10 @@ def insert_resource_simple(resource_data: Dict[str, Any]) -> Tuple[bool, str, Op
 
     try:
         cursor = conn.cursor()
+        origin_type = resource_data.get("origin_type", "manual")
         sql = """
-        INSERT INTO resources (name, share_link, cloud_name, type, remarks)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO resources (name, share_link, cloud_name, type, remarks, origin_type)
+        VALUES (?, ?, ?, ?, ?, ?)
         """
         params = (
             resource_data["name"],
@@ -333,6 +336,7 @@ def insert_resource_simple(resource_data: Dict[str, Any]) -> Tuple[bool, str, Op
             resource_data.get("cloud_name", ""),
             resource_data.get("type", ""),
             resource_data.get("remarks", ""),
+            origin_type,
         )
         cursor.execute(sql, params)
         conn.commit()
@@ -526,7 +530,11 @@ def search_resources_advanced(
 
 
 def list_expired_resources(days: Optional[int] = None, minutes: Optional[int] = None, limit: int = 100) -> List[Dict[str, Any]]:
-    """查询创建时间超过指定分钟或天数的资源记录（用于存储自动优化与旧资源清理）。"""
+    """
+    查询创建时间超过指定分钟或天数的资源记录（用于存储自动优化与旧资源清理）。
+    注意：仅清理系统自动转存/临时中转的资源 (origin_type = 'relay')，
+    用户手动录入 ('manual') 或批量导入 ('batch_import') 的外部资源永久保留，不在此被物理删除。
+    """
     conn = get_db_connection()
     if not conn:
         return []
@@ -534,9 +542,10 @@ def list_expired_resources(days: Optional[int] = None, minutes: Optional[int] = 
         cursor = conn.cursor(as_dict=True)
         if minutes is not None:
             sql = """
-            SELECT id, file_id, name, share_link, cloud_name, type, remarks, account_id, created_at
+            SELECT id, file_id, name, share_link, cloud_name, type, remarks, account_id, origin_type, created_at
             FROM resources
-            WHERE datetime(created_at) < datetime('now', '-' || ? || ' minutes')
+            WHERE origin_type = 'relay'
+              AND datetime(created_at) < datetime('now', '-' || ? || ' minutes')
             ORDER BY created_at ASC
             LIMIT ?
             """
@@ -544,9 +553,10 @@ def list_expired_resources(days: Optional[int] = None, minutes: Optional[int] = 
         else:
             days_val = int(days) if days is not None else 15
             sql = """
-            SELECT id, file_id, name, share_link, cloud_name, type, remarks, account_id, created_at
+            SELECT id, file_id, name, share_link, cloud_name, type, remarks, account_id, origin_type, created_at
             FROM resources
-            WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
+            WHERE origin_type = 'relay'
+              AND datetime(created_at) < datetime('now', '-' || ? || ' days')
             ORDER BY created_at ASC
             LIMIT ?
             """
@@ -562,7 +572,7 @@ def list_expired_resources(days: Optional[int] = None, minutes: Optional[int] = 
 
 
 def count_expired_resources(days: Optional[int] = None, minutes: Optional[int] = None) -> int:
-    """统计创建时间超过指定分钟或天数的资源记录数量。"""
+    """统计创建时间超过指定分钟或天数的系统转存资源记录数量（排除手动及批量导入资源）。"""
     conn = get_db_connection()
     if not conn:
         return 0
@@ -572,7 +582,8 @@ def count_expired_resources(days: Optional[int] = None, minutes: Optional[int] =
             sql = """
             SELECT COUNT(*) AS total
             FROM resources
-            WHERE datetime(created_at) < datetime('now', '-' || ? || ' minutes')
+            WHERE origin_type = 'relay'
+              AND datetime(created_at) < datetime('now', '-' || ? || ' minutes')
             """
             cursor.execute(sql, (int(minutes),))
         else:
@@ -580,7 +591,8 @@ def count_expired_resources(days: Optional[int] = None, minutes: Optional[int] =
             sql = """
             SELECT COUNT(*) AS total
             FROM resources
-            WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
+            WHERE origin_type = 'relay'
+              AND datetime(created_at) < datetime('now', '-' || ? || ' days')
             """
             cursor.execute(sql, (days_val,))
         row = cursor.fetchone()
@@ -671,7 +683,7 @@ def get_dead_resources(limit: int = 100) -> List[Dict[str, Any]]:
     try:
         cursor = conn.cursor(as_dict=True)
         sql = """
-        SELECT id, file_id, name, share_link, cloud_name, type, remarks, health_status, health_message, checked_at
+        SELECT id, file_id, name, share_link, cloud_name, type, remarks, origin_type, health_status, health_message, checked_at
         FROM resources
         WHERE health_status = 'bad'
         ORDER BY id ASC

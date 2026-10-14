@@ -196,12 +196,13 @@ def cleanup_dead_resources(dry_run: bool = False, limit: int = 100) -> Dict[str,
         file_id = item.get("file_id")
 
         if not dry_run:
-            try:
-                # 尝试物理删除网盘文件
-                if share_url or file_id:
+            origin_type = item.get("origin_type") or "manual"
+            # 只有系统自动转存中转的资源才去网盘物理删除；用户手动录入或批量导入的外部资源跳过网盘删除
+            if origin_type == "relay" and (share_url or file_id):
+                try:
                     del_share({"share_url": share_url, "file_id": file_id})
-            except Exception as exc:
-                logger.warning(f"清理失效资源物理网盘文件异常 (ID={res_id}): {exc}")
+                except Exception as exc:
+                    logger.warning(f"清理失效资源物理网盘文件异常 (ID={res_id}): {exc}")
 
             try:
                 delete_resource_by_id(res_id)

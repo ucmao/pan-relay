@@ -125,10 +125,13 @@
                             <th style="width: 110px; min-width: 110px; cursor: pointer;" onclick="handleResourceSort('health_status')" title="点击按健康状态排序">
                                 健康状态 <span id="resourceSortIconHealthStatus" class="text-slate-300 ml-0.5">↕</span>
                             </th>
+                            <th style="width: 105px; min-width: 105px; cursor: pointer;" onclick="handleResourceSort('origin_type')" title="点击按来源类型排序">
+                                来源 <span id="resourceSortIconOriginType" class="text-slate-300 ml-0.5">↕</span>
+                            </th>
                             <th style="width: 95px; min-width: 95px; cursor: pointer;" onclick="handleResourceSort('is_replaced')" title="点击按同步状态排序">
                                 同步状态 <span id="resourceSortIconIsReplaced" class="text-slate-300 ml-0.5">↕</span>
                             </th>
-                            <th style="width: 125px; min-width: 125px; text-align: center;">操作</th>
+                            <th class="col-sticky-action" style="width: 135px; min-width: 135px; text-align: center;">操作</th>
                         </tr>
                     </thead>
                     <tbody id="resourcesTableBody">

@@ -7,3 +7,4 @@ PyJWT==2.10.1
 PySocks==1.7.1
 python-dotenv==1.0.1
 requests==2.32.3
+pycryptodome==3.23.0

@@ -99,13 +99,17 @@ _db_initialized = False
 
 
 def _migrate_schema_columns(conn: sqlite3.Connection):
-    """确保 resources 与 temp_share 包含 account_id 字段"""
+    """确保 resources 与 temp_share 包含必要的字段结构"""
     try:
-        # 1. 检查 resources 是否有 account_id
+        # 1. 检查 resources 字段
         res_cols = [row[1] for row in conn.execute("PRAGMA table_info(resources);").fetchall()]
-        if res_cols and "account_id" not in res_cols:
-            conn.execute("ALTER TABLE resources ADD COLUMN account_id INTEGER DEFAULT NULL;")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_resources_account ON resources(account_id);")
+        if res_cols:
+            if "account_id" not in res_cols:
+                conn.execute("ALTER TABLE resources ADD COLUMN account_id INTEGER DEFAULT NULL;")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_resources_account ON resources(account_id);")
+            if "origin_type" not in res_cols:
+                conn.execute("ALTER TABLE resources ADD COLUMN origin_type TEXT NOT NULL DEFAULT 'manual';")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_resources_origin ON resources(origin_type);")
 
         # 2. 检查 temp_share 是否有 account_id
         temp_cols = [row[1] for row in conn.execute("PRAGMA table_info(temp_share);").fetchall()]

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS resources (
   remarks TEXT DEFAULT NULL,
   account_id INTEGER DEFAULT NULL,
   is_replaced INTEGER DEFAULT 0,
+  origin_type TEXT NOT NULL DEFAULT 'manual',
   health_status TEXT DEFAULT 'unknown',
   health_message TEXT DEFAULT NULL,
   checked_at DATETIME DEFAULT NULL,
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS resources (
 
 CREATE INDEX IF NOT EXISTS idx_resources_name ON resources(name);
 CREATE INDEX IF NOT EXISTS idx_resources_health ON resources(health_status);
+CREATE INDEX IF NOT EXISTS idx_resources_origin ON resources(origin_type);
 
 CREATE TABLE IF NOT EXISTS cloud_accounts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

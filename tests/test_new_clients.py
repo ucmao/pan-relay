@@ -151,51 +151,26 @@ class TestNewPanClients(unittest.TestCase):
 
         self.assertTrue(client.del_file(["wk_f1"]))
 
-    @patch("requests.Session.request")
-    def test_caiyun_store_and_delete(self, mock_request):
-        """测试移动云盘转存与删除 mock"""
-        client = CaiyunPanClient("fake_auth_token")
+    def test_caiyun_store_and_delete(self):
+        """转存完成后只分享目标目录中新生成的文件 ID。"""
+        client = CaiyunPanClient({"token": "example", "account": "13800000000"})
+        shared = [{"caID": "source-folder", "caName": "专辑", "path": "source/path"}]
+        before = [{"fileId": "old-folder", "name": "专辑", "type": "folder"}]
+        after = before + [{"fileId": "new-folder", "name": "专辑", "type": "folder"}]
+        with patch.object(client, "_share_entries", return_value=({"lkName": "专辑"}, shared)), \
+             patch.object(client, "_list_personal", side_effect=[before, after]), \
+             patch.object(client, "_transfer", return_value=True) as transfer, \
+             patch.object(client, "_create_share", return_value="https://yun.139.com/shareweb/#/w/i/new") as create:
+            fid, fname, share_url = client.store("https://yun.139.com/shareweb/#/w/i/cy123")
+        self.assertEqual(json.loads(fid), ["new-folder"])
+        self.assertEqual(fname, "专辑")
+        self.assertEqual(share_url, "https://yun.139.com/shareweb/#/w/i/new")
+        transfer.assert_called_once()
+        create.assert_called_once_with([], ["new-folder"], "专辑")
 
-        # Mock getShareInfo
-        mock_info = MagicMock()
-        mock_info.status_code = 200
-        mock_info.json.return_value = {
-            "success": True,
-            "data": {
-                "contentList": [{"contentID": "cy_c1", "contentName": "doc.docx"}]
-            },
-        }
-
-        # Mock createBatch restore
-        mock_restore = MagicMock()
-        mock_restore.status_code = 200
-        mock_restore.json.return_value = {
-            "success": True,
-            "data": {"contentIDs": ["cy_c1"]},
-        }
-
-        # Mock createShare
-        mock_share = MagicMock()
-        mock_share.status_code = 200
-        mock_share.json.return_value = {
-            "success": True,
-            "data": {"shareUrl": "https://yun.139.com/shareweb/#/w/i/new_cy_link"},
-        }
-
-        mock_request.side_effect = [mock_info, mock_restore, mock_share]
-
-        fid, fname, share_url = client.store("https://yun.139.com/shareweb/#/w/i/cy123")
-        self.assertIn("cy_c1", fid)
-        self.assertEqual(fname, "doc.docx")
-        self.assertEqual(share_url, "https://yun.139.com/shareweb/#/w/i/new_cy_link")
-
-        # Mock Delete
-        mock_del = MagicMock()
-        mock_del.status_code = 200
-        mock_del.json.return_value = {"success": True}
-        mock_request.side_effect = [mock_del]
-
-        self.assertTrue(client.del_file("cy_c1"))
+        with patch.object(client, "_request_signed_api", return_value={"code": "0"}) as request:
+            self.assertTrue(client.del_file(fid))
+        self.assertEqual(request.call_args.args[1], {"fileIds": ["new-folder"]})
 
 
 if __name__ == "__main__":
