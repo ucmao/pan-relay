@@ -43,6 +43,7 @@ Thumbs.db
 *~
 *.bak
 *.tmp
+*.original.*
 
 # AI 助手私有配置与技能
 .agents/

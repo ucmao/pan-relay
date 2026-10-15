@@ -12,9 +12,9 @@
             }
         };
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="{{ url_for('static', filename='libs/tailwindcss/tailwind.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='libs/font-awesome/css/all.min.css') }}">
+    <script src="{{ url_for('static', filename='libs/qrcode/qrcode.min.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
     {% block head %}{% endblock %}
     <style>
@@ -459,8 +459,12 @@
             return;
         }
 
-        fetch('https://api.github.com/repos/ucmao/pan-relay')
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+        fetch('https://api.github.com/repos/ucmao/pan-relay', { signal: controller.signal })
             .then(res => {
+                clearTimeout(timeoutId);
                 if (!res.ok) throw new Error('Network error');
                 return res.json();
             })
@@ -474,6 +478,7 @@
                 }
             })
             .catch(() => {
+                clearTimeout(timeoutId);
                 starEl.textContent = cachedCount ? formatStars(cachedCount) : '--';
             });
     })();
