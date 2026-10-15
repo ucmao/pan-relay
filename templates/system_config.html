@@ -392,6 +392,48 @@
         <!-- TAB 3: 搜索过滤 -->
         <div id="tab-pane-security" class="system-tab-pane {% if current_tab == 'security' %}is-active{% endif %} space-y-6">
 
+            <!-- 管理员密码与账号凭据 -->
+            <section class="admin-panel">
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-key text-blue-600"></i> 管理员凭据与密码安全
+                        </h2>
+                        <p class="admin-panel-desc">管理后台管理员登录凭据，支持在线直接修改且免重启服务即时生效</p>
+                    </div>
+                </div>
+                <div class="admin-panel-body">
+                    <div class="divide-y divide-slate-100">
+                        <div class="setting-item-row">
+                            <div class="space-y-1 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-semibold text-slate-800 text-sm">当前管理员账号</span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 font-mono">{{ admin_username|default('admin') }}</span>
+                                </div>
+                                <p class="text-xs text-slate-500">
+                                    {% if is_default_admin_password %}
+                                    <span class="text-amber-600 font-semibold inline-flex items-center gap-1">
+                                        <i class="fas fa-triangle-exclamation"></i>
+                                        当前仍在使用系统初始弱口令 (admin123)，极易受攻击，请立即修改！
+                                    </span>
+                                    {% else %}
+                                    <span class="text-emerald-600 font-semibold inline-flex items-center gap-1">
+                                        <i class="fas fa-circle-check"></i>
+                                        已设置自定义管理密码，安全状态良好
+                                    </span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="flex items-center flex-shrink-0">
+                                <button type="button" class="btn btn-primary btn-sm px-3.5" onclick="openChangePasswordModal()">
+                                    <i class="fas fa-lock text-[10px]"></i> 修改密码
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- 标题匹配模式（顶部独立行） -->
             <section class="admin-panel">
                 <div class="admin-panel-header">

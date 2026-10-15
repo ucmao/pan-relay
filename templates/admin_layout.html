@@ -176,18 +176,25 @@
                             <i class="fas fa-user-shield"></i>
                         </div>
                         <div class="min-w-0 flex-1">
-                            <div class="text-xs font-semibold text-slate-900 truncate">Admin</div>
+                            <div class="text-xs font-semibold text-slate-900 truncate" id="sidebarAdminUsername">{{ admin_username|default('Admin') }}</div>
                             <div class="text-[11px] text-slate-500 truncate flex items-center">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
                                 <span>系统在线</span>
                             </div>
                         </div>
                     </div>
-                    <a href="{{ url_for('auth.logout') }}"
-                        class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors flex-shrink-0"
-                        title="退出登录">
-                        <i class="fas fa-sign-out-alt text-xs"></i>
-                    </a>
+                    <div class="flex items-center space-x-1">
+                        <button type="button" onclick="openChangePasswordModal()"
+                            class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition-colors flex-shrink-0 cursor-pointer"
+                            title="修改管理员密码">
+                            <i class="fas fa-key text-xs"></i>
+                        </button>
+                        <a href="{{ url_for('auth.logout') }}"
+                            class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors flex-shrink-0"
+                            title="退出登录">
+                            <i class="fas fa-sign-out-alt text-xs"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -214,6 +221,30 @@
             </header>
 
             <div class="p-4 md:p-8 max-w-7xl w-full mx-auto flex-1">
+                {% if is_default_admin_password %}
+                <div id="weak-password-banner"
+                    class="mb-6 p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-fade-in">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 text-base">
+                            <i class="fas fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-bold text-amber-900 flex items-center gap-2">
+                                <span>安全风险警告：当前仍在使用默认初始密码（admin123）</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200/70 text-amber-800">极高风险</span>
+                            </div>
+                            <div class="text-[11px] text-amber-700 mt-0.5">公网部署环境下极易受到恶意暴力破解或自动扫描攻击，建议立即修改为您专属的高强度密码。</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="openChangePasswordModal()"
+                        class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white text-xs font-semibold shrink-0 shadow-xs transition cursor-pointer flex items-center gap-1.5 self-start sm:self-center">
+                        <i class="fas fa-key text-[10px]"></i>
+                        <span>立即修改密码</span>
+                    </button>
+                </div>
+                {% endif %}
+
                 {% block content %}{% endblock %}
             </div>
 
@@ -307,8 +338,162 @@
         </div>
     </div>
 
+    <!-- 修改管理员密码弹窗 (Change Admin Password Modal) -->
+    <div id="change-password-modal-backdrop"
+        class="modal-backdrop fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200"
+        style="display:none" aria-hidden="true">
+        <div class="modal-card bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 transition-all duration-200 scale-95"
+            role="dialog" aria-modal="true">
+            <div class="flex items-start justify-between pb-4 mb-4 border-b border-slate-100">
+                <div class="flex items-center space-x-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
+                        <i class="fas fa-key text-base"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">修改管理员密码</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">修改后直接生效，支持热更新免重启服务</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeChangePasswordModal()"
+                    class="text-slate-400 hover:text-slate-600 p-1 rounded-lg text-lg leading-none cursor-pointer"
+                    aria-label="关闭">&times;</button>
+            </div>
+
+            <form id="changePasswordForm" onsubmit="handlePasswordSubmit(event)" class="space-y-4">
+                <div id="changePasswordError"
+                    class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center space-x-2">
+                    <i class="fas fa-exclamation-circle text-rose-500 shrink-0"></i>
+                    <span id="changePasswordErrorText"></span>
+                </div>
+
+                <div>
+                    <label for="changeOldPassword" class="block text-slate-700 text-xs font-semibold mb-1.5">当前原密码</label>
+                    <input type="password" id="changeOldPassword" required autocomplete="current-password"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent outline-none transition text-xs font-medium text-slate-800"
+                        placeholder="请输入当前原密码">
+                </div>
+
+                <div>
+                    <label for="changeNewPassword" class="block text-slate-700 text-xs font-semibold mb-1.5">新管理密码</label>
+                    <input type="password" id="changeNewPassword" required minlength="6" autocomplete="new-password"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent outline-none transition text-xs font-medium text-slate-800"
+                        placeholder="至少 6 位字符">
+                </div>
+
+                <div>
+                    <label for="changeConfirmPassword" class="block text-slate-700 text-xs font-semibold mb-1.5">确认新密码</label>
+                    <input type="password" id="changeConfirmPassword" required minlength="6" autocomplete="new-password"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent outline-none transition text-xs font-medium text-slate-800"
+                        placeholder="再次输入新密码以确认">
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeChangePasswordModal()"
+                        class="btn btn-secondary px-4 py-2 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                        取消
+                    </button>
+                    <button type="submit" id="btnSubmitChangePassword"
+                        class="btn btn-primary px-4 py-2 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition cursor-pointer flex items-center space-x-1.5">
+                        <i class="fas fa-check text-[10px]"></i>
+                        <span>确认修改</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
     <script>
+        function openChangePasswordModal() {
+            const modal = document.getElementById('change-password-modal-backdrop');
+            if (modal) {
+                modal.style.display = 'flex';
+                const err = document.getElementById('changePasswordError');
+                if (err) err.classList.add('hidden');
+                const form = document.getElementById('changePasswordForm');
+                if (form) form.reset();
+                setTimeout(() => {
+                    const oldInput = document.getElementById('changeOldPassword');
+                    if (oldInput) oldInput.focus();
+                }, 50);
+            }
+        }
+
+        function closeChangePasswordModal() {
+            const modal = document.getElementById('change-password-modal-backdrop');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function handlePasswordSubmit(e) {
+            e.preventDefault();
+            const errBox = document.getElementById('changePasswordError');
+            const errText = document.getElementById('changePasswordErrorText');
+            const oldPwd = document.getElementById('changeOldPassword').value.trim();
+            const newPwd = document.getElementById('changeNewPassword').value.trim();
+            const confirmPwd = document.getElementById('changeConfirmPassword').value.trim();
+            const btn = document.getElementById('btnSubmitChangePassword');
+
+            if (!oldPwd || !newPwd || !confirmPwd) {
+                errText.textContent = '请完整填写所有密码项';
+                errBox.classList.remove('hidden');
+                return;
+            }
+            if (newPwd.length < 6) {
+                errText.textContent = '新密码长度至少需要 6 位字符';
+                errBox.classList.remove('hidden');
+                return;
+            }
+            if (newPwd !== confirmPwd) {
+                errText.textContent = '两次输入的新密码不一致';
+                errBox.classList.remove('hidden');
+                return;
+            }
+            if (oldPwd === newPwd) {
+                errText.textContent = '新密码不能与原密码相同';
+                errBox.classList.remove('hidden');
+                return;
+            }
+
+            errBox.classList.add('hidden');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i><span>修改中...</span>';
+
+            try {
+                const res = await fetch('/admin/api/change_password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        old_password: oldPwd,
+                        new_password: newPwd,
+                        confirm_password: confirmPwd
+                    })
+                });
+                const data = await res.json();
+                if (data && data.success) {
+                    closeChangePasswordModal();
+                    if (window.showToast) {
+                        window.showToast(data.message || '密码修改成功！', 'success');
+                    }
+                    const banner = document.getElementById('weak-password-banner');
+                    if (banner) {
+                        banner.remove();
+                    }
+                } else {
+                    errText.textContent = data.message || '密码修改失败';
+                    errBox.classList.remove('hidden');
+                }
+            } catch (err) {
+                errText.textContent = '网络请求失败，请稍后重试';
+                errBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check text-[10px]"></i><span>确认修改</span>';
+            }
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             if (sidebar) {

@@ -7,14 +7,14 @@ from flask import jsonify, redirect, request, url_for
 from src.configs.app_config import SECRET_KEY
 
 
-def create_jwt_token():
+def create_jwt_token(username: str = "admin"):
     """创建 JWT 令牌，有效期 24 小时"""
     now = datetime.datetime.now(datetime.timezone.utc)
     expiration = now + datetime.timedelta(hours=24)
     payload = {
         "exp": expiration,
         "iat": now,
-        "sub": "admin",
+        "sub": username or "admin",
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return token

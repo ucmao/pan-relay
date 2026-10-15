@@ -36,6 +36,10 @@ app.secret_key = SECRET_KEY
 # 初始化 SQLite 数据库与表结构
 init_sqlite_db()
 
+# 初始化管理员账号认证配置（初次启动哈希落库）
+from src.services.admin_auth_service import init_admin_auth, is_using_default_password, get_admin_username
+init_admin_auth()
+
 # 注册蓝图
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
@@ -61,9 +65,21 @@ def inject_login_status():
             is_logged_in = True
     except Exception:
         pass
+
+    is_default_pwd = False
+    admin_name = 'Admin'
+    if is_logged_in:
+        try:
+            is_default_pwd = is_using_default_password()
+            admin_name = get_admin_username()
+        except Exception:
+            pass
+
     return {
         'is_logged_in': is_logged_in,
         'enable_frontend_github': is_frontend_github_enabled(),
+        'is_default_admin_password': is_default_pwd,
+        'admin_username': admin_name,
     }
 
 
