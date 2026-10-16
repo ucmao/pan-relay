@@ -435,6 +435,21 @@
     user-select: none;
 }
 
+.filter-name {
+    display: inline-flex;
+    align-items: center;
+}
+
+.filter-name-full,
+.badge-name-full {
+    display: inline;
+}
+
+.filter-name-short,
+.badge-name-short {
+    display: none;
+}
+
 .filter-btn:hover {
     color: var(--text-primary);
     border-color: rgba(245, 191, 96, 0.45);
@@ -1324,8 +1339,18 @@
         -webkit-overflow-scrolling: touch;
     }
 
+    .filter-name-full,
+    .badge-name-full {
+        display: none !important;
+    }
+
+    .filter-name-short,
+    .badge-name-short {
+        display: inline !important;
+    }
+
     .filter-btn {
-        padding: 5px 11px;
+        padding: 5px 9px;
         font-size: 0.8rem;
         flex-shrink: 0;
         border-radius: 9px;
@@ -1362,27 +1387,42 @@
     }
 
     .filter-toggle-button {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 17px;
-        font-size: 0.85rem;
+        flex: 0 0 34px !important;
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 50% !important;
+        font-size: 0.88rem !important;
+        line-height: 1 !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+        aspect-ratio: 1 / 1 !important;
+        overflow: hidden !important;
     }
 
     .filter-excel-btn {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        padding: 0;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        font-size: 0.9rem;
+        flex: 0 0 34px !important;
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        font-size: 0.88rem !important;
+        line-height: 1 !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+        aspect-ratio: 1 / 1 !important;
     }
 
     .filter-toggle-button .btn-text,
@@ -1393,7 +1433,9 @@
 
     .filter-toggle-button i,
     .filter-excel-btn i {
+        font-size: 0.76rem !important;
         margin: 0 !important;
+        line-height: 1 !important;
     }
 
     .advanced-filter-panel {
@@ -1477,10 +1519,10 @@
     .result-title-line .netdisk-badge {
         display: inline-flex;
         vertical-align: 1px;
-        margin-right: 6px;
+        margin-right: 4px;
         margin-bottom: 2px;
         font-size: 0.72rem;
-        padding: 1px 6px;
+        padding: 1px 5px;
         height: 20px;
         line-height: 20px;
         flex-shrink: 0;
@@ -1519,7 +1561,7 @@
         width: auto;
         margin-left: 0;
         margin-top: 0;
-        min-width: 68px;
+        min-width: 48px;
     }
 
     .result-actions .action-btn-wrapper {
@@ -1532,12 +1574,20 @@
     .result-actions .btn,
     .copy-button,
     .view-button {
-        min-width: 66px;
-        height: 30px;
-        padding: 0 10px !important;
+        min-width: 48px;
+        height: 28px;
+        padding: 0 8px !important;
         font-size: 0.82rem !important;
-        border-radius: 15px !important;
+        border-radius: 14px !important;
         white-space: nowrap !important;
+        gap: 0 !important;
+    }
+
+    /* 移动端隐藏 查看/复制 按钮前面的图标，节省空间 */
+    .result-actions .btn i,
+    .copy-button i,
+    .view-button i {
+        display: none !important;
     }
 
     .link-health-badge {
@@ -1637,12 +1687,33 @@
         font-size: 0.78rem;
     }
 
+    .result-title-line .netdisk-badge {
+        margin-right: 3px;
+        padding: 1px 4px;
+    }
+
+    .filter-toggle-button {
+        flex: 0 0 32px !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+        font-size: 0.84rem !important;
+        border-radius: 50% !important;
+    }
+
+    .result-actions {
+        min-width: 44px;
+    }
+
     .result-actions .btn,
     .copy-button,
     .view-button {
-        min-width: 62px;
-        height: 28px;
-        padding: 0 8px !important;
+        min-width: 44px;
+        height: 26px;
+        padding: 0 6px !important;
         font-size: 0.78rem !important;
     }
 }

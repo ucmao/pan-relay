@@ -78,9 +78,42 @@
     {% block head %}{% endblock %}
 </head>
 
-<body class="bg-slate-50/80 text-slate-900 antialiased selection:bg-blue-500 selection:text-white has-sidebar">
+<body class="bg-slate-50/80 text-slate-900 antialiased selection:bg-blue-500 selection:text-white has-sidebar flex flex-col h-screen overflow-hidden">
 
-    <div class="flex h-screen overflow-hidden relative">
+    {% if is_default_admin_password %}
+    <div id="weak-password-banner"
+        class="w-full bg-amber-50 border-b border-amber-200/90 text-amber-900 px-4 py-2 flex items-center justify-between gap-3 text-xs shrink-0 z-40 animate-fade-in">
+        <div class="flex items-center gap-2.5 min-w-0">
+            <span class="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-700 flex items-center justify-center shrink-0 text-xs">
+                <i class="fas fa-shield-halved"></i>
+            </span>
+            <div class="text-xs font-bold text-amber-900 flex items-center gap-2 truncate">
+                <span class="truncate">安全风险警告：当前仍在使用默认初始密码（admin123）</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200/70 text-amber-800 shrink-0">极高风险</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="openChangePasswordModal()"
+                class="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white text-xs font-semibold shadow-2xs transition cursor-pointer flex items-center gap-1.5">
+                <i class="fas fa-key text-[10px]"></i>
+                <span>立即修改密码</span>
+            </button>
+            <button type="button" onclick="dismissWeakPasswordBanner()"
+                class="w-7 h-7 flex items-center justify-center rounded-lg text-amber-600/80 hover:text-amber-950 hover:bg-amber-100/80 active:scale-95 transition-colors cursor-pointer"
+                title="关闭提示" aria-label="关闭提示">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </div>
+    </div>
+    <script>
+        if (sessionStorage.getItem('panrelay_dismiss_weak_password_banner') === '1') {
+            const _weakBanner = document.getElementById('weak-password-banner');
+            if (_weakBanner) _weakBanner.remove();
+        }
+    </script>
+    {% endif %}
+
+    <div class="flex flex-1 overflow-hidden relative">
         <!-- Sidebar (ucmao admin_modern style) -->
         <aside id="sidebar"
             class="admin-sidebar fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200/80 flex-shrink-0 flex flex-col transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-200 ease-in-out">
@@ -219,30 +252,6 @@
             </header>
 
             <div class="p-4 md:p-8 max-w-7xl w-full mx-auto flex-1">
-                {% if is_default_admin_password %}
-                <div id="weak-password-banner"
-                    class="mb-6 p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-fade-in">
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 text-base">
-                            <i class="fas fa-shield-halved"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs font-bold text-amber-900 flex items-center gap-2">
-                                <span>安全风险警告：当前仍在使用默认初始密码（admin123）</span>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200/70 text-amber-800">极高风险</span>
-                            </div>
-                            <div class="text-[11px] text-amber-700 mt-0.5">公网部署环境下极易受到恶意暴力破解或自动扫描攻击，建议立即修改为您专属的高强度密码。</div>
-                        </div>
-                    </div>
-                    <button type="button" onclick="openChangePasswordModal()"
-                        class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-[0.98] text-white text-xs font-semibold shrink-0 shadow-xs transition cursor-pointer flex items-center gap-1.5 self-start sm:self-center">
-                        <i class="fas fa-key text-[10px]"></i>
-                        <span>立即修改密码</span>
-                    </button>
-                </div>
-                {% endif %}
-
                 {% block content %}{% endblock %}
             </div>
 
@@ -423,6 +432,16 @@
             if (modal) modal.style.display = 'none';
         }
 
+        function dismissWeakPasswordBanner() {
+            const banner = document.getElementById('weak-password-banner');
+            if (banner) {
+                banner.remove();
+                try {
+                    sessionStorage.setItem('panrelay_dismiss_weak_password_banner', '1');
+                } catch (e) {}
+            }
+        }
+
         async function handlePasswordSubmit(e) {
             e.preventDefault();
             const errBox = document.getElementById('changePasswordError');
@@ -479,6 +498,9 @@
                     if (banner) {
                         banner.remove();
                     }
+                    try {
+                        sessionStorage.removeItem('panrelay_dismiss_weak_password_banner');
+                    } catch (e) {}
                 } else {
                     errText.textContent = data.message || '密码修改失败';
                     errBox.classList.remove('hidden');

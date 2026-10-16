@@ -195,26 +195,42 @@ class QuarkPanClient(BasePanClient):
         logger.info("夸克网盘创建保存任务")
         fid_list = first_id if isinstance(first_id, list) else [first_id]
         fid_token_list = share_fid_token if isinstance(share_fid_token, list) else [share_fid_token]
-        data = self._request(
-            "POST",
-            "https://drive.quark.cn/1/clouddrive/share/sharepage/save",
-            payload={
-                "fid_list": fid_list,
-                "fid_token_list": fid_token_list,
-                "to_pdir_fid": to_pdir_fid,
-                "pwd_id": pwd_id,
-                "stoken": stoken,
-                "pdir_fid": "0",
-                "scene": "link",
-            },
-            params={
-                "pr": "ucpro",
-                "fr": "pc",
-                "uc_param_str": "",
-                "__dt": int(random.uniform(1, 5) * 60 * 1000),
-                "__t": generate_timestamp(13),
-            },
-        )
+        try:
+            data = self._request(
+                "POST",
+                "https://drive.quark.cn/1/clouddrive/share/sharepage/save",
+                payload={
+                    "fid_list": fid_list,
+                    "fid_token_list": fid_token_list,
+                    "to_pdir_fid": to_pdir_fid,
+                    "pwd_id": pwd_id,
+                    "stoken": stoken,
+                    "pdir_fid": "0",
+                    "scene": "link",
+                },
+                params={
+                    "pr": "ucpro",
+                    "fr": "pc",
+                    "uc_param_str": "",
+                    "__dt": int(random.uniform(1, 5) * 60 * 1000),
+                    "__t": generate_timestamp(13),
+                },
+            )
+        except requests.exceptions.HTTPError as http_err:
+            resp_text = ""
+            try:
+                resp_text = http_err.response.text
+            except Exception:
+                pass
+            if "禁止转存自己的分享" in resp_text or getattr(http_err.response, "status_code", None) == 404:
+                logger.info("夸克网盘检测到本账号分享或转存限制: %s", resp_text)
+            else:
+                logger.error("夸克网盘保存请求 HTTP 异常: %s", http_err)
+            return ""
+        except Exception as exc:
+            logger.error("夸克网盘创建保存任务异常: %s", exc)
+            return ""
+
         if not data or data.get("status") != 200:
             msg = (data or {}).get("message") or "未知错误"
             if msg == "require login [guest]":
@@ -463,9 +479,20 @@ class QuarkPanClient(BasePanClient):
         if ad_fids:
             self.del_file(ad_fids)
 
+    def copy_file(self, fid_list: List[str], to_pdir_fid: str) -> Optional[Dict[str, Any]]:
+        """在网盘内部复制文件到指定目录"""
+        logger.info("夸克网盘复制文件: %s -> %s", fid_list, to_pdir_fid)
+        return self._request(
+            "POST",
+            "https://drive-pc.quark.cn/1/clouddrive/file/copy",
+            payload={"filelist": fid_list, "to_pdir_fid": to_pdir_fid},
+            params={"pr": "ucpro", "fr": "pc"},
+        )
+
     def add_ad(self, dir_id: str, ad_share_url: Optional[str] = None) -> bool:
         """
         向夸克网盘指定的转存目录植入个人自定义引流/宣传文件。
+        支持转存他人分享链接，或通过同盘内部快速拷贝支持本账号分享链接。
         """
         target_url = (ad_share_url or "").strip()
         if not target_url:
@@ -491,10 +518,21 @@ class QuarkPanClient(BasePanClient):
             share_fid_token = detail.get("share_fid_token")
             if not first_id or not share_fid_token:
                 return False
+
+            # 1. 尝试通过常规外部分享转存方式保存
             task_id = self.save_task_id(pwd_id, stoken, first_id, share_fid_token, dir_id)
             if task_id:
                 self.task(task_id, retries=5)
-                logger.info("夸克网盘已向目录 %s 成功植入自定义引流文件 (pwd_id=%s)", dir_id, pwd_id)
+                logger.info("夸克网盘已向目录 %s 成功转存引流文件 (pwd_id=%s)", dir_id, pwd_id)
+                return True
+
+            # 2. 若外部分享转存失败（如属于本账号分享触发 41017'用户禁止转存自己的分享'），降级尝试本账号同盘内部拷贝
+            logger.info("夸克网盘外部分享转存引流未返回任务，尝试同盘内部快速拷贝: fid=%s -> %s", first_id, dir_id)
+            copy_res = self.copy_file([first_id], dir_id)
+            copy_task_id = ((copy_res or {}).get("data") or {}).get("task_id")
+            if copy_task_id:
+                self.task(copy_task_id, retries=5)
+                logger.info("夸克网盘已通过内部拷贝成功植入引流文件至目录 %s (fid=%s)", dir_id, first_id)
                 return True
         except Exception as exc:
             logger.error("夸克网盘植入自定义广告异常: %s", exc)

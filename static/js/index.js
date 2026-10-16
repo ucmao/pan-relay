@@ -57,7 +57,7 @@ if (hideDeadLinksToggle) {
         hideDeadLinksToggle.setAttribute('aria-pressed', 'true');
         hideDeadLinksToggle.setAttribute('title', '已过滤失效（点击显示全部）');
         if (hideDeadLinksText) {
-            hideDeadLinksText.textContent = '已过滤失效';
+            hideDeadLinksText.textContent = '已过滤';
         }
     }
 }
@@ -110,7 +110,7 @@ hideDeadLinksToggle?.addEventListener('click', function () {
     this.setAttribute('aria-pressed', String(isHideDeadLinks));
     this.setAttribute('title', isHideDeadLinks ? '已过滤失效（点击显示全部）' : '点击过滤：隐藏失效与空资源链接');
     if (hideDeadLinksText) {
-        hideDeadLinksText.textContent = isHideDeadLinks ? '已过滤失效' : '过滤失效';
+        hideDeadLinksText.textContent = isHideDeadLinks ? '已过滤' : '过滤';
     }
     updateFilterButtons();
     renderResults(true);
@@ -188,6 +188,50 @@ function getNetdiskColorClass(netdiskName) {
     else badgeClass = 'bg-other';
 
     return { badgeClass, badgeTextClass };
+}
+
+// --- 辅助函数：移动端网盘筛选按钮缩写映射与通用规则 ---
+const NETDISK_SHORT_NAMES = {
+    '全部': '全部',
+    '百度网盘': '百度',
+    '夸克网盘': '夸克',
+    '阿里云盘': '阿里',
+    'UC网盘': 'UC',
+    '迅雷网盘': '迅雷',
+    '光鸭云盘': '光鸭',
+    '悟空网盘': '悟空',
+    '移动云盘': '移动',
+    '123云盘': '123',
+    '115网盘': '115',
+    '天翼云盘': '天翼',
+    '联通云盘': '联通',
+    '蓝奏云': '蓝奏',
+    '蓝奏网盘': '蓝奏',
+    '城通网盘': '城通',
+    '腾讯微云': '微云',
+    '坚果云': '坚果',
+    '快兔网盘': '快兔',
+    '谷歌云盘': '谷歌',
+    'Google Drive': '谷歌',
+    'TeraBox': 'Tera',
+    '磁力链接': '磁力',
+    '迅雷链接': '迅雷链',
+    '电驴链接': '电驴',
+    '其他': '其他',
+};
+
+function getShortNetdiskName(name) {
+    if (!name) return '';
+    const trimmed = String(name).trim();
+    if (NETDISK_SHORT_NAMES[trimmed]) {
+        return NETDISK_SHORT_NAMES[trimmed];
+    }
+    // 兜底智能缩写：去除末尾的常见冗余后缀（网盘、云盘、链接）
+    let shortName = trimmed.replace(/(?:网盘|云盘|链接)$/i, '').trim();
+    if (shortName.length > 2 && shortName.endsWith('云')) {
+        shortName = shortName.slice(0, -1);
+    }
+    return shortName || trimmed;
 }
 
 // 提取规范化网盘资源唯一键 (与后端对齐，防止误杀同名不同链接)
@@ -362,6 +406,10 @@ function updateFilterButtons() {
     orderedDisks.forEach((diskName, index) => {
         const count = diskName === '全部' ? totalCount : (counts[diskName] || 0);
         let btn = existingButtonsMap.get(diskName);
+        const shortName = getShortNetdiskName(diskName);
+        const safeFullName = escapeHtml(diskName);
+        const safeShortName = escapeHtml(shortName);
+        const expectedNameHtml = `<span class="filter-name-full">${safeFullName}</span><span class="filter-name-short">${safeShortName}</span>`;
 
         if (!btn) {
             btn = document.createElement('button');
@@ -370,7 +418,7 @@ function updateFilterButtons() {
 
             const nameSpan = document.createElement('span');
             nameSpan.className = 'filter-name';
-            nameSpan.textContent = diskName;
+            nameSpan.innerHTML = expectedNameHtml;
 
             const countSpan = document.createElement('span');
             countSpan.className = 'filter-count';
@@ -386,10 +434,10 @@ function updateFilterButtons() {
             if (!nameSpan) {
                 nameSpan = document.createElement('span');
                 nameSpan.className = 'filter-name';
-                nameSpan.textContent = diskName;
+                nameSpan.innerHTML = expectedNameHtml;
                 btn.prepend(nameSpan);
-            } else if (nameSpan.textContent !== diskName) {
-                nameSpan.textContent = diskName;
+            } else if (nameSpan.innerHTML !== expectedNameHtml) {
+                nameSpan.innerHTML = expectedNameHtml;
             }
 
             if (!countSpan) {
@@ -836,13 +884,11 @@ function renderResults(reset = false) {
         const fullItem = document.createElement('div');
         fullItem.className = 'result-item-wrapper';
 
+        const shortNetdiskName = getShortNetdiskName(netdiskName);
         const itemHtml = `
             <div class="result-item ${hotClass} ${deadItemClass}" data-key="${escapeHtml(key)}" data-url="${escapeHtml(urlLink)}">
                 <div class="result-info">
-                    <div class="result-title-line">
-                        <span class="netdisk-badge ${finalBadgeClass}">${escapeHtml(netdiskName)}</span>
-                        <span class="result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
-                    </div>
+                    <div class="result-title-line"><span class="netdisk-badge ${finalBadgeClass}" data-netdisk="${escapeHtml(netdiskName)}"><span class="badge-name-full">${escapeHtml(netdiskName)}</span><span class="badge-name-short">${escapeHtml(shortNetdiskName)}</span></span><span class="result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span></div>
                     <div class="result-url-line ${isItemViewMode ? 'hidden' : ''}">
                         ${linkIconHtml}
                         <a href="${urlLink}" target="_blank" title="${urlLink}">${escapeHtml(urlLink)}</a>
@@ -1075,7 +1121,7 @@ function updateHealthBadgeInDOM(res) {
         if (!btn) {
             const titleText = item.querySelector('.result-title')?.getAttribute('title') || item.querySelector('.result-title')?.textContent || '';
             const urlLink = item.querySelector('.result-url-line a')?.getAttribute('href') || item.getAttribute('data-url') || '';
-            const netdiskName = item.querySelector('.netdisk-badge')?.textContent.trim() || '';
+            const netdiskName = item.querySelector('.netdisk-badge')?.getAttribute('data-netdisk') || item.querySelector('.badge-name-full')?.textContent.trim() || item.querySelector('.netdisk-badge')?.textContent.trim() || '';
 
             const isItemViewMode = isViewModeEnabled;
             btn = document.createElement('button');

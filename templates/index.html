@@ -3,7 +3,7 @@
 {% block head %}
 <title>Pan-Relay - 搜索页面</title>
 <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}?v=1.1.4">
 {% endblock %}
 
 {% block content %}
@@ -27,7 +27,10 @@
             <section class="search-shell hidden" id="searchShell">
                 <div id="netdisk-filter-bar" class="hidden">
                     <button class="filter-btn active" data-netdisk="全部">
-                        <span class="filter-name">全部</span>
+                        <span class="filter-name">
+                            <span class="filter-name-full">全部</span>
+                            <span class="filter-name-short">全部</span>
+                        </span>
                         <span class="filter-count">0</span>
                     </button>
                 </div>
@@ -40,7 +43,7 @@
                             <button class="btn filter-toggle-button" id="hideDeadLinksToggle" type="button"
                                 aria-pressed="false" title="点击过滤：隐藏失效与空资源链接">
                                 <i class="fas fa-shield-halved"></i><span id="hideDeadLinksText"
-                                    class="btn-text ms-1">过滤失效</span>
+                                    class="btn-text ms-1">过滤</span>
                             </button>
                             {% endif %}
                             <button class="btn filter-toggle-button" id="advancedFilterToggle" type="button"
@@ -176,5 +179,5 @@
     window.ENABLE_PC_QR_CODE = {{ 'true' if enable_pc_qr_code else 'false' }};
 </script>
 <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
-<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+<script src="{{ url_for('static', filename='js/index.js') }}?v=1.1.4"></script>
 {% endblock %}

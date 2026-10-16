@@ -139,8 +139,58 @@ class BaiduPanClient(BasePanClient):
         self.ensure_dir(target_path)
         return target_path
 
+    def copy_file(self, src_path: str, dest_dir: str, new_name: Optional[str] = None) -> bool:
+        """在百度网盘内部快速复制文件或文件夹到指定目录"""
+        clean_src = "/" + src_path.strip("/")
+        clean_dest = "/" + dest_dir.strip("/")
+        filename = new_name or clean_src.rsplit("/", 1)[-1]
+        logger.info("百度网盘内部复制文件: %s -> %s (%s)", clean_src, clean_dest, filename)
+        payload = {
+            "filelist": self._to_json([{"path": clean_src, "dest": clean_dest, "newname": filename, "ondup": "newcopy"}])
+        }
+        params = {
+            "async": 0,
+            "onnest": "fail",
+            "opera": "copy",
+            "bdstoken": self.bdstoken,
+            "newVerify": 1,
+            "clienttype": 0,
+            "web": 1,
+            "app_id": 250528,
+        }
+        try:
+            data = self._request("POST", "https://pan.baidu.com/api/filemanager", params=params, data=payload)
+            if data and data.get("errno") == 0:
+                return True
+            logger.warning("百度网盘内部复制返回非零 errno: %s", data)
+            return False
+        except Exception as exc:
+            logger.error("百度网盘内部复制请求异常: %s", exc)
+            return False
+
+    def _search_file_path(self, keyword: str) -> Optional[str]:
+        """按关键字搜索网盘内的文件，返回匹配项的完整路径"""
+        try:
+            res = self._request("GET", "https://pan.baidu.com/api/search", params={
+                "key": keyword,
+                "bdstoken": self.bdstoken,
+                "clienttype": 0,
+                "web": 1,
+                "page": 1,
+                "num": 20,
+            })
+            for item in (res or {}).get("list", []):
+                if item.get("server_filename") == keyword and item.get("path"):
+                    return item["path"]
+        except Exception as exc:
+            logger.warning("百度网盘搜索文件异常: %s", exc)
+        return None
+
     def add_ad(self, target_path: str, ad_share_url: Optional[str] = None) -> bool:
-        """向百度网盘指定的转存目录植入个人自定义引流/广告文件"""
+        """
+        向百度网盘指定的转存目录植入个人自定义引流/广告文件。
+        支持转存他人分享链接，或通过同盘内部快速拷贝支持本账号分享链接。
+        """
         target_url = (ad_share_url or "").strip()
         if not target_url:
             from src.services.system_config_service import get_ad_share_url_for_disk
@@ -159,14 +209,32 @@ class BaiduPanClient(BasePanClient):
             share_info = self._get_share_page_info(surl)
             if not share_info:
                 return False
-            share_id, from_uk, fs_id_list, _ = share_info
+            share_id, from_uk, fs_id_list, file_names = share_info
             if not fs_id_list:
                 return False
             clean_target = "/" + target_path.strip("/")
+
+            # 1. 尝试常规外部分享转存方式
             res = self._transfer_file(share_id, from_uk, [fs_id_list[0]], clean_target, surl=surl)
             if res:
-                logger.info("百度网盘已向目录 %s 成功植入自定义引流文件 (surl=%s)", clean_target, surl)
+                logger.info("百度网盘已向目录 %s 成功转存引流文件 (surl=%s)", clean_target, surl)
                 return True
+
+            # 2. 若转存失败（如属于本账号分享触发 errno: 2 '文件已存在'），降级尝试本账号同盘内部拷贝
+            target_filename = file_names[0] if (file_names and len(file_names) > 0) else ""
+            if target_filename:
+                logger.info("百度网盘外部分享转存未成功，尝试通过同盘内部快速拷贝: %s -> %s", target_filename, clean_target)
+                # 先尝试根目录
+                src_path = f"/{target_filename}"
+                copy_res = self.copy_file(src_path, clean_target, target_filename)
+                if not copy_res:
+                    # 尝试通过搜索定位该广告文件在当前网盘中的实际路径
+                    found_path = self._search_file_path(target_filename)
+                    if found_path and found_path != f"{clean_target}/{target_filename}":
+                        copy_res = self.copy_file(found_path, clean_target, target_filename)
+                if copy_res:
+                    logger.info("百度网盘已通过内部拷贝成功植入引流文件至目录 %s", clean_target)
+                    return True
         except Exception as exc:
             logger.error("百度网盘植入自定义广告异常: %s", exc)
         return False

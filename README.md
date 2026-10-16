@@ -4,11 +4,10 @@
 
 **基于 Python 的多网盘聚合与自动化变现管理系统**
 
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![Framework](https://img.shields.io/badge/Framework-Flask-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#-部署指南) [![REST API](https://img.shields.io/badge/REST__API-v1.0-purple.svg)](#-开放-rest-api-与无头部署) [![Account Pool](https://img.shields.io/badge/Account__Pool-Multi--Cloud-orange.svg)](#-网盘多账号池体系) [![Support](https://img.shields.io/badge/Support-8%20Major%20Clouds-brightgreen.svg)](#-支持的网盘矩阵)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![Framework](https://img.shields.io/badge/Framework-Flask-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#-部署指南) [![REST API](https://img.shields.io/badge/REST__API-v1.0-purple.svg)](#-开放-rest-api-与无头部署) [![Support](https://img.shields.io/badge/Support-8%20Major%20Clouds-brightgreen.svg)](#-支持的网盘矩阵)
 
 <p align="center">
-  <a href="#-核心业务逻辑">业务逻辑</a> •
-  <a href="#-网盘多账号池体系">多账号池</a> •
+  <a href="#-为什么需要-pan-relay">核心价值</a> •
   <a href="#-支持的网盘矩阵">支持网盘</a> •
   <a href="#-部署指南">部署指南</a> •
   <a href="#-开放-rest-api-与无头部署">开放 API</a> •
@@ -24,61 +23,29 @@ Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化�
 
 ---
 
-## 💎 核心业务逻辑
+## 💡 为什么需要 Pan-Relay？
 
-### 🔄 变现与转存闭环流程
+在网盘拉新推广、影视/学习资源站运营、或搭建私域社群机器人时，站长和推广员通常面临以下**核心痛点**：
 
-* **企业级多账号池调度**：已接入**夸克网盘、百度网盘、阿里云盘、UC网盘、迅雷网盘、光鸭云盘、悟空网盘、移动云盘** 8 大主流网盘，每个网盘支持无限添加子账号并执行负载均衡。
-* **自动化转存换链**：
-  * **模式一：批量转存 (入库)**：后台批量导入外部链接，自动“多号分流转存 $\rightarrow$ 换链 $\rightarrow$ 持久化入库”，构建站长私有核心收益资源库。
-  * **模式二：实时转存 (出链)**：前台或 API 搜索外部资源时按需实时调用账号池转存并生成收益链接返回给用户，过期由系统定时任务自动清理释放网盘空间。
-* **私有收益资源库**：资源统一存入本地 SQLite 数据库，支持后台批量导入、转存、增删改查、类型标注、精准账号关联与 Excel 导出。
-* **多渠道聚合搜索**：
-  * **前台搜索**：优先展示私有资源库中的收益链接，再并发聚合第三方 API、Telegram 公开频道和搜索插件的结果。
-  * **两步走 REST API**：提供规范的 `/api/v1` REST 接口（步骤 1 聚合查询 / SSE 流式推流 -> 步骤 2 自动转存替换），便于无缝对接移动端 APP、小程序或 Telegram 机器人。
+1. **手动转存换链耗时耗力**：全网搜集了海量热门资源，却需要人工逐个登录网盘、转存、复制分享链，效率极低且无法应对大批量爆发式需求；
+2. **为他人作嫁衣（引流与广告污染）**：上游公开分享的压缩包、文档中往往充斥着其他站长的引流水印、广告文件，直接分发等于帮别人拉新；
+3. **单账号容量报警与风控封禁**：单个网盘空间有限，高频转存极易触发平台风控熔断或限速，缺乏跨账号/多网盘的负载分流机制；
+4. **链接失效无法感知**：外部引用的第三方链接极易被举报或和谐，没有免登录的自动化实时测活机制，导致用户大量流失；
+5. **系统封闭难以与外部业务打通**：传统工具通常与特定前端强绑定，缺乏标准化的 OpenAPI，难以快速接入自建的小程序、Telegram Bot 或移动端 APP。
+
+---
+
+### 🎯 Pan-Relay 的破局方案（变现与转存闭环）
+
+* **企业级多账号池调度**：已接入**夸克网盘、百度网盘、阿里云盘、UC网盘、迅雷网盘、光鸭云盘、悟空网盘、移动云盘** 8 大主流网盘，支持无限添加子账号，内置加权轮询负载均衡、容量熔断、自动故障转移与后台静默保活。
+* **自动化转存与净网植入**：
+  * **模式一：批量转存 (入库)**：后台批量导入外部链接，自动“多号分流转存 $\rightarrow$ 智能过滤垃圾广告 $\rightarrow$ 植入站长引流信息 $\rightarrow$ 换链持久化入库”，打造私有核心收益资源库。
+  * **模式二：实时转存 (出链)**：前台或 API 搜索外部资源时按需实时调用账号池转存并生成收益链接返回给用户，过期由系统定时任务自动清理释放空间。
+* **私有收益资源库**：零外部数据库依赖（内置轻量 SQLite），支持后台批量导入、转存、增删改查、类型标注、精准账号关联与 Excel 导出。
+* **全网多源聚合搜索**：优先展示私有收益库，并并发聚合第三方 API、115+ Telegram 公开频道（免 Token）与 Python 插件源，支持异步免登录实时测活。
+* **完全解耦与两步走 REST API**：提供规范的 `/api/v1` 开放接口（步骤 1 聚合查询 / SSE 流式推流 $\rightarrow$ 步骤 2 自动转存替换），支持无头模式，秒级对接微信小程序、Web 站与 Telegram 机器人。
 
 > 📖 关于 API 接口源 JMESPath 字段映射、TG 频道免密抓取与编写 Python 搜索插件，详见 [搜索源体系与插件扩展指南](docs/plugins_and_sources_guide.md)。
-
----
-
-## ✨ 项目核心亮点
-
-* **多账号池智能中枢**：支持 8 大主流网盘，内置加权轮询负载均衡、容量熔断、自动故障转移与后台静默保活。
-* **自动化转存与净网**：转存时自动归档、智能过滤上游垃圾广告引流文件，并支持无感植入站长专属引流信息。
-* **全网多源聚合搜索**：内置私有库、10+外部API、115+TG公开频道（免Token）与Python插件源，支持异步免登录实时测活。
-* **完全解耦与开放API**：标准RESTful API（支持SSE流式推流与分步转存），支持无头模式，秒级对接小程序、APP与TGBot。
-* **极简轻量开箱即用**：零外部数据库依赖（内置SQLite），预置海量搜索规则与 Docker一键编排，开箱即跑。
-
----
-
-## 👥 网盘多账号池体系
-
-系统内置了独立的 **`AccountPoolManager`（网盘多账号池调度器）**，实现跨平台、多账号的统一自治管理：
-
-```mermaid
-flowchart TD
-    subgraph 触发入口
-        A1["前台动态转存出链 (/view)"]
-        A2["OpenAPI 转存接口 (/api/v1/transfer)"]
-        A3["后台批量转存入库"]
-    end
-
-    subgraph 账号池中枢 AccountPoolManager
-        A1 --> Core["账号有效性与容量检测"]
-        A2 --> Core
-        A3 --> Core
-        Core --> F1["优先级分组策略"]
-        F1 --> F2["轮询负载均衡"]
-        F2 --> F3["故障自动容灾"]
-    end
-
-    subgraph 网盘矩阵落盘
-        F3 --> Q["夸克 (账号1/账号2/...)"]
-        F3 --> B["百度 (主号/备用号/...)"]
-        F3 --> A["阿里 (Token轮换/...)"]
-        F3 --> X["迅雷 / UC / 移动 / 光鸭 / 悟空"]
-    end
-```
 
 ---
 
