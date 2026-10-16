@@ -97,6 +97,11 @@ class YunsoPlugin(HttpPlugin):
                     datetime_value=date_match.group(0) if date_match else None,
                     description=desc_text,
                     cover_url=cover_url,
+                    metadata={
+                        "search_card_text": clean_text(card.get_text(" ", strip=True)),
+                        "card_attributes": {key: value for key, value in card.attrs.items() if key.startswith("data-")},
+                        "link_attributes": {key: value for key, value in anchor.attrs.items() if key not in ("onclick",)},
+                    },
                 )
             )
         return self.finalize(items)

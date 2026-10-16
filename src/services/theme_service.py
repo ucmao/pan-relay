@@ -19,7 +19,7 @@ THEMES_METADATA = [
         "version": "1.2.0",
         "author": "Pan-Relay",
         "description": "系统经典网盘搜索聚合页面，支持高级筛选与快捷转存。",
-        "preview": "/static/images/themes/default_preview.webp",
+        "preview": "/themes/default/assets/preview.webp",
         "tags": ["经典聚合", "功能全面"],
     },
     {
@@ -28,7 +28,7 @@ THEMES_METADATA = [
         "version": "1.0.0",
         "author": "Pan-Relay",
         "description": "现代极简双模流式主题，带3D动态热词球与网盘极速分类Tab。",
-        "preview": "/static/images/themes/aurora_preview.webp",
+        "preview": "/themes/aurora/assets/preview.webp",
         "tags": ["极简极速", "暗黑双模"],
     },
 ]

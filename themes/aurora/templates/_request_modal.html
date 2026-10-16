@@ -1,0 +1,40 @@
+{% if enable_resource_request %}
+<div class="aurora-modal-backdrop" id="auroraRequestBackdrop" hidden></div>
+<div class="aurora-modal-shell aurora-request-modal" id="auroraRequestModal" hidden role="dialog" aria-modal="true" aria-labelledby="auroraRequestTitle">
+  <div class="request-modal__header">
+    <div class="request-modal__heading">
+      <h3 id="auroraRequestTitle">提交需求</h3>
+      <p>告诉我们你想找的资源，便于后续补充。</p>
+    </div>
+    <button type="button" class="request-modal__close" id="auroraRequestCloseBtn" aria-label="关闭">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <form id="auroraRequestForm" novalidate>
+    <div class="request-modal__field request-modal__field--name">
+      <label for="auroraReqName">资源名称 <span>*</span></label>
+      <input type="text" id="auroraReqName" required placeholder="输入资源名称（如：凡人修仙传 4K / 黑神话悟空）" autocomplete="off">
+    </div>
+
+    <div class="request-modal__field request-modal__field--contact">
+      <label for="auroraReqContact">联系方式 <span>（选填）</span></label>
+      <input type="text" id="auroraReqContact" placeholder="QQ / 邮箱 / 微信号" autocomplete="off">
+    </div>
+
+    <div class="request-modal__field request-modal__field--note">
+      <label for="auroraReqNote">需求说明 <span>（选填）</span></label>
+      <textarea id="auroraReqNote" rows="3" placeholder="补充版本、清晰度、年份或指定网盘"></textarea>
+    </div>
+
+    <div class="request-modal__footer">
+      <button type="button" class="request-modal__cancel" id="auroraRequestCancelBtn">取消</button>
+      <button type="submit" class="request-modal__submit" id="auroraRequestSubmitBtn">提交需求</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+<div class="aurora-toast" id="auroraToast" role="status" aria-live="polite"></div>

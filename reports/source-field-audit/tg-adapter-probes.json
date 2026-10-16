@@ -1,0 +1,3007 @@
+{
+  "generated_at": "2026-10-17 00:04:58",
+  "keyword": "latest public posts (empty search query)",
+  "total": 115,
+  "open_count": 109,
+  "nonempty_count": 86,
+  "results": [
+    {
+      "channel": "txtyzy",
+      "title": "埃菲尔花园",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2427,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "BaiduCloudDisk",
+      "title": "百度网盘中转&通知频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2717,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "tianyifc",
+      "title": "天翼刮削资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2283,
+      "count": 126,
+      "field_counts": {
+        "password": 126,
+        "datetime": 126,
+        "description": 126,
+        "cover_url": 93,
+        "source_type": 126,
+        "source_id": 126,
+        "source_name": 126
+      },
+      "metadata_count": 126,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "tianyifc"
+      ],
+      "source_names": [
+        "天翼刮削资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yp123pan",
+      "title": "网盘资源收藏(123云盘)",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2671,
+      "count": 15,
+      "field_counts": {
+        "password": 11,
+        "datetime": 15,
+        "description": 15,
+        "cover_url": 15,
+        "source_type": 15,
+        "source_id": 15,
+        "source_name": 15
+      },
+      "metadata_count": 15,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yp123pan"
+      ],
+      "source_names": [
+        "网盘资源收藏(123云盘)"
+      ],
+      "error": null
+    },
+    {
+      "channel": "PanjClub",
+      "title": "盘酱酱Club✨",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 4594,
+      "count": 40,
+      "field_counts": {
+        "password": 20,
+        "datetime": 40,
+        "description": 40,
+        "cover_url": 40,
+        "source_type": 40,
+        "source_id": 40,
+        "source_name": 40
+      },
+      "metadata_count": 40,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "PanjClub"
+      ],
+      "source_names": [
+        "盘酱酱Club✨"
+      ],
+      "error": null
+    },
+    {
+      "channel": "tgsearchers7",
+      "title": "资源宇宙7",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1862,
+      "count": 17,
+      "field_counts": {
+        "password": 3,
+        "datetime": 17,
+        "description": 14,
+        "cover_url": 17,
+        "source_type": 17,
+        "source_id": 17,
+        "source_name": 17
+      },
+      "metadata_count": 17,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "tgsearchers7"
+      ],
+      "source_names": [
+        "资源宇宙7"
+      ],
+      "error": null
+    },
+    {
+      "channel": "peccxinpd",
+      "title": "盘链资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2579,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "yunpanxunlei",
+      "title": "网盘资源收藏(迅雷云盘)",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2819,
+      "count": 20,
+      "field_counts": {
+        "password": 20,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yunpanxunlei"
+      ],
+      "source_names": [
+        "网盘资源收藏(迅雷云盘)"
+      ],
+      "error": null
+    },
+    {
+      "channel": "bsbdbfjfjff",
+      "title": "散人影视",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1647,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "gotopan",
+      "title": "网盘资源分享频道🅥",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2111,
+      "count": 20,
+      "field_counts": {
+        "password": 20,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "gotopan"
+      ],
+      "source_names": [
+        "网盘资源分享频道🅥"
+      ],
+      "error": null
+    },
+    {
+      "channel": "Aliyun_4K_Movies",
+      "title": "阿里、夸克、百度网盘4K影视资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2273,
+      "count": 37,
+      "field_counts": {
+        "password": 9,
+        "datetime": 37,
+        "description": 37,
+        "cover_url": 37,
+        "source_type": 37,
+        "source_id": 37,
+        "source_name": 37
+      },
+      "metadata_count": 37,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "Aliyun_4K_Movies"
+      ],
+      "source_names": [
+        "阿里、夸克、百度网盘4K影视资源"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yunpanx",
+      "title": "云盘影库|4K影视网盘资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1840,
+      "count": 29,
+      "field_counts": {
+        "password": 11,
+        "datetime": 29,
+        "description": 29,
+        "cover_url": 29,
+        "source_type": 29,
+        "source_id": 29,
+        "source_name": 29
+      },
+      "metadata_count": 29,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yunpanx"
+      ],
+      "source_names": [
+        "云盘影库|4K影视网盘资源"
+      ],
+      "error": null
+    },
+    {
+      "channel": "bdbdndn11",
+      "title": "电影网盘分享频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2287,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "ysxb48",
+      "title": "115网盘",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2800,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "ucwpzy",
+      "title": "UC网盘发布频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1796,
+      "count": 40,
+      "field_counts": {
+        "password": 0,
+        "datetime": 40,
+        "description": 40,
+        "cover_url": 40,
+        "source_type": 40,
+        "source_id": 40,
+        "source_name": 40
+      },
+      "metadata_count": 40,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "ucwpzy"
+      ],
+      "source_names": [
+        "UC网盘发布频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "MCPH086",
+      "title": "莫愁片海🐳动画",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2491,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "Q66Share",
+      "title": "阿里云盘吧",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2671,
+      "count": 9,
+      "field_counts": {
+        "password": 2,
+        "datetime": 9,
+        "description": 9,
+        "cover_url": 9,
+        "source_type": 9,
+        "source_id": 9,
+        "source_name": 9
+      },
+      "metadata_count": 9,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "Q66Share"
+      ],
+      "source_names": [
+        "阿里云盘吧"
+      ],
+      "error": null
+    },
+    {
+      "channel": "zaihuayun",
+      "title": "🎬 阿里云盘资源 🆙 🚦",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3658,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "MCPH01",
+      "title": "莫愁片海🐳综合",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1764,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "MCPH03",
+      "title": "莫愁片海🐳链接直接显示",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1951,
+      "count": 17,
+      "field_counts": {
+        "password": 10,
+        "datetime": 17,
+        "description": 15,
+        "cover_url": 17,
+        "source_type": 17,
+        "source_id": 17,
+        "source_name": 17
+      },
+      "metadata_count": 17,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "MCPH03"
+      ],
+      "source_names": [
+        "莫愁片海🐳链接直接显示"
+      ],
+      "error": null
+    },
+    {
+      "channel": "MCPH02",
+      "title": "莫愁片海🐳擦边短剧等🥵",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1931,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "baicaoZY",
+      "title": "百草网盘资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1831,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "baicaoZY"
+      ],
+      "source_names": [
+        "百草网盘资源"
+      ],
+      "error": null
+    },
+    {
+      "channel": "bdwpzhpd",
+      "title": "百度网盘综合频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3021,
+      "count": 20,
+      "field_counts": {
+        "password": 20,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "bdwpzhpd"
+      ],
+      "source_names": [
+        "百度网盘综合频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "shareAliyun",
+      "title": "阿里云盘发布频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3114,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "shareAliyun"
+      ],
+      "source_names": [
+        "阿里云盘发布频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "jdjdn1111",
+      "title": "短剧网盘分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2710,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "alyp_1",
+      "title": "网盘(高品质)影视",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 2760,
+      "count": 0,
+      "field_counts": {},
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": "频道 @alyp_1 未返回公开预览页"
+    },
+    {
+      "channel": "yingshifenxiang123",
+      "title": "比比追更",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2447,
+      "count": 17,
+      "field_counts": {
+        "password": 0,
+        "datetime": 17,
+        "description": 16,
+        "cover_url": 16,
+        "source_type": 17,
+        "source_id": 17,
+        "source_name": 17
+      },
+      "metadata_count": 17,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yingshifenxiang123"
+      ],
+      "source_names": [
+        "比比追更"
+      ],
+      "error": null
+    },
+    {
+      "channel": "tyypzhpd",
+      "title": "天翼云盘资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2644,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "oneonefivewpfx",
+      "title": "115网盘资源收藏",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2087,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "ucquark",
+      "title": "夸克百度UC迅雷网盘资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3823,
+      "count": 54,
+      "field_counts": {
+        "password": 30,
+        "datetime": 54,
+        "description": 54,
+        "cover_url": 54,
+        "source_type": 54,
+        "source_id": 54,
+        "source_name": 54
+      },
+      "metadata_count": 54,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "ucquark"
+      ],
+      "source_names": [
+        "夸克百度UC迅雷网盘资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "zyfb123",
+      "title": "资源发布",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2550,
+      "count": 20,
+      "field_counts": {
+        "password": 20,
+        "datetime": 20,
+        "description": 0,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "zyfb123"
+      ],
+      "source_names": [
+        "资源发布"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yunpan189",
+      "title": "网盘资源收藏(天翼云盘)",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3304,
+      "count": 10,
+      "field_counts": {
+        "password": 3,
+        "datetime": 10,
+        "description": 10,
+        "cover_url": 10,
+        "source_type": 10,
+        "source_id": 10,
+        "source_name": 10
+      },
+      "metadata_count": 10,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yunpan189"
+      ],
+      "source_names": [
+        "网盘资源收藏(天翼云盘)"
+      ],
+      "error": null
+    },
+    {
+      "channel": "xx123pan",
+      "title": "123云盘资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2956,
+      "count": 14,
+      "field_counts": {
+        "password": 14,
+        "datetime": 14,
+        "description": 14,
+        "cover_url": 14,
+        "source_type": 14,
+        "source_id": 14,
+        "source_name": 14
+      },
+      "metadata_count": 14,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "xx123pan"
+      ],
+      "source_names": [
+        "123云盘资源频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "Quark_Movies",
+      "title": "夸克云盘影视资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2472,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "Quark_Movies"
+      ],
+      "source_names": [
+        "夸克云盘影视资源频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "hdhhd21",
+      "title": "影视热门更新",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2967,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "Lsp115",
+      "title": "115网盘资源分享频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3960,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "XiangxiuNBB",
+      "title": "肯德基の4K影视综合电影云盘站",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3531,
+      "count": 31,
+      "field_counts": {
+        "password": 11,
+        "datetime": 31,
+        "description": 31,
+        "cover_url": 31,
+        "source_type": 31,
+        "source_id": 31,
+        "source_name": 31
+      },
+      "metadata_count": 31,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "XiangxiuNBB"
+      ],
+      "source_names": [
+        "肯德基の4K影视综合电影云盘站"
+      ],
+      "error": null
+    },
+    {
+      "channel": "vip115hot",
+      "title": "懒狗集中营-115/阿里/百度/迅雷/夸克 影视分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2297,
+      "count": 60,
+      "field_counts": {
+        "password": 32,
+        "datetime": 60,
+        "description": 60,
+        "cover_url": 60,
+        "source_type": 60,
+        "source_id": 60,
+        "source_name": 60
+      },
+      "metadata_count": 60,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "vip115hot"
+      ],
+      "source_names": [
+        "懒狗集中营-115/阿里/百度/迅雷/夸克 影视分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "tyysypzypd",
+      "title": "天翼影视网盘资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2398,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "TG654TG",
+      "title": "热门影视、综艺网盘资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2437,
+      "count": 38,
+      "field_counts": {
+        "password": 19,
+        "datetime": 38,
+        "description": 32,
+        "cover_url": 38,
+        "source_type": 38,
+        "source_id": 38,
+        "source_name": 38
+      },
+      "metadata_count": 38,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "TG654TG"
+      ],
+      "source_names": [
+        "热门影视、综艺网盘资源频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "Channel_Shares_115",
+      "title": "Shares_115_Channel",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2479,
+      "count": 19,
+      "field_counts": {
+        "password": 19,
+        "datetime": 19,
+        "description": 19,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "Channel_Shares_115"
+      ],
+      "source_names": [
+        "Shares_115_Channel"
+      ],
+      "error": null
+    },
+    {
+      "channel": "taoxgzy",
+      "title": "我的资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2681,
+      "count": 19,
+      "field_counts": {
+        "password": 2,
+        "datetime": 19,
+        "description": 19,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "taoxgzy"
+      ],
+      "source_names": [
+        "我的资源频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yunpanuc",
+      "title": "网盘资源收藏(UC网盘)",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1820,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yunpanuc"
+      ],
+      "source_names": [
+        "网盘资源收藏(UC网盘)"
+      ],
+      "error": null
+    },
+    {
+      "channel": "movielover8888_film3",
+      "title": "绝版风月.全网绝版稀有资源点播定制",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2000,
+      "count": 39,
+      "field_counts": {
+        "password": 19,
+        "datetime": 39,
+        "description": 39,
+        "cover_url": 39,
+        "source_type": 39,
+        "source_id": 39,
+        "source_name": 39
+      },
+      "metadata_count": 39,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "movielover8888_film3"
+      ],
+      "source_names": [
+        "绝版风月.全网绝版稀有资源点播定制"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yydf_hzl",
+      "title": "网盘资源合集频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3882,
+      "count": 25,
+      "field_counts": {
+        "password": 8,
+        "datetime": 25,
+        "description": 24,
+        "cover_url": 25,
+        "source_type": 25,
+        "source_id": 25,
+        "source_name": 25
+      },
+      "metadata_count": 25,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yydf_hzl"
+      ],
+      "source_names": [
+        "网盘资源合集频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yeqingjie_GJG666",
+      "title": "爷青回动画分享频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2200,
+      "count": 45,
+      "field_counts": {
+        "password": 18,
+        "datetime": 45,
+        "description": 45,
+        "cover_url": 45,
+        "source_type": 45,
+        "source_id": 45,
+        "source_name": 45
+      },
+      "metadata_count": 45,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yeqingjie_GJG666"
+      ],
+      "source_names": [
+        "爷青回动画分享频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "leoziyuan",
+      "title": "LEO网盘搜集",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2560,
+      "count": 20,
+      "field_counts": {
+        "password": 12,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "leoziyuan"
+      ],
+      "source_names": [
+        "LEO网盘搜集"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yunpan139",
+      "title": "网盘资源收藏(移动云盘)",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2195,
+      "count": 20,
+      "field_counts": {
+        "password": 1,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yunpan139"
+      ],
+      "source_names": [
+        "网盘资源收藏(移动云盘)"
+      ],
+      "error": null
+    },
+    {
+      "channel": "wp123zy",
+      "title": "123网盘",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2412,
+      "count": 19,
+      "field_counts": {
+        "password": 14,
+        "datetime": 19,
+        "description": 19,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "wp123zy"
+      ],
+      "source_names": [
+        "123网盘"
+      ],
+      "error": null
+    },
+    {
+      "channel": "KaiPanshare",
+      "title": "电子书资源分享 📚",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3550,
+      "count": 43,
+      "field_counts": {
+        "password": 28,
+        "datetime": 43,
+        "description": 43,
+        "cover_url": 39,
+        "source_type": 43,
+        "source_id": 43,
+        "source_name": 43
+      },
+      "metadata_count": 43,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "KaiPanshare"
+      ],
+      "source_names": [
+        "电子书资源分享 📚"
+      ],
+      "error": null
+    },
+    {
+      "channel": "D_wusun",
+      "title": "无损音乐分享频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3163,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "D_wusun"
+      ],
+      "source_names": [
+        "无损音乐分享频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "pxyunpanxunlei",
+      "title": "迅雷网盘资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2386,
+      "count": 17,
+      "field_counts": {
+        "password": 17,
+        "datetime": 17,
+        "description": 17,
+        "cover_url": 17,
+        "source_type": 17,
+        "source_id": 17,
+        "source_name": 17
+      },
+      "metadata_count": 17,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "pxyunpanxunlei"
+      ],
+      "source_names": [
+        "迅雷网盘资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "FLMdongtianfudi",
+      "title": "Fang的资源分享群",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2093,
+      "count": 17,
+      "field_counts": {
+        "password": 0,
+        "datetime": 17,
+        "description": 17,
+        "cover_url": 17,
+        "source_type": 17,
+        "source_id": 17,
+        "source_name": 17
+      },
+      "metadata_count": 17,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "FLMdongtianfudi"
+      ],
+      "source_names": [
+        "Fang的资源分享群"
+      ],
+      "error": null
+    },
+    {
+      "channel": "QukanMovie",
+      "title": "115影视资源分享频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1934,
+      "count": 19,
+      "field_counts": {
+        "password": 19,
+        "datetime": 19,
+        "description": 19,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "QukanMovie"
+      ],
+      "source_names": [
+        "115影视资源分享频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yunpanNB",
+      "title": "鹏星の4K影视综合电影云盘站",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2967,
+      "count": 48,
+      "field_counts": {
+        "password": 30,
+        "datetime": 48,
+        "description": 48,
+        "cover_url": 48,
+        "source_type": 48,
+        "source_id": 48,
+        "source_name": 48
+      },
+      "metadata_count": 48,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yunpanNB"
+      ],
+      "source_names": [
+        "鹏星の4K影视综合电影云盘站"
+      ],
+      "error": null
+    },
+    {
+      "channel": "newproductsourcing",
+      "title": "影视分享频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2823,
+      "count": 74,
+      "field_counts": {
+        "password": 38,
+        "datetime": 74,
+        "description": 6,
+        "cover_url": 2,
+        "source_type": 74,
+        "source_id": 74,
+        "source_name": 74
+      },
+      "metadata_count": 74,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "newproductsourcing"
+      ],
+      "source_names": [
+        "影视分享频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "rjyxfx",
+      "title": "安卓软件游戏破解资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2804,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 17,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "rjyxfx"
+      ],
+      "source_names": [
+        "安卓软件游戏破解资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "QQZYDAPP",
+      "title": "QQ资源岛-破解软件分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2337,
+      "count": 3,
+      "field_counts": {
+        "password": 0,
+        "datetime": 3,
+        "description": 3,
+        "cover_url": 3,
+        "source_type": 3,
+        "source_id": 3,
+        "source_name": 3
+      },
+      "metadata_count": 3,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "QQZYDAPP"
+      ],
+      "source_names": [
+        "QQ资源岛-破解软件分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "baipiaou",
+      "title": "不是白嫖，这叫借鉴（备用）",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1954,
+      "count": 2,
+      "field_counts": {
+        "password": 0,
+        "datetime": 2,
+        "description": 2,
+        "cover_url": 2,
+        "source_type": 2,
+        "source_id": 2,
+        "source_name": 2
+      },
+      "metadata_count": 2,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "baipiaou"
+      ],
+      "source_names": [
+        "不是白嫖，这叫借鉴（备用）"
+      ],
+      "error": null
+    },
+    {
+      "channel": "XQFXS",
+      "title": "小七分享社-破解软件VPN",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2844,
+      "count": 9,
+      "field_counts": {
+        "password": 9,
+        "datetime": 9,
+        "description": 9,
+        "cover_url": 9,
+        "source_type": 9,
+        "source_id": 9,
+        "source_name": 9
+      },
+      "metadata_count": 9,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "XQFXS"
+      ],
+      "source_names": [
+        "小七分享社-破解软件VPN"
+      ],
+      "error": null
+    },
+    {
+      "channel": "syrjfx_sl",
+      "title": "🌈破解软件分享✨",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2717,
+      "count": 19,
+      "field_counts": {
+        "password": 6,
+        "datetime": 19,
+        "description": 19,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "syrjfx_sl"
+      ],
+      "source_names": [
+        "🌈破解软件分享✨"
+      ],
+      "error": null
+    },
+    {
+      "channel": "xxzlzn",
+      "title": "学习资料指南",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3557,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 18,
+        "cover_url": 0,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "xxzlzn"
+      ],
+      "source_names": [
+        "学习资料指南"
+      ],
+      "error": null
+    },
+    {
+      "channel": "zdqxm",
+      "title": "短剧夸克网盘资源分享交流",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3455,
+      "count": 19,
+      "field_counts": {
+        "password": 1,
+        "datetime": 19,
+        "description": 17,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "zdqxm"
+      ],
+      "source_names": [
+        "短剧夸克网盘资源分享交流"
+      ],
+      "error": null
+    },
+    {
+      "channel": "btzhi",
+      "title": "BT之家btzhi导航频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1847,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "PikPak_Share_Channel",
+      "title": "PikPak磁链资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2950,
+      "count": 3,
+      "field_counts": {
+        "password": 0,
+        "datetime": 3,
+        "description": 3,
+        "cover_url": 2,
+        "source_type": 3,
+        "source_id": 3,
+        "source_name": 3
+      },
+      "metadata_count": 3,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "PikPak_Share_Channel"
+      ],
+      "source_names": [
+        "PikPak磁链资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "Baidu_netdisk",
+      "title": "百度网盘资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3459,
+      "count": 20,
+      "field_counts": {
+        "password": 20,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "Baidu_netdisk"
+      ],
+      "source_names": [
+        "百度网盘资源频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "solidsexydoll",
+      "title": "电影资源分享频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2318,
+      "count": 74,
+      "field_counts": {
+        "password": 38,
+        "datetime": 74,
+        "description": 6,
+        "cover_url": 2,
+        "source_type": 74,
+        "source_id": 74,
+        "source_name": 74
+      },
+      "metadata_count": 74,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "solidsexydoll"
+      ],
+      "source_names": [
+        "电影资源分享频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "cilidianying",
+      "title": "磁力电影分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2173,
+      "count": 1,
+      "field_counts": {
+        "password": 0,
+        "datetime": 1,
+        "description": 1,
+        "cover_url": 1,
+        "source_type": 1,
+        "source_id": 1,
+        "source_name": 1
+      },
+      "metadata_count": 1,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "cilidianying"
+      ],
+      "source_names": [
+        "磁力电影分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "CBduanju",
+      "title": "全网擦边｜电影｜资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2296,
+      "count": 18,
+      "field_counts": {
+        "password": 1,
+        "datetime": 18,
+        "description": 16,
+        "cover_url": 18,
+        "source_type": 18,
+        "source_id": 18,
+        "source_name": 18
+      },
+      "metadata_count": 18,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "CBduanju"
+      ],
+      "source_names": [
+        "全网擦边｜电影｜资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "jxwpzy",
+      "title": "精选网盘资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3028,
+      "count": 18,
+      "field_counts": {
+        "password": 9,
+        "datetime": 18,
+        "description": 18,
+        "cover_url": 18,
+        "source_type": 18,
+        "source_id": 18,
+        "source_name": 18
+      },
+      "metadata_count": 18,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "jxwpzy"
+      ],
+      "source_names": [
+        "精选网盘资源"
+      ],
+      "error": null
+    },
+    {
+      "channel": "SharePanFilms",
+      "title": "网盘高分影视|资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1983,
+      "count": 19,
+      "field_counts": {
+        "password": 0,
+        "datetime": 19,
+        "description": 19,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "SharePanFilms"
+      ],
+      "source_names": [
+        "网盘高分影视|资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yoyokuakeduanju",
+      "title": "YOYO资源|夸克|UC|短剧|影视",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1891,
+      "count": 22,
+      "field_counts": {
+        "password": 1,
+        "datetime": 22,
+        "description": 22,
+        "cover_url": 22,
+        "source_type": 22,
+        "source_id": 22,
+        "source_name": 22
+      },
+      "metadata_count": 22,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yoyokuakeduanju"
+      ],
+      "source_names": [
+        "YOYO资源|夸克|UC|短剧|影视"
+      ],
+      "error": null
+    },
+    {
+      "channel": "xunleip",
+      "title": "短剧|动漫|影视|迅雷云盘|光鸭云盘资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2629,
+      "count": 20,
+      "field_counts": {
+        "password": 20,
+        "datetime": 20,
+        "description": 0,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "xunleip"
+      ],
+      "source_names": [
+        "短剧|动漫|影视|迅雷云盘|光鸭云盘资源"
+      ],
+      "error": null
+    },
+    {
+      "channel": "WPpindao",
+      "title": "夸克百度迅雷UC综合网盘频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2735,
+      "count": 147,
+      "field_counts": {
+        "password": 54,
+        "datetime": 147,
+        "description": 131,
+        "cover_url": 0,
+        "source_type": 147,
+        "source_id": 147,
+        "source_name": 147
+      },
+      "metadata_count": 147,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "WPpindao"
+      ],
+      "source_names": [
+        "夸克百度迅雷UC综合网盘频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "guoman4K",
+      "title": "国漫 | 网盘频道（4K）",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2539,
+      "count": 16,
+      "field_counts": {
+        "password": 0,
+        "datetime": 16,
+        "description": 16,
+        "cover_url": 16,
+        "source_type": 16,
+        "source_id": 16,
+        "source_name": 16
+      },
+      "metadata_count": 16,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "guoman4K"
+      ],
+      "source_names": [
+        "国漫 | 网盘频道（4K）"
+      ],
+      "error": null
+    },
+    {
+      "channel": "dzsgx",
+      "title": "电子书|阅读|学习|课程",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3150,
+      "count": 17,
+      "field_counts": {
+        "password": 11,
+        "datetime": 17,
+        "description": 1,
+        "cover_url": 4,
+        "source_type": 17,
+        "source_id": 17,
+        "source_name": 17
+      },
+      "metadata_count": 17,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "dzsgx"
+      ],
+      "source_names": [
+        "电子书|阅读|学习|课程"
+      ],
+      "error": null
+    },
+    {
+      "channel": "kduanju",
+      "title": "热门短剧每日更新夸克网盘百度网盘资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3444,
+      "count": 38,
+      "field_counts": {
+        "password": 19,
+        "datetime": 38,
+        "description": 38,
+        "cover_url": 36,
+        "source_type": 38,
+        "source_id": 38,
+        "source_name": 38
+      },
+      "metadata_count": 38,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "kduanju"
+      ],
+      "source_names": [
+        "热门短剧每日更新夸克网盘百度网盘资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "kuakedongman",
+      "title": "夸克网盘动漫资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3673,
+      "count": 14,
+      "field_counts": {
+        "password": 0,
+        "datetime": 14,
+        "description": 14,
+        "cover_url": 14,
+        "source_type": 14,
+        "source_id": 14,
+        "source_name": 14
+      },
+      "metadata_count": 14,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "kuakedongman"
+      ],
+      "source_names": [
+        "夸克网盘动漫资源"
+      ],
+      "error": null
+    },
+    {
+      "channel": "douerpan",
+      "title": "豆儿盘",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1662,
+      "count": 32,
+      "field_counts": {
+        "password": 10,
+        "datetime": 32,
+        "description": 0,
+        "cover_url": 31,
+        "source_type": 32,
+        "source_id": 32,
+        "source_name": 32
+      },
+      "metadata_count": 32,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "douerpan"
+      ],
+      "source_names": [
+        "豆儿盘"
+      ],
+      "error": null
+    },
+    {
+      "channel": "ciliziyuanku",
+      "title": "磁力资源库",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2325,
+      "count": 1,
+      "field_counts": {
+        "password": 0,
+        "datetime": 1,
+        "description": 1,
+        "cover_url": 1,
+        "source_type": 1,
+        "source_id": 1,
+        "source_name": 1
+      },
+      "metadata_count": 1,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "ciliziyuanku"
+      ],
+      "source_names": [
+        "磁力资源库"
+      ],
+      "error": null
+    },
+    {
+      "channel": "domgmingapk",
+      "title": "DM_share 🕸",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 2928,
+      "count": 0,
+      "field_counts": {},
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": "频道 @domgmingapk 未返回公开预览页"
+    },
+    {
+      "channel": "baidu_yppan",
+      "title": "百度云盘-云盘盘频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2906,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "BooksRealm",
+      "title": "书之领域图书馆",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2115,
+      "count": 19,
+      "field_counts": {
+        "password": 0,
+        "datetime": 19,
+        "description": 19,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "BooksRealm"
+      ],
+      "source_names": [
+        "书之领域图书馆"
+      ],
+      "error": null
+    },
+    {
+      "channel": "xiangnikanj",
+      "title": "短剧更新频道|擦边短剧|热播短剧夸克百度网盘免费分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1999,
+      "count": 38,
+      "field_counts": {
+        "password": 19,
+        "datetime": 38,
+        "description": 38,
+        "cover_url": 36,
+        "source_type": 38,
+        "source_id": 38,
+        "source_name": 38
+      },
+      "metadata_count": 38,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "xiangnikanj"
+      ],
+      "source_names": [
+        "短剧更新频道|擦边短剧|热播短剧夸克百度网盘免费分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "xiangnikanj3075",
+      "title": "短剧更新频道|擦边短剧|热播短剧夸克百度网盘免费分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1985,
+      "count": 30,
+      "field_counts": {
+        "password": 15,
+        "datetime": 30,
+        "description": 30,
+        "cover_url": 30,
+        "source_type": 30,
+        "source_id": 30,
+        "source_name": 30
+      },
+      "metadata_count": 30,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "xiangnikanj3075"
+      ],
+      "source_names": [
+        "短剧更新频道|擦边短剧|热播短剧夸克百度网盘免费分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "aiduanju666",
+      "title": "热门短剧影视综艺动态漫小说网盘免费分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2989,
+      "count": 39,
+      "field_counts": {
+        "password": 39,
+        "datetime": 39,
+        "description": 39,
+        "cover_url": 39,
+        "source_type": 39,
+        "source_id": 39,
+        "source_name": 39
+      },
+      "metadata_count": 39,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "aiduanju666"
+      ],
+      "source_names": [
+        "热门短剧影视综艺动态漫小说网盘免费分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "soduanju",
+      "title": "搜短剧|热门短剧|抖音短剧|唯库影视",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2897,
+      "count": 1128,
+      "field_counts": {
+        "password": 0,
+        "datetime": 1128,
+        "description": 62,
+        "cover_url": 0,
+        "source_type": 1128,
+        "source_id": 1128,
+        "source_name": 1128
+      },
+      "metadata_count": 1128,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "soduanju"
+      ],
+      "source_names": [
+        "搜短剧|热门短剧|抖音短剧|唯库影视"
+      ],
+      "error": null
+    },
+    {
+      "channel": "iby668",
+      "title": "云盘分享站TG频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2536,
+      "count": 21,
+      "field_counts": {
+        "password": 0,
+        "datetime": 21,
+        "description": 12,
+        "cover_url": 19,
+        "source_type": 21,
+        "source_id": 21,
+        "source_name": 21
+      },
+      "metadata_count": 21,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "iby668"
+      ],
+      "source_names": [
+        "云盘分享站TG频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "dianying4k",
+      "title": "4K影视屋(分屋）-蓝光无损电影",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 4411,
+      "count": 4,
+      "field_counts": {
+        "password": 2,
+        "datetime": 4,
+        "description": 4,
+        "cover_url": 4,
+        "source_type": 4,
+        "source_id": 4,
+        "source_name": 4
+      },
+      "metadata_count": 4,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "dianying4k"
+      ],
+      "source_names": [
+        "4K影视屋(分屋）-蓝光无损电影"
+      ],
+      "error": null
+    },
+    {
+      "channel": "kkdj001",
+      "title": "夸克网盘资源俱乐部",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2738,
+      "count": 2,
+      "field_counts": {
+        "password": 0,
+        "datetime": 2,
+        "description": 0,
+        "cover_url": 2,
+        "source_type": 2,
+        "source_id": 2,
+        "source_name": 2
+      },
+      "metadata_count": 2,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "kkdj001"
+      ],
+      "source_names": [
+        "夸克网盘资源俱乐部"
+      ],
+      "error": null
+    },
+    {
+      "channel": "Oscar_4Kmovies",
+      "title": "奥斯卡4K蓝光(精品)影视磁力站🍟",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3542,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "yunpanquark",
+      "title": "夸克网盘资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3517,
+      "count": 19,
+      "field_counts": {
+        "password": 0,
+        "datetime": 19,
+        "description": 19,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yunpanquark"
+      ],
+      "source_names": [
+        "夸克网盘资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "godupan",
+      "title": "百度网盘资源库🅥",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1836,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "ucshare",
+      "title": "UC网盘资源分享",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1594,
+      "count": 19,
+      "field_counts": {
+        "password": 0,
+        "datetime": 19,
+        "description": 0,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "ucshare"
+      ],
+      "source_names": [
+        "UC网盘资源分享"
+      ],
+      "error": null
+    },
+    {
+      "channel": "Netdisk_Movies",
+      "title": "海外影视资源频道(夸克、阿里、百度)",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 4045,
+      "count": 47,
+      "field_counts": {
+        "password": 8,
+        "datetime": 47,
+        "description": 47,
+        "cover_url": 47,
+        "source_type": 47,
+        "source_id": 47,
+        "source_name": 47
+      },
+      "metadata_count": 47,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "Netdisk_Movies"
+      ],
+      "source_names": [
+        "海外影视资源频道(夸克、阿里、百度)"
+      ],
+      "error": null
+    },
+    {
+      "channel": "jzmm_123pan",
+      "title": "精准猫咪网盘资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3483,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "jzmm_123pan"
+      ],
+      "source_names": [
+        "精准猫咪网盘资源"
+      ],
+      "error": null
+    },
+    {
+      "channel": "WFYSFX03",
+      "title": "观影视界[GyWEB]",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3307,
+      "count": 80,
+      "field_counts": {
+        "password": 29,
+        "datetime": 80,
+        "description": 57,
+        "cover_url": 31,
+        "source_type": 80,
+        "source_id": 80,
+        "source_name": 80
+      },
+      "metadata_count": 80,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "WFYSFX03"
+      ],
+      "source_names": [
+        "观影视界[GyWEB]"
+      ],
+      "error": null
+    },
+    {
+      "channel": "ammmziyuan",
+      "title": "每日资源精选",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 3230,
+      "count": 0,
+      "field_counts": {},
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": "频道 @ammmziyuan 未返回公开预览页"
+    },
+    {
+      "channel": "gimy115",
+      "title": "剧迷115影视热更快频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2871,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "tgbokee",
+      "title": "梦鱼网盘资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2502,
+      "count": 193,
+      "field_counts": {
+        "password": 2,
+        "datetime": 193,
+        "description": 13,
+        "cover_url": 13,
+        "source_type": 193,
+        "source_id": 193,
+        "source_name": 193
+      },
+      "metadata_count": 193,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "tgbokee"
+      ],
+      "source_names": [
+        "梦鱼网盘资源"
+      ],
+      "error": null
+    },
+    {
+      "channel": "gimy115iso",
+      "title": "剧迷115影视原盘频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2252,
+      "count": 20,
+      "field_counts": {
+        "password": 20,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "gimy115iso"
+      ],
+      "source_names": [
+        "剧迷115影视原盘频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "wpan8",
+      "title": "网盘吧@夸克百度迅雷光鸭网盘资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2370,
+      "count": 39,
+      "field_counts": {
+        "password": 11,
+        "datetime": 39,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 39,
+        "source_id": 39,
+        "source_name": 39
+      },
+      "metadata_count": 39,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "wpan8"
+      ],
+      "source_names": [
+        "网盘吧@夸克百度迅雷光鸭网盘资源"
+      ],
+      "error": null
+    },
+    {
+      "channel": "gimy100",
+      "title": "剧迷115影视完结频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3222,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "mqte5",
+      "title": "影视资源发布频道(夸克)",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3101,
+      "count": 19,
+      "field_counts": {
+        "password": 0,
+        "datetime": 19,
+        "description": 19,
+        "cover_url": 19,
+        "source_type": 19,
+        "source_id": 19,
+        "source_name": 19
+      },
+      "metadata_count": 19,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "mqte5"
+      ],
+      "source_names": [
+        "影视资源发布频道(夸克)"
+      ],
+      "error": null
+    },
+    {
+      "channel": "regengguangya",
+      "title": "光鸭云盘影视热更频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3540,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": null
+    },
+    {
+      "channel": "regeng123",
+      "title": "123云盘影视热更频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3300,
+      "count": 20,
+      "field_counts": {
+        "password": 20,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "regeng123"
+      ],
+      "source_names": [
+        "123云盘影视热更频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "QuarkFree",
+      "title": "夸克网盘资源收藏夹",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1885,
+      "count": 21,
+      "field_counts": {
+        "password": 10,
+        "datetime": 21,
+        "description": 0,
+        "cover_url": 21,
+        "source_type": 21,
+        "source_id": 21,
+        "source_name": 21
+      },
+      "metadata_count": 21,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "QuarkFree"
+      ],
+      "source_names": [
+        "夸克网盘资源收藏夹"
+      ],
+      "error": null
+    },
+    {
+      "channel": "gokuapan",
+      "title": "夸克网盘资源库🅥",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1907,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "gokuapan"
+      ],
+      "source_names": [
+        "夸克网盘资源库🅥"
+      ],
+      "error": null
+    },
+    {
+      "channel": "regeng115",
+      "title": "115网盘影视热更频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 3208,
+      "count": 20,
+      "field_counts": {
+        "password": 0,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "regeng115"
+      ],
+      "source_names": [
+        "115网盘影视热更频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "peccxin",
+      "title": "盘链交流群",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 2168,
+      "count": 0,
+      "field_counts": {},
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": "频道 @peccxin 未返回公开预览页"
+    },
+    {
+      "channel": "guangyapan_episode",
+      "title": "光鸭云盘资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2170,
+      "count": 14,
+      "field_counts": {
+        "password": 0,
+        "datetime": 14,
+        "description": 14,
+        "cover_url": 14,
+        "source_type": 14,
+        "source_id": 14,
+        "source_name": 14
+      },
+      "metadata_count": 14,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "guangyapan_episode"
+      ],
+      "source_names": [
+        "光鸭云盘资源频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "yy80986098",
+      "title": "影音基地",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2179,
+      "count": 20,
+      "field_counts": {
+        "password": 15,
+        "datetime": 20,
+        "description": 20,
+        "cover_url": 20,
+        "source_type": 20,
+        "source_id": 20,
+        "source_name": 20
+      },
+      "metadata_count": 20,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "yy80986098"
+      ],
+      "source_names": [
+        "影音基地"
+      ],
+      "error": null
+    },
+    {
+      "channel": "pan_guangya",
+      "title": "光鸭云盘资源频道",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2414,
+      "count": 5,
+      "field_counts": {
+        "password": 0,
+        "datetime": 5,
+        "description": 5,
+        "cover_url": 5,
+        "source_type": 5,
+        "source_id": 5,
+        "source_name": 5
+      },
+      "metadata_count": 5,
+      "source_types": [
+        "telegram"
+      ],
+      "source_ids": [
+        "pan_guangya"
+      ],
+      "source_names": [
+        "光鸭云盘资源频道"
+      ],
+      "error": null
+    },
+    {
+      "channel": "Movie888035",
+      "title": "115影音交流室",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 5774,
+      "count": 0,
+      "field_counts": {},
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": "频道 @Movie888035 未返回公开预览页"
+    },
+    {
+      "channel": "yoyokuakeduanjujiaoliuqun",
+      "title": "YOYO资源|夸克|短剧|交流群",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 7319,
+      "count": 0,
+      "field_counts": {},
+      "metadata_count": 0,
+      "source_types": [],
+      "source_ids": [],
+      "source_names": [],
+      "error": "频道 @yoyokuakeduanjujiaoliuqun 未返回公开预览页"
+    }
+  ]
+}

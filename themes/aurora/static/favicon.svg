@@ -1,0 +1,22 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="aurora-bg" x1="34" y1="21" x2="222" y2="236" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff8fab"/>
+      <stop offset="0.38" stop-color="#7667ff"/>
+      <stop offset="0.72" stop-color="#415cf6"/>
+      <stop offset="1" stop-color="#13bdf2"/>
+    </linearGradient>
+    <radialGradient id="aurora-shine" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(70 50) rotate(43) scale(190)">
+      <stop stop-color="#ffffff" stop-opacity="0.52"/>
+      <stop offset="0.42" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="aurora-shadow" x="-10" y="-4" width="276" height="284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="14" flood-color="#3132b4" flood-opacity="0.26" stdDeviation="13"/>
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#aurora-bg)" filter="url(#aurora-shadow)"/>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#aurora-shine)"/>
+  <path d="M187.5 75.5C173.8 61.6 153.6 55 128.8 55 98.1 55 76.4 70.4 76.4 94.7c0 22.1 17.6 32.1 48.3 37.8l16.8 3.1c22.7 4.2 32.5 9.6 32.5 23.2 0 16.1-16.3 25.5-43.5 25.5-25.2 0-44.2-7.9-59.6-23.8" stroke="#ffffff" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M187.5 75.5C173.8 61.6 153.6 55 128.8 55 98.1 55 76.4 70.4 76.4 94.7c0 22.1 17.6 32.1 48.3 37.8" stroke="#f9fbff" stroke-opacity="0.88" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

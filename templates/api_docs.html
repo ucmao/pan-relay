@@ -275,14 +275,28 @@
   "results": [
     {
       "title": "黑神话：悟空 高清原画合集",
+      "name": "黑神话：悟空 高清原画合集",
       "share_link": "https://pan.quark.cn/s/raw_sample_123",
+      "url": "https://pan.quark.cn/s/raw_sample_123",
       "cloud_name": "夸克网盘",
+      "drive_type": "quark",
       "password": "",
-      "source": "hot"
+      "source": "hot",
+      "source_type": "api",
+      "source_display": "API",
+      "source_id": "example_api",
+      "source_name": "示例 API",
+      "datetime": "2026-10-17 12:30:00",
+      "description": "资源简介",
+      "cover_url": "https://example.com/cover.jpg",
+      "image": "https://example.com/cover.jpg",
+      "cover": "https://example.com/cover.jpg",
+      "metadata": {"category": "电影", "rating": 8.5}
     }
   ]
 }</pre>
                     </div>
+                    <p class="text-xs text-slate-600 leading-relaxed">资源对象还会返回 <code class="font-mono">source_type</code>、<code class="font-mono">source_display</code>、<code class="font-mono">source_id</code>、<code class="font-mono">source_name</code> 用于来源分类与溯源；按可用情况返回 <code class="font-mono">datetime</code>、<code class="font-mono">description</code>、<code class="font-mono">cover_url</code>（兼容别名 <code class="font-mono">image</code>/<code class="font-mono">cover</code>）和安全扩展字段 <code class="font-mono">metadata</code>。可选字段没有值时会省略。<code class="font-mono">title</code>/<code class="font-mono">name</code>、<code class="font-mono">share_link</code>/<code class="font-mono">url</code> 为兼容别名。</p>
                 </div>
             </div>
 
@@ -302,7 +316,7 @@
                         <div class="px-3.5 py-2 bg-slate-100/70 border-b border-slate-200/80 text-slate-700 font-sans text-[11px] font-semibold">SSE Stream Format:</div>
                         <pre class="p-3.5 text-xs font-mono text-slate-800 bg-slate-50/40 overflow-x-auto leading-relaxed">data: {"type": "start", "keyword": "黑神话"}
 
-data: {"type": "item", "data": {"title": "黑神话：悟空", "share_link": "https://pan.quark.cn/s/...", "cloud_name": "夸克网盘", "source": "db"}}
+data: {"type": "item", "data": {"title": "黑神话：悟空", "share_link": "https://pan.quark.cn/s/...", "cloud_name": "夸克网盘", "source_type": "telegram", "source_display": "TG", "source_id": "channel_id", "source_name": "频道名称", "datetime": "2026-10-17", "description": "资源简介", "cover_url": "https://example.com/cover.jpg"}}
 
 data: {"type": "done", "total": 1}</pre>
                     </div>

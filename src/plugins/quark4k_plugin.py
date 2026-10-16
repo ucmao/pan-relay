@@ -90,6 +90,11 @@ class Quark4KPlugin(HttpPlugin):
                             datetime_value=attributes.get("createdAt"),
                             description=desc_text if desc_text and desc_text != title else None,
                             cover_url=cover_url,
+                            metadata={
+                                "discussion": {key: value for key, value in attributes.items() if key not in ("content", "contentHtml")},
+                                "post": {key: value for key, value in post_attrs.items() if key not in ("content", "contentHtml")},
+                                "tags": relationships.get("tags", {}).get("data") or [],
+                            },
                         )
                     )
         return self.finalize(items)

@@ -1,6 +1,11 @@
 import unittest
 from src.models.search_item import SearchResultItem
-from src.services.search_service import calculate_completeness_score, merge_or_select_better
+from src.services.search_service import (
+    _make_api_result_rows,
+    calculate_completeness_score,
+    clean_and_extract_data,
+    merge_or_select_better,
+)
 from src.services.telegram_search_service import _extract_telegram_cover
 from bs4 import BeautifulSoup
 
@@ -15,10 +20,14 @@ class UIPaginationAndMetaFieldsTestCase(unittest.TestCase):
             datetime="2026-10-16 20:30",
             description="这是一部高清测试影片的剧情简介",
             cover_url="https://img.example.com/poster.jpg",
+            source_type="plugin",
+            source_id="test_plugin",
+            source_name="测试插件",
+            metadata={"rating": 8.5},
         )
-        # Test to_front_list 7-element format
+        # Test legacy seven fields plus provenance and source metadata.
         front_list = item.to_front_list()
-        self.assertEqual(len(front_list), 7)
+        self.assertEqual(len(front_list), 11)
         self.assertEqual(front_list[0], "test_plugin")
         self.assertEqual(front_list[1], "测试电影 4K")
         self.assertEqual(front_list[2], "https://pan.quark.cn/s/test123456")
@@ -26,12 +35,20 @@ class UIPaginationAndMetaFieldsTestCase(unittest.TestCase):
         self.assertEqual(front_list[4], "2026-10-16 20:30")
         self.assertEqual(front_list[5], "这是一部高清测试影片的剧情简介")
         self.assertEqual(front_list[6], "https://img.example.com/poster.jpg")
+        self.assertEqual(front_list[7], "plugin")
+        self.assertEqual(front_list[8], "test_plugin")
+        self.assertEqual(front_list[9], "测试插件")
+        self.assertEqual(front_list[10], {"rating": 8.5})
 
         # Test from_item tuple reconstruction
         reconstructed = SearchResultItem.from_item(front_list)
         self.assertEqual(reconstructed.cover_url, "https://img.example.com/poster.jpg")
         self.assertEqual(reconstructed.description, "这是一部高清测试影片的剧情简介")
         self.assertEqual(reconstructed.datetime, "2026-10-16 20:30")
+        self.assertEqual(reconstructed.source_type, "plugin")
+        self.assertEqual(reconstructed.source_id, "test_plugin")
+        self.assertEqual(reconstructed.source_name, "测试插件")
+        self.assertEqual(reconstructed.metadata, {"rating": 8.5})
 
     def test_completeness_score_with_cover_and_desc(self):
         item_rich = SearchResultItem(
@@ -94,6 +111,38 @@ class UIPaginationAndMetaFieldsTestCase(unittest.TestCase):
         msg_el = soup.find("div", class_="tgme_widget_message")
         cover = _extract_telegram_cover(msg_el)
         self.assertEqual(cover, "https://cdn.telegram.org/file/poster123.jpg")
+
+    def test_api_projection_recovers_original_record_fields(self):
+        cover = "https://img.example.com/api-poster.jpg"
+        url = "https://pan.quark.cn/s/api-test"
+        payload = {
+            "data": [{
+                "title": "仙逆",
+                "url": url,
+                "created_at": 1792166191,
+                "description": "测试简介",
+                "images": [cover],
+                "password": "abcd",
+                "owner": "测试来源",
+                "api_token": "must-not-leak",
+            }]
+        }
+        rows = _make_api_result_rows(
+            [["仙逆", url]],
+            payload,
+            {"id": 12, "name": "测试 API"},
+        )
+        item = clean_and_extract_data(rows)[0]
+
+        self.assertEqual(item.source_type, "api")
+        self.assertEqual(item.source_id, "12")
+        self.assertEqual(item.source_name, "测试 API")
+        self.assertEqual(item.password, "abcd")
+        self.assertEqual(item.description, "测试简介")
+        self.assertEqual(item.cover_url, cover)
+        self.assertIn("owner", item.metadata)
+        self.assertNotIn("api_token", item.metadata)
+        self.assertNotIn("password", item.to_dict().get("metadata", {}))
 
 
 if __name__ == "__main__":

@@ -49,7 +49,17 @@ class NyaaPlugin(HttpPlugin):
                 timestamp = int(timestamp) if timestamp else None
             except (TypeError, ValueError):
                 timestamp = None
+            cells = row.select("td")
+            metadata = {
+                "category": clean_text(cells[2].get_text(" ", strip=True)) if len(cells) > 2 else None,
+                "size": clean_text(cells[3].get_text(" ", strip=True)) if len(cells) > 3 else None,
+                "seeders": clean_text(cells[5].get_text(" ", strip=True)) if len(cells) > 5 else None,
+                "leechers": clean_text(cells[6].get_text(" ", strip=True)) if len(cells) > 6 else None,
+                "completed": clean_text(cells[7].get_text(" ", strip=True)) if len(cells) > 7 else None,
+                "uploader": clean_text(cells[-1].get_text(" ", strip=True)) if len(cells) > 8 else None,
+            }
+            metadata = {key: value for key, value in metadata.items() if value}
             items.append(
-                self.make_item(title, magnet_anchor.get("href"), datetime_value=timestamp)
+                self.make_item(title, magnet_anchor.get("href"), datetime_value=timestamp, metadata=metadata)
             )
         return self.finalize(items)

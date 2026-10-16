@@ -53,6 +53,10 @@ class U3c3Plugin(HttpPlugin):
             if any(term not in title.casefold() for term in keyword.casefold().split()):
                 continue
             date = clean_text(cells[4].get_text(" ", strip=True)) if len(cells) > 4 else None
+            metadata = {
+                "result_row_text": clean_text(row.get_text(" ", strip=True)),
+                "cells": [clean_text(cell.get_text(" ", strip=True)) for cell in cells],
+            }
             for anchor in cells[2].select("a[href^='magnet:']"):
-                items.append(self.make_item(title, anchor.get("href"), datetime_value=date))
+                items.append(self.make_item(title, anchor.get("href"), datetime_value=date, metadata=metadata))
         return self.finalize(items)

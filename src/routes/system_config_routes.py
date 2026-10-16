@@ -31,8 +31,12 @@ from src.services.system_config_service import (
     is_pc_qr_code_enabled,
     save_pc_qr_code_config,
     get_frontend_github_config,
+    get_frontend_disclaimer_text,
+    get_frontend_seo_config,
     is_frontend_github_enabled,
     save_frontend_github_config,
+    save_frontend_footer_text,
+    save_frontend_disclaimer_text,
     get_frontend_link_check_config,
 
     get_frontend_display_netdisk_config,
@@ -215,7 +219,7 @@ def frontend_config_page():
     )
 
     tab = request.args.get("tab", "appearance")
-    if tab not in ("appearance", "strategies"):
+    if tab not in ("appearance", "seo", "strategies"):
         tab = "appearance"
 
     frontend_config = get_frontend_display_netdisk_config()
@@ -238,6 +242,7 @@ def frontend_config_page():
         allow_excel_download=allow_excel.get("allow_excel_download", True),
         enable_pc_qr_code=is_pc_qr_code_enabled(),
         enable_frontend_github=is_frontend_github_enabled(),
+        frontend_disclaimer_text=get_frontend_disclaimer_text(),
         enable_resource_request=is_resource_request_enabled(),
         enable_hot_searches=is_hot_searches_enabled(),
         hot_search_words=hot_words,
@@ -249,6 +254,7 @@ def frontend_config_page():
         active_theme=get_active_theme(),
         current_site_logo=get_site_logo(),
         current_site_name=get_site_name(),
+        frontend_seo_config=get_frontend_seo_config(),
     )
 
 
@@ -460,19 +466,92 @@ def update_pc_qr_code_api():
 @token_required
 def get_frontend_github_api():
     config = get_frontend_github_config()
-    return jsonify({"success": True, "enabled": config["enabled"]})
+    return jsonify({"success": True, **config})
 
 
 @system_config_bp.route("/admin/api/frontend-github-config", methods=["PUT"])
 @token_required
 def update_frontend_github_api():
     data = request.get_json() or {}
-    enabled = bool(data.get("enabled", True))
+    footer_text = data.get("footer_text")
+    if "footer_text" in data and not isinstance(footer_text, str):
+        return jsonify({"success": False, "message": "页脚文字必须是文本"}), 400
 
-    if not save_frontend_github_config(enabled):
+    saved = True
+    if "enabled" in data:
+        saved = save_frontend_github_config(bool(data["enabled"]))
+    if saved and "footer_text" in data:
+        saved = save_frontend_footer_text(footer_text)
+
+    if not saved:
         return jsonify({"success": False, "message": "前台 GitHub 标识配置保存失败"}), 400
 
-    return jsonify({"success": True, "message": f"前台 GitHub 标识展示已{'开启' if enabled else '关闭'}"})
+    if "footer_text" in data and "enabled" not in data:
+        return jsonify({"success": True, "message": "前台页脚文字已保存"})
+    return jsonify({"success": True, "message": f"前台 GitHub 标识展示已{'开启' if bool(data.get('enabled', True)) else '关闭'}"})
+
+
+@system_config_bp.route("/admin/api/frontend-disclaimer-config", methods=["GET"])
+@token_required
+def get_frontend_disclaimer_api():
+    return jsonify({"success": True, "disclaimer_text": get_frontend_disclaimer_text()})
+
+
+@system_config_bp.route("/admin/api/frontend-disclaimer-config", methods=["PUT"])
+@token_required
+def update_frontend_disclaimer_api():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or not isinstance(data.get("disclaimer_text"), str):
+        return jsonify({"success": False, "message": "免责声明必须是文本"}), 400
+    disclaimer_text = data["disclaimer_text"]
+    if len(disclaimer_text) > 5000:
+        return jsonify({"success": False, "message": "免责声明不能超过 5000 个字符"}), 400
+    if not save_frontend_disclaimer_text(disclaimer_text):
+        return jsonify({"success": False, "message": "免责声明保存失败"}), 400
+    return jsonify({"success": True, "message": "免责声明已保存"})
+
+
+@system_config_bp.route("/admin/api/frontend-seo-config", methods=["GET"])
+@token_required
+def get_frontend_seo_api():
+    return jsonify({"success": True, "config": get_frontend_seo_config()})
+
+
+@system_config_bp.route("/admin/api/frontend-seo-config", methods=["PUT"])
+@token_required
+def update_frontend_seo_api():
+    from src.services.system_config_service import save_frontend_seo_config
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"success": False, "message": "SEO 配置格式无效"}), 400
+
+    clean_config = {}
+    for page_type in ("home", "search"):
+        page_config = data.get(page_type)
+        if not isinstance(page_config, dict):
+            return jsonify({"success": False, "message": "请完整填写首页和搜索页 SEO 配置"}), 400
+        clean_page = {}
+        for field, max_length in (("title", 200), ("description", 500), ("keywords", 500)):
+            value = page_config.get(field)
+            if not isinstance(value, str):
+                return jsonify({"success": False, "message": "标题、描述和关键词必须是文本"}), 400
+            value = value.strip()
+            if field == "title" and not value:
+                return jsonify({"success": False, "message": f"{page_type}页标题不能为空"}), 400
+            if len(value) > max_length:
+                return jsonify({"success": False, "message": f"{field} 最多 {max_length} 个字符"}), 400
+            clean_page[field] = value
+        if page_type == "search":
+            allow_indexing = page_config.get("allow_indexing")
+            if not isinstance(allow_indexing, bool):
+                return jsonify({"success": False, "message": "搜索页收录开关格式无效"}), 400
+            clean_page["allow_indexing"] = allow_indexing
+        clean_config[page_type] = clean_page
+
+    if not save_frontend_seo_config(clean_config):
+        return jsonify({"success": False, "message": "SEO 配置保存失败"}), 500
+    return jsonify({"success": True, "message": "前台 SEO 配置已保存"})
 
 
 

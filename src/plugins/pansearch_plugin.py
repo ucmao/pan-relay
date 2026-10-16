@@ -81,6 +81,7 @@ class PansearchPlugin(HttpPlugin):
                         datetime_value=record.get("time"),
                         description=desc_text if desc_text and desc_text != title else None,
                         cover_url=cover_url,
+                        metadata={key: value for key, value in record.items() if key != "content"},
                     )
                 )
         return self.finalize(items)

@@ -26,22 +26,35 @@ class DetailPagePlugin(HttpPlugin):
         datetime_value=None,
         cover_url=None,
         description=None,
+        metadata=None,
     ) -> List[SearchResultItem]:
         response = self.request("GET", url, headers={"Referer": self.base_url + "/"})
         soup = BeautifulSoup(response.text, "html.parser")
+        page_metadata = dict(metadata or {})
+        for node in soup.select("meta[property], meta[name]"):
+            key = clean_text(node.get("property") or node.get("name")).lower()
+            value = clean_text(node.get("content"))
+            if key and value and any(marker in key for marker in ("og:", "article:", "twitter:", "description", "published", "date", "author", "keywords")):
+                page_metadata.setdefault(key.replace(":", "_"), value)
+        if not datetime_value:
+            datetime_value = page_metadata.get("article_published_time") or page_metadata.get("datepublished") or page_metadata.get("published_time")
         if not cover_url:
             img = soup.select_one("img.cover, .post-thumb img, .entry-content img, .detail-pic img, .video-cover img, .article-content img")
             if img:
                 c = img.get("data-src") or img.get("src")
                 if c:
                     cover_url = c if c.startswith("http") else urljoin(self.base_url, c)
+            if not cover_url and page_metadata.get("og_image"):
+                cover_url = page_metadata["og_image"]
         if not description:
             desc_node = soup.select_one(".entry-content p, .article-content p, .post-content p, .intro, .summary, .description")
             if desc_node:
                 description = clean_text(desc_node.get_text(" ", strip=True))
+            if not description:
+                description = page_metadata.get("og_description") or page_metadata.get("description")
         values = [node.get("href") or node.get("data-clipboard-text") for node in soup.select(self.resource_selector)]
         return [
-            self.make_item(title, link, datetime_value=datetime_value, cover_url=cover_url, description=description)
+            self.make_item(title, link, datetime_value=datetime_value, cover_url=cover_url, description=description, metadata=page_metadata)
             for value in values
             for link in extract_links(value)
         ]
@@ -86,6 +99,10 @@ class DetailPagePlugin(HttpPlugin):
                     cover = c if c.startswith("http") else urljoin(self.base_url, c)
             desc_node = node.select_one(desc_selector) if desc_selector else None
             desc = clean_text(desc_node.get_text(" ", strip=True)) if desc_node else None
+            metadata = {"search_card_text": clean_text(node.get_text(" ", strip=True))}
+            for key, value in (node.attrs or {}).items():
+                if key.startswith("data-") and value not in (None, ""):
+                    metadata[key[5:].replace("-", "_")] = value
             if title and href:
                 records.append((
                     title,
@@ -93,5 +110,6 @@ class DetailPagePlugin(HttpPlugin):
                     clean_text(date_node.get_text(" ", strip=True)) if date_node else None,
                     cover,
                     desc,
+                    metadata,
                 ))
         return records

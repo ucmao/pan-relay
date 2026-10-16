@@ -1,0 +1,15 @@
+{
+  "id": "aurora",
+  "name": "模板 2 · 极光双模风",
+  "version": "1.0.0",
+  "author": "Pan-Relay",
+  "description": "专为网盘搜索打造的极简流式双模界面，支持暗黑模式、3D 浮动热词云、网盘图标分类 Tab 与无感换链转存。",
+  "preview": "/themes/aurora/assets/preview.webp",
+  "features": [
+    "暗黑/白天双模式一键切换",
+    "3D 浮动热词球",
+    "主流网盘图标分类 Tab (夸克/百度/阿里/迅雷/UC/光鸭/悟空/移动/磁力)",
+    "SSE 实时流式加载",
+    "无缝对接 Pan-Relay 收益转存与扫码保存"
+  ]
+}

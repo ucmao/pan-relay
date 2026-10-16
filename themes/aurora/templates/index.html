@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ seo_meta.title }}</title>
+  <meta name="description" content="{{ seo_meta.description }}">
+  {% if seo_meta.keywords %}<meta name="keywords" content="{{ seo_meta.keywords }}">{% endif %}
+  <meta name="robots" content="{{ seo_meta.robots }}">
+  <link rel="icon" href="/themes/aurora/assets/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/themes/aurora/assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/themes/aurora/assets/css/theme.css?v=1.0.1">
+  <link rel="stylesheet" href="/themes/aurora/assets/css/request-modal.css?v=1.0.0">
+  <style>
+    /* 适配前台展示微调：增大 Logo 尺寸提升视觉品牌感 */
+    .brand {
+      margin-bottom: 32px !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+    }
+    .brand img {
+      height: 168px !important;
+      max-height: 200px !important;
+      max-width: 480px !important;
+      width: auto !important;
+      object-fit: contain !important;
+      filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.05));
+      transition: transform 0.2s ease;
+    }
+    .brand img:hover {
+      transform: scale(1.02);
+    }
+    @media (max-width: 768px) {
+      .brand {
+        margin-bottom: 24px !important;
+      }
+      .brand img {
+        height: 110px !important;
+        max-width: 280px !important;
+      }
+    }
+    .quick-action-github {
+      gap: 7px;
+      color: var(--ink, #475569);
+      padding: 0 12px;
+      font-weight: 600;
+    }
+    .quick-action-github .github-mark {
+      display: block;
+      width: 17px;
+      height: 17px;
+      fill: currentColor;
+      stroke: none;
+    }
+    .quick-action-github .github-star-mark {
+      width: 12px;
+      height: 12px;
+      color: #f59e0b;
+      fill: currentColor;
+      stroke: none;
+      align-self: center;
+      flex: 0 0 auto;
+    }
+    .quick-action-request {
+      height: 34px;
+      padding: 0 12px;
+      border: 1px solid #dfe3eb;
+      border-radius: 999px;
+      color: #3c4043;
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    }
+    .quick-action-request:hover {
+      background: #f8fafd;
+      border-color: #cfd5df;
+      box-shadow: 0 4px 12px rgba(60, 64, 67, 0.1);
+    }
+    .quick-action-request svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    [data-theme="dark"] .quick-action-request {
+      border-color: #2b3546;
+      color: #e8edf7;
+      background: #121826;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.28);
+    }
+    [data-theme="dark"] .quick-action-request:hover {
+      background: #1a2232;
+    }
+    @media (max-width: 900px) {
+      .quick-action-request {
+        width: 36px;
+        height: 34px;
+        padding: 0;
+        justify-content: center;
+        gap: 0;
+      }
+      .quick-action-request span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+    }
+    @media (max-width: 720px) {
+      .quick-action-request {
+        display: none;
+      }
+    }
+    @media (max-width: 680px) {
+      .quick-action-github {
+        padding: 0;
+      }
+      .quick-action-github .github-star-mark {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 背景光晕动态氛围效果 -->
+  <div class="ambient" aria-hidden="true">
+    <span class="ambient__halo ambient__halo--one"></span>
+    <span class="ambient__halo ambient__halo--two"></span>
+    <span class="ambient__arc"></span>
+    <span class="ambient__plate"></span>
+  </div>
+
+  <!-- 顶部快捷操作 -->
+  <nav class="quick-actions" aria-label="快捷操作">
+    {% if enable_frontend_github %}
+    <a class="quick-action quick-action-github" href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" title="前往 Pan-Relay GitHub 仓库并点亮 Star" aria-label="前往 Pan-Relay GitHub 仓库并点亮 Star">
+      <svg class="github-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .9a11.1 11.1 0 0 0-3.51 21.63c.55.1.76-.24.76-.54v-2.1c-3.1.67-3.76-1.32-3.76-1.32-.5-1.29-1.23-1.63-1.23-1.63-1.01-.69.08-.68.08-.68 1.12.08 1.71 1.15 1.71 1.15 1 .1.76 2.28 3.84 1.61.1-.72.4-1.21.7-1.49-2.48-.28-5.09-1.24-5.09-5.52 0-1.22.44-2.21 1.15-2.99-.12-.28-.5-1.42.11-2.96 0 0 .94-.3 3.05 1.14a10.6 10.6 0 0 1 5.55 0c2.11-1.44 3.05-1.14 3.05-1.14.61 1.54.23 2.68.11 2.96.71.78 1.14 1.77 1.14 2.99 0 4.29-2.61 5.23-5.1 5.51.4.35.75 1.02.75 2.06v3.05c0 .3.2.65.77.54A11.1 11.1 0 0 0 12 .9Z"/></svg>
+      <span>GitHub</span>
+      <svg class="github-star-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.2 2.98 6.04 6.66.97-4.82 4.7 1.14 6.63L12 17.4l-5.96 3.14 1.14-6.63-4.82-4.7 6.66-.97L12 2.2Z"/></svg>
+    </a>
+    {% endif %}
+    {% if enable_resource_request %}
+    <button class="quick-action-request" id="openRequestModalBtn" type="button" title="提交求片需求">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"></path>
+        <path d="M8 10h8M8 14h5"></path>
+      </svg>
+      <span>求片</span>
+    </button>
+    {% endif %}
+
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换夜间模式" aria-pressed="false">
+      <span class="theme-toggle__track">
+        <svg class="theme-toggle__sun" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2.5v2"></path>
+          <path d="M12 19.5v2"></path>
+          <path d="M4.57 4.57 6 6"></path>
+          <path d="m18 18 1.43 1.43"></path>
+          <path d="M2.5 12h2"></path>
+          <path d="M19.5 12h2"></path>
+          <path d="M4.57 19.43 6 18"></path>
+          <path d="m18 6 1.43-1.43"></path>
+        </svg>
+        <svg class="theme-toggle__moon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.3 14.4A7.8 7.8 0 0 1 9.6 3.7 8.7 8.7 0 1 0 20.3 14.4Z"></path>
+        </svg>
+      </span>
+    </button>
+  </nav>
+
+  <!-- 主体内容 -->
+  <main class="page">
+    <section class="search-home" aria-labelledby="siteName">
+      <h1 class="brand" id="siteName">
+        <img src="{{ site_logo }}" alt="{{ site_name }}">
+      </h1>
+
+      <form class="search-frame" id="searchForm" action="/search" method="GET" autocomplete="off">
+        <div class="engine-bar" role="tablist" aria-label="网盘类型">
+          <button class="engine is-active" type="button" data-engine="all" aria-label="全部" title="全部" aria-pressed="true">
+            <img src="/themes/aurora/assets/all-source-dark.svg" alt="">
+            <span>全部</span>
+          </button>
+          {% for disk in frontend_theme_netdisks %}
+          <button class="engine" type="button" data-engine="{{ disk.name }}" aria-label="{{ disk.name }}" title="{{ disk.name }}" aria-pressed="false">
+            {% if disk.icon %}<img src="{{ disk.icon }}" alt="">{% else %}<span class="engine-icon-fallback" aria-hidden="true">{{ disk.label[:2] }}</span>{% endif %}
+            <span>{{ disk.label }}</span>
+          </button>
+          {% endfor %}
+        </div>
+
+        <input type="hidden" name="drive" id="searchDriveInput" value="">
+
+        <div class="input-wrap">
+          <svg class="input-wrap__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10.8 5.2a5.6 5.6 0 1 1 0 11.2 5.6 5.6 0 0 1 0-11.2Z"></path>
+            <path d="m15.2 15.2 4 4"></path>
+          </svg>
+          <input id="searchInput" name="q" type="search" placeholder="输入关键词搜索全部网盘资源..." aria-label="搜索关键词" required autofocus>
+        </div>
+
+        <button class="submit" type="submit" aria-label="搜索">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 3 10 14"></path>
+            <path d="m21 3-7 18-4-7-7-4 18-7Z"></path>
+          </svg>
+          <span>搜索</span>
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="footer">
+    {{ frontend_footer_text }}
+  </footer>
+
+  {% include "aurora/templates/_request_modal.html" %}
+
+  <script>
+    // 夜间/白天模式切换持久化
+    const themeToggle = document.getElementById("themeToggle");
+    const savedTheme = localStorage.getItem("theme_mode") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    if (themeToggle) {
+      themeToggle.setAttribute("aria-pressed", String(savedTheme === "dark"));
+      themeToggle.addEventListener("click", () => {
+        const current = document.documentElement.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme_mode", next);
+        themeToggle.setAttribute("aria-pressed", String(next === "dark"));
+      });
+    }
+
+    // 引擎类型选择
+    const engineButtons = document.querySelectorAll(".engine");
+    const driveInput = document.getElementById("searchDriveInput");
+    const searchInput = document.getElementById("searchInput");
+
+    engineButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        engineButtons.forEach(b => {
+          b.classList.remove("is-active");
+          b.setAttribute("aria-pressed", "false");
+        });
+        btn.classList.add("is-active");
+        btn.setAttribute("aria-pressed", "true");
+        const drive = btn.dataset.engine;
+        driveInput.value = (drive === "all" ? "" : drive);
+        if (searchInput) {
+          searchInput.placeholder = drive ? `搜索${drive}专属资源...` : "输入关键词搜索全部网盘资源...";
+          searchInput.focus();
+        }
+      });
+    });
+
+  </script>
+  <script src="/themes/aurora/assets/js/request_modal.js?v=1.0.0"></script>
+</body>
+</html>

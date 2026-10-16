@@ -108,6 +108,7 @@ class SougsPlugin(HttpPlugin):
                     datetime_value=item.get("created_at") or item.get("time") or item.get("datetime"),
                     description=desc,
                     cover_url=cover,
+                    metadata=item,
                 )
                 if search_item:
                     items.append(search_item)

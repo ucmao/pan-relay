@@ -97,6 +97,11 @@ class XiaokupanPlugin(HttpPlugin):
                 datetime_node = value(node, "datetime") or {}
                 cover_node = value(node, "cover") or value(node, "image") or value(node, "thumb") or {}
                 desc_node = value(node, "desc") or value(node, "description") or value(node, "content") or {}
+                raw_fields = {}
+                node_props = (node or {}).get("p") or {}
+                for field_name, field_node in zip(node_props.get("k") or [], node_props.get("v") or []):
+                    resolved = resolve(field_node)
+                    raw_fields[field_name] = resolved.get("s") if isinstance(resolved, dict) and "s" in resolved else resolved
                 items.append(
                     self.make_item(
                         note_node.get("s"),
@@ -105,6 +110,7 @@ class XiaokupanPlugin(HttpPlugin):
                         datetime_value=datetime_node.get("s"),
                         description=desc_node.get("s"),
                         cover_url=cover_node.get("s"),
+                        metadata=raw_fields,
                     )
                 )
         return self.finalize(items)

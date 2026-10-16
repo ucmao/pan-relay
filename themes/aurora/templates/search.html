@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ seo_meta.title }}</title>
+  <meta name="description" content="{{ seo_meta.description }}">
+  {% if seo_meta.keywords %}<meta name="keywords" content="{{ seo_meta.keywords }}">{% endif %}
+  <meta name="robots" content="{{ seo_meta.robots }}">
+  <link rel="icon" href="/themes/aurora/assets/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/themes/aurora/assets/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/themes/aurora/assets/css/theme.css?v=1.0.1">
+  <link rel="stylesheet" href="/themes/aurora/assets/css/results.css?v=1.0.3">
+  <link rel="stylesheet" href="/themes/aurora/assets/css/request-modal.css?v=1.0.0">
+  <style>
+    /* 顶部通栏网格对齐：使搜索框与下方内容列表（serp-left）在左侧垂直精准对齐，消除右偏 */
+    .topbar-main {
+      display: grid !important;
+      grid-template-columns: calc(var(--serp-left) - 32px) minmax(360px, var(--search-width)) minmax(180px, 1fr) !important;
+      align-items: center !important;
+      gap: 0 !important;
+    }
+
+    .topbar-brand {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-self: start !important;
+      padding-right: 14px;
+    }
+
+    .topbar-brand img {
+      width: auto !important;
+      max-width: calc(var(--serp-left) - 44px) !important;
+      height: 46px !important;
+      max-height: 50px !important;
+      object-fit: contain !important;
+      display: block !important;
+      transition: transform 0.15s ease;
+    }
+
+    .topbar-brand img:hover {
+      transform: scale(1.03);
+    }
+
+    @media (max-width: 1120px) {
+      .topbar-main {
+        grid-template-columns: minmax(96px, 128px) minmax(260px, 1fr) auto !important;
+        gap: 12px !important;
+      }
+
+      .topbar-brand img {
+        max-width: 110px !important;
+        height: 38px !important;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .topbar-main {
+        grid-template-columns: 66px minmax(128px, 1fr) auto !important;
+        gap: 6px !important;
+      }
+
+      .topbar-brand img {
+        max-width: 64px !important;
+        height: 32px !important;
+      }
+    }
+
+    .serp-tabs {
+      display: flex !important;
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      scrollbar-width: none !important;
+      gap: 6px !important;
+      padding: 4px 0 !important;
+      margin-bottom: 12px !important;
+    }
+
+    .serp-tabs::-webkit-scrollbar {
+      display: none !important;
+    }
+
+    .source-chip {
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 6px !important;
+      height: 32px !important;
+      padding: 0 12px !important;
+      font-size: 13px !important;
+      line-height: 1 !important;
+    }
+
+    .source-chip img {
+      width: 15px !important;
+      height: 15px !important;
+      flex-shrink: 0 !important;
+      display: inline-block !important;
+    }
+
+    /* 卡片专属转存操作按钮 */
+    .serp-item__toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .serp-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12.5px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .serp-btn-copy {
+      background: rgba(100, 116, 139, 0.08);
+      border: 1px solid rgba(100, 116, 139, 0.2);
+      color: var(--text-main, #334155);
+    }
+
+    [data-theme="dark"] .serp-btn-copy {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: #cbd5e1;
+    }
+
+    .serp-btn-copy:hover {
+      background: rgba(100, 116, 139, 0.15);
+    }
+
+    .serp-btn-get {
+      background: #4f46e5;
+      border: 1px solid #4338ca;
+      color: #ffffff !important;
+    }
+
+    .serp-btn-get:hover {
+      background: #4338ca;
+    }
+
+    .res-badge-hot {
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(245, 158, 11, 0.15);
+      color: #d97706;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      font-weight: 600;
+    }
+
+    .res-badge-pwd {
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .aurora-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(99, 102, 241, 0.2);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="theme-transition" id="themeTransition" aria-hidden="true"></div>
+
+  <!-- 顶部通栏搜索栏 -->
+  <header class="result-topbar">
+    <div class="topbar-main">
+      <a class="topbar-brand" href="/" aria-label="返回首页">
+        <img src="{{ site_logo }}" alt="{{ site_name }}">
+      </a>
+
+      <form class="serp-search" id="resultsSearchForm" autocomplete="off">
+        <div class="serp-search__shell">
+          <svg class="serp-search__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5"></circle>
+            <path d="m16 16 4 4"></path>
+          </svg>
+          <input id="resultsSearchInput" name="q" type="text" aria-label="搜索关键词" placeholder="搜索网盘资源..."
+            value="{{ query or '' }}" autocomplete="off" required>
+          <button class="serp-clear" type="button" aria-label="清空搜索"
+            onclick="document.getElementById('resultsSearchInput').value='';">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m7 7 10 10"></path>
+              <path d="m17 7-10 10"></path>
+            </svg>
+          </button>
+          <button class="serp-search__submit" type="submit">搜索</button>
+        </div>
+      </form>
+
+      <nav class="topbar-actions" aria-label="快捷操作">
+        {% if enable_resource_request %}
+        <button class="serp-btn serp-btn-request" id="openRequestModalBtn" type="button" title="提交求片需求">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"></path>
+            <path d="M8 10h8M8 14h5"></path>
+          </svg>
+          <span>求片</span>
+        </button>
+        {% endif %}
+
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换夜间模式" aria-pressed="false">
+          <span class="theme-toggle__track">
+            <svg class="theme-toggle__sun" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2.5v2"></path>
+              <path d="M12 19.5v2"></path>
+              <path d="M4.57 4.57 6 6"></path>
+              <path d="m18 18 1.43 1.43"></path>
+              <path d="M2.5 12h2"></path>
+              <path d="M19.5 12h2"></path>
+              <path d="M4.57 19.43 6 18"></path>
+              <path d="m18 6 1.43-1.43"></path>
+            </svg>
+            <svg class="theme-toggle__moon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20.3 14.4A7.8 7.8 0 0 1 9.6 3.7 8.7 8.7 0 1 0 20.3 14.4Z"></path>
+            </svg>
+          </span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 搜索页面主体 -->
+  <main class="serp-page">
+    <section class="result-column" id="resultBoard">
+      <!-- 搜索来源 Tab 栏 -->
+      <nav class="serp-tabs" aria-label="搜索来源">
+        <button class="source-chip is-active" type="button" data-drive="">全部</button>
+        {% for disk in frontend_theme_netdisks %}
+        <button class="source-chip" type="button" data-drive="{{ disk.name }}">
+          {% if disk.icon %}<img src="{{ disk.icon }}" alt="">{% else %}<span class="source-chip-icon-fallback" aria-hidden="true">{{ disk.label[:2] }}</span>{% endif %}{{ disk.label }}
+        </button>
+        {% endfor %}
+      </nav>
+
+      <!-- 概览状态 -->
+      <header class="results-overview" id="resultSummary" aria-label="搜索状态">
+        <p class="serp-count__label" id="resultSummaryText">正在检索全网公开网盘资源...</p>
+        <div class="serp-count__stats" aria-label="资源状态统计">
+          <span id="countStatsValid">有效资源 0 条</span>
+          <span id="countStatsFailed" class="is-invalid">已失效 0 条</span>
+        </div>
+      </header>
+
+      <!-- 搜索结果列表 -->
+      <div id="resultsList" class="serp-results" aria-label="搜索结果"></div>
+
+      <!-- 分页导航条 (10条/页) -->
+      <nav id="serpPagination" class="serp-pagination is-hidden" aria-label="分页导航"></nav>
+    </section>
+
+    <!-- 右侧热门搜索 3D 球 -->
+    <aside class="related-panel" aria-label="热门搜索">
+      {% if enable_hot_searches %}
+      <section class="related-card" id="hotSearchCard">
+        <h2>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M13 2 5 13h6l-1 9 9-13h-6l0-7Z"></path>
+          </svg>
+          全网热门搜索
+        </h2>
+        <div class="hot-search-list" id="hotSearchList" aria-label="热门搜索词"></div>
+      </section>
+      {% endif %}
+
+      <section class="related-card notice-card">
+        <h2>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3 4 7v6c0 4.4 3.1 7.4 8 8 4.9-.6 8-3.6 8-8V7l-8-4Z"></path>
+            <path d="M9 12l2 2 4-5"></path>
+          </svg>
+          本站原理
+        </h2>
+        <p class="disclaimer-config-text">{{ frontend_disclaimer_text }}</p>
+      </section>
+
+      <!-- 侧边栏求片卡片 -->
+      {% if enable_resource_request %}
+      <section class="related-card"
+        style="margin-top: 14px; background: rgba(99, 102, 241, 0.05); border: 1px dashed rgba(99, 102, 241, 0.35); text-align: left;">
+        <h2 style="color: #6366f1;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"
+            style="width:16px;height:16px;">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          没找到想要的？
+        </h2>
+        <p style="font-size: 13px; color: var(--muted, #64748b); margin: 6px 0 12px; line-height: 1.5;">
+          提交你想看的电影、短剧、学习资料，平台将尽快跟进补充并收录！</p>
+        <button type="button" class="serp-btn serp-btn-get" id="sideRequestBtn"
+          style="width: 100%; justify-content: center; font-weight: 600;">
+          立即提交求片
+        </button>
+      </section>
+      {% endif %}
+    </aside>
+  </main>
+
+  <footer class="serp-footer">
+    <p>{{ frontend_footer_text }}</p>
+  </footer>
+
+  {% include "aurora/templates/_request_modal.html" %}
+
+  <!-- 转存 / 扫码获取模态弹窗 -->
+  <div class="aurora-modal-backdrop" id="auroraModalBackdrop" hidden></div>
+  <div class="aurora-modal-shell" id="auroraModalShell" hidden role="dialog" aria-modal="true">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="margin:0;font-size:16px;font-weight:700;">获取专属收益资源</h3>
+      <button type="button" data-aurora-modal-close
+        style="background:none;border:none;cursor:pointer;color:#94a3b8;padding:4px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div id="auroraModalLoading" style="text-align: center; padding: 24px 0;">
+      <div class="aurora-spinner"></div>
+      <p style="font-size: 13.5px; color: #94a3b8; margin: 0;">正在自动转存并生成专属链接，请稍等...</p>
+    </div>
+
+    <div id="auroraModalContent" style="display: none; text-align: center;">
+      <h4 id="auroraModalTitle"
+        style="font-size: 14.5px; margin-bottom: 12px; font-weight: 600; word-break: break-all; line-height: 1.4;"></h4>
+
+      <div id="auroraModalQrContainer" style="display: none; margin: 10px 0;">
+        <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 6px;">打开手机网盘 App 扫码即可极速保存：</p>
+        <div
+          style="background:#fff;padding:10px;border-radius:10px;display:inline-block;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+          <img id="auroraModalQrImg" src="" alt="保存二维码" style="width: 160px; height: 160px; display: block;">
+        </div>
+      </div>
+
+      <div style="margin: 12px 0; font-size: 12.5px; color: #94a3b8; word-break: break-all;">
+        <span>资源地址：</span>
+        <a id="auroraModalLink" href="#" target="_blank" rel="noopener"
+          style="color: #4f46e5; text-decoration: underline;"></a>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 16px;">
+        <button type="button" class="serp-btn serp-btn-copy" id="auroraModalCopyBtn">复制链接</button>
+        <button type="button" class="serp-btn serp-btn-get" id="auroraModalOpenBtn">直接访问</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全局配置参数传入前端 -->
+  <script>
+    window.SEARCH_LINK_MODE = {{ frontend_link_mode | tojson }};
+    window.ENABLE_LINK_CHECK = {{ 'true' if enable_link_check else 'false' }};
+    window.ENABLED_CHECK_PANS = {{ enabled_check_pans | tojson }};
+    window.ENABLE_PC_QR_CODE = {{ 'true' if enable_pc_qr_code else 'false' }};
+    window.ENABLE_RESOURCE_REQUEST = {{ 'true' if enable_resource_request else 'false' }};
+    window.ENABLE_HOT_SEARCHES = {{ 'true' if enable_hot_searches else 'false' }};
+    window.HOT_SEARCH_WORDS = {{ hot_search_words | tojson }};
+  </script>
+  <script src="/themes/aurora/assets/js/request_modal.js?v=1.0.0"></script>
+  <script src="/themes/aurora/assets/js/theme_aurora.js?v=1.0.3"></script>
+</body>
+
+</html>

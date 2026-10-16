@@ -41,6 +41,6 @@ class OugePlugin(HttpPlugin):
             title = record.get("vod_name")
             providers = str(record.get("vod_down_from") or "").split("$$$")
             links = str(record.get("vod_down_url") or "").split("$$$")
-            for _provider, link in zip(providers, links):
-                items.append(self.make_item(title, link))
+            for provider, link in zip(providers, links):
+                items.append(self.make_item(title, link, metadata={"record": record, "provider": provider}))
         return self.finalize(items)

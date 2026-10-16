@@ -80,6 +80,10 @@ class TelegramParserTest(unittest.TestCase):
         self.assertEqual("繁花 (2023) 4K 杜比视界", fh_baidu.title)
         self.assertEqual("https://pan.baidu.com/s/fanhua_baidu?pwd=7788", fh_baidu.share_link)
         self.assertEqual("7788", fh_baidu.password)
+        self.assertEqual("telegram", fh_baidu.source_type)
+        self.assertEqual("tgchannel", fh_baidu.source_id)
+        self.assertEqual("tgchannel", fh_baidu.source_name)
+        self.assertEqual("101", fh_baidu.metadata["message_id"])
 
     def test_compound_line_list_pairing(self):
         results = parse_telegram_search_html(COMPOUND_LINE_HTML, "tgchannel")

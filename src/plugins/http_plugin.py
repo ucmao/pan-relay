@@ -98,6 +98,7 @@ class HttpPlugin(BasePlugin):
         datetime_value: Any = None,
         description: Any = None,
         cover_url: Any = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Optional[SearchResultItem]:
         clean_title = clean_text(title)
         clean_link = normalize_link(share_link)
@@ -113,6 +114,10 @@ class HttpPlugin(BasePlugin):
             datetime=parse_datetime(datetime_value),
             description=clean_text(description) if description else None,
             cover_url=clean_text(cover_url) if cover_url else None,
+            source_type="plugin",
+            source_id=str(self.name),
+            source_name=str(self.display_name),
+            metadata=metadata or {},
         )
 
     def finalize(self, items: Iterable[Optional[SearchResultItem]]) -> List[SearchResultItem]:

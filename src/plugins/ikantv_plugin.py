@@ -56,6 +56,7 @@ class IkanTVPlugin(HttpPlugin):
                         datetime_value=link.get("datetime") or record.get("datetime"),
                         description=desc_text if desc_text and desc_text != title else None,
                         cover_url=cover_url,
+                        metadata={"record": record, "link": link},
                     )
                 )
         return self.finalize(items)

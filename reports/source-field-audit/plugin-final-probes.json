@@ -1,0 +1,748 @@
+{
+  "generated_at": "2026-10-17 00:11:52",
+  "keywords": [
+    "仙逆",
+    "逆袭",
+    "总裁"
+  ],
+  "total": 26,
+  "nonempty_count": 14,
+  "results": [
+    {
+      "plugin": "clxiong",
+      "display_name": "磁力熊",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 3448,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": [
+        "[clxiong] 搜索响应缺少 searchid",
+        "[clxiong] 搜索响应缺少 searchid",
+        "[clxiong] 搜索响应缺少 searchid"
+      ]
+    },
+    {
+      "plugin": "duanjuku",
+      "display_name": "短剧库",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 8347,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": []
+    },
+    {
+      "plugin": "duoduo",
+      "display_name": "多多资源",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 9025,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": [
+        "[duoduo] 所有备用网址均失败: [duoduo] 请求失败: HTTPSConnectionPool(host='tv.yydsys.top', port=443): Read timed out. (read timeout=3.0)",
+        "[duoduo] 所有备用网址均失败: [duoduo] 请求失败: HTTPSConnectionPool(host='tv.yydsys.top', port=443): Read timed out. (read timeout=3.0)",
+        "[duoduo] 所有备用网址均失败: [duoduo] 请求失败: HTTPSConnectionPool(host='tv.yydsys.top', port=443): Read timed out. (read timeout=3.0)"
+      ]
+    },
+    {
+      "plugin": "erxiao",
+      "display_name": "二小资源",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 9036,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": [
+        "[erxiao] 所有备用网址均失败: [erxiao] 请求失败: HTTPSConnectionPool(host='www.2xiaopan.top', port=443): Read timed out. (read timeout=3.0)",
+        "[erxiao] 所有备用网址均失败: [erxiao] 请求失败: HTTPSConnectionPool(host='www.wexwp.cc', port=443): Read timed out. (read timeout=3.0)",
+        "[erxiao] 所有备用网址均失败: [erxiao] 请求失败: HTTPSConnectionPool(host='www.wexwp.cc', port=443): Read timed out. (read timeout=3.0)"
+      ]
+    },
+    {
+      "plugin": "huban",
+      "display_name": "虎斑资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 6236,
+      "keyword": "仙逆",
+      "count": 26,
+      "field_counts": {
+        "password": 7,
+        "datetime": 0,
+        "description": 26,
+        "cover_url": 26,
+        "source_type": 26,
+        "source_id": 26,
+        "source_name": 26
+      },
+      "metadata_result_count": 26,
+      "metadata_keys": [
+        "description",
+        "keywords",
+        "provider",
+        "search_card_text"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "hunhepan",
+      "display_name": "混合盘搜索",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2254,
+      "keyword": "仙逆",
+      "count": 7,
+      "field_counts": {
+        "password": 0,
+        "datetime": 7,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 7,
+        "source_id": 7,
+        "source_name": 7
+      },
+      "metadata_result_count": 7,
+      "metadata_keys": [
+        "disk_id",
+        "disk_name",
+        "disk_pass",
+        "disk_type",
+        "doc_id",
+        "enabled",
+        "files",
+        "is_mine",
+        "link",
+        "rel_movie",
+        "share_user",
+        "share_user_id",
+        "shared_time",
+        "size",
+        "status",
+        "tags",
+        "weight"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "ikantv",
+      "display_name": "爱看网盘搜索",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 1840,
+      "keyword": "仙逆",
+      "count": 14,
+      "field_counts": {
+        "password": 5,
+        "datetime": 14,
+        "description": 14,
+        "cover_url": 0,
+        "source_type": 14,
+        "source_id": 14,
+        "source_name": 14
+      },
+      "metadata_result_count": 14,
+      "metadata_keys": [
+        "link",
+        "record"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "javdb",
+      "display_name": "JavDB 磁力",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 6003,
+      "keyword": "仙逆",
+      "count": 6,
+      "field_counts": {
+        "password": 0,
+        "datetime": 6,
+        "description": 6,
+        "cover_url": 6,
+        "source_type": 6,
+        "source_id": 6,
+        "source_name": 6
+      },
+      "metadata_result_count": 6,
+      "metadata_keys": [
+        "description",
+        "keywords",
+        "search_card_text"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "jutoushe",
+      "display_name": "剧透社",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 359,
+      "keyword": "仙逆",
+      "count": 5,
+      "field_counts": {
+        "password": 2,
+        "datetime": 5,
+        "description": 5,
+        "cover_url": 0,
+        "source_type": 5,
+        "source_id": 5,
+        "source_name": 5
+      },
+      "metadata_result_count": 5,
+      "metadata_keys": [
+        "description",
+        "keywords",
+        "search_card_text"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "kkv",
+      "display_name": "KKV 资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 819,
+      "keyword": "仙逆",
+      "count": 3,
+      "field_counts": {
+        "password": 3,
+        "datetime": 0,
+        "description": 3,
+        "cover_url": 3,
+        "source_type": 3,
+        "source_id": 3,
+        "source_name": 3
+      },
+      "metadata_result_count": 3,
+      "metadata_keys": [
+        "description",
+        "search_card_text"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "labi",
+      "display_name": "蜡笔资源",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 5518,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": [
+        "[labi] 所有备用网址均失败: [labi] 请求失败: HTTP 409",
+        "[labi] 所有备用网址均失败: [labi] 请求失败: HTTP 409",
+        "[labi] 所有备用网址均失败: [labi] 请求失败: HTTP 409"
+      ]
+    },
+    {
+      "plugin": "muou",
+      "display_name": "木偶资源",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 24024,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": [
+        "[muou] 所有备用网址均失败: [muou] 请求失败: HTTPSConnectionPool(host='www.muoua.top', port=443): Read timed out. (read timeout=3.0)",
+        "[muou] 所有备用网址均失败: [muou] 请求失败: HTTPSConnectionPool(host='333.333291.xyz', port=443): Read timed out. (read timeout=3.0)",
+        "[muou] 所有备用网址均失败: [muou] 请求失败: HTTPSConnectionPool(host='333.333291.xyz', port=443): Read timed out. (read timeout=3.0)"
+      ]
+    },
+    {
+      "plugin": "nyaa",
+      "display_name": "Nyaa 磁力搜索",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2710,
+      "keyword": "仙逆",
+      "count": 71,
+      "field_counts": {
+        "password": 0,
+        "datetime": 71,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 71,
+        "source_id": 71,
+        "source_name": 71
+      },
+      "metadata_result_count": 71,
+      "metadata_keys": [
+        "completed",
+        "leechers",
+        "seeders",
+        "size"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "ouge",
+      "display_name": "欧歌资源搜索",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 1900,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": [
+        "[ouge] JSON 解析失败: Expecting value: line 1 column 1 (char 0)",
+        "[ouge] JSON 解析失败: Expecting value: line 1 column 1 (char 0)",
+        "[ouge] JSON 解析失败: Expecting value: line 1 column 1 (char 0)"
+      ]
+    },
+    {
+      "plugin": "pansearch",
+      "display_name": "盘搜",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 4736,
+      "keyword": "仙逆",
+      "count": 14,
+      "field_counts": {
+        "password": 14,
+        "datetime": 14,
+        "description": 14,
+        "cover_url": 14,
+        "source_type": 14,
+        "source_id": 14,
+        "source_name": 14
+      },
+      "metadata_result_count": 14,
+      "metadata_keys": [
+        "id",
+        "image",
+        "pan",
+        "time"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "quark4k",
+      "display_name": "Quark4K",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2727,
+      "keyword": "仙逆",
+      "count": 1,
+      "field_counts": {
+        "password": 0,
+        "datetime": 1,
+        "description": 1,
+        "cover_url": 0,
+        "source_type": 1,
+        "source_id": 1,
+        "source_name": 1
+      },
+      "metadata_result_count": 1,
+      "metadata_keys": [
+        "discussion",
+        "post",
+        "tags"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "quarksoo",
+      "display_name": "夸克搜",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 3807,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": []
+    },
+    {
+      "plugin": "shandian",
+      "display_name": "闪电资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 2685,
+      "keyword": "仙逆",
+      "count": 2,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 2,
+        "cover_url": 2,
+        "source_type": 2,
+        "source_id": 2,
+        "source_name": 2
+      },
+      "metadata_result_count": 2,
+      "metadata_keys": [
+        "description",
+        "keywords",
+        "provider",
+        "search_card_text"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "sougs",
+      "display_name": "搜网盘",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 5906,
+      "keyword": "仙逆",
+      "count": 2,
+      "field_counts": {
+        "password": 1,
+        "datetime": 2,
+        "description": 2,
+        "cover_url": 2,
+        "source_type": 2,
+        "source_id": 2,
+        "source_name": 2
+      },
+      "metadata_result_count": 2,
+      "metadata_keys": [
+        "category",
+        "category_id",
+        "created_at",
+        "desc",
+        "description",
+        "detailURL",
+        "detail_url",
+        "disk_name",
+        "disk_type",
+        "drive_type",
+        "file_count",
+        "hot",
+        "id",
+        "link",
+        "magnet",
+        "pan_type",
+        "poster",
+        "resource_id",
+        "routes",
+        "share_link",
+        "share_time",
+        "size",
+        "slug",
+        "source",
+        "sourceLabel",
+        "source_label",
+        "source_type",
+        "status",
+        "title",
+        "updated_at"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "ting77",
+      "display_name": "77听资源",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 4853,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": [
+        "[ting77] 请求失败: HTTP 403",
+        "[ting77] 请求失败: HTTP 403",
+        "[ting77] 请求失败: HTTP 403"
+      ]
+    },
+    {
+      "plugin": "u3c3",
+      "display_name": "U3C3 磁力",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 10555,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": []
+    },
+    {
+      "plugin": "xb6v",
+      "display_name": "6V 电影",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 6944,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": [
+        "[xb6v] 所有备用网址均失败: [xb6v] 请求失败: HTTP 404",
+        "[xb6v] 所有备用网址均失败: [xb6v] 请求失败: HTTP 404",
+        "[xb6v] 所有备用网址均失败: [xb6v] 请求失败: HTTP 404"
+      ]
+    },
+    {
+      "plugin": "xiaokupan",
+      "display_name": "小酷盘",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 8317,
+      "keyword": "仙逆",
+      "count": 392,
+      "field_counts": {
+        "password": 145,
+        "datetime": 392,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 392,
+        "source_id": 392,
+        "source_name": 392
+      },
+      "metadata_result_count": 392,
+      "metadata_keys": [
+        "datetime",
+        "images",
+        "note",
+        "source",
+        "url"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    },
+    {
+      "plugin": "yingpanshe",
+      "display_name": "影盘社",
+      "enabled": true,
+      "success": false,
+      "latency_ms": 10981,
+      "keyword": null,
+      "count": 0,
+      "field_counts": {
+        "password": 0,
+        "datetime": 0,
+        "description": 0,
+        "cover_url": 0,
+        "source_type": 0,
+        "source_id": 0,
+        "source_name": 0
+      },
+      "metadata_result_count": 0,
+      "metadata_keys": [],
+      "source_types": [],
+      "errors": []
+    },
+    {
+      "plugin": "yunso",
+      "display_name": "小云搜索",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 8206,
+      "keyword": "逆袭",
+      "count": 37,
+      "field_counts": {
+        "password": 3,
+        "datetime": 37,
+        "description": 37,
+        "cover_url": 37,
+        "source_type": 37,
+        "source_id": 37,
+        "source_name": 37
+      },
+      "metadata_result_count": 37,
+      "metadata_keys": [
+        "card_attributes",
+        "link_attributes",
+        "search_card_text"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": [
+        "[yunso] 所有页面均失败: [yunso] API 错误: 需要完成人机验证后继续搜索"
+      ]
+    },
+    {
+      "plugin": "zhizhen",
+      "display_name": "指针资源",
+      "enabled": true,
+      "success": true,
+      "latency_ms": 4937,
+      "keyword": "仙逆",
+      "count": 8,
+      "field_counts": {
+        "password": 3,
+        "datetime": 2,
+        "description": 8,
+        "cover_url": 8,
+        "source_type": 8,
+        "source_id": 8,
+        "source_name": 8
+      },
+      "metadata_result_count": 8,
+      "metadata_keys": [
+        "description",
+        "keywords",
+        "provider",
+        "search_card_text"
+      ],
+      "source_types": [
+        "plugin"
+      ],
+      "errors": []
+    }
+  ]
+}

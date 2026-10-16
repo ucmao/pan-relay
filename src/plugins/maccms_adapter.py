@@ -1,6 +1,6 @@
 import concurrent.futures
 import re
-from typing import List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import quote, urljoin
 
 from bs4 import BeautifulSoup
@@ -15,7 +15,7 @@ class MacCmsPlugin(HttpPlugin):
     base_urls: Sequence[str] = ()
     max_details = 12
 
-    def _search_base(self, base_url: str, keyword: str) -> List[Tuple[str, str, Optional[str], Optional[str], Optional[str]]]:
+    def _search_base(self, base_url: str, keyword: str) -> List[Tuple[str, str, Optional[str], Optional[str], Optional[str], Dict[str, Any]]]:
         url = f"{base_url.rstrip('/')}/index.php/vod/search/wd/{quote(keyword, safe='')}.html"
         response = self.request("GET", url, headers={"Referer": f"{base_url.rstrip('/')}/"}, retries=0)
         soup = BeautifulSoup(response.text, "html.parser")
@@ -35,7 +35,10 @@ class MacCmsPlugin(HttpPlugin):
             date_node = card.select_one(".video-info-header .tag-link, .video-serial, .date")
             dt = clean_text(date_node.get_text(" ", strip=True)) if date_node else None
             if title and href:
-                records.append((title, urljoin(base_url, href), cover, desc, dt))
+                records.append((title, urljoin(base_url, href), cover, desc, dt, {
+                    "provider": base_url,
+                    "search_card_text": clean_text(card.get_text(" ", strip=True)),
+                }))
         return records[: self.max_details]
 
     def _detail(
@@ -46,18 +49,31 @@ class MacCmsPlugin(HttpPlugin):
         cover: Optional[str] = None,
         desc: Optional[str] = None,
         dt: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> List[SearchResultItem]:
         response = self.request("GET", detail_url, headers={"Referer": base_url}, retries=0)
         soup = BeautifulSoup(response.text, "html.parser")
+        page_metadata = dict(metadata or {})
+        for node in soup.select("meta[property], meta[name]"):
+            key = clean_text(node.get("property") or node.get("name")).lower()
+            value = clean_text(node.get("content"))
+            if key and value and any(marker in key for marker in ("og:", "article:", "description", "published", "date", "author", "keywords")):
+                page_metadata.setdefault(key.replace(":", "_"), value)
         if not cover:
             img = soup.select_one(".module-item-pic img, .video-cover img, .detail-pic img")
             c = (img.get("data-src") or img.get("src")) if img else None
             if c:
                 cover = c if c.startswith("http") else urljoin(base_url, c)
+        if not cover:
+            cover = page_metadata.get("og_image")
         if not desc:
             d_node = soup.select_one(".video-info-content, .module-info-introduction-content, .vod-content")
             if d_node:
                 desc = clean_text(d_node.get_text(" ", strip=True))
+            if not desc:
+                desc = page_metadata.get("og_description") or page_metadata.get("description")
+        if not dt:
+            dt = page_metadata.get("article_published_time") or page_metadata.get("datepublished") or page_metadata.get("published_time")
 
         values = []
         for node in soup.select("#download-list [data-clipboard-text], #download-list a[href]"):
@@ -65,7 +81,7 @@ class MacCmsPlugin(HttpPlugin):
         if not values:
             values = extract_links(response.text)
         return [
-            self.make_item(title, link, datetime_value=dt, description=desc, cover_url=cover)
+            self.make_item(title, link, datetime_value=dt, description=desc, cover_url=cover, metadata=page_metadata)
             for value in values
             for link in extract_links(value)
         ]

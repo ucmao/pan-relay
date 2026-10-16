@@ -55,6 +55,10 @@ class YingpanshePlugin(HttpPlugin):
                 title=title,
                 share_link=link,
                 datetime_value=date_str,
+                metadata={
+                    "search_card_text": clean_text(item.get_text(" ", strip=True)),
+                    "meta_fields": [clean_text(span.get_text(" ", strip=True)) for span in meta_spans],
+                },
             )
             if search_item:
                 items.append(search_item)

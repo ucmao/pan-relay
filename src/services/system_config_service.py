@@ -28,6 +28,9 @@ FRONTEND_LINK_CHECK_CONFIG_KEY = "frontend_link_check_config"
 SECURITY_CONFIG_KEY = "security_config"
 ENABLE_PC_QR_CODE_KEY = "enable_pc_qr_code"
 ENABLE_FRONTEND_GITHUB_KEY = "enable_frontend_github"
+DEFAULT_FRONTEND_FOOTER_TEXT = "Pan-Relay 聚合分发中枢 · 极速流式引擎"
+FRONTEND_DISCLAIMER_TEXT_KEY = "frontend_disclaimer_text"
+DEFAULT_FRONTEND_DISCLAIMER_TEXT = "您的请求将通过第三方搜索引擎（如 Google、Bing、百度）获取原始数据，页面内容由系统自动整理与美化生成。本站不产生、不存储任何资源内容，亦未参与录制或上传。若相关结果侵犯您的合法权益，请联系我们，我们将在核实后尽快处理。"
 ENABLE_RESOURCE_REQUEST_KEY = "enable_resource_request"
 HOT_SEARCHES_CONFIG_KEY = "hot_searches_config"
 
@@ -266,18 +269,23 @@ def save_pc_qr_code_config(enabled: bool) -> bool:
     )
 
 
-def get_frontend_github_config() -> Dict[str, bool]:
+def get_frontend_github_config() -> Dict[str, Any]:
     raw_value = get_config_value(ENABLE_FRONTEND_GITHUB_KEY)
     if not raw_value:
-        return {"enabled": True}
+        return {"enabled": True, "footer_text": DEFAULT_FRONTEND_FOOTER_TEXT}
 
     try:
         parsed = json.loads(raw_value)
     except (TypeError, json.JSONDecodeError):
         logger.warning("前台GitHub展示配置格式无效，已回退到默认值")
-        return {"enabled": True}
+        return {"enabled": True, "footer_text": DEFAULT_FRONTEND_FOOTER_TEXT}
 
-    return {"enabled": bool(parsed.get("enabled", True))}
+    if not isinstance(parsed, dict):
+        return {"enabled": True, "footer_text": DEFAULT_FRONTEND_FOOTER_TEXT}
+    footer_text = parsed.get("footer_text", DEFAULT_FRONTEND_FOOTER_TEXT)
+    if not isinstance(footer_text, str):
+        footer_text = DEFAULT_FRONTEND_FOOTER_TEXT
+    return {"enabled": bool(parsed.get("enabled", True)), "footer_text": footer_text}
 
 
 def is_frontend_github_enabled() -> bool:
@@ -285,9 +293,39 @@ def is_frontend_github_enabled() -> bool:
 
 
 def save_frontend_github_config(enabled: bool) -> bool:
+    config = get_frontend_github_config()
+    config["enabled"] = bool(enabled)
     return set_config_value(
         ENABLE_FRONTEND_GITHUB_KEY,
-        {"enabled": bool(enabled)},
+        config,
+    )
+
+
+def save_frontend_footer_text(footer_text: str) -> bool:
+    config = get_frontend_github_config()
+    config["footer_text"] = str(footer_text or "").strip()
+    return set_config_value(ENABLE_FRONTEND_GITHUB_KEY, config)
+
+
+def get_frontend_disclaimer_text() -> str:
+    raw_value = get_config_value(FRONTEND_DISCLAIMER_TEXT_KEY)
+    if raw_value is None:
+        return DEFAULT_FRONTEND_DISCLAIMER_TEXT
+    try:
+        parsed = json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("前台免责声明配置格式无效，已回退到默认值")
+        return DEFAULT_FRONTEND_DISCLAIMER_TEXT
+    if not isinstance(parsed, dict) or not isinstance(parsed.get("text"), str):
+        logger.warning("前台免责声明配置格式无效，已回退到默认值")
+        return DEFAULT_FRONTEND_DISCLAIMER_TEXT
+    return parsed["text"]
+
+
+def save_frontend_disclaimer_text(disclaimer_text: str) -> bool:
+    return set_config_value(
+        FRONTEND_DISCLAIMER_TEXT_KEY,
+        {"text": str(disclaimer_text or "").strip()},
     )
 
 
@@ -1284,8 +1322,78 @@ def save_active_theme(theme_id: str) -> bool:
 
 SITE_LOGO_KEY = "site_logo"
 SITE_NAME_KEY = "site_name"
+FRONTEND_SEO_CONFIG_KEY = "frontend_seo_config"
 DEFAULT_SITE_LOGO = "/static/images/hero_search_top.webp"
 DEFAULT_SITE_NAME = "Pan-Relay"
+DEFAULT_FRONTEND_SEO_CONFIG = {
+    "home": {
+        "title": "网盘资源搜索与聚合分发 - {site_name}",
+        "description": "聚合夸克、百度、阿里云盘等主流网盘公开资源，支持多网盘检索与快捷筛选。",
+        "keywords": "网盘搜索,夸克网盘,百度网盘,阿里云盘,资源检索",
+    },
+    "search": {
+        "title": "{query} 网盘资源搜索 - {site_name}",
+        "description": "搜索「{query}」相关的公开网盘资源，聚合多网盘结果并支持快捷筛选。",
+        "keywords": "{query},网盘搜索,资源检索",
+        "allow_indexing": True,
+    },
+}
+
+
+def get_frontend_seo_config() -> Dict[str, Any]:
+    """获取按页面类型配置的前台 SEO 元信息。"""
+    raw_value = get_config_value(FRONTEND_SEO_CONFIG_KEY)
+    if not raw_value:
+        return json.loads(json.dumps(DEFAULT_FRONTEND_SEO_CONFIG))
+
+    try:
+        parsed = json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("前台 SEO 配置格式无效，已回退到默认值")
+        return json.loads(json.dumps(DEFAULT_FRONTEND_SEO_CONFIG))
+
+    config = json.loads(json.dumps(DEFAULT_FRONTEND_SEO_CONFIG))
+    if not isinstance(parsed, dict):
+        return config
+    for page_type in ("home", "search"):
+        page_config = parsed.get(page_type)
+        if not isinstance(page_config, dict):
+            continue
+        for field in ("title", "description", "keywords"):
+            if isinstance(page_config.get(field), str):
+                config[page_type][field] = page_config[field]
+    if isinstance(parsed.get("search"), dict) and isinstance(parsed["search"].get("allow_indexing"), bool):
+        config["search"]["allow_indexing"] = parsed["search"]["allow_indexing"]
+    return config
+
+
+def save_frontend_seo_config(config: Dict[str, Any]) -> bool:
+    """保存首页与搜索结果页的 SEO 元信息配置。"""
+    return set_config_value(FRONTEND_SEO_CONFIG_KEY, config)
+
+
+def build_frontend_seo_meta(page_type: str, query: str = "") -> Dict[str, str]:
+    """按页面类型生成可供 HTML head 使用的 SEO 文本。"""
+    config = get_frontend_seo_config()
+    selected_type = "search" if page_type == "search" else "home"
+    page_config = config[selected_type]
+    replacements = {
+        "{site_name}": get_site_name(),
+        "{query}": (query or "网盘资源").strip()[:120],
+    }
+
+    def apply_tokens(value: str) -> str:
+        for token, replacement in replacements.items():
+            value = value.replace(token, replacement)
+        return value.strip()
+
+    result = {
+        "title": apply_tokens(page_config["title"]),
+        "description": apply_tokens(page_config["description"]),
+        "keywords": apply_tokens(page_config["keywords"]),
+        "robots": "index,follow" if selected_type == "home" or config["search"]["allow_indexing"] else "noindex,follow",
+    }
+    return result
 
 
 def get_site_logo() -> str:

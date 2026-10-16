@@ -98,11 +98,24 @@ sequenceDiagram
   "total": 2,
   "results": [
     {
+      "source": "plugin",
       "title": "黑神话：悟空 v1.0.8 官方中文版",
+      "name": "黑神话：悟空 v1.0.8 官方中文版",
       "share_link": "https://pan.quark.cn/s/raw_public_link_123",
+      "url": "https://pan.quark.cn/s/raw_public_link_123",
       "cloud_name": "夸克网盘",
-      "password": "",
-      "source": "plugin"
+      "drive_type": "quark",
+      "source_type": "plugin",
+      "source_display": "插件",
+      "source_id": "demo_plugin",
+      "source_name": "示例插件",
+      "password": "ABCD",
+      "datetime": "2026-10-17 12:30:00",
+      "description": "资源简介",
+      "cover_url": "https://example.com/cover.jpg",
+      "image": "https://example.com/cover.jpg",
+      "cover": "https://example.com/cover.jpg",
+      "metadata": {"category": "电影", "rating": 8.5}
     },
     {
       "title": "黑神话：悟空 高清原画合集",
@@ -114,6 +127,8 @@ sequenceDiagram
   ]
 }
 ```
+
+**资源对象字段说明**：`source` 是兼容旧版本的原始来源标记；`source_type` 是稳定的来源分类（`api`、`telegram`、`plugin`、`internal` 等），`source_id` 与 `source_name` 标识具体 API、TG 频道或插件，`source_display` 是适合直接展示的来源分类名称。`title`/`name`、`share_link`/`url` 是兼容别名；`drive_type` 表示网盘类型。`password`、`datetime`、`description`、`cover_url` 在有值时返回，图片同时提供 `image`、`cover` 兼容别名。`metadata` 在有安全的扩展字段时返回；字段会按来源而异，敏感凭据不会放入其中。可选资源字段缺失时不会出现在 JSON 中。
 
 ---
 
@@ -129,7 +144,7 @@ sequenceDiagram
   ```text
   data: {"type": "start", "keyword": "黑神话"}
 
-  data: {"type": "item", "data": {"title": "黑神话：悟空", "share_link": "...", "cloud_name": "夸克网盘", "source": "db"}}
+  data: {"type": "item", "data": {"title": "黑神话：悟空", "share_link": "...", "cloud_name": "夸克网盘", "source_type": "api", "source_id": "api_1", "source_name": "示例 API", "datetime": "2026-10-17", "description": "资源简介", "cover_url": "https://example.com/cover.jpg", "metadata": {"category": "电影"}}}
 
   data: {"type": "done", "total": 12}
   ```

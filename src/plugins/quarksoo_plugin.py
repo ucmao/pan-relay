@@ -45,5 +45,12 @@ class QuarksooPlugin(HttpPlugin):
             link = normalize_link(anchor.get("href"))
             if "pan.quark.cn" not in link.casefold():
                 continue
-            items.append(self.make_item(title, link))
+            items.append(self.make_item(
+                title,
+                link,
+                metadata={
+                    "search_row_text": clean_text(row.get_text(" ", strip=True)),
+                    "row_attributes": {key: value for key, value in row.attrs.items() if key.startswith("data-")},
+                },
+            ))
         return self.finalize(items)

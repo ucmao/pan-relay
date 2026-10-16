@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 
@@ -21,6 +21,10 @@ class SearchResultItem:
     datetime: Optional[str] = None  # 发布时间/创建时间 (可选)
     description: Optional[str] = None  # 资源简介/内容描述 (可选)
     cover_url: Optional[str] = None  # 封面图片/缩略图 (可选)
+    source_type: Optional[str] = None  # 统一来源类别: internal / telegram / plugin / api
+    source_id: Optional[str] = None  # 具体来源标识: 频道用户名、插件 ID 或 API ID
+    source_name: Optional[str] = None  # 来源的人类可读名称
+    metadata: Dict[str, Any] = field(default_factory=dict)  # 经清洗的来源扩展字段
 
     @property
     def url(self) -> str:
@@ -38,6 +42,32 @@ class SearchResultItem:
         from src.utils.netdisk_utils import get_netdisk_drive_type
         return get_netdisk_drive_type(self.cloud_name, self.share_link)
 
+    @property
+    def source_display(self) -> str:
+        """前端来源类别显示名；具体来源由 source_id/source_name 独立承载。"""
+        labels = {
+            "internal": "站长自建",
+            "telegram": "TG",
+            "plugin": "插件",
+            "api": "API",
+        }
+        return labels.get(self.normalized_source_type, "网络聚合")
+
+    @property
+    def normalized_source_type(self) -> str:
+        value = str(self.source_type or self.source or "").strip().lower()
+        if value == "hot":
+            return "internal"
+        if value in ("tg", "telegram") or value.startswith("tg:") or value.startswith("telegram:"):
+            return "telegram"
+        if value == "plugin" or value.startswith("plugin:"):
+            return "plugin"
+        if value in ("other", "api") or value.startswith("api:"):
+            return "api"
+        if value in ("internal", "telegram", "plugin", "api"):
+            return value
+        return ""
+
     def to_list(self) -> List[str]:
         """
         转换为传统 4 项元组列表形式:
@@ -47,10 +77,7 @@ class SearchResultItem:
         return [self.source, self.title, self.share_link, self.cloud_name]
 
     def to_front_list(self) -> List[str]:
-        """
-        转换为前端卡片渲染与 SSE 流使用的完整序列:
-        [source, title, url, netdisk_name, datetime, description, cover_url]
-        """
+        """返回兼容旧版前端字段的完整序列，并附带来源与扩展信息。"""
         return [
             self.source,
             self.title,
@@ -59,6 +86,10 @@ class SearchResultItem:
             self.datetime or "",
             self.description or "",
             self.cover_url or "",
+            self.normalized_source_type,
+            self.source_id or "",
+            self.source_name or "",
+            _sanitize_metadata(self.metadata),
         ]
 
     def to_dict(self) -> Dict[str, Any]:
@@ -73,7 +104,15 @@ class SearchResultItem:
             "url": self.share_link,
             "cloud_name": self.cloud_name,
             "drive_type": self.drive_type,
+            "source_type": self.normalized_source_type or "unknown",
+            "source_display": self.source_display,
         }
+        if self.source_id:
+            res["source_id"] = self.source_id
+        if self.source_name:
+            res["source_name"] = self.source_name
+        if self.metadata:
+            res["metadata"] = _sanitize_metadata(self.metadata)
         if self.password:
             res["password"] = self.password
         if self.datetime:
@@ -114,6 +153,12 @@ class SearchResultItem:
             dt = str(item[4]) if len(item) > 4 and item[4] else None
             desc = str(item[5]) if len(item) > 5 and item[5] else None
             cover = str(item[6]) if len(item) > 6 and item[6] else None
+            source_type = str(item[7]) if len(item) > 7 and item[7] else None
+            source_id = str(item[8]) if len(item) > 8 and item[8] else None
+            source_name = str(item[9]) if len(item) > 9 and item[9] else None
+            metadata = item[10] if len(item) > 10 and isinstance(item[10], dict) else {}
+            if not source_id and ":" in source:
+                source_id = source.split(":", 1)[1]
             return cls(
                 source=source,
                 title=title,
@@ -122,6 +167,10 @@ class SearchResultItem:
                 datetime=dt,
                 description=desc,
                 cover_url=cover,
+                source_type=source_type,
+                source_id=source_id,
+                source_name=source_name,
+                metadata=metadata,
             )
         if isinstance(item, dict):
             source = item.get("source", "other")
@@ -148,6 +197,25 @@ class SearchResultItem:
                 or item.get("poster")
                 or item.get("pic")
             )
+            source_type = item.get("source_type")
+            source_id = item.get("source_id")
+            source_name = item.get("source_name")
+            known_fields = {
+                "source", "source_type", "source_id", "source_name", "source_display",
+                "title", "name", "share_link", "url", "cloud_name", "netdisk_name",
+                "password", "pwd", "disk_pass", "datetime", "created_at", "time",
+                "shared_time", "description", "remarks", "summary", "intro", "content",
+                "desc", "cover_url", "cover", "image_url", "image", "thumb",
+                "thumbnail", "poster", "pic", "metadata", "extra",
+            }
+            metadata = item.get("metadata") or item.get("extra") or {
+                key: value for key, value in item.items()
+                if key not in known_fields and not _is_sensitive_metadata_key(key)
+            }
+            if not source_id:
+                raw_source = str(source or "")
+                if ":" in raw_source:
+                    source_id = raw_source.split(":", 1)[1]
             return cls(
                 source=source,
                 title=title,
@@ -157,5 +225,26 @@ class SearchResultItem:
                 datetime=dt,
                 description=desc,
                 cover_url=cover,
+                source_type=source_type,
+                source_id=str(source_id) if source_id else None,
+                source_name=str(source_name) if source_name else None,
+                metadata=metadata if isinstance(metadata, dict) else {},
             )
         raise ValueError(f"无法转换为 SearchResultItem: {item}")
+
+
+def _is_sensitive_metadata_key(key: Any) -> bool:
+    value = str(key or "").lower().replace("-", "_")
+    return any(part in value for part in ("token", "secret", "authorization", "cookie", "credential", "api_key", "password", "passwd"))
+
+
+def _sanitize_metadata(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {
+            str(key): _sanitize_metadata(item)
+            for key, item in value.items()
+            if not _is_sensitive_metadata_key(key)
+        }
+    if isinstance(value, list):
+        return [_sanitize_metadata(item) for item in value]
+    return value

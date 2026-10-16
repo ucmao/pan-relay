@@ -339,7 +339,12 @@ def _extract_telegram_cover(message_element) -> Optional[str]:
 
 
 def extract_items_from_message_element(
-    message_element, dt: Optional[str] = None, cover_url: Optional[str] = None
+    message_element,
+    dt: Optional[str] = None,
+    cover_url: Optional[str] = None,
+    channel: Optional[str] = None,
+    channel_title: Optional[str] = None,
+    post_metadata: Optional[Dict[str, Any]] = None,
 ) -> List[SearchResultItem]:
     """
     双遍扫描 Telegram 消息节点，精确将网盘链接、上下文标题与专属提取码绑定。
@@ -451,6 +456,10 @@ def extract_items_from_message_element(
                         datetime=dt,
                         description=global_description,
                         cover_url=cover_url,
+                        source_type="telegram",
+                        source_id=channel,
+                        source_name=channel_title or channel,
+                        metadata=dict(post_metadata or {}),
                     )
                 )
 
@@ -483,6 +492,13 @@ def parse_telegram_search_html(html, channel):
     soup = BeautifulSoup(html, "html.parser")
     results = []
     seen = set()
+    channel_name = channel
+    try:
+        from src.db.telegram_channels import get_channel
+        channel_config = get_channel(channel) or {}
+        channel_name = channel_config.get("title") or channel
+    except Exception:
+        pass
 
     for wrapper in soup.select(".tgme_widget_message_wrap"):
         message = wrapper.select_one(".tgme_widget_message") or wrapper
@@ -493,8 +509,21 @@ def parse_telegram_search_html(html, channel):
         time_tag = message.select_one(".tgme_widget_message_date time")
         dt = time_tag.get("datetime") if time_tag else None
         cover_url = _extract_telegram_cover(message)
+        post_link = (message.select_one(".tgme_widget_message_date") or {}).get("href")
+        post_id = (message.get("data-post") or "").rsplit("/", 1)[-1] or None
+        views_tag = message.select_one(".tgme_widget_message_views")
+        views = views_tag.get_text(" ", strip=True) if views_tag else None
+        post_metadata = {"post_link": post_link, "message_id": post_id, "views": views}
+        post_metadata = {key: value for key, value in post_metadata.items() if value}
 
-        items = extract_items_from_message_element(content, dt=dt, cover_url=cover_url)
+        items = extract_items_from_message_element(
+            content,
+            dt=dt,
+            cover_url=cover_url,
+            channel=channel,
+            channel_title=channel_name,
+            post_metadata=post_metadata,
+        )
         for item in items:
             base_key = item.share_link.split("?")[0].rstrip("/")
             if base_key in seen:

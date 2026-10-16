@@ -751,12 +751,28 @@
                                             class="font-mono text-xs font-semibold text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded border border-slate-200/60">results</code>
                                     </td>
                                     <td class="px-3.5 py-2.5 text-slate-500">Array</td>
-                                    <td class="px-3.5 py-2.5 text-slate-600">搜索结果列表，包含 <code
-                                            class="font-mono">title</code>、<code
-                                            class="font-mono">share_link</code>、<code
-                                            class="font-mono">cloud_name</code>、<code class="font-mono">source</code>
-                                        以及开启测活时的健康字段。
+                                    <td class="px-3.5 py-2.5 text-slate-600">搜索结果列表，包含标题、链接、网盘、来源及可选的时间、简介、封面和安全扩展字段。开启测活时还可能包含健康字段。
                                     </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3.5 py-2.5"><code class="font-mono text-xs font-semibold text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded border border-slate-200/60">source_type / source_display</code></td>
+                                    <td class="px-3.5 py-2.5 text-slate-500">String</td>
+                                    <td class="px-3.5 py-2.5 text-slate-600">来源分类与面向用户的分类名称。类型可能为 <code class="font-mono">api</code>、<code class="font-mono">telegram</code>、<code class="font-mono">plugin</code>、<code class="font-mono">internal</code>；名称对应 API、TG、插件、站长自建。</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3.5 py-2.5"><code class="font-mono text-xs font-semibold text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded border border-slate-200/60">source_id / source_name</code></td>
+                                    <td class="px-3.5 py-2.5 text-slate-500">String</td>
+                                    <td class="px-3.5 py-2.5 text-slate-600">具体来源的标识与名称，例如某个 API 预设、TG 频道或本地插件；有值时返回。</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3.5 py-2.5"><code class="font-mono text-xs font-semibold text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded border border-slate-200/60">datetime / description / cover_url</code></td>
+                                    <td class="px-3.5 py-2.5 text-slate-500">String</td>
+                                    <td class="px-3.5 py-2.5 text-slate-600">资源时间、简介和封面地址。按来源数据情况可选返回；封面同时提供 <code class="font-mono">image</code>、<code class="font-mono">cover</code> 兼容别名。</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3.5 py-2.5"><code class="font-mono text-xs font-semibold text-slate-800 bg-slate-100/90 px-2 py-0.5 rounded border border-slate-200/60">metadata</code></td>
+                                    <td class="px-3.5 py-2.5 text-slate-500">Object</td>
+                                    <td class="px-3.5 py-2.5 text-slate-600">各上游安全的附加字段；字段依来源而异，敏感凭据会过滤，有扩展数据时返回。</td>
                                 </tr>
                                 <tr>
                                     <td class="px-3.5 py-2.5"><code

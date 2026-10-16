@@ -367,6 +367,10 @@ async function loadFrontendGithubConfig() {
         if (toggle) {
             toggle.checked = Boolean(data.enabled);
         }
+        const footerInput = document.getElementById('frontendFooterTextInput');
+        if (footerInput) {
+            footerInput.value = data.footer_text || '';
+        }
     } catch (error) {
         console.error('加载前台 GitHub 标识配置失败:', error);
     }
@@ -393,6 +397,108 @@ async function saveFrontendGithubConfig() {
         console.error('保存前台 GitHub 标识配置失败:', error);
         showToast(`保存配置失败: ${error.message}`, 'danger');
         await loadFrontendGithubConfig();
+    }
+}
+
+async function saveFrontendFooterText() {
+    const input = document.getElementById('frontendFooterTextInput');
+    const footer_text = input ? input.value : '';
+    try {
+        const response = await fetch('/admin/api/frontend-github-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ footer_text })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+        showToast(data.message || '页脚文字已保存', 'success');
+    } catch (error) {
+        console.error('保存前台页脚文字失败:', error);
+        showToast(`保存配置失败: ${error.message}`, 'danger');
+        await loadFrontendGithubConfig();
+    }
+}
+
+async function saveFrontendDisclaimerText() {
+    const input = document.getElementById('frontendDisclaimerTextInput');
+    const disclaimer_text = input ? input.value : '';
+    try {
+        const response = await fetch('/admin/api/frontend-disclaimer-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ disclaimer_text })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+        showToast(data.message || '免责声明已保存', 'success');
+    } catch (error) {
+        console.error('保存前台免责声明失败:', error);
+        showToast(`保存配置失败: ${error.message}`, 'danger');
+    }
+}
+
+async function loadFrontendSeoConfig() {
+    try {
+        const response = await fetch('/admin/api/frontend-seo-config');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+        const config = data.config || {};
+        const home = config.home || {};
+        const search = config.search || {};
+        const fields = {
+            seoHomeTitle: home.title,
+            seoHomeDescription: home.description,
+            seoHomeKeywords: home.keywords,
+            seoSearchTitle: search.title,
+            seoSearchDescription: search.description,
+            seoSearchKeywords: search.keywords,
+        };
+        Object.entries(fields).forEach(([id, value]) => {
+            const input = document.getElementById(id);
+            if (input && typeof value === 'string') input.value = value;
+        });
+        const allowIndexing = document.getElementById('seoSearchAllowIndexing');
+        if (allowIndexing) allowIndexing.checked = search.allow_indexing !== false;
+    } catch (error) {
+        console.error('加载前台 SEO 配置失败:', error);
+    }
+}
+
+async function saveFrontendSeoConfig() {
+    const value = (id) => document.getElementById(id)?.value || '';
+    const payload = {
+        home: {
+            title: value('seoHomeTitle'),
+            description: value('seoHomeDescription'),
+            keywords: value('seoHomeKeywords'),
+        },
+        search: {
+            title: value('seoSearchTitle'),
+            description: value('seoSearchDescription'),
+            keywords: value('seoSearchKeywords'),
+            allow_indexing: Boolean(document.getElementById('seoSearchAllowIndexing')?.checked),
+        },
+    };
+    try {
+        const response = await fetch('/admin/api/frontend-seo-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+        showToast(data.message || 'SEO 配置已保存', 'success');
+    } catch (error) {
+        console.error('保存前台 SEO 配置失败:', error);
+        showToast(`保存 SEO 配置失败: ${error.message}`, 'danger');
     }
 }
 
@@ -1565,6 +1671,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAllowExcelDownloadConfig();
     loadPcQrCodeConfig();
     loadFrontendGithubConfig();
+    loadFrontendSeoConfig();
     loadFrontendLinkCheckConfig();
     loadTransferTargetDirConfig();
     loadFrontendDisplayNetdisks();

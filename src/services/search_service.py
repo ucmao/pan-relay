@@ -334,9 +334,20 @@ def clean_and_extract_data(data):
         title = extract_title(d_lst[1])
         url = extract_url(d_lst[2])
         netdisk_name = match_netdisk_link(url)
-        dt = str(d_lst[3]) if len(d_lst) > 3 and d_lst[3] else None
+        dt = d_lst[3] if len(d_lst) > 3 and d_lst[3] else None
+        if dt is not None:
+            try:
+                from src.plugins.http_plugin import parse_datetime
+                dt = parse_datetime(dt) or str(dt)
+            except Exception:
+                dt = str(dt)
         desc = str(d_lst[4]) if len(d_lst) > 4 and d_lst[4] else None
         cover = str(d_lst[5]) if len(d_lst) > 5 and d_lst[5] else None
+        source_type = str(d_lst[6]) if len(d_lst) > 6 and d_lst[6] else None
+        source_id = str(d_lst[7]) if len(d_lst) > 7 and d_lst[7] else None
+        source_name = str(d_lst[8]) if len(d_lst) > 8 and d_lst[8] else None
+        metadata = d_lst[9] if len(d_lst) > 9 and isinstance(d_lst[9], dict) else {}
+        password = str(d_lst[10]) if len(d_lst) > 10 and d_lst[10] else None
 
         cleaned_data.append(
             SearchResultItem(
@@ -347,10 +358,123 @@ def clean_and_extract_data(data):
                 datetime=dt,
                 description=desc,
                 cover_url=cover,
+                password=password,
+                source_type=source_type,
+                source_id=source_id,
+                source_name=source_name,
+                metadata=metadata,
             )
         )
 
     return cleaned_data
+
+
+_API_FIELD_ALIASES = {
+    "title": ("title", "name", "vod_name", "filename", "note"),
+    "url": ("url", "viewlink", "data_url", "downurl", "share_link", "link", "vod_play_url"),
+    "password": ("password", "pwd", "disk_pass", "extcode", "unzipcode", "vod_pwd", "crux"),
+    "datetime": ("datetime", "create_at", "addtime", "inputday", "createtime", "created_at", "created", "shared_time", "release_date", "updated_at", "vod_time", "vod_time_add"),
+    "description": ("description", "summary", "intro", "content", "desc", "remarks", "vod_blurb", "vod_content", "vod_remarks"),
+    "cover": ("cover_url", "cover", "image_url", "image", "images", "thumb", "thumbnail", "poster", "pic", "vod_pic", "vod_pic_thumb", "vod_pic_slide"),
+}
+_API_CANONICAL_KEYS = {key.lower() for values in _API_FIELD_ALIASES.values() for key in values}
+
+
+def _first_record_value(record, aliases):
+    if not isinstance(record, dict):
+        return None
+    lowered = {str(key).lower(): value for key, value in record.items()}
+    for alias in aliases:
+        value = lowered.get(alias.lower())
+        if value not in (None, "", [], {}):
+            return value
+    return None
+
+
+def _index_source_records(payload):
+    """一次遍历建立标题/链接索引，避免多结果 API 对完整响应重复扫描。"""
+    records = {}
+
+    def visit(value):
+        if isinstance(value, dict):
+            title = _first_record_value(value, _API_FIELD_ALIASES["title"])
+            url = _first_record_value(value, _API_FIELD_ALIASES["url"])
+            if title and url:
+                records.setdefault((str(title).strip(), str(url).strip()), value)
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+
+    visit(payload)
+    return records
+
+
+def _find_source_record(payload, title, url, record_index=None):
+    """旧版 JMESPath 规则常只选出 [标题, 链接]；回到原响应按值找回完整记录。"""
+    key = (str(title).strip(), str(url).strip())
+    if record_index is not None:
+        return record_index.get(key, {})
+    return _index_source_records(payload).get(key, {})
+
+
+def _safe_api_metadata(record):
+    """保留上游非标准字段，同时剔除凭据类字段；标准字段由统一字段承载。"""
+    if not isinstance(record, dict):
+        return {}
+    metadata = {}
+
+    def safe_value(value):
+        if isinstance(value, dict):
+            return {
+                str(k): safe_value(v)
+                for k, v in value.items()
+                if not any(part in str(k).lower().replace("-", "_") for part in ("token", "secret", "authorization", "cookie", "credential", "api_key"))
+            }
+        if isinstance(value, list):
+            return [safe_value(item) for item in value]
+        return value
+
+    for key, value in record.items():
+        normalized_key = str(key).lower()
+        if normalized_key in _API_CANONICAL_KEYS and normalized_key != "images":
+            continue
+        if any(part in normalized_key.replace("-", "_") for part in ("token", "secret", "authorization", "cookie", "credential", "api_key")):
+            continue
+        metadata[str(key)] = safe_value(value)
+    return metadata
+
+
+def _make_api_result_rows(extracted_data, response_data, config):
+    """把预设的标题/链接投影与原始记录重新关联，补齐常见字段及可扩展 metadata。"""
+    rows = []
+    source_id = str(config.get("id") or config.get("name") or "unknown")
+    source_name = str(config.get("name") or "未知 API")
+    record_index = _index_source_records(response_data) if any(isinstance(item, (list, tuple)) for item in (extracted_data or [])) else None
+    for item in extracted_data or []:
+        if isinstance(item, dict):
+            record = item
+            title = _first_record_value(record, _API_FIELD_ALIASES["title"])
+            url = _first_record_value(record, _API_FIELD_ALIASES["url"])
+        elif isinstance(item, (list, tuple)) and len(item) >= 2:
+            title, url = item[0], item[1]
+            record = _find_source_record(response_data, title, url, record_index)
+        else:
+            continue
+        if not title or not url:
+            continue
+        dt = _first_record_value(record, _API_FIELD_ALIASES["datetime"])
+        description = _first_record_value(record, _API_FIELD_ALIASES["description"])
+        cover = _first_record_value(record, _API_FIELD_ALIASES["cover"])
+        if isinstance(cover, list):
+            cover = next((value for value in cover if isinstance(value, str) and value.startswith(("http://", "https://"))), None)
+        password = _first_record_value(record, _API_FIELD_ALIASES["password"]) or extract_password_from_url(str(url))
+        rows.append([
+            "other", title, url, dt, description, cover, "api", source_id,
+            source_name, _safe_api_metadata(record), password,
+        ])
+    return rows
 
 
 def process_config(config, keyword, timeout=10):
@@ -363,11 +487,11 @@ def process_config(config, keyword, timeout=10):
     try:
         response_data = fetch_data(config["url"], config["method"], config["request"], timeout=timeout)
 
-        if response_data:
+        if response_data is not None:
             extracted_data = extract_from_json(response_data, config["response"])
 
             if extracted_data and isinstance(extracted_data, list):
-                extracted_data_with_source = [["other", *item] for item in extracted_data]
+                extracted_data_with_source = _make_api_result_rows(extracted_data, response_data, config)
                 final_results = clean_and_extract_data(extracted_data_with_source)
 
             num_results = len(final_results)
@@ -389,7 +513,16 @@ def _search_plugin(plugin, keyword):
     """执行单个插件搜索，避免一个插件失败中断其他搜索源。"""
     try:
         logger.info("插件 [%s] 开始搜索: %s", plugin.name, keyword)
-        results = plugin.search(keyword)
+        results = []
+        for raw_item in plugin.search(keyword):
+            try:
+                item = SearchResultItem.from_item(raw_item)
+            except (TypeError, ValueError, IndexError):
+                continue
+            item.source_type = "plugin"
+            item.source_id = item.source_id or str(plugin.name)
+            item.source_name = item.source_name or str(getattr(plugin, "display_name", plugin.name))
+            results.append(item)
         logger.info("插件 [%s] 搜索完成，找到 %d 条结果。", plugin.name, len(results))
         return results
     except Exception as error:
@@ -512,6 +645,9 @@ def search_in_database(keyword):
                     datetime=created_at,
                     description=remarks,
                     cover_url=cover_url,
+                    source_type="internal",
+                    source_id="internal",
+                    source_name="站长自建",
                 )
             )
 
@@ -787,6 +923,31 @@ def merge_or_select_better(existing: SearchResultItem, incoming: SearchResultIte
         chosen.description = best_desc
     if best_dt and not getattr(chosen, "datetime", None):
         chosen.datetime = best_dt
+
+    # 同一分享链接可能被多个来源收录。保留主来源，同时合并可补充字段和来源明细。
+    merged_metadata = dict(existing.metadata or {})
+    for key, value in (incoming.metadata or {}).items():
+        merged_metadata.setdefault(key, value)
+    source_records = []
+    for item in (existing, incoming):
+        if not item.source_type and not item.source_id and not item.source_name:
+            continue
+        source_record = {
+            "type": item.normalized_source_type or "unknown",
+            "id": item.source_id or "",
+            "name": item.source_name or "",
+        }
+        if source_record not in source_records:
+            source_records.append(source_record)
+    if len(source_records) > 1:
+        merged_metadata["source_matches"] = source_records
+    chosen.metadata = merged_metadata
+    if not chosen.source_type:
+        chosen.source_type = existing.source_type or incoming.source_type
+    if not chosen.source_id:
+        chosen.source_id = existing.source_id or incoming.source_id
+    if not chosen.source_name:
+        chosen.source_name = existing.source_name or incoming.source_name
 
     return chosen
 

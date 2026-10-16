@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -183,29 +184,6 @@
             text-align: center;
         }
 
-        .admin-nav-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            font-size: 0.82rem;
-            font-weight: 500;
-            color: #64748b;
-            background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(148, 163, 184, 0.22);
-            border-radius: 8px;
-            text-decoration: none;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s ease;
-        }
-
-        .admin-nav-link:hover {
-            color: #0f172a;
-            border-color: rgba(148, 163, 184, 0.4);
-            background: #ffffff;
-            transform: translateY(-1px);
-        }
-
         /* 免责声明弹窗优化 */
         .disclaimer-modal-dialog {
             max-width: 540px;
@@ -313,10 +291,15 @@
 
         .disclaimer-note-block {
             margin: 10px 0 4px;
-            padding: 12px 14px 12px 28px;
+            padding: 14px;
             border: 1px solid rgba(245, 191, 96, 0.28);
             border-radius: 14px;
             background: linear-gradient(180deg, rgba(255, 251, 235, 0.75), rgba(255, 255, 255, 0.85));
+        }
+
+        .disclaimer-config-text {
+            margin: 0;
+            white-space: pre-line;
         }
 
         .disclaimer-list {
@@ -380,160 +363,136 @@
         }
     </style>
 </head>
+
 <body>
 
-<header class="public-top-nav">
-    <div class="container-fluid-custom flex justify-between items-center">
-        <div class="public-nav-left">
-            <!-- 预留左侧区域，保持搜索区干净居中 -->
-        </div>
-        <div class="public-nav-right flex items-center gap-2">
-            {% if enable_resource_request %}
-            <button type="button" id="openResourceRequestBtn" class="request-resource-pill" title="告诉我们你想找的资源" aria-label="求片 / 提交需求">
-                <i class="fas fa-comment-dots text-amber-500"></i>
-                <span class="pill-text">求片</span>
-            </button>
-            {% endif %}
-            {% if enable_frontend_github %}
-            <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="github-star-pill" title="前往 Pan-Relay GitHub 仓库" aria-label="前往 Pan-Relay GitHub 仓库，点亮 Star">
-                <span class="github-pill-left">
-                    <i class="fab fa-github" aria-hidden="true"></i>
-                </span>
-                <span class="github-pill-right">
-                    <i class="fas fa-star star-icon"></i>
-                    <span id="githubStarCount" class="github-star-count">...</span>
-                </span>
-            </a>
-            {% endif %}
-            {% if is_logged_in %}
-            <a href="{{ url_for('resources.resources_page') }}" class="admin-nav-link" title="进入管理后台">
-                <i class="fas fa-cog"></i>
-                <span>管理后台</span>
-            </a>
-            {% endif %}
-        </div>
-    </div>
-</header>
-
-{% block content %}{% endblock %}
-
-<div class="footer-container">
-    <div class="container-fluid-custom">
-        <div class="footer-copyright">
-            <a id="disclaimerLink">&copy; Pan-Relay</a>
-            {% if enable_frontend_github %}
-            <span class="footer-divider">|</span>
-            <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer">
-                <i class="fab fa-github me-1"></i>GitHub
-            </a>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="disclaimerModal" tabindex="-1" aria-labelledby="disclaimerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered disclaimer-modal-dialog">
-        <div class="modal-content disclaimer-modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="disclaimerModalLabel">关于与免责声明</h5>
-                <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
+    <header class="public-top-nav">
+        <div class="container-fluid-custom flex justify-between items-center">
+            <div class="public-nav-left">
+                <!-- 预留左侧区域，保持搜索区干净居中 -->
             </div>
-            <div class="modal-body disclaimer-modal-body">
-                <p class="disclaimer-intro">Pan-Relay 是一款基于多源 API 的自动化检索与网盘中继工具{% if enable_frontend_github %}，本项目已在 GitHub 完全开源{% endif %}。</p>
-                {% if enable_frontend_github %}
-                <div class="disclaimer-star-box">
-                    <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="disclaimer-repo-link" title="前往 GitHub 查看源码">
-                        <i class="fab fa-github fa-lg"></i>
-                        <span>ucmao / pan-relay</span>
-                    </a>
-                    <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer" class="disclaimer-star-btn" title="在 GitHub 上点亮 Star">
-                        <i class="fas fa-star"></i>
-                        <span>Star 支持</span>
-                    </a>
-                </div>
+            <div class="public-nav-right flex items-center gap-2">
+                {% if enable_resource_request %}
+                <button type="button" id="openResourceRequestBtn" class="request-resource-pill" title="告诉我们你想找的资源"
+                    aria-label="求片 / 提交需求">
+                    <i class="fas fa-comment-dots text-amber-500"></i>
+                    <span class="pill-text">求片</span>
+                </button>
                 {% endif %}
-                <div class="disclaimer-note-block">
-                    <ol class="disclaimer-list">
-                        <li>本工具仅作为资源检索辅助工具，所有搜索结果均实时调用第三方公开 API 自动生成，本站<strong>不存储、不上传、不分发</strong>任何实质资源内容。</li>
-                        <li>搜索结果指向的第三方链接内容由原平台负责，Pan-Relay 无法控制其内容，不对其合法性、准确性或安全性负责。</li>
-                        <li>本工具<strong>仅供技术研究、学习与交流使用</strong>，严禁用于任何形式的商业牟利行为。</li>
-                        <li>请在法律允许的范围内合理使用，因违规使用所产生的法律后果由用户自行承担。</li>
-                    </ol>
-                </div>
+                {% if enable_frontend_github %}
+                <a href="https://github.com/ucmao/pan-relay" target="_blank" rel="noopener noreferrer"
+                    class="github-star-pill" title="前往 Pan-Relay GitHub 仓库" aria-label="前往 Pan-Relay GitHub 仓库，点亮 Star">
+                    <span class="github-pill-left">
+                        <i class="fab fa-github" aria-hidden="true"></i>
+                    </span>
+                    <span class="github-pill-right">
+                        <i class="fas fa-star star-icon"></i>
+                        <span id="githubStarCount" class="github-star-count">...</span>
+                    </span>
+                </a>
+                {% endif %}
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm disclaimer-confirm-btn" data-ui-dismiss="modal">我知道了</button>
+        </div>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <div class="footer-container">
+        <div class="container-fluid-custom">
+            <div class="footer-copyright">
+                <a id="disclaimerLink" role="button">{{ frontend_footer_text }}</a>
             </div>
         </div>
     </div>
-</div>
 
-<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
-{% if enable_frontend_github %}
-<script>
-    // GitHub Star 计数器异步加载与缓存
-    (function () {
-        const starEl = document.getElementById('githubStarCount');
-        if (!starEl) return;
+    <div class="modal fade" id="disclaimerModal" tabindex="-1" aria-labelledby="disclaimerModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered disclaimer-modal-dialog">
+            <div class="modal-content disclaimer-modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="disclaimerModalLabel">本站原理</h5>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body disclaimer-modal-body">
+                    <div class="disclaimer-note-block">
+                        <p class="disclaimer-config-text">{{ frontend_disclaimer_text }}</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm disclaimer-confirm-btn"
+                        data-ui-dismiss="modal">我知道了</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        const CACHE_KEY = 'pan_relay_star_count';
-        const CACHE_TIME_KEY = 'pan_relay_star_time';
-        const TTL = 30 * 60 * 1000; // 30 分钟本地缓存
+    <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+    {% if enable_frontend_github %}
+    <script>
+        // GitHub Star 计数器异步加载与缓存
+        (function () {
+            const starEl = document.getElementById('githubStarCount');
+            if (!starEl) return;
 
-        function formatStars(count) {
-            const num = Number(count);
-            if (isNaN(num)) return '--';
-            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
-            return String(num);
-        }
+            const CACHE_KEY = 'pan_relay_star_count';
+            const CACHE_TIME_KEY = 'pan_relay_star_time';
+            const TTL = 30 * 60 * 1000; // 30 分钟本地缓存
 
-        const cachedCount = localStorage.getItem(CACHE_KEY);
-        const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+            function formatStars(count) {
+                const num = Number(count);
+                if (isNaN(num)) return '--';
+                if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+                return String(num);
+            }
 
-        if (cachedCount && cachedTime && (Date.now() - Number(cachedTime) < TTL)) {
-            starEl.textContent = formatStars(cachedCount);
-            return;
-        }
+            const cachedCount = localStorage.getItem(CACHE_KEY);
+            const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1500);
+            if (cachedCount && cachedTime && (Date.now() - Number(cachedTime) < TTL)) {
+                starEl.textContent = formatStars(cachedCount);
+                return;
+            }
 
-        fetch('https://api.github.com/repos/ucmao/pan-relay', { signal: controller.signal })
-            .then(res => {
-                clearTimeout(timeoutId);
-                if (!res.ok) throw new Error('Network error');
-                return res.json();
-            })
-            .then(data => {
-                if (typeof data.stargazers_count === 'number') {
-                    localStorage.setItem(CACHE_KEY, data.stargazers_count);
-                    localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
-                    starEl.textContent = formatStars(data.stargazers_count);
-                } else {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1500);
+
+            fetch('https://api.github.com/repos/ucmao/pan-relay', { signal: controller.signal })
+                .then(res => {
+                    clearTimeout(timeoutId);
+                    if (!res.ok) throw new Error('Network error');
+                    return res.json();
+                })
+                .then(data => {
+                    if (typeof data.stargazers_count === 'number') {
+                        localStorage.setItem(CACHE_KEY, data.stargazers_count);
+                        localStorage.setItem(CACHE_TIME_KEY, String(Date.now()));
+                        starEl.textContent = formatStars(data.stargazers_count);
+                    } else {
+                        starEl.textContent = cachedCount ? formatStars(cachedCount) : '--';
+                    }
+                })
+                .catch(() => {
+                    clearTimeout(timeoutId);
                     starEl.textContent = cachedCount ? formatStars(cachedCount) : '--';
-                }
-            })
-            .catch(() => {
-                clearTimeout(timeoutId);
-                starEl.textContent = cachedCount ? formatStars(cachedCount) : '--';
-            });
-    })();
-</script>
-{% endif %}
-<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.8"></script>
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const disclaimerLink = document.getElementById('disclaimerLink');
+                });
+        })();
+    </script>
+    {% endif %}
+    <script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.8"></script>
+    {% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const disclaimerLink = document.getElementById('disclaimerLink');
 
-        if (disclaimerLink) {
-            disclaimerLink.addEventListener('click', (event) => {
-                event.preventDefault();
-                window.AppUI?.openModal('disclaimerModal');
-            });
-        }
-    });
-</script>
-{% endblock %}
+            if (disclaimerLink) {
+                disclaimerLink.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    window.AppUI?.openModal('disclaimerModal');
+                });
+            }
+        });
+    </script>
+    {% endblock %}
 </body>
+
 </html>

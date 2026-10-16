@@ -157,6 +157,8 @@ X-API-Key: your_transfer_key
 
 > 📖 完整的 OpenAPI 接口参数、流式 SSE 搜索推流与响应 Payload 字典，详见 [REST API 开发者接入规范](docs/api_v1_docs.md)。
 
+搜索结果会在原有标题、链接、网盘和提取码字段外，按来源提供时间、简介、封面、来源分类及具体来源标识；上游安全的额外字段保存在 `metadata` 中。字段详情和可选性见 API 指南。
+
 ---
 
 ## ⚙️ 网盘凭据快速配置
