@@ -28,6 +28,20 @@ FRONTEND_LINK_CHECK_CONFIG_KEY = "frontend_link_check_config"
 SECURITY_CONFIG_KEY = "security_config"
 ENABLE_PC_QR_CODE_KEY = "enable_pc_qr_code"
 ENABLE_FRONTEND_GITHUB_KEY = "enable_frontend_github"
+ENABLE_RESOURCE_REQUEST_KEY = "enable_resource_request"
+HOT_SEARCHES_CONFIG_KEY = "hot_searches_config"
+
+DEFAULT_HOT_SEARCH_WORDS = [
+    "兰香如故",
+    "现在就出发",
+    "凡人修仙传",
+    "余红旧事",
+    "希望",
+    "我不是大师",
+    "无可替代",
+    "仙逆",
+    "我是证人",
+]
 
 
 
@@ -274,6 +288,88 @@ def save_frontend_github_config(enabled: bool) -> bool:
     return set_config_value(
         ENABLE_FRONTEND_GITHUB_KEY,
         {"enabled": bool(enabled)},
+    )
+
+
+def get_resource_request_config() -> Dict[str, bool]:
+    raw_value = get_config_value(ENABLE_RESOURCE_REQUEST_KEY)
+    if not raw_value:
+        return {"enabled": True}
+
+    try:
+        parsed = json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("求片入口配置格式无效，已回退到默认值")
+        return {"enabled": True}
+
+    return {"enabled": bool(parsed.get("enabled", True))}
+
+
+def is_resource_request_enabled() -> bool:
+    return get_resource_request_config()["enabled"]
+
+
+def save_resource_request_config(enabled: bool) -> bool:
+    return set_config_value(
+        ENABLE_RESOURCE_REQUEST_KEY,
+        {"enabled": bool(enabled)},
+    )
+
+
+def get_hot_searches_config() -> Dict[str, Any]:
+    raw_value = get_config_value(HOT_SEARCHES_CONFIG_KEY)
+    default_config = {
+        "enabled": True,
+        "words": DEFAULT_HOT_SEARCH_WORDS.copy(),
+    }
+    if not raw_value:
+        return default_config
+
+    try:
+        parsed = json.loads(raw_value)
+        if not isinstance(parsed, dict):
+            return default_config
+        words = parsed.get("words")
+        if not isinstance(words, list) or not words:
+            words = DEFAULT_HOT_SEARCH_WORDS.copy()
+        else:
+            words = [str(w).strip() for w in words if str(w).strip()]
+            if not words:
+                words = DEFAULT_HOT_SEARCH_WORDS.copy()
+
+        return {
+            "enabled": bool(parsed.get("enabled", True)),
+            "words": words,
+        }
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("热搜词配置格式无效，已回退到默认值")
+        return default_config
+
+
+def is_hot_searches_enabled() -> bool:
+    return get_hot_searches_config()["enabled"]
+
+
+def get_hot_search_words() -> List[str]:
+    return get_hot_searches_config()["words"]
+
+
+def save_hot_searches_config(enabled: bool, words: List[str]) -> bool:
+    cleaned_words = []
+    if isinstance(words, list):
+        for w in words:
+            w_str = str(w).strip()
+            if w_str and w_str not in cleaned_words:
+                cleaned_words.append(w_str)
+    if not cleaned_words:
+        cleaned_words = DEFAULT_HOT_SEARCH_WORDS.copy()
+
+    return set_config_value(
+        HOT_SEARCHES_CONFIG_KEY,
+        {
+            "enabled": bool(enabled),
+            "words": cleaned_words,
+        },
     )
 
 
@@ -1155,4 +1251,76 @@ def remove_ip_from_blacklist(ip: str) -> bool:
     return True
 
 
+ACTIVE_THEME_KEY = "active_theme"
+DEFAULT_THEME = "default"
+VALID_THEMES = {"default", "aurora", "sougs"}
 
+
+def get_active_theme() -> str:
+    """获取当前启用的前台主题标识，默认 default"""
+    raw_value = get_config_value(ACTIVE_THEME_KEY)
+    if not raw_value:
+        return DEFAULT_THEME
+    try:
+        parsed = json.loads(raw_value)
+        theme = str(parsed.get("theme", DEFAULT_THEME)).strip().lower()
+        if theme == "sougs":
+            theme = "aurora"
+        return theme if theme in VALID_THEMES else DEFAULT_THEME
+    except Exception:
+        return DEFAULT_THEME
+
+
+def save_active_theme(theme_id: str) -> bool:
+    """保存当前启用的前台主题"""
+    clean_id = (theme_id or "").strip().lower()
+    if clean_id == "sougs":
+        clean_id = "aurora"
+    if clean_id not in VALID_THEMES:
+        logger.warning(f"尝试设置未知的主题: {clean_id}，忽略")
+        return False
+    return set_config_value(ACTIVE_THEME_KEY, {"theme": clean_id})
+
+
+SITE_LOGO_KEY = "site_logo"
+SITE_NAME_KEY = "site_name"
+DEFAULT_SITE_LOGO = "/static/images/hero_search_top.webp"
+DEFAULT_SITE_NAME = "Pan-Relay"
+
+
+def get_site_logo() -> str:
+    """获取全局站点 Logo 地址，默认 /static/images/hero_search_top.webp"""
+    raw_value = get_config_value(SITE_LOGO_KEY)
+    if not raw_value:
+        return DEFAULT_SITE_LOGO
+    try:
+        parsed = json.loads(raw_value)
+        logo = str(parsed.get("logo", DEFAULT_SITE_LOGO)).strip()
+        return logo or DEFAULT_SITE_LOGO
+    except Exception:
+        return DEFAULT_SITE_LOGO
+
+
+def save_site_logo(logo_url: str) -> bool:
+    """保存全局站点 Logo 地址"""
+    clean_url = (logo_url or "").strip()
+    return set_config_value(SITE_LOGO_KEY, {"logo": clean_url})
+
+
+def get_site_name() -> str:
+    """获取全局站点名称，默认 Pan-Relay"""
+    raw_value = get_config_value(SITE_NAME_KEY)
+    if not raw_value:
+        return DEFAULT_SITE_NAME
+    try:
+        parsed = json.loads(raw_value)
+        name = str(parsed.get("name", DEFAULT_SITE_NAME)).strip()
+        return name or DEFAULT_SITE_NAME
+    except Exception:
+        return DEFAULT_SITE_NAME
+
+
+def save_site_name(site_name: str) -> bool:
+    """保存全局站点名称"""
+    clean_name = (site_name or "").strip()
+    return set_config_value(SITE_NAME_KEY, {"name": clean_name})

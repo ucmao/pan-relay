@@ -366,3 +366,47 @@ def parse_netdisk_names(val, normalize: bool = True) -> set:
             result.add(item)
     return result
 
+
+CLOUD_TO_DRIVE_TYPE = {
+    "百度网盘": "baidu",
+    "夸克网盘": "quark",
+    "阿里云盘": "ali",
+    "UC网盘": "uc",
+    "迅雷网盘": "xunlei",
+    "光鸭云盘": "guangya",
+    "悟空网盘": "wukong",
+    "移动云盘": "yidong",
+    "磁力链接": "seed",
+    "迅雷链接": "seed",
+    "电驴链接": "seed",
+    "123云盘": "123pan",
+    "天翼云盘": "tianyi",
+    "115网盘": "115",
+    "蓝奏云": "lanzou",
+}
+
+
+def get_netdisk_drive_type(cloud_name: Optional[str] = None, link: Optional[str] = None) -> str:
+    """
+    根据网盘中文名称或链接，推导统一的英文驱动代号 (如 quark, baidu, ali, uc, xunlei, seed 等)
+    主要用于前台主题展示网盘图标及分类 Tab 筛选。
+    """
+    if cloud_name:
+        std_name = normalize_cloud_name(cloud_name) or cloud_name.strip()
+        if std_name in CLOUD_TO_DRIVE_TYPE:
+            return CLOUD_TO_DRIVE_TYPE[std_name]
+        c_lower = cloud_name.lower()
+        for k, v in CLOUD_TO_DRIVE_TYPE.items():
+            if v in c_lower or k in cloud_name:
+                return v
+        if any(w in c_lower for w in ("magnet", "bt", "seed", "种子", "磁力")):
+            return "seed"
+
+    if link:
+        detected = match_netdisk_link(link)
+        if detected and detected in CLOUD_TO_DRIVE_TYPE:
+            return CLOUD_TO_DRIVE_TYPE[detected]
+
+    return "other"
+
+

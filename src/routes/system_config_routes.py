@@ -204,12 +204,27 @@ def api_config_page():
 @system_config_bp.route("/admin/frontend-config", methods=["GET"])
 @token_required
 def frontend_config_page():
+    from src.services.theme_service import get_available_themes
+    from src.services.system_config_service import (
+        get_active_theme,
+        get_site_logo,
+        get_site_name,
+        is_resource_request_enabled,
+        is_hot_searches_enabled,
+        get_hot_search_words,
+    )
+
+    tab = request.args.get("tab", "appearance")
+    if tab not in ("appearance", "strategies"):
+        tab = "appearance"
+
     frontend_config = get_frontend_display_netdisk_config()
     api_mode_config = get_api_mode_config()
     link_check_config = get_frontend_link_check_config()
     dynamic_transfer_config = get_dynamic_transfer_netdisk_config()
     allow_excel = get_allow_excel_download_config()
     frontend_link_mode = get_frontend_link_mode()
+    hot_words = get_hot_search_words()
     return render_template(
         "admin_frontend_config.html",
         frontend_netdisk_options=FRONTEND_DISPLAY_NETDISK_OPTIONS,
@@ -223,9 +238,113 @@ def frontend_config_page():
         allow_excel_download=allow_excel.get("allow_excel_download", True),
         enable_pc_qr_code=is_pc_qr_code_enabled(),
         enable_frontend_github=is_frontend_github_enabled(),
+        enable_resource_request=is_resource_request_enabled(),
+        enable_hot_searches=is_hot_searches_enabled(),
+        hot_search_words=hot_words,
+        hot_search_words_text="\n".join(hot_words),
         frontend_link_mode=frontend_link_mode if isinstance(frontend_link_mode, str) else frontend_link_mode.get("mode", "view"),
         active_page="config_frontend",
+        current_tab=tab,
+        themes=get_available_themes(),
+        active_theme=get_active_theme(),
+        current_site_logo=get_site_logo(),
+        current_site_name=get_site_name(),
     )
+
+
+@system_config_bp.route("/api/theme/switch", methods=["POST"])
+@token_required
+def api_switch_theme():
+    """切换前台主题模板接口"""
+    from src.services.theme_service import switch_theme
+    data = request.get_json() or {}
+    theme_id = (data.get("theme_id") or "").strip()
+    if not theme_id:
+        return jsonify({"success": False, "message": "缺少主题标识"}), 400
+    if switch_theme(theme_id):
+        return jsonify({"success": True, "message": f"成功切换前台主题为 [{theme_id}]", "theme_id": theme_id})
+    return jsonify({"success": False, "message": "切换主题失败，未知的主题标识"}), 400
+
+
+@system_config_bp.route("/api/site/branding/save", methods=["POST"])
+@token_required
+def api_save_site_branding():
+    """保存全局站点品牌名称与 Logo"""
+    from src.services.system_config_service import save_site_logo, save_site_name, get_site_logo, get_site_name
+    data = request.get_json() or {}
+    logo_url = (data.get("logo_url") or "").strip()
+    site_name = (data.get("site_name") or "").strip()
+    if logo_url:
+        save_site_logo(logo_url)
+    if site_name:
+        save_site_name(site_name)
+    return jsonify({
+        "success": True,
+        "message": "站点品牌配置保存成功",
+        "site_logo": get_site_logo(),
+        "site_name": get_site_name(),
+    })
+
+
+@system_config_bp.route("/api/frontend/resource-request/save", methods=["POST"])
+@token_required
+def api_save_resource_request_config():
+    """保存求片功能展示开关"""
+    from src.services.system_config_service import save_resource_request_config
+    data = request.get_json() or {}
+    enabled = bool(data.get("enabled", True))
+    if save_resource_request_config(enabled):
+        msg = "求片入口已启用" if enabled else "求片入口已关闭"
+        return jsonify({"success": True, "message": msg, "enabled": enabled})
+    return jsonify({"success": False, "message": "保存求片配置失败"}), 500
+
+
+@system_config_bp.route("/api/frontend/hot-searches/save", methods=["POST"])
+@token_required
+def api_save_hot_searches_config():
+    """保存热搜推荐词配置"""
+    from src.services.system_config_service import save_hot_searches_config
+    data = request.get_json() or {}
+    enabled = bool(data.get("enabled", True))
+    words = data.get("words", [])
+    if isinstance(words, str):
+        words = [w.strip() for w in words.replace("\r", "\n").split("\n") if w.strip()]
+    elif isinstance(words, list):
+        words = [str(w).strip() for w in words if str(w).strip()]
+    if save_hot_searches_config(enabled, words):
+        return jsonify({"success": True, "message": "热搜词配置已保存", "enabled": enabled, "words": words})
+    return jsonify({"success": False, "message": "保存热搜词配置失败"}), 500
+
+
+@system_config_bp.route("/api/site/logo/upload", methods=["POST"])
+@token_required
+def api_upload_site_logo():
+    """上传自定义全局站点 Logo"""
+    import os, time
+    from src.services.system_config_service import save_site_logo
+
+    if "file" not in request.files:
+        return jsonify({"success": False, "message": "未检测到上传文件"}), 400
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"success": False, "message": "未选择文件"}), 400
+
+    allowed_exts = {".png", ".jpg", ".jpeg", ".svg", ".webp", ".ico", ".gif"}
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in allowed_exts:
+        return jsonify({"success": False, "message": f"不支持的文件类型: {ext}，仅支持常见图片格式"}), 400
+
+    filename = f"logo_{int(time.time())}{ext}"
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    upload_dir = os.path.join(base_dir, "static", "uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    target_path = os.path.join(upload_dir, filename)
+    file.save(target_path)
+
+    relative_url = f"/static/uploads/{filename}"
+    save_site_logo(relative_url)
+    return jsonify({"success": True, "message": "Logo 上传并替换成功", "logo_url": relative_url})
+
 
 
 @system_config_bp.route("/admin/system-config", methods=["GET"])

@@ -334,9 +334,20 @@ def clean_and_extract_data(data):
         title = extract_title(d_lst[1])
         url = extract_url(d_lst[2])
         netdisk_name = match_netdisk_link(url)
+        dt = str(d_lst[3]) if len(d_lst) > 3 and d_lst[3] else None
+        desc = str(d_lst[4]) if len(d_lst) > 4 and d_lst[4] else None
+        cover = str(d_lst[5]) if len(d_lst) > 5 and d_lst[5] else None
 
         cleaned_data.append(
-            SearchResultItem(source=source, title=title, share_link=url, cloud_name=netdisk_name)
+            SearchResultItem(
+                source=source,
+                title=title,
+                share_link=url,
+                cloud_name=netdisk_name,
+                datetime=dt,
+                description=desc,
+                cover_url=cover,
+            )
         )
 
     return cleaned_data
@@ -356,7 +367,7 @@ def process_config(config, keyword, timeout=10):
             extracted_data = extract_from_json(response_data, config["response"])
 
             if extracted_data and isinstance(extracted_data, list):
-                extracted_data_with_source = [["other", item[0], item[1]] for item in extracted_data]
+                extracted_data_with_source = [["other", *item] for item in extracted_data]
                 final_results = clean_and_extract_data(extracted_data_with_source)
 
             num_results = len(final_results)
@@ -489,6 +500,8 @@ def search_in_database(keyword):
             link = str(row[1]) if len(row) > 1 else ""
             cloud_name = str(row[2]) if len(row) > 2 and row[2] else ""
             created_at = str(row[3]) if len(row) > 3 and row[3] else None
+            remarks = str(row[4]) if len(row) > 4 and row[4] else None
+            cover_url = str(row[5]) if len(row) > 5 and row[5] else None
             netdisk_name = cloud_name if cloud_name else match_netdisk_link(link)
             final_results.append(
                 SearchResultItem(
@@ -497,6 +510,8 @@ def search_in_database(keyword):
                     share_link=link,
                     cloud_name=netdisk_name,
                     datetime=created_at,
+                    description=remarks,
+                    cover_url=cover_url,
                 )
             )
 
@@ -576,7 +591,7 @@ def generate_search_stream_events(
 
         def _serialize_items(items):
             return [
-                item.to_list() if isinstance(item, SearchResultItem) else list(item)
+                item.to_front_list() if isinstance(item, SearchResultItem) else list(item)
                 for item in items
             ]
 
@@ -725,6 +740,14 @@ def calculate_completeness_score(item: SearchResultItem) -> int:
     if item.cloud_name and item.cloud_name != "其他":
         score += 10
 
+    # 6. 富媒体与元数据加分 (封面图、简介与发布时间)
+    if getattr(item, "cover_url", None):
+        score += 40
+    if getattr(item, "description", None):
+        score += 30
+    if getattr(item, "datetime", None):
+        score += 20
+
     return score
 
 
@@ -733,6 +756,7 @@ def merge_or_select_better(existing: SearchResultItem, incoming: SearchResultIte
     当两条记录指向相同网盘真实资源时，择优合并：
     1. 选择得分更高者作为基础信息
     2. 继承并补全提取码密码，防止有效密码丢失
+    3. 补全封面图、简介与时间元数据
     """
     existing_pwd = existing.password or extract_password_from_url(existing.share_link)
     incoming_pwd = incoming.password or extract_password_from_url(incoming.share_link)
@@ -752,6 +776,17 @@ def merge_or_select_better(existing: SearchResultItem, incoming: SearchResultIte
             sep = "&" if "?" in chosen.share_link else "?"
             param = "password" if "115" in chosen.share_link else "pwd"
             chosen.share_link = f"{chosen.share_link}{sep}{param}={best_pwd}"
+
+    # 补全封面、简介与时间字段
+    best_cover = getattr(existing, "cover_url", None) or getattr(incoming, "cover_url", None)
+    best_desc = getattr(existing, "description", None) or getattr(incoming, "description", None)
+    best_dt = getattr(existing, "datetime", None) or getattr(incoming, "datetime", None)
+    if best_cover and not getattr(chosen, "cover_url", None):
+        chosen.cover_url = best_cover
+    if best_desc and not getattr(chosen, "description", None):
+        chosen.description = best_desc
+    if best_dt and not getattr(chosen, "datetime", None):
+        chosen.datetime = best_dt
 
     return chosen
 

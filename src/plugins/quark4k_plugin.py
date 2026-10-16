@@ -79,12 +79,17 @@ class Quark4KPlugin(HttpPlugin):
                 soup = BeautifulSoup(content_html, "html.parser")
                 links = [anchor.get("href") for anchor in soup.select("a[href]")]
                 links.extend(extract_links(soup.get_text("\n", strip=True)))
+                img_node = soup.select_one("img[src]")
+                cover_url = img_node.get("src") if img_node else None
+                desc_text = clean_text(soup.get_text(" ", strip=True))
                 for link in links:
                     items.append(
                         self.make_item(
                             title,
                             link,
                             datetime_value=attributes.get("createdAt"),
+                            description=desc_text if desc_text and desc_text != title else None,
+                            cover_url=cover_url,
                         )
                     )
         return self.finalize(items)

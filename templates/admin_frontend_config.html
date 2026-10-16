@@ -1,15 +1,16 @@
 {% extends "admin_layout.html" %}
 {% set active_page = 'config_frontend' %}
+{% set current_tab = current_tab or 'appearance' %}
 
 {% block title %}前台 Web 配置 - Pan-Relay Console{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto space-y-6">
+<div id="frontendConfigContainer" class="max-w-5xl mx-auto space-y-6">
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h1 class="text-xl font-bold tracking-tight text-slate-900">前台 Web 界面配置</h1>
-            <p class="text-xs text-slate-500 mt-0.5">控制前台 Web 搜索界面的访问开关、导出下载权限及网盘展示筛选</p>
+            <p class="text-xs text-slate-500 mt-0.5">控制前台 Web 搜索界面的主题外观、品牌标识、访问开关及网盘出链规则</p>
         </div>
         <div class="flex items-center space-x-2.5">
             <a href="{{ url_for('search_index') }}" target="_blank" class="btn btn-outline-primary btn-sm">
@@ -18,327 +19,536 @@
         </div>
     </div>
 
-    <!-- 1. 前台访问与出链策略 -->
-    <section class="admin-panel">
-        <div class="admin-panel-header">
-            <div class="admin-panel-title-area">
-                <h2 class="admin-panel-title">
-                    <i class="fas fa-desktop text-blue-600"></i> 前台访问与出链策略
-                </h2>
-                <p class="admin-panel-desc">控制前台 Web 搜索首页访问、链接提供方式与结果导出工具</p>
-            </div>
-        </div>
-        <div class="admin-panel-body">
-            <div class="divide-y divide-slate-100">
-                <!-- 开关 1: 前台 Web 界面开关 -->
-                <div class="setting-item-row">
-                    <div class="space-y-1 min-w-0 pr-4">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-semibold text-slate-800 text-sm">前台 Web 搜索界面</span>
-                            <span class="help-tooltip" data-tooltip="关闭后访客访问主页将自动重定向至后台管理登录页面 (/login)">
-                                <i class="far fa-circle-question text-xs"></i>
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500">控制是否允许访客直接访问公共搜索首页</p>
-                    </div>
-                    <div class="flex items-center flex-shrink-0">
-                        <label class="plugin-switch" title="切换前台界面">
-                            <input type="checkbox" id="enableFrontendToggle" onchange="saveApiModeConfig()" {% if
-                                enable_frontend %}checked{% endif %}>
-                            <span class="plugin-switch-slider"></span>
-                        </label>
-                    </div>
+    <!-- 分段控制 Tab 导航 -->
+    <div class="source-tabs-header">
+        <button class="source-tab-btn {{ 'is-active' if current_tab != 'strategies' else '' }}"
+            data-frontend-tab-target="appearance" onclick="switchFrontendTab('appearance')" type="button">
+            <i class="fas fa-palette"></i> 外观与品牌
+        </button>
+        <button class="source-tab-btn {{ 'is-active' if current_tab == 'strategies' else '' }}"
+            data-frontend-tab-target="strategies" onclick="switchFrontendTab('strategies')" type="button">
+            <i class="fas fa-sliders"></i> 访问与功能策略
+        </button>
+    </div>
+
+    <!-- TAB 1: 外观与品牌 (Appearance & Branding) -->
+    <div id="tab-pane-appearance"
+        class="frontend-tab-pane {{ '' if current_tab != 'strategies' else 'hidden' }} space-y-6">
+        <!-- 1. 前台主题模板与外观市场 -->
+        <section class="admin-panel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-palette text-indigo-600"></i> 前台主题外观与多模板切换
+                    </h2>
+                    <p class="admin-panel-desc">支持即插即用的多套前台 UI 模板，一键换肤，无缝继承 SEO 标签与自动化转存</p>
                 </div>
-
-                <!-- 开关 2: 搜索出链与动态转存策略 (前台专属) -->
-                <div class="setting-item-row flex-col items-stretch {% if not enable_frontend %}hidden{% endif %}"
-                    id="frontendLinkStrategyContainer">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div class="space-y-1 min-w-0 pr-4">
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <span class="font-semibold text-slate-800 text-sm">搜索出链策略</span>
-                                <span class="help-tooltip" data-tooltip="原始链接模式直接跳转第三方；动态转存模式通过网盘凭证自动转存为站长专属收益链接">
-                                    <i class="far fa-circle-question text-xs"></i>
-                                </span>
+            </div>
+            <div class="admin-panel-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% for t in themes %}
+                    <div
+                        class="group bg-white rounded-xl overflow-hidden transition-all duration-200 flex flex-col {% if t.is_active %}border-2 border-indigo-600 shadow-md ring-4 ring-indigo-50{% else %}border border-slate-200 hover:border-slate-300 hover:shadow-sm{% endif %}">
+                        <!-- 严格 16:9 扁平比例展示封面图 -->
+                        <div class="relative w-full overflow-hidden bg-slate-100" style="aspect-ratio: 16 / 9;">
+                            <img src="{{ t.preview }}?v=169" alt="{{ t.name }}"
+                                class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                                loading="lazy">
+                            {% if t.is_active %}
+                            <div
+                                class="absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500 text-white shadow-md flex items-center gap-1.5 backdrop-blur-sm">
+                                <i class="fas fa-check-circle text-[11px]"></i> 正在使用
                             </div>
-                            <p class="text-xs text-slate-500">前台用户点击资源时的链接提供方式</p>
+                            {% endif %}
                         </div>
-                        <div class="flex items-center space-x-3 flex-shrink-0">
-                            <select id="frontendLinkModeSelect" class="form-select form-select-sm"
-                                onchange="saveFrontendLinkMode()" style="min-width: 170px;">
-                                <option value="copy" {% if frontend_link_mode=='copy' %}selected{% endif %}>原始链接模式
-                                </option>
-                                <option value="view" {% if frontend_link_mode=='view' %}selected{% endif %}>动态转存模式
-                                </option>
-                            </select>
-                        </div>
-                    </div>
 
-                    <!-- 原始链接模式专属控制面板 (搜索结果 Excel 导出) -->
-                    <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 {% if frontend_link_mode != 'copy' %}hidden{% endif %} transition-all duration-200"
-                        id="rawLinkSettingsWrapper">
-                        <div class="flex items-center justify-between gap-4" id="excelDownloadSettingContainer">
-                            <div class="space-y-0.5 min-w-0 pr-4">
-                                <div class="flex items-center gap-2 flex-wrap text-xs">
-                                    <span class="font-semibold text-slate-800 text-xs">搜索结果 Excel 导出</span>
-                                    <span class="help-tooltip" data-tooltip="控制前台搜索结果列表顶部工具栏中是否展示“导出Excel”操作按钮">
-                                        <i class="far fa-circle-question text-xs"></i>
-                                    </span>
-                                </div>
-                                <p class="text-[11px] text-slate-500" id="excelDownloadDesc">允许访客将前台搜索列表结果导出为表格</p>
+                        <!-- 简约卡片操作栏 -->
+                        <div class="p-3.5 flex items-center justify-between bg-white border-t border-slate-100">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                    {{ t.name }}
+                                </h3>
+                                <p class="text-[11px] text-slate-400 mt-0.5">{{ t.description }}</p>
                             </div>
-                            <div class="flex items-center flex-shrink-0">
-                                <label class="plugin-switch" title="切换 Excel 导出按钮" id="allowExcelDownloadSwitchLabel">
-                                    <input type="checkbox" id="allowExcelDownloadToggle"
-                                        onchange="saveAllowExcelDownloadConfig()" {% if allow_excel_download %}checked{%
-                                        endif %}>
-                                    <span class="plugin-switch-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 统一动态转存控制面板 (整合网盘勾选与凭据就绪状态) -->
-                    <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 {% if frontend_link_mode != 'view' %}hidden{% endif %} transition-all duration-200"
-                        id="dynamicTransferNetdisksWrapper">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div class="flex items-center gap-2 flex-wrap text-xs">
-                                <div class="flex items-center gap-1.5 font-semibold text-slate-700 flex-shrink-0">
-                                    <i class="fas fa-arrows-split-up-and-left text-blue-500 text-[11px]"></i>
-                                    <span>转存生效网盘与凭证:</span>
-                                </div>
-                                <span class="text-slate-500 text-[11px]">
-                                    仅对勾选网盘转存，未勾选自动出原始链接。已选 <span id="enabledDynamicTransferPansCount"
-                                        class="font-bold text-blue-600">{{
-                                        dynamic_transfer_netdisks|length if dynamic_transfer_netdisks else
-                                        dynamic_transfer_netdisk_options|length }}</span> / {{
-                                    dynamic_transfer_netdisk_options|length }}
-                                    <span class="text-slate-400 mx-1">·</span>
-                                    <span class="text-slate-500" id="dynamicTransferStatusSummary"></span>
-                                </span>
-                            </div>
-                            <div class="flex items-center space-x-2.5 flex-shrink-0 text-xs">
-                                <button class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-xs"
-                                    id="toggleAllDynamicTransferNetdisksButton" type="button"
-                                    onclick="toggleAllDynamicTransferNetdisks()">
-                                    全选 / 反选
-                                </button>
-                                <a href="{{ url_for('system_config.system_config_page', tab='accounts') }}"
-                                    class="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors"
-                                    id="dynamicTransferManageLink">
-                                    管理账号池 <i class="fas fa-chevron-right text-[9px]"></i>
+                            <div class="flex-shrink-0 ml-3">
+                                {% if t.is_active %}
+                                <a href="{{ url_for('search_index') }}" target="_blank"
+                                    class="btn btn-sm btn-outline-primary text-xs py-1.5 px-3 flex items-center gap-1">
+                                    <i class="fas fa-external-link-alt text-[10px]"></i> 查看效果
                                 </a>
-                            </div>
-                        </div>
-                        <div class="dynamic-transfer-grid" id="dynamicTransferNetdisksGroup">
-                            {% for netdisk_name in dynamic_transfer_netdisk_options %}
-                            <label class="dynamic-transfer-netdisk-card" for="dynamicTransferNetdisk{{ loop.index }}"
-                                data-cloud-card="{{ netdisk_name }}">
-                                <input class="dynamic-transfer-netdisk-checkbox" type="checkbox"
-                                    id="dynamicTransferNetdisk{{ loop.index }}" value="{{ netdisk_name }}"
-                                    onchange="saveDynamicTransferNetdisksConfig()" {% if not dynamic_transfer_netdisks
-                                    or netdisk_name in dynamic_transfer_netdisks %}checked{% endif %}>
-                                <span class="whitespace-nowrap">{{ netdisk_name }}</span>
-                                <div class="flex items-center gap-2 ml-auto">
-                                    <span class="dynamic-card-status-badge status-missing"
-                                        data-cloud-badge="{{ netdisk_name }}" title="{{ netdisk_name }}: 加载状态中...">
-                                        <span class="status-dot"></span>
-                                        <span class="status-text">未配置</span>
-                                    </span>
-                                    <span class="dynamic-transfer-netdisk-card-check-box">
-                                        <i class="fas fa-check"></i>
-                                    </span>
-                                </div>
-                            </label>
-                            {% endfor %}
-                        </div>
-
-                        <!-- PC端扫码转存引导开关 (仅动态转存模式生效) -->
-                        <div class="pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-4 mt-1"
-                            id="pcQrCodeSettingContainer">
-                            <div class="space-y-0.5 min-w-0 pr-4">
-                                <div class="flex items-center gap-2 flex-wrap text-xs">
-                                    <span class="font-semibold text-slate-800 text-xs">PC 端扫码转存引导（生成二维码）</span>
-                                    <span class="help-tooltip"
-                                        data-tooltip="开启后，前台 PC 端访客点击转存资源时将弹窗生成二维码，强引导访客使用手机 APP 扫码转存以获取更高移动转存收益（仅对勾选了动态转存的网盘生效）。">
-                                        <i class="far fa-circle-question text-xs"></i>
-                                    </span>
-                                </div>
-                                <p class="text-[11px] text-slate-500">动态转存模式下弹出二维码引导扫码保存，最大化移动端转存收益</p>
-                            </div>
-                            <div class="flex items-center flex-shrink-0">
-                                <label class="plugin-switch" title="切换 PC 端扫码转存引导">
-                                    <input type="checkbox" id="enablePcQrCodeToggle" onchange="savePcQrCodeConfig()" {%
-                                        if enable_pc_qr_code %}checked{% endif %}>
-                                    <span class="plugin-switch-slider"></span>
-                                </label>
+                                {% else %}
+                                <button type="button" onclick="switchActiveTheme('{{ t.id }}')"
+                                    class="btn btn-sm btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1.5">
+                                    <i class="fas fa-magic text-[10px]"></i> 立即启用
+                                </button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- 2. 链接测活与品质净化 -->
-    <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
-        id="linkCheckPanel">
-        <div class="admin-panel-header">
-            <div class="admin-panel-title-area">
-                <h2 class="admin-panel-title">
-                    <i class="fas fa-heart-pulse text-emerald-600"></i> 链接测活与品质净化
-                </h2>
-                <p class="admin-panel-desc">控制前台 Web 实时免登录测活探测与失效空资源自动过滤</p>
+        <!-- 2. 全局品牌与站点 Logo -->
+        <section class="admin-panel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-image text-emerald-600"></i> 全局品牌与站点 Logo
+                    </h2>
+                    <p class="admin-panel-desc">统一管理所有前台主题的品牌 Logo 与站点名称，支持本地上传或输入外部图片 URL</p>
+                </div>
             </div>
-        </div>
-        <div class="admin-panel-body">
-            <div class="divide-y divide-slate-100">
-                <!-- 开关 4: 前台链接实时测活 -->
-                <div class="setting-item-row flex-col items-stretch">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="admin-panel-body">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                    <!-- 左侧: 站点 Logo 预览与地址输入 -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-700">站点 Logo</label>
+                        <div class="flex items-center gap-3">
+                            <!-- 纯图片预览框 -->
+                            <div class="h-10 w-28 flex-shrink-0 flex items-center justify-center p-1.5 border border-slate-200 rounded-lg bg-slate-50 overflow-hidden shadow-inner"
+                                title="Logo 效果预览">
+                                <img id="currentLogoPreview" src="{{ current_site_logo }}" alt="{{ current_site_name }}"
+                                    class="max-h-7 max-w-full object-contain">
+                            </div>
+                            <!-- 左侧输入框: Logo 地址 -->
+                            <div class="flex-1 min-w-0">
+                                <input type="text" id="siteLogoInput" value="{{ current_site_logo }}"
+                                    placeholder="输入图片 URL 或本地静态路径"
+                                    class="form-control text-xs bg-white border-slate-300"
+                                    onkeydown="if(event.key==='Enter') saveSiteBranding()">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="btn btn-outline-primary btn-sm text-xs cursor-pointer py-1 px-2.5">
+                                <i class="fas fa-cloud-arrow-up mr-1 text-[11px]"></i> 上传新 Logo
+                                <input type="file" id="logoFileInput" accept="image/*" class="hidden"
+                                    onchange="uploadLogoFile(this)">
+                            </label>
+                            <button type="button" onclick="resetDefaultLogo()"
+                                class="btn btn-outline-secondary btn-sm text-xs py-1 px-2.5">
+                                <i class="fas fa-rotate-left mr-1 text-[11px]"></i> 恢复默认
+                            </button>
+                            <span class="text-[11px] text-slate-400">支持 PNG / SVG / JPG / WebP</span>
+                        </div>
+                    </div>
+
+                    <!-- 右侧: 站点名称与保存按钮 -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-semibold text-slate-700">站点名称 (Site Title)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="siteNameInput" value="{{ current_site_name }}"
+                                placeholder="例如: Pan-Relay 聚合分发"
+                                class="form-control text-xs bg-white border-slate-300 flex-1"
+                                onkeydown="if(event.key==='Enter') saveSiteBranding()">
+                            <button type="button" onclick="saveSiteBranding()"
+                                class="btn btn-primary btn-sm text-xs px-3.5 py-2 flex items-center justify-center gap-1.5 flex-shrink-0">
+                                <i class="fas fa-save text-[11px]"></i> 保存
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-400">统一应用于所有前台主题导航栏、浏览器标签页与 SEO 标题</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 页面元素与品牌展示 -->
+        <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
+            id="frontendBrandPanel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fab fa-github text-slate-700"></i> 页面元素与品牌展示
+                    </h2>
+                    <p class="admin-panel-desc">控制前台 Web 页面的开源标识、外部链接及版权信息展示</p>
+                </div>
+            </div>
+            <div class="admin-panel-body">
+                <div class="divide-y divide-slate-100">
+                    <div class="setting-item-row" id="frontendGithubSettingContainer">
                         <div class="space-y-1 min-w-0 pr-4">
                             <div class="flex items-center gap-2 flex-wrap">
-                                <span class="font-semibold text-slate-800 text-sm">前台链接实时测活</span>
+                                <span class="font-semibold text-slate-800 text-sm">GitHub 徽章与开源外链</span>
                                 <span class="help-tooltip"
-                                    data-tooltip="控制前台 Web 搜索结果是否在后台异步发起免登录测活并显示健康徽章。关闭后可大幅节省服务器请求并避免网盘风控">
+                                    data-tooltip="控制前台 Web 顶部右侧 GitHub 徽章、底部页脚 GitHub 外链及免责声明中的 GitHub 仓库展示。关闭后前台将完全隐藏开源外链。">
                                     <i class="far fa-circle-question text-xs"></i>
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500">搜索结果自动检测链接有效性、文件数量与失效违规状态</p>
+                            <p class="text-xs text-slate-500">前台界面展示 GitHub 仓库入口、Star 计数与底部开源外链</p>
                         </div>
                         <div class="flex items-center flex-shrink-0">
-                            <label class="plugin-switch" title="切换前台链接实时测活">
-                                <input type="checkbox" id="enableFrontendLinkCheckToggle"
-                                    onchange="saveFrontendLinkCheckConfig()" {% if enable_link_check %}checked{% endif
+                            <label class="plugin-switch" title="切换 GitHub 标识展示">
+                                <input type="checkbox" id="enableFrontendGithubToggle"
+                                    onchange="saveFrontendGithubConfig()" {% if enable_frontend_github %}checked{% endif
                                     %}>
                                 <span class="plugin-switch-slider"></span>
                             </label>
                         </div>
                     </div>
 
-                    <!-- 测活生效网盘范围微型面板 (仅在前台测活开启时展示) -->
-                    <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 hidden transition-all duration-200"
-                        id="linkCheckNetdisksWrapper">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div class="flex items-center gap-2 flex-wrap text-xs">
-                                <div class="flex items-center gap-1.5 font-semibold text-slate-700 flex-shrink-0">
-                                    <i class="fas fa-heart-pulse text-emerald-500 text-[11px]"></i>
-                                    <span>测活生效网盘范围:</span>
-                                </div>
-                                <span class="text-slate-500 text-[11px]">仅对勾选网盘发起实时探测，已选 <span
-                                        id="enabledCheckPansCount" class="font-bold text-emerald-600">{{
-                                        link_check_netdisks|length if link_check_netdisks else
-                                        link_check_netdisk_options|length }}</span> / {{
-                                    link_check_netdisk_options|length }}</span>
-                            </div>
-                            <div class="flex items-center space-x-2 flex-shrink-0">
-                                <button class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-xs" type="button"
-                                    onclick="selectMainstreamLinkCheckNetdisks()">
-                                    <i class="fas fa-star text-amber-500 text-[10px] mr-1"></i>主流网盘
-                                </button>
-                                <button class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-xs"
-                                    id="toggleAllLinkCheckNetdisksButton" type="button"
-                                    onclick="toggleAllLinkCheckNetdisks()">
-                                    全选 / 反选
-                                </button>
-                            </div>
-                        </div>
-                        <div class="frontend-netdisk-grid" id="linkCheckNetdisksGroup">
-                            {% for netdisk_name in link_check_netdisk_options %}
-                            <label class="link-check-netdisk-card" for="linkCheckNetdisk{{ loop.index }}">
-                                <input class="link-check-netdisk-checkbox" type="checkbox"
-                                    id="linkCheckNetdisk{{ loop.index }}" value="{{ netdisk_name }}"
-                                    onchange="saveFrontendLinkCheckConfig()" {% if not link_check_netdisks or
-                                    netdisk_name in link_check_netdisks %}checked{% endif %}>
-                                <span class="frontend-netdisk-card-name truncate">{{ netdisk_name }}</span>
-                                <span class="link-check-netdisk-card-check-box">
-                                    <i class="fas fa-check"></i>
+                    <!-- 求片入口开关 -->
+                    <div class="setting-item-row" id="frontendResourceRequestSettingContainer">
+                        <div class="space-y-1 min-w-0 pr-4">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-semibold text-slate-800 text-sm">用户求片入口与需求提交</span>
+                                <span class="help-tooltip"
+                                    data-tooltip="控制前台导航栏、搜索无结果引导及侧边栏的「求片」入口与提交弹窗。关闭后前台将完全隐藏所有求片按钮与弹窗。">
+                                    <i class="far fa-circle-question text-xs"></i>
                                 </span>
+                            </div>
+                            <p class="text-xs text-slate-500">前台界面展示求片胶囊按钮、弹窗与侧边栏需求收集引导</p>
+                        </div>
+                        <div class="flex items-center flex-shrink-0">
+                            <label class="plugin-switch" title="切换求片入口展示">
+                                <input type="checkbox" id="enableResourceRequestToggle"
+                                    onchange="saveResourceRequestConfig()" {% if enable_resource_request %}checked{%
+                                    endif %}>
+                                <span class="plugin-switch-slider"></span>
                             </label>
-                            {% endfor %}
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- 3. 前台展示网盘类型 (Tag 网格) -->
-    <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
-        id="frontendDisplayNetdisksPanel">
-        <div class="admin-panel-header">
-            <div class="admin-panel-title-area">
-                <h2 class="admin-panel-title">
-                    <i class="fas fa-filter text-blue-600"></i> 前台展示网盘类型
-                </h2>
-                <p class="admin-panel-desc">控制前台 Web 搜索界面中允许选择与展示的网盘类型（不影响后端 API 检索），已选 <span
-                        id="frontendNetdiskSelectedCount" class="font-bold text-blue-600">{{ enabled_netdisks|length if
-                        enabled_netdisks else frontend_netdisk_options|length }}</span> / <span
-                        id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></p>
+        <!-- 4. 前台热搜词推荐板块 -->
+        <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
+            id="frontendHotSearchesPanel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-fire-alt text-amber-500"></i> 前台热搜词推荐板块
+                    </h2>
+                    <p class="admin-panel-desc">管理前台搜索框/进度条下方的热搜推荐词，在模板 1 中位于搜索栏下方，在模板 2 中同步展示于搜索结果侧边栏</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-500 font-medium">启用展示</span>
+                    <label class="plugin-switch" title="切换热搜词板块展示">
+                        <input type="checkbox" id="enableHotSearchesToggle" onchange="toggleHotSearchesState()" {% if
+                            enable_hot_searches %}checked{% endif %}>
+                        <span class="plugin-switch-slider"></span>
+                    </label>
+                </div>
             </div>
-            <div class="flex items-center space-x-2">
-                <button class="btn btn-outline-secondary btn-sm" type="button"
-                    onclick="selectMainstreamFrontendNetdisks()">
-                    <i class="fas fa-star text-amber-500 text-[10px] mr-1"></i>主流网盘
-                </button>
-                <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button"
-                    onclick="toggleAllFrontendDisplayNetdisks()">
-                    全选 / 反选
-                </button>
-            </div>
-        </div>
-        <div class="admin-panel-body">
-            <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
-                {% for netdisk_name in frontend_netdisk_options %}
-                <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
-                    <input class="frontend-display-netdisk-checkbox" type="checkbox"
-                        id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}" {% if not enabled_netdisks or
-                        netdisk_name in enabled_netdisks %}checked{% endif %}>
-                    <span class="frontend-netdisk-card-name truncate">{{ netdisk_name }}</span>
-                    <span class="frontend-netdisk-card-check-box">
-                        <i class="fas fa-check"></i>
-                    </span>
-                </label>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
+            <div class="admin-panel-body space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">
+                        热搜词列表 <span class="text-slate-400 font-normal">（每行输入一个关键词，用户点击将直接填入搜索）</span>
+                    </label>
+                    <textarea id="hotSearchesWordsInput" rows="7"
+                        placeholder="兰香如故&#10;现在就出发&#10;凡人修仙传&#10;余红旧事&#10;希望&#10;我不是大师&#10;无可替代&#10;仙逆&#10;我是证人"
+                        class="form-control text-xs font-mono bg-white border-slate-300 w-full leading-relaxed">{{ hot_search_words_text }}</textarea>
+                </div>
 
-    <!-- 4. 页面元素与品牌展示 -->
-    <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
-        id="frontendBrandPanel">
-        <div class="admin-panel-header">
-            <div class="admin-panel-title-area">
-                <h2 class="admin-panel-title">
-                    <i class="fab fa-github text-slate-700"></i> 页面元素与品牌展示
-                </h2>
-                <p class="admin-panel-desc">控制前台 Web 页面的开源标识、外部链接及版权信息展示</p>
-            </div>
-        </div>
-        <div class="admin-panel-body">
-            <div class="divide-y divide-slate-100">
-                <div class="setting-item-row" id="frontendGithubSettingContainer">
-                    <div class="space-y-1 min-w-0 pr-4">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-semibold text-slate-800 text-sm">GitHub 徽章与开源外链</span>
-                            <span class="help-tooltip"
-                                data-tooltip="控制前台 Web 顶部右侧 GitHub 徽章、底部页脚 GitHub 外链及免责声明中的 GitHub 仓库展示。关闭后前台将完全隐藏开源外链。">
-                                <i class="far fa-circle-question text-xs"></i>
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500">前台界面展示 GitHub 仓库入口、Star 计数与底部开源外链</p>
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-2">
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="restoreDefaultHotSearches()"
+                            class="btn btn-outline-secondary btn-sm text-xs py-1.5 px-3">
+                            <i class="fas fa-rotate-left mr-1 text-[11px]"></i> 恢复默认热搜词
+                        </button>
                     </div>
-                    <div class="flex items-center flex-shrink-0">
-                        <label class="plugin-switch" title="切换 GitHub 标识展示">
-                            <input type="checkbox" id="enableFrontendGithubToggle" onchange="saveFrontendGithubConfig()"
-                                {% if enable_frontend_github %}checked{% endif %}>
-                            <span class="plugin-switch-slider"></span>
-                        </label>
+                    <button type="button" onclick="saveHotSearchesConfig()" id="saveHotSearchesBtn"
+                        class="btn btn-primary btn-sm text-xs px-4 py-2 flex items-center gap-1.5 font-medium">
+                        <i class="fas fa-save text-[11px]"></i> 保存热搜词配置
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- TAB 2: 访问与功能策略 (Access & Strategies) -->
+    <div id="tab-pane-strategies"
+        class="frontend-tab-pane {{ '' if current_tab == 'strategies' else 'hidden' }} space-y-6">
+        <!-- 1. 前台访问与出链策略 -->
+        <section class="admin-panel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-desktop text-blue-600"></i> 前台访问与出链策略
+                    </h2>
+                    <p class="admin-panel-desc">控制前台 Web 搜索首页访问、链接提供方式与结果导出工具</p>
+                </div>
+            </div>
+            <div class="admin-panel-body">
+                <div class="divide-y divide-slate-100">
+                    <!-- 开关 1: 前台 Web 界面开关 -->
+                    <div class="setting-item-row">
+                        <div class="space-y-1 min-w-0 pr-4">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-semibold text-slate-800 text-sm">前台 Web 搜索界面</span>
+                                <span class="help-tooltip" data-tooltip="关闭后访客访问主页将自动重定向至后台管理登录页面 (/login)">
+                                    <i class="far fa-circle-question text-xs"></i>
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500">控制是否允许访客直接访问公共搜索首页</p>
+                        </div>
+                        <div class="flex items-center flex-shrink-0">
+                            <label class="plugin-switch" title="切换前台界面">
+                                <input type="checkbox" id="enableFrontendToggle" onchange="saveApiModeConfig()" {% if
+                                    enable_frontend %}checked{% endif %}>
+                                <span class="plugin-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 开关 2: 搜索出链与动态转存策略 (前台专属) -->
+                    <div class="setting-item-row flex-col items-stretch {% if not enable_frontend %}hidden{% endif %}"
+                        id="frontendLinkStrategyContainer">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="space-y-1 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-semibold text-slate-800 text-sm">搜索出链策略</span>
+                                    <span class="help-tooltip" data-tooltip="原始链接模式直接跳转第三方；动态转存模式通过网盘凭证自动转存为站长专属收益链接">
+                                        <i class="far fa-circle-question text-xs"></i>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500">前台用户点击资源时的链接提供方式</p>
+                            </div>
+                            <div class="flex items-center space-x-3 flex-shrink-0">
+                                <select id="frontendLinkModeSelect" class="form-select form-select-sm"
+                                    onchange="saveFrontendLinkMode()" style="min-width: 170px;">
+                                    <option value="copy" {% if frontend_link_mode=='copy' %}selected{% endif %}>原始链接模式
+                                    </option>
+                                    <option value="view" {% if frontend_link_mode=='view' %}selected{% endif %}>动态转存模式
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 原始链接模式专属控制面板 (搜索结果 Excel 导出) -->
+                        <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 {% if frontend_link_mode != 'copy' %}hidden{% endif %} transition-all duration-200"
+                            id="rawLinkSettingsWrapper">
+                            <div class="flex items-center justify-between gap-4" id="excelDownloadSettingContainer">
+                                <div class="space-y-0.5 min-w-0 pr-4">
+                                    <div class="flex items-center gap-2 flex-wrap text-xs">
+                                        <span class="font-semibold text-slate-800 text-xs">搜索结果 Excel 导出</span>
+                                        <span class="help-tooltip" data-tooltip="控制前台搜索结果列表顶部工具栏中是否展示“导出Excel”操作按钮">
+                                            <i class="far fa-circle-question text-xs"></i>
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500" id="excelDownloadDesc">允许访客将前台搜索列表结果导出为表格</p>
+                                </div>
+                                <div class="flex items-center flex-shrink-0">
+                                    <label class="plugin-switch" title="切换 Excel 导出按钮"
+                                        id="allowExcelDownloadSwitchLabel">
+                                        <input type="checkbox" id="allowExcelDownloadToggle"
+                                            onchange="saveAllowExcelDownloadConfig()" {% if allow_excel_download
+                                            %}checked{% endif %}>
+                                        <span class="plugin-switch-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 统一动态转存控制面板 (整合网盘勾选与凭据就绪状态) -->
+                        <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 {% if frontend_link_mode != 'view' %}hidden{% endif %} transition-all duration-200"
+                            id="dynamicTransferNetdisksWrapper">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 flex-wrap text-xs">
+                                    <div class="flex items-center gap-1.5 font-semibold text-slate-700 flex-shrink-0">
+                                        <i class="fas fa-arrows-split-up-and-left text-blue-500 text-[11px]"></i>
+                                        <span>转存生效网盘与凭证:</span>
+                                    </div>
+                                    <span class="text-slate-500 text-[11px]">
+                                        仅对勾选网盘转存，未勾选自动出原始链接。已选 <span id="enabledDynamicTransferPansCount"
+                                            class="font-bold text-blue-600">{{
+                                            dynamic_transfer_netdisks|length if dynamic_transfer_netdisks else
+                                            dynamic_transfer_netdisk_options|length }}</span> / {{
+                                        dynamic_transfer_netdisk_options|length }}
+                                        <span class="text-slate-400 mx-1">·</span>
+                                        <span class="text-slate-500" id="dynamicTransferStatusSummary"></span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-2.5 flex-shrink-0 text-xs">
+                                    <button class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-xs"
+                                        id="toggleAllDynamicTransferNetdisksButton" type="button"
+                                        onclick="toggleAllDynamicTransferNetdisks()">
+                                        全选 / 反选
+                                    </button>
+                                    <a href="{{ url_for('system_config.system_config_page', tab='accounts') }}"
+                                        class="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition-colors"
+                                        id="dynamicTransferManageLink">
+                                        管理账号池 <i class="fas fa-chevron-right text-[9px]"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="dynamic-transfer-grid" id="dynamicTransferNetdisksGroup">
+                                {% for netdisk_name in dynamic_transfer_netdisk_options %}
+                                <label class="dynamic-transfer-netdisk-card"
+                                    for="dynamicTransferNetdisk{{ loop.index }}" data-cloud-card="{{ netdisk_name }}">
+                                    <input class="dynamic-transfer-netdisk-checkbox" type="checkbox"
+                                        id="dynamicTransferNetdisk{{ loop.index }}" value="{{ netdisk_name }}"
+                                        onchange="saveDynamicTransferNetdisksConfig()" {% if not
+                                        dynamic_transfer_netdisks or netdisk_name in dynamic_transfer_netdisks
+                                        %}checked{% endif %}>
+                                    <span class="whitespace-nowrap">{{ netdisk_name }}</span>
+                                    <div class="flex items-center gap-2 ml-auto">
+                                        <span class="dynamic-card-status-badge status-missing"
+                                            data-cloud-badge="{{ netdisk_name }}" title="{{ netdisk_name }}: 加载状态中...">
+                                            <span class="status-dot"></span>
+                                            <span class="status-text">未配置</span>
+                                        </span>
+                                        <span class="dynamic-transfer-netdisk-card-check-box">
+                                            <i class="fas fa-check"></i>
+                                        </span>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+
+                            <!-- PC端扫码转存引导开关 (仅动态转存模式生效) -->
+                            <div class="pt-2.5 border-t border-slate-200/60 flex items-center justify-between gap-4 mt-1"
+                                id="pcQrCodeSettingContainer">
+                                <div class="space-y-0.5 min-w-0 pr-4">
+                                    <div class="flex items-center gap-2 flex-wrap text-xs">
+                                        <span class="font-semibold text-slate-800 text-xs">PC 端扫码转存引导（生成二维码）</span>
+                                        <span class="help-tooltip"
+                                            data-tooltip="开启后，前台 PC 端访客点击转存资源时将弹窗生成二维码，强引导访客使用手机 APP 扫码转存以获取更高移动转存收益（仅对勾选了动态转存的网盘生效）。">
+                                            <i class="far fa-circle-question text-xs"></i>
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-500">动态转存模式下弹出二维码引导扫码保存，最大化移动端转存收益</p>
+                                </div>
+                                <div class="flex items-center flex-shrink-0">
+                                    <label class="plugin-switch" title="切换 PC 端扫码转存引导">
+                                        <input type="checkbox" id="enablePcQrCodeToggle" onchange="savePcQrCodeConfig()"
+                                            {% if enable_pc_qr_code %}checked{% endif %}>
+                                        <span class="plugin-switch-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+
+        <!-- 2. 链接测活与品质净化 -->
+        <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
+            id="linkCheckPanel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-heart-pulse text-emerald-600"></i> 链接测活与品质净化
+                    </h2>
+                    <p class="admin-panel-desc">控制前台 Web 实时免登录测活探测与失效空资源自动过滤</p>
+                </div>
+            </div>
+            <div class="admin-panel-body">
+                <div class="divide-y divide-slate-100">
+                    <!-- 开关 4: 前台链接实时测活 -->
+                    <div class="setting-item-row flex-col items-stretch">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="space-y-1 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-semibold text-slate-800 text-sm">前台链接实时测活</span>
+                                    <span class="help-tooltip"
+                                        data-tooltip="控制前台 Web 搜索结果是否在后台异步发起免登录测活并显示健康徽章。关闭后可大幅节省服务器请求并避免网盘风控">
+                                        <i class="far fa-circle-question text-xs"></i>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500">搜索结果自动检测链接有效性、文件数量与失效违规状态</p>
+                            </div>
+                            <div class="flex items-center flex-shrink-0">
+                                <label class="plugin-switch" title="切换前台链接实时测活">
+                                    <input type="checkbox" id="enableFrontendLinkCheckToggle"
+                                        onchange="saveFrontendLinkCheckConfig()" {% if enable_link_check %}checked{%
+                                        endif %}>
+                                    <span class="plugin-switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 测活生效网盘范围微型面板 (仅在前台测活开启时展示) -->
+                        <div class="mt-2.5 p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5 hidden transition-all duration-200"
+                            id="linkCheckNetdisksWrapper">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 flex-wrap text-xs">
+                                    <div class="flex items-center gap-1.5 font-semibold text-slate-700 flex-shrink-0">
+                                        <i class="fas fa-heart-pulse text-emerald-500 text-[11px]"></i>
+                                        <span>测活生效网盘范围:</span>
+                                    </div>
+                                    <span class="text-slate-500 text-[11px]">仅对勾选网盘发起实时探测，已选 <span
+                                            id="enabledCheckPansCount" class="font-bold text-emerald-600">{{
+                                            link_check_netdisks|length if link_check_netdisks else
+                                            link_check_netdisk_options|length }}</span> / {{
+                                        link_check_netdisk_options|length }}</span>
+                                </div>
+                                <div class="flex items-center space-x-2 flex-shrink-0">
+                                    <button class="btn btn-outline-secondary btn-sm py-0.5 px-2 text-xs" type="button"
+                                        onclick="selectMainstreamLinkCheckNetdisks()">
+                                        <i class="fas fa-star text-amber-500 text-[10px] mr-1"></i>主流网盘
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm"
+                                        id="toggleAllLinkCheckNetdisksButton" type="button"
+                                        onclick="toggleAllLinkCheckNetdisks()">
+                                        全选 / 反选
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="frontend-netdisk-grid" id="linkCheckNetdisksGroup">
+                                {% for netdisk_name in link_check_netdisk_options %}
+                                <label class="link-check-netdisk-card" for="linkCheckNetdisk{{ loop.index }}">
+                                    <input class="link-check-netdisk-checkbox" type="checkbox"
+                                        id="linkCheckNetdisk{{ loop.index }}" value="{{ netdisk_name }}"
+                                        onchange="saveFrontendLinkCheckConfig()" {% if not link_check_netdisks or
+                                        netdisk_name in link_check_netdisks %}checked{% endif %}>
+                                    <span class="frontend-netdisk-card-name truncate">{{ netdisk_name }}</span>
+                                    <span class="link-check-netdisk-card-check-box">
+                                        <i class="fas fa-check"></i>
+                                    </span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 前台展示网盘类型 (Tag 网格) -->
+        <section class="admin-panel {% if not enable_frontend %}opacity-50 pointer-events-none select-none{% endif %}"
+            id="frontendDisplayNetdisksPanel">
+            <div class="admin-panel-header">
+                <div class="admin-panel-title-area">
+                    <h2 class="admin-panel-title">
+                        <i class="fas fa-filter text-blue-600"></i> 前台展示网盘类型
+                    </h2>
+                    <p class="admin-panel-desc">控制前台 Web 搜索界面中允许选择与展示的网盘类型（不影响后端 API 检索），已选 <span
+                            id="frontendNetdiskSelectedCount" class="font-bold text-blue-600">{{ enabled_netdisks|length
+                            if
+                            enabled_netdisks else frontend_netdisk_options|length }}</span> / <span
+                            id="frontendNetdiskTotalCount">{{ frontend_netdisk_options|length }}</span></p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-outline-secondary btn-sm" type="button"
+                        onclick="selectMainstreamFrontendNetdisks()">
+                        <i class="fas fa-star text-amber-500 text-[10px] mr-1"></i>主流网盘
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" id="toggleAllFrontendNetdisksButton" type="button"
+                        onclick="toggleAllFrontendDisplayNetdisks()">
+                        全选 / 反选
+                    </button>
+                </div>
+            </div>
+            <div class="admin-panel-body">
+                <div class="frontend-netdisk-grid" id="frontendDisplayNetdisksGroup">
+                    {% for netdisk_name in frontend_netdisk_options %}
+                    <label class="frontend-netdisk-card" for="frontendNetdisk{{ loop.index }}">
+                        <input class="frontend-display-netdisk-checkbox" type="checkbox"
+                            id="frontendNetdisk{{ loop.index }}" value="{{ netdisk_name }}" {% if not enabled_netdisks
+                            or netdisk_name in enabled_netdisks %}checked{% endif %}>
+                        <span class="frontend-netdisk-card-name truncate">{{ netdisk_name }}</span>
+                        <span class="frontend-netdisk-card-check-box">
+                            <i class="fas fa-check"></i>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </div>
 
 </div>
 
@@ -349,4 +559,214 @@
 {{ super() }}
 <script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.7"></script>
 <script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.7"></script>
+<script>
+    function switchFrontendTab(targetTab) {
+        if (!targetTab) targetTab = 'appearance';
+
+        document.querySelectorAll('.source-tab-btn[data-frontend-tab-target]').forEach(btn => {
+            if (btn.getAttribute('data-frontend-tab-target') === targetTab) {
+                btn.classList.add('is-active');
+            } else {
+                btn.classList.remove('is-active');
+            }
+        });
+
+        document.querySelectorAll('.frontend-tab-pane').forEach(pane => {
+            pane.classList.add('hidden');
+        });
+
+        const targetPane = document.getElementById(`tab-pane-${targetTab}`);
+        if (targetPane) {
+            targetPane.classList.remove('hidden');
+        }
+
+        // 更新 URL query 参数并保持历史
+        const url = new URL(window.location);
+        url.searchParams.set('tab', targetTab);
+        window.history.replaceState({}, '', url);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab');
+        if (tabParam === 'strategies' || tabParam === 'appearance') {
+            switchFrontendTab(tabParam);
+        }
+    });
+
+    async function switchActiveTheme(themeId) {
+        if (!themeId) return;
+        try {
+            const resp = await fetch('/api/theme/switch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ theme_id: themeId })
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                if (typeof showToast === 'function') {
+                    showToast(`已成功切换前台主题为「${themeId}」`, 'success');
+                } else {
+                    alert(`已成功切换前台主题为「${themeId}」`);
+                }
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                alert(data.message || '切换主题失败');
+            }
+        } catch (err) {
+            console.error('切换主题网络错误:', err);
+            alert('切换主题网络异常，请稍后重试');
+        }
+    }
+    async function saveSiteBranding() {
+        const siteName = (document.getElementById('siteNameInput')?.value || '').trim();
+        const logoUrl = (document.getElementById('siteLogoInput')?.value || '').trim();
+        try {
+            const resp = await fetch('/api/site/branding/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ site_name: siteName, logo_url: logoUrl })
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                const previewEl = document.getElementById('currentLogoPreview');
+                if (previewEl) previewEl.src = data.site_logo;
+                const pathEl = document.getElementById('currentLogoPath');
+                if (pathEl) pathEl.textContent = data.site_logo;
+                if (typeof showToast === 'function') {
+                    showToast('站点品牌与 Logo 保存成功！', 'success');
+                } else {
+                    alert('站点品牌与 Logo 保存成功！');
+                }
+            } else {
+                alert(data.message || '保存失败');
+            }
+        } catch (e) {
+            alert('网络错误，请稍后重试');
+        }
+    }
+
+    async function uploadLogoFile(inputEl) {
+        if (!inputEl.files || !inputEl.files[0]) return;
+        const file = inputEl.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const resp = await fetch('/api/site/logo/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                const previewEl = document.getElementById('currentLogoPreview');
+                if (previewEl) previewEl.src = data.logo_url;
+                const pathEl = document.getElementById('currentLogoPath');
+                if (pathEl) pathEl.textContent = data.logo_url;
+                const logoInput = document.getElementById('siteLogoInput');
+                if (logoInput) logoInput.value = data.logo_url;
+                if (typeof showToast === 'function') {
+                    showToast('新 Logo 上传并替换成功！全局所有模板已同步更新。', 'success');
+                } else {
+                    alert('新 Logo 上传并替换成功！全局所有模板已同步更新。');
+                }
+            } else {
+                alert(data.message || '上传失败');
+            }
+        } catch (e) {
+            alert('文件上传失败，请检查网络');
+        }
+    }
+
+    function resetDefaultLogo() {
+        const defaultLogo = '/static/images/hero_search_top.webp';
+        document.getElementById('siteLogoInput').value = defaultLogo;
+        saveSiteBranding();
+    }
+
+    async function saveResourceRequestConfig() {
+        const toggle = document.getElementById('enableResourceRequestToggle');
+        const enabled = toggle ? toggle.checked : true;
+        try {
+            const resp = await fetch('/api/frontend/resource-request/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                if (typeof showToast === 'function') {
+                    showToast(data.message || '求片入口配置已更新', 'success');
+                } else {
+                    alert(data.message || '求片入口配置已更新');
+                }
+            } else {
+                alert(data.message || '保存失败');
+                if (toggle) toggle.checked = !enabled;
+            }
+        } catch (e) {
+            alert('网络异常，请重试');
+            if (toggle) toggle.checked = !enabled;
+        }
+    }
+
+    async function toggleHotSearchesState() {
+        saveHotSearchesConfig();
+    }
+
+    function restoreDefaultHotSearches() {
+        const defaultWords = [
+            "兰香如故",
+            "现在就出发",
+            "凡人修仙传",
+            "余红旧事",
+            "希望",
+            "我不是大师",
+            "无可替代",
+            "仙逆",
+            "我是证人"
+        ];
+        const input = document.getElementById('hotSearchesWordsInput');
+        if (input) input.value = defaultWords.join('\n');
+    }
+
+    async function saveHotSearchesConfig() {
+        const toggle = document.getElementById('enableHotSearchesToggle');
+        const enabled = toggle ? toggle.checked : true;
+        const input = document.getElementById('hotSearchesWordsInput');
+        const text = input ? input.value : '';
+        const words = text.split('\n').map(w => w.trim()).filter(Boolean);
+
+        const btn = document.getElementById('saveHotSearchesBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[11px]"></i> 保存中...';
+        }
+
+        try {
+            const resp = await fetch('/api/frontend/hot-searches/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled, words })
+            });
+            const data = await resp.json();
+            if (resp.ok && data.success) {
+                if (typeof showToast === 'function') {
+                    showToast('前台热搜词推荐配置已保存！全局模板已同步更新。', 'success');
+                } else {
+                    alert('前台热搜词推荐配置已保存！全局模板已同步更新。');
+                }
+            } else {
+                alert(data.message || '保存热搜词失败');
+            }
+        } catch (e) {
+            alert('网络异常，请稍后重试');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save text-[11px]"></i> 保存热搜词配置';
+            }
+        }
+    }
+</script>
 {% endblock %}

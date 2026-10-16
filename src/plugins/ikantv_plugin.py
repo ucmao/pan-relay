@@ -43,6 +43,8 @@ class IkanTVPlugin(HttpPlugin):
         items = []
         for record in payload.get("data") or []:
             title = record.get("title") or record.get("content")
+            cover_url = record.get("image") or record.get("cover") or record.get("thumbnail") or record.get("pic")
+            desc_text = record.get("content") or record.get("description") or record.get("summary")
             for link in record.get("links") or []:
                 if clean_text(link.get("type")).lower() not in self.allowed_types:
                     continue
@@ -52,6 +54,8 @@ class IkanTVPlugin(HttpPlugin):
                         link.get("url"),
                         password=link.get("password"),
                         datetime_value=link.get("datetime") or record.get("datetime"),
+                        description=desc_text if desc_text and desc_text != title else None,
+                        cover_url=cover_url,
                     )
                 )
         return self.finalize(items)

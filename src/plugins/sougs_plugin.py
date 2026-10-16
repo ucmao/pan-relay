@@ -17,11 +17,11 @@ except ImportError:
 
 
 class SougsPlugin(HttpPlugin):
-    """搜网盘 (sou.gs) API 搜索插件，支持 TLS 指纹绕过与并发受控轮询。"""
+    """搜网盘 API 搜索插件，支持 TLS 指纹绕过与并发受控轮询。"""
 
     name = "sougs"
     display_name = "搜网盘"
-    description = "搜网盘 (sou.gs) API 检索"
+    description = "搜网盘 API 检索"
     version = "1.0.0"
     author = "pan-relay"
     priority = 140
@@ -92,10 +92,22 @@ class SougsPlugin(HttpPlugin):
                 if not title or not link:
                     continue
 
+                desc = item.get("description") or item.get("summary") or item.get("intro") or item.get("content")
+                cover = (
+                    item.get("cover")
+                    or item.get("cover_url")
+                    or item.get("thumbnail")
+                    or item.get("thumb")
+                    or item.get("image")
+                    or item.get("poster")
+                    or item.get("pic")
+                )
                 search_item = self.make_item(
                     title=title,
                     share_link=link,
-                    datetime_value=item.get("created_at") or item.get("time"),
+                    datetime_value=item.get("created_at") or item.get("time") or item.get("datetime"),
+                    description=desc,
+                    cover_url=cover,
                 )
                 if search_item:
                     items.append(search_item)

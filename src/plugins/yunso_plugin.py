@@ -85,12 +85,18 @@ class YunsoPlugin(HttpPlugin):
                 password = next((clean_text(query.get(key, [""])[0]) for key in ("pwd", "pass", "password") if query.get(key)), "")
             header = clean_text((card.select_one(".layui-card-header") or card).get_text(" ", strip=True))
             date_match = re.search(r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", header)
+            img_node = card.select_one("img[src]")
+            cover_url = img_node.get("src") if img_node else None
+            desc_node = card.select_one(".layui-card-body")
+            desc_text = clean_text(desc_node.get_text(" ", strip=True)) if desc_node else None
             items.append(
                 self.make_item(
                     anchor.get_text(" ", strip=True),
                     link,
                     password=password,
                     datetime_value=date_match.group(0) if date_match else None,
+                    description=desc_text,
+                    cover_url=cover_url,
                 )
             )
         return self.finalize(items)

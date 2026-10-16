@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS resources (
   account_id INTEGER DEFAULT NULL,
   is_replaced INTEGER DEFAULT 0,
   origin_type TEXT NOT NULL DEFAULT 'manual',
+  cover_url TEXT DEFAULT NULL,
   health_status TEXT DEFAULT 'unknown',
   health_message TEXT DEFAULT NULL,
   checked_at DATETIME DEFAULT NULL,
@@ -121,3 +122,18 @@ CREATE TABLE IF NOT EXISTS system_logs (
 CREATE INDEX IF NOT EXISTS idx_logs_created_at ON system_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_logs_type_created ON system_logs(log_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_logs_status_created ON system_logs(status_code, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS resource_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  resource_name TEXT NOT NULL,
+  contact TEXT DEFAULT NULL,
+  note TEXT DEFAULT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  client_ip TEXT DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_res_requests_created ON resource_requests(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_res_requests_status ON resource_requests(status);
+

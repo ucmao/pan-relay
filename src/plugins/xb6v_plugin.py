@@ -44,8 +44,17 @@ class Xb6vPlugin(DetailPagePlugin):
                         continue
                     title = clean_text(anchor.get("title") or anchor.get_text(" ", strip=True))
                     date = row.select_one(".info .info_date")
+                    img_node = row.select_one(".thumbnail img, img")
+                    cover = (img_node.get("src") or img_node.get("data-src")) if img_node else None
+                    if cover and not cover.startswith("http"):
+                        cover = urljoin(base, cover)
                     if title:
-                        records.append((title, urljoin(base, anchor.get("href")), clean_text(date.get_text(" ", strip=True)) if date else None))
+                        records.append((
+                            title,
+                            urljoin(base, anchor.get("href")),
+                            clean_text(date.get_text(" ", strip=True)) if date else None,
+                            cover,
+                        ))
                 return records
             except Exception as error:
                 errors.append(error)

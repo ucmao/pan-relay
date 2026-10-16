@@ -2,7 +2,7 @@
 let allResults = [];
 let isSearchRunning = false;
 let currentPage = 1;
-const itemsPerPage = 20;
+const itemsPerPage = 15;
 let isLoadingNextBatch = false;
 let isFullyLoaded = false;
 
@@ -78,6 +78,16 @@ const statusBar = document.getElementById('statusBar');
 const exportExcelBtn = document.getElementById('exportExcelBtn');
 const advancedFilterToggle = document.getElementById('advancedFilterToggle');
 const advancedFilterPanel = document.getElementById('advancedFilterPanel');
+const searchStatsPills = document.getElementById('searchStatsPills');
+const statPillValid = document.getElementById('statPillValid');
+const statCountValid = document.getElementById('statCountValid');
+const statPillInvalid = document.getElementById('statPillInvalid');
+const statCountInvalid = document.getElementById('statCountInvalid');
+const statPillChecking = document.getElementById('statPillChecking');
+const statCountChecking = document.getElementById('statCountChecking');
+const statPillMagnet = document.getElementById('statPillMagnet');
+const statCountMagnet = document.getElementById('statCountMagnet');
+
 const viewResultModalElement = document.getElementById('viewResultModal');
 const viewResultLoadingState = document.getElementById('viewResultLoadingState');
 const viewResultContentState = document.getElementById('viewResultContentState');
@@ -101,6 +111,13 @@ const viewResultModal = viewResultModalElement ? {
 let currentResolvedViewResult = null;
 let isAdvancedFilterOpen = false;
 
+// 绑定已失效胶囊点击一键过滤/恢复
+statPillInvalid?.addEventListener('click', function () {
+    if (hideDeadLinksToggle) {
+        hideDeadLinksToggle.click();
+    }
+});
+
 hideDeadLinksToggle?.addEventListener('click', function () {
     isHideDeadLinks = !isHideDeadLinks;
     try {
@@ -115,6 +132,7 @@ hideDeadLinksToggle?.addEventListener('click', function () {
     updateFilterButtons();
     renderResults(true);
     toggleScrollbarBasedOnContent();
+    updateSearchStatsPills();
 });
 
 function setAdvancedFilterOpen(isOpen) {
@@ -140,6 +158,173 @@ function setAdvancedFilterOpen(isOpen) {
 advancedFilterToggle?.addEventListener('click', function () {
     setAdvancedFilterOpen(!isAdvancedFilterOpen);
 });
+
+
+// --- 辅助函数：解析时间及计算时效性 (24小时内高亮) ---
+function parseResultDateTime(rawStr) {
+    if (!rawStr) return null;
+    const str = String(rawStr).trim();
+    if (!str) return null;
+
+    let dateObj = null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+        dateObj = new Date(str.replace(' ', 'T'));
+    } else if (/^\d{2}-\d{2}\s+\d{2}:\d{2}/.test(str)) {
+        const currentYear = new Date().getFullYear();
+        dateObj = new Date(`${currentYear}-${str.replace(' ', 'T')}`);
+    } else {
+        const parsed = Date.parse(str);
+        if (!isNaN(parsed)) {
+            dateObj = new Date(parsed);
+        }
+    }
+
+    let isWithin24Hours = false;
+    let isToday = false;
+    let displayTime = str;
+
+    if (dateObj && !isNaN(dateObj.getTime())) {
+        const now = new Date();
+        const diffMs = now.getTime() - dateObj.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        if (diffHours >= -1 && diffHours <= 24) {
+            isWithin24Hours = true;
+        }
+
+        const isSameDay = now.getFullYear() === dateObj.getFullYear() &&
+                          now.getMonth() === dateObj.getMonth() &&
+                          now.getDate() === dateObj.getDate();
+        if (isSameDay) {
+            isToday = true;
+        }
+
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        const hh = String(dateObj.getHours()).padStart(2, '0');
+        const mm = String(dateObj.getMinutes()).padStart(2, '0');
+        displayTime = `${m}-${d} ${hh}:${mm}`;
+    } else {
+        if (/(\d+分钟前|\d+小时前|刚刚|今天)/.test(str)) {
+            isWithin24Hours = true;
+        }
+    }
+
+    return {
+        displayTime,
+        isWithin24Hours,
+        isToday,
+    };
+}
+
+// --- 辅助函数：更新搜索状态胶囊统计 (有效 / 失效 / 测活中 / 磁力) ---
+function updateSearchStatsPills() {
+    if (!searchStatsPills) return;
+    if (!allResults || allResults.length === 0) {
+        searchStatsPills.classList.add('hidden');
+        return;
+    }
+
+    const targetResults = allResults.filter(result => {
+        const netdisk = result[3];
+        if (currentFilter !== '全部' && netdisk !== currentFilter) return false;
+
+        const title = (result[1] || '').toLowerCase();
+        const matchesInclude = includeKeywords.length === 0 ||
+            includeKeywords.every(kw => title.includes(kw.toLowerCase()));
+        const matchesExclude = excludeKeywords.length === 0 ||
+            !excludeKeywords.some(kw => title.includes(kw.toLowerCase()));
+        return matchesInclude && matchesExclude;
+    });
+
+    if (targetResults.length === 0) {
+        searchStatsPills.classList.add('hidden');
+        return;
+    }
+
+    let validCount = 0;
+    let invalidCount = 0;
+    let checkingCount = 0;
+    let magnetCount = 0;
+
+    targetResults.forEach(result => {
+        const url = result[2] || '';
+        const netdisk = result[3] || '';
+        const isMagnet = url.startsWith('magnet:') || url.startsWith('ed2k:') || url.startsWith('thunder:') || netdisk.includes('磁力');
+        if (isMagnet) {
+            magnetCount++;
+            return;
+        }
+
+        const key = extractCanonicalResourceKeyFront(url);
+        const health = (key && linkHealthCache.get(key)) || linkHealthCache.get(url);
+
+        if (health) {
+            if (health.state === 'ok' || health.state === 'locked') {
+                validCount++;
+            } else if (health.state === 'bad') {
+                invalidCount++;
+            }
+        } else if (isLinkCheckEnabled && isNetdiskCheckEnabled(netdisk)) {
+            checkingCount++;
+        }
+    });
+
+    let hasAnyStat = false;
+
+    if (isLinkCheckEnabled) {
+        // 1. 有效资源胶囊
+        if (validCount > 0 || (!isSearchRunning && !isCheckingQueueRunning)) {
+            if (statCountValid) statCountValid.textContent = validCount;
+            statPillValid?.classList.remove('hidden');
+            hasAnyStat = true;
+        } else {
+            statPillValid?.classList.add('hidden');
+        }
+
+        // 2. 已失效胶囊 (带交互提示)
+        if (statCountInvalid) statCountInvalid.textContent = invalidCount;
+        if (invalidCount > 0) {
+            statPillInvalid?.classList.remove('hidden');
+            if (statPillInvalid) {
+                statPillInvalid.title = isHideDeadLinks
+                    ? `已自动隐藏这 ${invalidCount} 条失效链接（点击显示全部）`
+                    : `发现 ${invalidCount} 条失效链接（点击快速隐藏）`;
+            }
+            hasAnyStat = true;
+        } else if (!isSearchRunning && !isCheckingQueueRunning && targetResults.length > 0) {
+            statPillInvalid?.classList.remove('hidden');
+            if (statPillInvalid) statPillInvalid.title = '当前结果暂无失效链接';
+            hasAnyStat = true;
+        } else {
+            statPillInvalid?.classList.add('hidden');
+        }
+
+        // 3. 测活中胶囊
+        if (checkingCount > 0 && (isSearchRunning || isCheckingQueueRunning)) {
+            if (statCountChecking) statCountChecking.textContent = checkingCount;
+            statPillChecking?.classList.remove('hidden');
+            hasAnyStat = true;
+        } else {
+            statPillChecking?.classList.add('hidden');
+        }
+    }
+
+    // 4. 磁力线路胶囊
+    if (magnetCount > 0) {
+        if (statCountMagnet) statCountMagnet.textContent = magnetCount;
+        statPillMagnet?.classList.remove('hidden');
+        hasAnyStat = true;
+    } else {
+        statPillMagnet?.classList.add('hidden');
+    }
+
+    if (hasAnyStat) {
+        searchStatsPills.classList.remove('hidden');
+    } else {
+        searchStatsPills.classList.add('hidden');
+    }
+}
 
 
 // --- 辅助函数：全量网盘与协议链接品牌配色 ---
@@ -496,6 +681,13 @@ function performSearch() {
     searchButton.classList.add('is-flying');
     searchButton.classList.add('searching');
 
+    const progressBarContainer = document.getElementById('searchProgressBarContainer');
+    const progressBar = document.getElementById('searchProgressBar');
+    if (progressBarContainer && progressBar) {
+        progressBarContainer.classList.remove('hidden');
+        progressBar.style.width = '25%';
+    }
+
     if (statusBar) {
         statusBar.classList.remove('hidden');
         void statusBar.offsetWidth;
@@ -540,6 +732,9 @@ function performSearch() {
                 allResults = data.results || [];
                 finalizeSearch();
             } else if (data.results && data.results.length > 0) {
+                if (progressBar) {
+                    progressBar.style.width = '75%';
+                }
                 const currentLength = allResults.length;
                 allResults.push(...data.results);
                 allResults = filterUnique2ndDomainFront(allResults);
@@ -554,7 +749,7 @@ function performSearch() {
                     updateFilterButtons();
                     // 在第一页或初次加载时实时渲染新到达的结果
                     if (allResults.length <= itemsPerPage || currentPage === 1) {
-                        renderResults(true);
+                        renderResults(false);
                         toggleScrollbarBasedOnContent();
                     }
                 }
@@ -582,6 +777,16 @@ function finalizeSearch(hasError = false) {
     // 停止纸飞机动画
     searchButton.classList.remove('is-flying');
     searchButton.classList.remove('searching');
+
+    const progressBarContainer = document.getElementById('searchProgressBarContainer');
+    const progressBar = document.getElementById('searchProgressBar');
+    if (progressBarContainer && progressBar) {
+        progressBar.style.width = '100%';
+        setTimeout(() => {
+            progressBarContainer.classList.add('hidden');
+            progressBar.style.width = '0%';
+        }, 350);
+    }
 
     if (statusBar) {
         statusBar.classList.add('toast-hidden');
@@ -616,7 +821,7 @@ function finalizeSearch(hasError = false) {
         if (filterAndCountContainer) {
             filterAndCountContainer.classList.remove('hidden');
         }
-        renderResults(true);
+        renderResults(false);
 
         // 搜索完成时，根据内容高度决定是否显示滚动条
         toggleScrollbarBasedOnContent();
@@ -800,52 +1005,160 @@ function exportFilteredResultsToExcel() {
 exportExcelBtn?.addEventListener('click', exportFilteredResultsToExcel);
 
 /**
- * 渲染搜索结果到页面 (修改过滤逻辑)
+ * 渲染分页导航条 (15条/页，对齐竞品布局)
+ */
+function renderPagination(totalCount, curPage, perPage) {
+    const container = document.getElementById('paginationContainer');
+    if (!container) return;
+
+    const totalPages = Math.ceil(totalCount / perPage) || 1;
+    if (totalCount === 0 || totalPages <= 1) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    container.classList.remove('hidden');
+
+    let pages = [];
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        if (curPage <= 4) {
+            pages = [1, 2, 3, 4, 5, '...', totalPages];
+        } else if (curPage >= totalPages - 3) {
+            pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        } else {
+            pages = [1, '...', curPage - 1, curPage, curPage + 1, '...', totalPages];
+        }
+    }
+
+    let html = `
+        <button type="button" class="page-btn page-prev" data-page="${curPage - 1}" ${curPage <= 1 ? 'disabled' : ''}>
+            上一页
+        </button>
+    `;
+
+    pages.forEach(p => {
+        if (p === '...') {
+            html += `<span class="page-ellipsis">...</span>`;
+        } else {
+            const isActive = p === curPage ? 'is-active' : '';
+            html += `
+                <button type="button" class="page-btn page-num ${isActive}" data-page="${p}">
+                    ${p}
+                </button>
+            `;
+        }
+    });
+
+    html += `
+        <button type="button" class="page-btn page-next" data-page="${curPage + 1}" ${curPage >= totalPages ? 'disabled' : ''}>
+            下一页
+        </button>
+    `;
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('button[data-page]:not(:disabled)').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const targetPage = parseInt(this.getAttribute('data-page'), 10);
+            if (targetPage && targetPage !== currentPage && targetPage >= 1 && targetPage <= totalPages) {
+                currentPage = targetPage;
+                renderResults(false);
+                const scrollTarget = document.getElementById('searchForm') || scrollableResultsDiv;
+                if (scrollTarget) {
+                    scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        });
+    });
+}
+
+/**
+ * 渲染搜索结果到页面 (对齐竞品精美图文混排 + 15条分页)
  */
 function renderResults(reset = false) {
     let filteredResults = getFilteredResults();
 
     if (reset) {
         currentPage = 1;
-        resultContainer.innerHTML = '';
     }
 
+    const totalPages = Math.ceil(filteredResults.length / itemsPerPage) || 1;
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
+    }
+    if (currentPage < 1) {
+        currentPage = 1;
+    }
+
+    resultContainer.innerHTML = '';
+
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredResults.length);
     const currentBatch = filteredResults.slice(startIndex, endIndex);
 
     // 总是显示结果计数，即使为0
     resultCountText.textContent = `共找到 ${filteredResults.length} 个结果 (${currentFilter})`;
     resultCountText.classList.remove('hidden');
 
-    if (filteredResults.length > 0) {
-        resultContainer.querySelector('p.text-center.text-muted')?.remove();
-    } else if (!isSearchRunning && reset) {
-        resultContainer.innerHTML = `<div class="text-center p-5"><p class="text-muted">在 ${currentFilter} 中未找到相关结果</p></div>`;
-    } else if (isSearchRunning && reset) {
-        resultContainer.innerHTML = `<div class="text-center p-5"><div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div><p class="text-muted">正在持续检索，暂未发现匹配项...</p></div>`;
+    if (filteredResults.length === 0) {
+        renderPagination(0, 1, itemsPerPage);
+        if (!isSearchRunning) {
+            resultContainer.innerHTML = `<div class="text-center p-5"><p class="text-muted">在 ${currentFilter} 中未找到相关结果</p></div>`;
+        } else {
+            resultContainer.innerHTML = `<div class="text-center p-5"><div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div><p class="text-muted">正在持续检索，暂未发现匹配项...</p></div>`;
+        }
+        loadingMore.classList.add('hidden');
+        isLoadingNextBatch = false;
+        return;
     }
 
     // 渲染当前批次
     currentBatch.forEach((result, index) => {
-        // 假设 result 结构：[source, title, url, netdisk_name]
-        const source = result[0];
-        const titleText = result[1];
-        const urlLink = result[2];
-        const netdiskName = result[3];
+        // result 结构：[source, title, url, netdisk_name, datetime, description, cover_url]
+        const source = result[0] || '';
+        const titleText = result[1] || '';
+        const urlLink = result[2] || '';
+        const netdiskName = result[3] || '其他';
+        const datetimeRaw = result[4] || '';
+        const descriptionRaw = result[5] || '';
+        const coverUrlRaw = result[6] || '';
 
         const { badgeClass, badgeTextClass } = getNetdiskColorClass(netdiskName);
         const hotClass = source === 'hot' ? 'hot-result' : '';
 
-        // Link Icon Logic: Change link icon to a larger 🔥 for hot results
-        let linkIconHtml = '<i class="fas fa-link me-2" style="font-size:0.7rem;"></i>';
-        if (source === 'hot') {
-            // Larger fire icon for the link line (1.1rem as requested to be larger)
-            linkIconHtml = '<span class="me-2" style="font-size: 1.1rem;">🔥</span>';
+        // 卡片顶部元数据条 (网盘品牌、时间、24小时内时效徽标、精选标识等)
+        const timeMeta = parseResultDateTime(datetimeRaw);
+        let recentBadgeHtml = '';
+        if (timeMeta && timeMeta.isWithin24Hours) {
+            recentBadgeHtml = '<span class="badge-time-24h"><i class="fas fa-bolt me-1" style="font-size:0.6rem;"></i>24小时内</span>';
+        } else if (timeMeta && timeMeta.isToday) {
+            recentBadgeHtml = '<span class="badge-time-today"><i class="fas fa-calendar-day me-1" style="font-size:0.6rem;"></i>今日更新</span>';
         }
 
-        // Use default netdisk badge class (no hot override)
+        let timeTextHtml = '';
+        if (timeMeta && timeMeta.displayTime) {
+            timeTextHtml = `<span class="result-meta-divider">·</span><span class="result-time-text" title="发布/更新时间: ${escapeHtml(timeMeta.displayTime)}">${escapeHtml(timeMeta.displayTime)}</span>`;
+        }
+
+        let hotSourceBadgeHtml = '';
+        if (source === 'hot') {
+            hotSourceBadgeHtml = '<span class="result-source-tag text-amber-600 border-amber-200 bg-amber-50" title="精选内部优质资源"><i class="fas fa-fire text-amber-500"></i> 精选</span>';
+        }
+
+        const shortNetdiskName = getShortNetdiskName(netdiskName);
         const finalBadgeClass = `${badgeClass} ${badgeTextClass}`;
+        const brandHtml = `<span class="netdisk-badge result-cloud-brand ${finalBadgeClass}" data-netdisk="${escapeHtml(netdiskName)}"><i class="fas fa-hdd me-1" style="font-size:0.72rem;"></i><span class="badge-name-full">${escapeHtml(netdiskName)}</span><span class="badge-name-short">${escapeHtml(shortNetdiskName)}</span></span>`;
+
+        const metaTopHtml = `<div class="result-meta-top">${brandHtml}${timeTextHtml}${recentBadgeHtml}${hotSourceBadgeHtml}</div>`;
+
+        // 资源简介与内容描述 (多行省略)
+        let descriptionHtml = '';
+        if (descriptionRaw && descriptionRaw.trim() && descriptionRaw.trim() !== titleText.trim()) {
+            descriptionHtml = `<p class="result-desc-paragraph" title="${escapeHtml(descriptionRaw.trim())}">${escapeHtml(descriptionRaw.trim())}</p>`;
+        }
 
         const key = extractCanonicalResourceKeyFront(urlLink);
         const health = (key && linkHealthCache.get(key)) || linkHealthCache.get(urlLink);
@@ -855,18 +1168,29 @@ function renderResults(reset = false) {
         if (isLinkCheckEnabled) {
             if (health) {
                 if (health.state === 'ok') {
-                    healthBadgeHtml = `<span class="link-health-badge badge-ok" title="${escapeHtml(health.summary || '资源有效')}"><i class="fas fa-check-circle"></i> 有效</span>`;
+                    healthBadgeHtml = `<span class="link-health-badge result-status-pill status-ok" title="${escapeHtml(health.summary || '资源有效')}"><i class="fas fa-check-circle"></i> 状态 资源有效</span>`;
                 } else if (health.state === 'bad') {
                     deadItemClass = 'is-dead-link';
-                    healthBadgeHtml = `<span class="link-health-badge badge-bad" title="${escapeHtml(health.summary || '资源已失效或为空')}"><i class="fas fa-times-circle"></i> 失效</span>`;
+                    healthBadgeHtml = `<span class="link-health-badge result-status-pill status-bad" title="${escapeHtml(health.summary || '资源已失效或为空')}"><i class="fas fa-times-circle"></i> 状态 资源失效</span>`;
                 } else if (health.state === 'locked') {
-                    healthBadgeHtml = `<span class="link-health-badge badge-locked" title="${escapeHtml(health.summary || '需提取码')}"><i class="fas fa-key"></i> 需提取码</span>`;
+                    healthBadgeHtml = `<span class="link-health-badge result-status-pill status-checking" style="color:#d97706;background:#fffbeb;border-color:rgba(245,158,11,0.28);" title="${escapeHtml(health.summary || '需提取码')}"><i class="fas fa-key"></i> 需提取码</span>`;
                 } else if (health.state === 'uncertain') {
-                    healthBadgeHtml = `<span class="link-health-badge badge-uncertain" title="${escapeHtml(health.summary || '探测超时或未知')}"><i class="fas fa-question-circle"></i> 未知</span>`;
+                    healthBadgeHtml = `<span class="link-health-badge result-status-pill status-checking" title="${escapeHtml(health.summary || '探测超时或未知')}"><i class="fas fa-question-circle"></i> 状态 未知</span>`;
                 }
             } else if (urlLink && !urlLink.startsWith('magnet:') && !urlLink.startsWith('ed2k:') && !urlLink.startsWith('thunder:') && isNetdiskCheckEnabled(netdiskName)) {
-                healthBadgeHtml = `<span class="link-health-badge badge-checking" title="正在探测网盘链接有效性..."><span class="spinner-border spinner-border-sm" style="width: 0.65rem; height: 0.65rem; border-width: 0.1em;"></span> 测活中</span>`;
+                healthBadgeHtml = `<span class="link-health-badge result-status-pill status-checking" title="正在探测网盘链接有效性..."><span class="spinner-border spinner-border-sm" style="width: 0.65rem; height: 0.65rem; border-width: 0.1em;"></span> 状态 测活中</span>`;
             }
+        }
+
+        let sourceDisplay = '网络聚合';
+        if (source === 'hot') {
+            sourceDisplay = '站长自建';
+        } else if (source.startsWith('tg:')) {
+            sourceDisplay = source.replace('tg:', 'TG:');
+        } else if (source.startsWith('plugin:')) {
+            sourceDisplay = source.replace('plugin:', '');
+        } else if (source) {
+            sourceDisplay = source;
         }
 
         const isItemViewMode = isViewModeEnabled;
@@ -874,39 +1198,69 @@ function renderResults(reset = false) {
         if (deadItemClass === 'is-dead-link') {
             actionBtnClass += ' dead-btn';
         }
-        const actionBtnHtml = `
-            <div class="action-btn-wrapper">
-                <button class="btn btn-sm ${actionBtnClass}" data-title="${escapeHtml(titleText)}" data-url="${escapeHtml(urlLink)}" data-netdisk="${escapeHtml(netdiskName)}">
-                    ${isItemViewMode ? '<i class="fas fa-eye"></i>查看' : '<i class="far fa-copy"></i>复制'}
-                </button>
-            </div>`;
+
+        // 缩略图生成与兜底降级处理 (对齐竞品 UI)
+        let coverHtml = '';
+        const fallbackInner = `<div class="result-cover-fallback"><svg class="fallback-icon-svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span class="fallback-text">缩略图加载失败</span></div>`;
+
+        if (coverUrlRaw && (coverUrlRaw.startsWith('http://') || coverUrlRaw.startsWith('https://') || coverUrlRaw.startsWith('/'))) {
+            coverHtml = `<img src="${escapeHtml(coverUrlRaw)}" alt="${escapeHtml(titleText)}" class="result-cover-img" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='${fallbackInner.replace(/'/g, "\\'")}';">`;
+        } else {
+            coverHtml = fallbackInner;
+        }
 
         const fullItem = document.createElement('div');
         fullItem.className = 'result-item-wrapper';
 
-        const shortNetdiskName = getShortNetdiskName(netdiskName);
         const itemHtml = `
             <div class="result-item ${hotClass} ${deadItemClass}" data-key="${escapeHtml(key)}" data-url="${escapeHtml(urlLink)}">
-                <div class="result-info">
-                    <div class="result-title-line"><span class="netdisk-badge ${finalBadgeClass}" data-netdisk="${escapeHtml(netdiskName)}"><span class="badge-name-full">${escapeHtml(netdiskName)}</span><span class="badge-name-short">${escapeHtml(shortNetdiskName)}</span></span><span class="result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span></div>
-                    <div class="result-url-line ${isItemViewMode ? 'hidden' : ''}">
-                        ${linkIconHtml}
-                        <a href="${urlLink}" target="_blank" title="${urlLink}">${escapeHtml(urlLink)}</a>
+                <div class="result-content-left">
+                    ${metaTopHtml}
+                    <h3 class="result-title-h3">
+                        <a href="${urlLink}" target="_blank" class="result-title-link result-title" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</a>
+                    </h3>
+                    ${descriptionHtml}
+                    <div class="result-footer-bar">
+                        <span class="result-source-pill">🌐 资源来自 ${escapeHtml(sourceDisplay)}</span>
+                        <div class="action-btn-wrapper">
+                            <button class="result-action-pill ${actionBtnClass}" data-title="${escapeHtml(titleText)}" data-url="${escapeHtml(urlLink)}" data-netdisk="${escapeHtml(netdiskName)}">
+                                ${isItemViewMode ? '<i class="fas fa-eye me-1"></i>打开资源' : '<i class="far fa-copy me-1"></i>复制链接'}
+                            </button>
+                        </div>
+                        ${healthBadgeHtml}
+                    </div>
+                    <div class="result-url-line hidden">
+                        <a href="${urlLink}" target="_blank">${escapeHtml(urlLink)}</a>
                     </div>
                 </div>
-                <div class="result-actions">
-                    ${healthBadgeHtml}
-                    ${actionBtnHtml}
+                <div class="result-cover-box">
+                    ${coverHtml}
                 </div>
             </div>
-            ${(startIndex + index) < filteredResults.length - 1 ? '<hr class="result-divider">' : ''}
         `;
         fullItem.innerHTML = itemHtml;
         resultContainer.appendChild(fullItem);
     });
 
+    updateSearchStatsPills();
+
+    // 渲染 15 条/页 分页控制条
+    renderPagination(filteredResults.length, currentPage, itemsPerPage);
+
     // 触发当前渲染批次的网盘链接异步测活
     queueLinksForVerification(currentBatch);
+
+    // 绑定标题链接点击 (视图模式下唤起弹窗)
+    resultContainer.querySelectorAll('.result-title-link:not([data-bound="true"])').forEach(link => {
+        link.setAttribute('data-bound', 'true');
+        link.addEventListener('click', function (e) {
+            if (isItemViewMode) {
+                e.preventDefault();
+                const btn = this.closest('.result-item')?.querySelector('.result-action-pill');
+                if (btn) btn.click();
+            }
+        });
+    });
 
     // 绑定复制按钮事件
     resultContainer.querySelectorAll('.copy-button:not([data-bound="true"])').forEach(button => {
@@ -914,13 +1268,12 @@ function renderResults(reset = false) {
         button.addEventListener('click', function () {
             const title = this.getAttribute('data-title');
             const url = this.getAttribute('data-url');
-            const textToCopy = `标题: ${title}
-链接: ${url}`;
+            const textToCopy = `标题: ${title}\n链接: ${url}`;
 
             copyTextToClipboard(textToCopy).then(success => {
                 if (success) {
-                    this.innerHTML = '<i class="fas fa-check"></i> 已复制';
-                    setTimeout(() => { this.innerHTML = '<i class="far fa-copy"></i>复制'; }, 1500);
+                    this.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
+                    setTimeout(() => { this.innerHTML = '<i class="far fa-copy me-1"></i>复制链接'; }, 1500);
                 } else {
                     showAlertModal(`复制失败，请手动复制：\n\n${textToCopy}`, 'warning', '复制失败', '关闭');
                 }
@@ -939,35 +1292,17 @@ function renderResults(reset = false) {
     resultContainer.querySelectorAll('.result-item:not([data-card-bound="true"])').forEach(item => {
         item.setAttribute('data-card-bound', 'true');
         item.addEventListener('click', function (e) {
-            if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.link-health-badge')) {
+            if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.link-health-badge') || e.target.closest('.result-cover-box')) {
                 return;
             }
-            const btn = this.querySelector('.view-button, .copy-button');
+            const btn = this.querySelector('.view-button, .copy-button, .result-action-pill');
             if (btn) {
                 btn.click();
             }
         });
     });
 
-    // 更新分页状态和加载提示
-    if (endIndex >= filteredResults.length) {
-        if (isSearchRunning) {
-            isFullyLoaded = false;
-            loadingMore.classList.add('hidden');
-        } else {
-            isFullyLoaded = true;
-            loadingMore.classList.add('hidden');
-            loadingMore.textContent = '已加载全部结果。';
-        }
-    } else {
-        isFullyLoaded = false;
-        loadingMore.classList.remove('hidden');
-        loadingMore.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"><span class="visually-hidden">Loading...</span></div>加载更多结果...';
-    }
-
-    if (currentBatch.length > 0) {
-        currentPage++;
-    }
+    loadingMore.classList.add('hidden');
     isLoadingNextBatch = false;
 }
 
@@ -1027,6 +1362,7 @@ function queueLinksForVerification(items) {
         checkQueue.push({ url, disk_type: diskType, key });
     }
 
+    updateSearchStatsPills();
     processCheckQueue();
 }
 
@@ -1069,6 +1405,7 @@ async function processCheckQueue() {
                             const currentFiltered = getFilteredResults();
                             resultCountText.textContent = `共找到 ${currentFiltered.length} 个结果 (${currentFilter})`;
                         }
+                        updateSearchStatsPills();
                     }
                 }
             } catch (err) {
@@ -1082,6 +1419,7 @@ async function processCheckQueue() {
         }
     } finally {
         isCheckingQueueRunning = false;
+        updateSearchStatsPills();
     }
 }
 
@@ -1198,34 +1536,19 @@ function updateHealthBadgeInDOM(res) {
     });
 }
 
-// --- 无限滚动逻辑（同时支持容器内滚动与移动端整页滚动） ---
+// --- 分页导航模式（已替代无限滚动，保持事件声明以兼容外部调用） ---
 const infiniteScrollHandler = () => {
-    const container = scrollableResultsDiv;
-    if (!container || isFullyLoaded || isLoadingNextBatch) return;
-    if ((container.scrollTop + container.clientHeight) >= (container.scrollHeight - 50)) {
-        loadNextPage();
-    }
+    // 已切换为 15条/页 分页控件模式
+    return;
 };
 
 const windowScrollHandler = () => {
-    if (!scrollableResultsDiv || isFullyLoaded || isLoadingNextBatch) return;
-    const scrollPosition = window.innerHeight + window.scrollY;
-    const threshold = document.documentElement.scrollHeight - 120;
-    if (scrollPosition >= threshold) {
-        loadNextPage();
-    }
+    // 已切换为 15条/页 分页控件模式
+    return;
 };
-window.addEventListener('scroll', windowScrollHandler, { passive: true });
 
 function loadNextPage() {
-    isLoadingNextBatch = true;
-    loadingMore.classList.remove('hidden');
-
-    setTimeout(() => {
-        renderResults(false);
-        // 加载更多后，重新判断是否需要滚动条
-        toggleScrollbarBasedOnContent();
-    }, 300);
+    return;
 }
 
 async function handleViewButtonClick(button) {
@@ -1652,3 +1975,121 @@ if (document.readyState === 'loading') {
 } else {
     initSearchFromUrl();
 }
+
+// ==================== 侧边栏与搜索框下方热搜词联动 ====================
+document.getElementById('hotSearchTags')?.addEventListener('click', function (e) {
+    const tag = e.target.closest('.hot-tag');
+    if (!tag) return;
+    const kw = tag.getAttribute('data-keyword') || tag.textContent.trim();
+    if (!kw || !searchInput) return;
+
+    searchInput.value = kw;
+    searchInput.focus();
+    performSearch();
+});
+
+document.getElementById('searchHotWordsBar')?.addEventListener('click', function (e) {
+    const item = e.target.closest('.hot-word-item');
+    if (!item) return;
+    const kw = item.getAttribute('data-keyword') || item.textContent.trim();
+    if (!kw || !searchInput) return;
+
+    searchInput.value = kw;
+    searchInput.focus();
+    performSearch();
+});
+
+// ==================== 求片 / 提交需求交互逻辑 ====================
+const openResourceRequestBtn = document.getElementById('openResourceRequestBtn');
+const requestResourceModalElem = document.getElementById('requestResourceModal');
+const submitResourceRequestBtn = document.getElementById('submitResourceRequestBtn');
+const submitReqBtnText = document.getElementById('submitReqBtnText');
+const submitReqBtnSpinner = document.getElementById('submitReqBtnSpinner');
+const reqResourceNameInput = document.getElementById('reqResourceName');
+const reqContactInput = document.getElementById('reqContact');
+const reqNoteInput = document.getElementById('reqNote');
+
+function openResourceRequestModal() {
+    if (!requestResourceModalElem) return;
+
+    // 若当前输入框有关键词且求片输入框为空，智能自动带入
+    if (reqResourceNameInput && !reqResourceNameInput.value.trim() && searchInput && searchInput.value.trim()) {
+        reqResourceNameInput.value = searchInput.value.trim();
+    }
+
+    if (window.AppUI && typeof window.AppUI.openModal === 'function') {
+        window.AppUI.openModal(requestResourceModalElem);
+    } else {
+        requestResourceModalElem.classList.add('show');
+        requestResourceModalElem.style.display = 'block';
+    }
+
+    setTimeout(() => {
+        if (reqResourceNameInput) {
+            reqResourceNameInput.focus();
+            if (reqResourceNameInput.value) {
+                reqResourceNameInput.select();
+            }
+        }
+    }, 150);
+}
+
+function closeResourceRequestModal() {
+    if (!requestResourceModalElem) return;
+    if (window.AppUI && typeof window.AppUI.closeModal === 'function') {
+        window.AppUI.closeModal(requestResourceModalElem);
+    } else {
+        requestResourceModalElem.classList.remove('show');
+        requestResourceModalElem.style.display = 'none';
+    }
+}
+
+openResourceRequestBtn?.addEventListener('click', openResourceRequestModal);
+
+submitResourceRequestBtn?.addEventListener('click', async function () {
+    const resourceName = reqResourceNameInput?.value.trim() || '';
+    const contact = reqContactInput?.value.trim() || '';
+    const note = reqNoteInput?.value.trim() || '';
+
+    if (!resourceName) {
+        showAlertModal('请先填写你想寻找的资源名称', 'warning', '提示');
+        reqResourceNameInput?.focus();
+        return;
+    }
+
+    // 设置按钮加载态
+    if (submitResourceRequestBtn) submitResourceRequestBtn.disabled = true;
+    if (submitReqBtnText) submitReqBtnText.textContent = '提交中...';
+    if (submitReqBtnSpinner) submitReqBtnSpinner.classList.remove('hidden');
+
+    try {
+        const resp = await fetch('/api/request_resource', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                resource_name: resourceName,
+                contact: contact,
+                note: note,
+            }),
+        });
+
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+            closeResourceRequestModal();
+            // 清空表单
+            if (reqResourceNameInput) reqResourceNameInput.value = '';
+            if (reqContactInput) reqContactInput.value = '';
+            if (reqNoteInput) reqNoteInput.value = '';
+            showAlertModal('求片需求提交成功！我们会尽快补充对应资源。', 'success', '提交成功');
+        } else {
+            showAlertModal(data.message || '提交失败，请稍后再试', 'warning', '提交提示');
+        }
+    } catch (err) {
+        showAlertModal('网络连接异常，无法提交求片需求', 'danger', '提交失败');
+    } finally {
+        if (submitResourceRequestBtn) submitResourceRequestBtn.disabled = false;
+        if (submitReqBtnText) submitReqBtnText.textContent = '提交需求';
+        if (submitReqBtnSpinner) submitReqBtnSpinner.classList.add('hidden');
+    }
+});
+

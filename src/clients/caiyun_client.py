@@ -71,8 +71,14 @@ class CaiyunPanClient(BasePanClient):
 
     @staticmethod
     def _ok(result: Optional[Dict[str, Any]]) -> bool:
-        # 服务端在业务错误时也可能返回 success=true。
-        return bool(result and str(result.get("code", result.get("resultCode", ""))) in ("0", "0000") and result.get("success") is not False)
+        if not result:
+            return False
+        code = str(result.get("code", result.get("resultCode", "")))
+        if code in ("0", "0000"):
+            return result.get("success") is not False
+        if "code" not in result and "resultCode" not in result and result.get("success") is True:
+            return True
+        return False
 
     def _request_share_api(self, path: str, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         headers = {
@@ -293,7 +299,8 @@ class CaiyunPanClient(BasePanClient):
             "parentFileId": parent, "name": name, "description": "",
             "type": "folder", "fileRenameMode": "force_rename",
         })
-        return str(((result or {}).get("data") or {}).get("fileId") or parent)
+        res_data = (result or {}).get("data") or {}
+        return str(res_data.get("fileId") or res_data.get("catalogID") or res_data.get("catalogId") or parent)
 
     def add_ad(self, target_dir_id: str, ad_share_url: Optional[str] = None) -> bool:
         if not ad_share_url:

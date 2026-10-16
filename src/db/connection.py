@@ -110,11 +110,29 @@ def _migrate_schema_columns(conn: sqlite3.Connection):
             if "origin_type" not in res_cols:
                 conn.execute("ALTER TABLE resources ADD COLUMN origin_type TEXT NOT NULL DEFAULT 'manual';")
                 conn.execute("CREATE INDEX IF NOT EXISTS idx_resources_origin ON resources(origin_type);")
+            if "cover_url" not in res_cols:
+                conn.execute("ALTER TABLE resources ADD COLUMN cover_url TEXT DEFAULT NULL;")
 
         # 2. 检查 temp_share 是否有 account_id
         temp_cols = [row[1] for row in conn.execute("PRAGMA table_info(temp_share);").fetchall()]
         if temp_cols and "account_id" not in temp_cols:
             conn.execute("ALTER TABLE temp_share ADD COLUMN account_id INTEGER DEFAULT NULL;")
+
+        # 3. 检查 resource_requests 表
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS resource_requests (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              resource_name TEXT NOT NULL,
+              contact TEXT DEFAULT NULL,
+              note TEXT DEFAULT NULL,
+              status TEXT NOT NULL DEFAULT 'pending',
+              client_ip TEXT DEFAULT NULL,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_res_requests_created ON resource_requests(created_at DESC);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_res_requests_status ON resource_requests(status);")
     except Exception as e:
         logger.warning(f"表结构字段校验异常: {e}")
 

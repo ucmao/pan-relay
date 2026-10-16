@@ -95,5 +95,16 @@ class XiaokupanPlugin(HttpPlugin):
                 note_node = value(node, "note") or {}
                 password_node = value(node, "password") or {}
                 datetime_node = value(node, "datetime") or {}
-                items.append(self.make_item(note_node.get("s"), link_node.get("s"), password=password_node.get("s"), datetime_value=datetime_node.get("s")))
+                cover_node = value(node, "cover") or value(node, "image") or value(node, "thumb") or {}
+                desc_node = value(node, "desc") or value(node, "description") or value(node, "content") or {}
+                items.append(
+                    self.make_item(
+                        note_node.get("s"),
+                        link_node.get("s"),
+                        password=password_node.get("s"),
+                        datetime_value=datetime_node.get("s"),
+                        description=desc_node.get("s"),
+                        cover_url=cover_node.get("s"),
+                    )
+                )
         return self.finalize(items)

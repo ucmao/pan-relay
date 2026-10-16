@@ -27,9 +27,25 @@ from src.services.system_config_service import (
     is_frontend_github_enabled,
     is_frontend_enabled,
     is_api_only_enabled,
+    get_active_theme,
+    get_site_logo,
+    get_site_name,
+    is_resource_request_enabled,
+    is_hot_searches_enabled,
+    get_hot_search_words,
 )
+from src.services.theme_service import theme_static_bp
+import jinja2
 
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
+# 配置多主题模板加载器支持
+themes_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "themes")
+app.jinja_loader = jinja2.ChoiceLoader([
+    app.jinja_loader,
+    jinja2.FileSystemLoader(themes_path),
+])
 
 app.secret_key = SECRET_KEY
 
@@ -41,6 +57,7 @@ from src.services.admin_auth_service import init_admin_auth, is_using_default_pa
 init_admin_auth()
 
 # 注册蓝图
+app.register_blueprint(theme_static_bp)
 app.register_blueprint(auth_bp)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(api_config_bp)
@@ -80,6 +97,11 @@ def inject_login_status():
         'enable_frontend_github': is_frontend_github_enabled(),
         'is_default_admin_password': is_default_pwd,
         'admin_username': admin_name,
+        'site_logo': get_site_logo(),
+        'site_name': get_site_name(),
+        'enable_resource_request': is_resource_request_enabled(),
+        'enable_hot_searches': is_hot_searches_enabled(),
+        'hot_search_words': get_hot_search_words(),
     }
 
 
@@ -92,26 +114,58 @@ def check_ui_access():
         return redirect(url_for('auth.login'))
 
 
-# 首页，返回 HTML 文件或重定向
+# 首页，支持根据当前激活主题渲染不同模板
 @app.route('/')
 def search_index():
     if not is_frontend_enabled():
         return redirect(url_for('auth.login'))
 
+    active_theme = get_active_theme()
     link_mode = get_frontend_link_mode()
     link_check_config = get_frontend_link_check_config()
     dynamic_transfer_config = get_dynamic_transfer_netdisk_config()
 
-    return render_template(
-        'index.html',
-        frontend_link_mode=link_mode,
-        allow_excel_download=(link_mode != "view") and is_excel_download_enabled(),
-        enable_link_check=link_check_config.get("enable_link_check", True),
-        enabled_check_pans=link_check_config.get("enabled_check_pans", []),
-        enabled_dynamic_transfer_pans=dynamic_transfer_config.get("enabled_netdisks", []),
-        enable_pc_qr_code=is_pc_qr_code_enabled(),
-        enable_frontend_github=is_frontend_github_enabled(),
-    )
+    ctx = {
+        'frontend_link_mode': link_mode,
+        'allow_excel_download': (link_mode != "view") and is_excel_download_enabled(),
+        'enable_link_check': link_check_config.get("enable_link_check", True),
+        'enabled_check_pans': link_check_config.get("enabled_check_pans", []),
+        'enabled_dynamic_transfer_pans': dynamic_transfer_config.get("enabled_netdisks", []),
+        'enable_pc_qr_code': is_pc_qr_code_enabled(),
+        'enable_frontend_github': is_frontend_github_enabled(),
+        'enable_resource_request': is_resource_request_enabled(),
+        'enable_hot_searches': is_hot_searches_enabled(),
+        'hot_search_words': get_hot_search_words(),
+    }
+
+    if active_theme in ("aurora", "sougs"):
+        return render_template('aurora/templates/index.html', **ctx)
+    return render_template('index.html', **ctx)
+
+
+# 搜索结果页 (主要用于 aurora 主题或独立搜索 URL)
+@app.route('/search')
+def search_page():
+    if not is_frontend_enabled():
+        return redirect(url_for('auth.login'))
+
+    active_theme = get_active_theme()
+    q = request.args.get('q') or request.args.get('keyword') or ''
+    link_mode = get_frontend_link_mode()
+    link_check_config = get_frontend_link_check_config()
+
+    if active_theme in ("aurora", "sougs"):
+        return render_template(
+            'aurora/templates/search.html',
+            query=q,
+            frontend_link_mode=link_mode,
+            enable_link_check=link_check_config.get("enable_link_check", True),
+            enable_pc_qr_code=is_pc_qr_code_enabled(),
+            enable_resource_request=is_resource_request_enabled(),
+            enable_hot_searches=is_hot_searches_enabled(),
+            hot_search_words=get_hot_search_words(),
+        )
+    return redirect(url_for('search_index', keyword=q))
 
 
 # 独立 API 接入文档网页

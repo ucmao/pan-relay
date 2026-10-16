@@ -148,3 +148,73 @@ def get_resource_health_stats_route():
     stats = get_resource_health_overview()
     return jsonify({"success": True, "data": stats})
 
+
+# ==================== 用户求片需求后台管理 ====================
+
+@resources_bp.route("/admin/requests")
+@token_required
+def requests_page():
+    """用户求片需求管理页面"""
+    from src.db.resource_requests import get_resource_request_counts
+    counts = get_resource_request_counts()
+    return render_template("admin_requests.html", counts=counts, active_page="requests")
+
+
+@resources_bp.route("/admin/api/requests", methods=["GET"])
+@token_required
+def get_requests_api():
+    """获取用户求片列表及统计"""
+    from src.db.resource_requests import get_resource_requests, get_resource_request_counts
+
+    page = request.args.get("page", 1, type=int)
+    page_size = request.args.get("page_size", 20, type=int)
+    status = request.args.get("status", "all", type=str)
+    search = request.args.get("search", "", type=str)
+
+    items, total = get_resource_requests(status=status, keyword=search, page=page, page_size=page_size)
+    counts = get_resource_request_counts()
+
+    return jsonify({
+        "success": True,
+        "data": {
+            "items": items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "counts": counts,
+        }
+    })
+
+
+@resources_bp.route("/admin/api/requests/<int:req_id>/status", methods=["POST"])
+@token_required
+def update_request_status_api(req_id: int):
+    """更新求片状态 (pending / completed / ignored)"""
+    from src.db.resource_requests import update_resource_request_status
+
+    payload = request.get_json(silent=True) or {}
+    status = str(payload.get("status", "")).strip()
+
+    if status not in {"pending", "completed", "ignored"}:
+        return jsonify({"success": False, "message": "无效的状态值"}), 400
+
+    ok = update_resource_request_status(req_id, status)
+    if not ok:
+        return jsonify({"success": False, "message": "状态更新失败或记录不存在"}), 404
+
+    return jsonify({"success": True, "message": "状态更新成功"})
+
+
+@resources_bp.route("/admin/api/requests/<int:req_id>", methods=["DELETE"])
+@token_required
+def delete_request_api(req_id: int):
+    """删除求片记录"""
+    from src.db.resource_requests import delete_resource_request
+
+    ok = delete_resource_request(req_id)
+    if not ok:
+        return jsonify({"success": False, "message": "删除失败或记录不存在"}), 404
+
+    return jsonify({"success": True, "message": "删除成功"})
+
+

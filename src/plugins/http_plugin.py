@@ -96,6 +96,8 @@ class HttpPlugin(BasePlugin):
         *,
         password: Any = None,
         datetime_value: Any = None,
+        description: Any = None,
+        cover_url: Any = None,
     ) -> Optional[SearchResultItem]:
         clean_title = clean_text(title)
         clean_link = normalize_link(share_link)
@@ -109,6 +111,8 @@ class HttpPlugin(BasePlugin):
             cloud_name=cloud_name,
             password=clean_text(password) or extract_password_from_url(clean_link),
             datetime=parse_datetime(datetime_value),
+            description=clean_text(description) if description else None,
+            cover_url=clean_text(cover_url) if cover_url else None,
         )
 
     def finalize(self, items: Iterable[Optional[SearchResultItem]]) -> List[SearchResultItem]:

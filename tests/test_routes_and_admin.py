@@ -277,6 +277,15 @@ class SystemConfigPagesTest(unittest.TestCase):
         response = self.client.get("/admin/frontend-config")
         self.assertEqual(200, response.status_code)
         self.assertIn("前台 Web 界面配置", response.text)
+        self.assertIn("data-frontend-tab-target=\"appearance\"", response.text)
+        self.assertIn("data-frontend-tab-target=\"strategies\"", response.text)
+        self.assertIn("tab-pane-appearance", response.text)
+        self.assertIn("tab-pane-strategies", response.text)
+
+        # 访问策略 Tab
+        resp_strategies = self.client.get("/admin/frontend-config?tab=strategies")
+        self.assertEqual(200, resp_strategies.status_code)
+        self.assertIn("tab-pane-strategies", resp_strategies.text)
 
     def test_system_config_page_renders(self):
         response = self.client.get("/admin/system-config")

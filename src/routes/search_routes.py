@@ -297,3 +297,49 @@ def cleanup_temp_shares():
         result_count=cleaned_count,
     )
     return jsonify({"success": True, "cleaned_count": cleaned_count})
+
+
+# 简单的内存防刷限流器 (IP -> timestamp)
+_request_resource_rate_limit = {}
+
+
+@search_bp.route("/api/request_resource", methods=["POST"])
+def submit_resource_request():
+    """前台用户提交求片/需求提交接口"""
+    if not is_frontend_enabled():
+        return jsonify({"success": False, "message": "前台服务当前已关闭"}), 403
+
+    from src.services.system_config_service import is_resource_request_enabled
+    if not is_resource_request_enabled():
+        return jsonify({"success": False, "message": "求片功能当前已关闭"}), 403
+
+    data = request.get_json(silent=True) or {}
+    resource_name = str(data.get("resource_name") or "").strip()
+    contact = str(data.get("contact") or "").strip()
+    note = str(data.get("note") or "").strip()
+
+    if not resource_name:
+        return jsonify({"success": False, "message": "请输入要寻找的资源名称"}), 400
+
+    if len(resource_name) > 120:
+        return jsonify({"success": False, "message": "资源名称不能超过 120 个字符"}), 400
+
+    client_ip = get_current_client_ip()
+    now = time.time()
+    last_req_time = _request_resource_rate_limit.get(client_ip, 0)
+    if now - last_req_time < 5.0:
+        return jsonify({"success": False, "message": "提交过于频繁，请稍候再试"}), 429
+    _request_resource_rate_limit[client_ip] = now
+
+    from src.db.resource_requests import create_resource_request
+    ok, msg, req_id = create_resource_request(
+        resource_name=resource_name,
+        contact=contact,
+        note=note,
+        client_ip=client_ip,
+    )
+    if not ok:
+        return jsonify({"success": False, "message": msg}), 500
+
+    return jsonify({"success": True, "message": "需求已提交，感谢您的反馈！", "request_id": req_id})
+

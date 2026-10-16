@@ -69,6 +69,18 @@ class PansearchPlugin(HttpPlugin):
             title = clean_text(title_match.group(1)) if title_match else keyword
             links = [anchor.get("href") for anchor in soup.select("a[href]")] or extract_links(content)
             password_match = re.search(r"(?:提取码|访问码|密码|pwd|code)\s*[:=：]?\s*([0-9a-z]{4,8})", text, re.I)
+            desc_text = clean_text(soup.get_text(" ", strip=True))
+            img_node = soup.select_one("img[src]")
+            cover_url = img_node.get("src") if img_node else (record.get("image") or record.get("cover"))
             for link in links:
-                items.append(self.make_item(title, link, password=password_match.group(1) if password_match else None, datetime_value=record.get("time")))
+                items.append(
+                    self.make_item(
+                        title,
+                        link,
+                        password=password_match.group(1) if password_match else None,
+                        datetime_value=record.get("time"),
+                        description=desc_text if desc_text and desc_text != title else None,
+                        cover_url=cover_url,
+                    )
+                )
         return self.finalize(items)

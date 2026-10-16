@@ -19,11 +19,32 @@ class DetailPagePlugin(HttpPlugin):
     def search_records(self, keyword: str) -> Sequence[Tuple[str, str, object]]:
         raise NotImplementedError
 
-    def parse_detail(self, title: str, url: str, datetime_value=None) -> List[SearchResultItem]:
+    def parse_detail(
+        self,
+        title: str,
+        url: str,
+        datetime_value=None,
+        cover_url=None,
+        description=None,
+    ) -> List[SearchResultItem]:
         response = self.request("GET", url, headers={"Referer": self.base_url + "/"})
         soup = BeautifulSoup(response.text, "html.parser")
+        if not cover_url:
+            img = soup.select_one("img.cover, .post-thumb img, .entry-content img, .detail-pic img, .video-cover img, .article-content img")
+            if img:
+                c = img.get("data-src") or img.get("src")
+                if c:
+                    cover_url = c if c.startswith("http") else urljoin(self.base_url, c)
+        if not description:
+            desc_node = soup.select_one(".entry-content p, .article-content p, .post-content p, .intro, .summary, .description")
+            if desc_node:
+                description = clean_text(desc_node.get_text(" ", strip=True))
         values = [node.get("href") or node.get("data-clipboard-text") for node in soup.select(self.resource_selector)]
-        return [self.make_item(title, link, datetime_value=datetime_value) for value in values for link in extract_links(value)]
+        return [
+            self.make_item(title, link, datetime_value=datetime_value, cover_url=cover_url, description=description)
+            for value in values
+            for link in extract_links(value)
+        ]
 
     def search(self, keyword: str) -> List[SearchResultItem]:
         keyword = clean_text(keyword)
@@ -40,7 +61,13 @@ class DetailPagePlugin(HttpPlugin):
                     continue
         return self.finalize(items)
 
-    def records_from_html(self, html: str, datetime_selector: str = ""):
+    def records_from_html(
+        self,
+        html: str,
+        datetime_selector: str = "",
+        cover_selector: str = "",
+        desc_selector: str = "",
+    ):
         soup = BeautifulSoup(html, "html.parser")
         records = []
         for node in soup.select(self.search_selector):
@@ -51,6 +78,20 @@ class DetailPagePlugin(HttpPlugin):
             title = clean_text((title_node or anchor).get_text(" ", strip=True) or anchor.get("title"))
             href = anchor.get("href")
             date_node = node.select_one(datetime_selector) if datetime_selector else None
+            img_node = node.select_one(cover_selector) if cover_selector else node.select_one("img")
+            cover = None
+            if img_node:
+                c = img_node.get("data-src") or img_node.get("src")
+                if c:
+                    cover = c if c.startswith("http") else urljoin(self.base_url, c)
+            desc_node = node.select_one(desc_selector) if desc_selector else None
+            desc = clean_text(desc_node.get_text(" ", strip=True)) if desc_node else None
             if title and href:
-                records.append((title, urljoin(self.base_url, href), clean_text(date_node.get_text(" ", strip=True)) if date_node else None))
+                records.append((
+                    title,
+                    urljoin(self.base_url, href),
+                    clean_text(date_node.get_text(" ", strip=True)) if date_node else None,
+                    cover,
+                    desc,
+                ))
         return records

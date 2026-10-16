@@ -448,7 +448,7 @@ def search_resources_by_title_terms(terms: List[str]) -> List[Tuple]:
         return []
 
     conditions = " OR ".join("name LIKE ?" for _ in clean_terms)
-    sql = f"SELECT name, share_link, cloud_name, created_at FROM resources WHERE {conditions}"
+    sql = f"SELECT name, share_link, cloud_name, created_at, remarks, cover_url FROM resources WHERE {conditions}"
     conn = get_db_connection()
     if not conn:
         return []

@@ -1,0 +1,264 @@
+{% extends "admin_layout.html" %}
+{% set active_page = 'requests' %}
+
+{% block head %}
+    {{ super() }}
+    <title>Pan-Relay - 求片需求管理</title>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <!-- Page Header -->
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">用户求片需求</h1>
+            <p class="text-xs text-slate-500 mt-0.5">收集前台用户提交的找资源诉求，辅助扩充站内高频热搜资源库</p>
+        </div>
+        <div class="flex items-center space-x-2.5 flex-wrap">
+            <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                <span class="text-xs text-slate-500">待处理需求:</span>
+                <span class="text-sm font-bold text-amber-600" id="kpiPendingCount">{{ counts.pending|default(0) }}</span>
+                <span class="text-slate-300">|</span>
+                <span class="text-xs text-slate-500">总需求:</span>
+                <span class="text-sm font-bold text-slate-800" id="kpiTotalCount">{{ counts.total|default(0) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据管理面板 -->
+    <section class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <!-- 状态过滤 Tabs -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0" id="statusFilterTabs">
+                <button type="button" class="tab-btn active px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white transition cursor-pointer" data-status="all">全部 (<span id="tabCountAll">0</span>)</button>
+                <button type="button" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer" data-status="pending">待处理 (<span id="tabCountPending">0</span>)</button>
+                <button type="button" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer" data-status="completed">已满足 (<span id="tabCountCompleted">0</span>)</button>
+                <button type="button" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer" data-status="ignored">已忽略 (<span id="tabCountIgnored">0</span>)</button>
+            </div>
+
+            <!-- 搜索框 -->
+            <div class="flex items-center gap-2">
+                <div class="relative w-full sm:w-64">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="requestSearchInput" placeholder="搜索资源名 / 联系方式 / 说明..."
+                        class="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition">
+                </div>
+                <button type="button" onclick="loadRequests(1)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer">
+                    <i class="fas fa-rotate"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 表格容器 -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50/70 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
+                    <tr>
+                        <th class="py-3 px-4 w-16">ID</th>
+                        <th class="py-3 px-4 min-w-[200px]">资源名称</th>
+                        <th class="py-3 px-4 min-w-[120px]">联系方式</th>
+                        <th class="py-3 px-4 min-w-[220px]">需求说明</th>
+                        <th class="py-3 px-4 w-28">状态</th>
+                        <th class="py-3 px-4 w-36">提交时间</th>
+                        <th class="py-3 px-4 w-36 text-right">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="requestTableBody" class="divide-y divide-slate-100">
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-slate-400">
+                            <div class="inline-block animate-spin mr-2"><i class="fas fa-spinner"></i></div> 正在加载求片记录...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 分页栏 -->
+        <div class="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+            <div id="paginationInfo">共 0 条需求</div>
+            <div class="flex items-center gap-1.5" id="paginationControls"></div>
+        </div>
+    </section>
+</div>
+
+<script>
+    let currentStatus = 'all';
+    let currentPage = 1;
+    const pageSize = 20;
+
+    async function loadRequests(page = 1) {
+        currentPage = page;
+        const searchVal = document.getElementById('requestSearchInput')?.value || '';
+        const url = `/admin/api/requests?page=${page}&page_size=${pageSize}&status=${currentStatus}&search=${encodeURIComponent(searchVal)}`;
+
+        try {
+            const res = await fetch(url);
+            const json = await res.json();
+            if (!json.success) {
+                alert(json.message || '加载求片列表失败');
+                return;
+            }
+
+            const { items, total, counts } = json.data;
+            renderCounts(counts, total);
+            renderTable(items);
+            renderPagination(total, page);
+        } catch (e) {
+            console.error('加载求片失败:', e);
+        }
+    }
+
+    function renderCounts(counts, total) {
+        if (!counts) return;
+        document.getElementById('kpiPendingCount').textContent = counts.pending || 0;
+        document.getElementById('kpiTotalCount').textContent = counts.total || total || 0;
+        document.getElementById('tabCountAll').textContent = counts.total || total || 0;
+        document.getElementById('tabCountPending').textContent = counts.pending || 0;
+        document.getElementById('tabCountCompleted').textContent = counts.completed || 0;
+        document.getElementById('tabCountIgnored').textContent = counts.ignored || 0;
+    }
+
+    function renderTable(items) {
+        const tbody = document.getElementById('requestTableBody');
+        if (!items || items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="py-12 text-center text-slate-400">暂无相关求片需求记录</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = items.map(item => {
+            let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">待处理</span>';
+            if (item.status === 'completed') {
+                statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">已满足</span>';
+            } else if (item.status === 'ignored') {
+                statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">已忽略</span>';
+            }
+
+            const safeName = escapeHtml(item.resource_name);
+            const safeContact = escapeHtml(item.contact || '-');
+            const safeNote = escapeHtml(item.note || '-');
+            const searchUrl = `/?keyword=${encodeURIComponent(item.resource_name)}`;
+
+            return `
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="py-3 px-4 font-mono text-slate-400">#${item.id}</td>
+                    <td class="py-3 px-4 font-bold text-slate-900 break-all">
+                        <div class="flex items-center gap-1.5">
+                            <span>${safeName}</span>
+                            <a href="${searchUrl}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs ml-1" title="在聚合搜索中检索该资源">
+                                <i class="fas fa-arrow-up-right-from-square"></i>
+                            </a>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 font-mono text-slate-700">${safeContact}</td>
+                    <td class="py-3 px-4 text-slate-600 max-w-xs break-all">${safeNote}</td>
+                    <td class="py-3 px-4">${statusBadge}</td>
+                    <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">${item.created_at || '-'}</td>
+                    <td class="py-3 px-4 text-right whitespace-nowrap">
+                        <div class="inline-flex items-center gap-1">
+                            ${item.status !== 'completed' ? `
+                                <button type="button" onclick="updateStatus(${item.id}, 'completed')" class="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold transition" title="标记为已满足">
+                                    <i class="fas fa-check"></i> 满足
+                                </button>
+                            ` : ''}
+                            ${item.status !== 'ignored' ? `
+                                <button type="button" onclick="updateStatus(${item.id}, 'ignored')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] transition" title="标记为已忽略">
+                                    忽略
+                                </button>
+                            ` : ''}
+                            <button type="button" onclick="deleteRequest(${item.id})" class="p-1 rounded text-rose-500 hover:bg-rose-50 transition" title="删除记录">
+                                <i class="fas fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function renderPagination(total, page) {
+        document.getElementById('paginationInfo').textContent = `共 ${total} 条求片记录 · 第 ${page} 页`;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        const container = document.getElementById('paginationControls');
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        if (page > 1) {
+            html += `<button type="button" onclick="loadRequests(${page - 1})" class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition cursor-pointer">上一页</button>`;
+        }
+        html += `<span class="px-2 font-mono">${page} / ${totalPages}</span>`;
+        if (page < totalPages) {
+            html += `<button type="button" onclick="loadRequests(${page + 1})" class="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition cursor-pointer">下一页</button>`;
+        }
+        container.innerHTML = html;
+    }
+
+    async function updateStatus(id, status) {
+        try {
+            const res = await fetch(`/admin/api/requests/${id}/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            const json = await res.json();
+            if (json.success) {
+                loadRequests(currentPage);
+            } else {
+                alert(json.message || '更新失败');
+            }
+        } catch (e) {
+            alert('请求异常');
+        }
+    }
+
+    async function deleteRequest(id) {
+        if (!confirm('确定要删除此求片需求吗？')) return;
+        try {
+            const res = await fetch(`/admin/api/requests/${id}`, { method: 'DELETE' });
+            const json = await res.json();
+            if (json.success) {
+                loadRequests(currentPage);
+            } else {
+                alert(json.message || '删除失败');
+            }
+        } catch (e) {
+            alert('请求异常');
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    document.getElementById('statusFilterTabs')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.tab-btn');
+        if (!btn) return;
+        document.querySelectorAll('#statusFilterTabs .tab-btn').forEach(b => {
+            b.classList.remove('bg-slate-900', 'text-white', 'active');
+            b.classList.add('text-slate-600', 'hover:bg-slate-100');
+        });
+        btn.classList.add('bg-slate-900', 'text-white', 'active');
+        btn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+        currentStatus = btn.getAttribute('data-status') || 'all';
+        loadRequests(1);
+    });
+
+    document.getElementById('requestSearchInput')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            loadRequests(1);
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadRequests(1);
+    });
+</script>
+{% endblock %}

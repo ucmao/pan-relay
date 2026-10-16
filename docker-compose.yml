@@ -12,6 +12,11 @@ services:
       # 持久化挂载 SQLite 数据库目录（确保容器重启/升级时数据不丢失）
       - ./data:/app/data
       - ./logs:/app/logs
+      - ./themes:/app/themes
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./src:/app/src
+      - ./app.py:/app/app.py
     env_file:
       - path: .env
         required: false

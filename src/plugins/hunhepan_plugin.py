@@ -78,6 +78,8 @@ class HunhepanPlugin(HttpPlugin):
                 record.get("link"),
                 password=record.get("disk_pass"),
                 datetime_value=record.get("shared_time"),
+                description=record.get("description") or record.get("summary") or record.get("content"),
+                cover_url=record.get("image") or record.get("cover") or record.get("thumb"),
             )
             for record in records
         ]

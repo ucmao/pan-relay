@@ -322,10 +322,28 @@ def extract_title_from_link_line(line: str) -> Optional[str]:
     return None
 
 
-def extract_items_from_message_element(message_element, dt: Optional[str] = None) -> List[SearchResultItem]:
+def _extract_telegram_cover(message_element) -> Optional[str]:
+    """从 Telegram 消息元素中提取封面图/缩略图 URL"""
+    if message_element is None:
+        return None
+    for el in message_element.select(".tgme_widget_message_photo_wrap, .tgme_widget_message_video_thumb, .link_preview_image"):
+        style = el.get("style", "")
+        m = re.search(r"url\(['\"]?(https?://[^'\"]+)['\"]?\)", style)
+        if m:
+            return m.group(1)
+    for img in message_element.select("img.tgme_widget_message_photo, .link_preview_image img, .link_preview_right_image"):
+        src = img.get("src") or img.get("data-src")
+        if src and str(src).startswith("http"):
+            return str(src)
+    return None
+
+
+def extract_items_from_message_element(
+    message_element, dt: Optional[str] = None, cover_url: Optional[str] = None
+) -> List[SearchResultItem]:
     """
     双遍扫描 Telegram 消息节点，精确将网盘链接、上下文标题与专属提取码绑定。
-    解决单帖多资源标题串味、多网盘密码错配的问题。
+    解决单帖多资源标题串味、多网盘密码错配的问题，并丰富封面图与简介数据。
     """
     import copy
     soup = copy.copy(message_element)
@@ -348,14 +366,26 @@ def extract_items_from_message_element(message_element, dt: Optional[str] = None
     if not lines:
         return []
 
-    # 寻找全局候选标题作为最终保底
+    # 寻找全局候选标题作为最终保底，并提取正文简介
     global_fallback_title = None
+    desc_candidates = []
     for line in lines:
-        if not URL_PATTERN.search(line) and not line.startswith("#") and not is_description_line(line):
+        if not URL_PATTERN.search(line) and not line.startswith("#"):
+            if any(ad in line for ad in ["关注频道", "入群交流", "永久发布页", "版权归原作者", "防走丢"]):
+                continue
+            if is_description_line(line):
+                clean_desc = DESCRIPTION_LINE_PATTERN.sub("", line).strip()
+                if clean_desc:
+                    desc_candidates.append(clean_desc)
+                continue
             cleaned = clean_telegram_title(line)
             if cleaned and not is_cloud_disk_label(cleaned):
-                global_fallback_title = cleaned
-                break
+                if not global_fallback_title:
+                    global_fallback_title = cleaned
+                elif len(line) >= 15:
+                    desc_candidates.append(cleaned)
+
+    global_description = " ".join(desc_candidates[:2]).strip() or None
 
     items = []
     seen_links = set()
@@ -419,6 +449,8 @@ def extract_items_from_message_element(message_element, dt: Optional[str] = None
                         cloud_name=netdisk_name,
                         password=pwd,
                         datetime=dt,
+                        description=global_description,
+                        cover_url=cover_url,
                     )
                 )
 
@@ -460,8 +492,9 @@ def parse_telegram_search_html(html, channel):
 
         time_tag = message.select_one(".tgme_widget_message_date time")
         dt = time_tag.get("datetime") if time_tag else None
+        cover_url = _extract_telegram_cover(message)
 
-        items = extract_items_from_message_element(content, dt=dt)
+        items = extract_items_from_message_element(content, dt=dt, cover_url=cover_url)
         for item in items:
             base_key = item.share_link.split("?")[0].rstrip("/")
             if base_key in seen:
