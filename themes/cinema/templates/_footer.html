@@ -1,0 +1,20 @@
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__identity">
+      <a class="site-footer__brand" href="/">
+        <img class="site-footer__logo" src="{{ site_logo }}" alt="">
+        <span>{{ site_name or 'Pan-Relay' }}</span>
+      </a>
+      <p>{{ frontend_footer_text }}</p>
+    </div>
+    <div class="site-footer__details">
+      {% include "_friend_links.html" %}
+      <p class="site-footer__disclaimer">{{ frontend_disclaimer_text }}</p>
+      <div class="site-footer__meta">
+        <a href="/#hot-search">热搜榜</a>
+        <a href="/#library">热播榜</a>
+        <span>{% if frontend_copyright_text %}{{ frontend_copyright_text }}{% else %}© {{ current_year or 2026 }} {{ site_name or 'Pan-Relay' }}{% endif %}</span>
+      </div>
+    </div>
+  </div>
+</footer>

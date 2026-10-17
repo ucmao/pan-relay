@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ seo_meta.title }}</title>
+  <meta name="description" content="{{ seo_meta.description }}">
+  {% if seo_meta.keywords %}<meta name="keywords" content="{{ seo_meta.keywords }}">{% endif %}
+  <meta name="robots" content="{{ seo_meta.robots }}">
+  <link rel="stylesheet" href="/themes/cinema/assets/css/theme.css?v=1.1.0">
+</head>
+<body>
+  {% set header_search_href = '#search-box' %}
+  {% include "cinema/templates/_header.html" %}
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-orbit hero-orbit-one" aria-hidden="true"></div>
+      <div class="hero-orbit hero-orbit-two" aria-hidden="true"></div>
+      <div class="hero-content">
+        <div class="eyebrow"><span class="eyebrow-dot"></span> 影视网盘资源搜索</div>
+        <h1 id="hero-title">好内容，<span>一搜就有。</span></h1>
+        <p class="hero-copy">电影、电视剧、动漫、综艺，找到你想看的那一部。</p>
+        <form class="search-form" id="search-box" action="/search" method="get" role="search">
+          <span class="search-icon" aria-hidden="true"></span>
+          <input name="q" type="search" placeholder="请输入电影、电视剧、综艺、动漫..." autocomplete="off" aria-label="搜索影视资源" required>
+          <button type="submit">搜索资源 <span aria-hidden="true">→</span></button>
+        </form>
+        {% if enable_hot_searches and hot_search_words %}
+        <div class="quick-searches" aria-label="大家都在搜">
+          <span>大家都在搜</span>
+          {% for word in hot_search_words[:5] %}
+          <a href="/search?q={{ word|urlencode }}">{{ word }}</a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="hero-side-note" aria-hidden="true"><span>DISCOVER</span><b>你的下一部<br>心头好</b><i>✳</i></div>
+    </section>
+
+    <div class="page-shell">
+      {% if frontend_announcement.enabled and frontend_announcement.text %}
+      <aside class="notice-strip">
+        <span class="notice-icon" aria-hidden="true">✦</span>
+        <strong>站点公告</strong>
+        <span>{{ frontend_announcement.text }}</span>
+      </aside>
+      {% endif %}
+
+      <section class="hot-search section-block" id="hot-search" aria-labelledby="hot-search-title">
+        <div class="section-heading compact-heading">
+          <div>
+            <div class="section-kicker">TRENDING SEARCHES</div>
+            <h2 id="hot-search-title"><span class="heading-flame">↗</span> 热门搜索</h2>
+            <p>看看大家正在寻找什么</p>
+          </div>
+          <span class="heading-aside">实时热度 <span class="live-pulse"></span></span>
+        </div>
+        {% if enable_hot_searches and hot_search_words %}
+        <div class="hot-search-grid">
+          {% for word in hot_search_words[:9] %}
+          <a class="hot-search-item" href="/search?q={{ word|urlencode }}">
+            <span class="rank {% if loop.index <= 3 %}rank-top{% endif %}">{{ '%02d'|format(loop.index) }}</span>
+            <span class="hot-word">{{ word }}</span>
+            {% if loop.index <= 3 %}<span class="hot-badge">热</span>{% endif %}
+            <span class="hot-arrow" aria-hidden="true">↗</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-hot-search">热搜暂未开启，试试搜索你喜欢的影视作品。</div>
+        {% endif %}
+      </section>
+
+      <section class="library section-block" id="library" aria-labelledby="library-title">
+        <div class="section-heading library-heading">
+          <div>
+            <div class="section-kicker">PICK YOUR NEXT WATCH</div>
+            <h2 id="library-title">热播榜 <span class="heading-pill">本周精选</span></h2>
+            <p>从热门榜单里，发现下一部好内容</p>
+          </div>
+          <a class="more-link" href="#library-grid">探索全部 <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="filter-row" role="tablist" aria-label="影视分类">
+          {% for category in discovery_categories %}
+          {% if category != '热搜' %}
+          <button class="filter-chip{% if category == '总榜' %} selected{% endif %}" type="button" role="tab" aria-selected="{{ 'true' if category == '总榜' else 'false' }}" data-category="{{ category }}">{{ category }}</button>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <div class="poster-grid" id="library-grid">
+          {% for item in discovery_items %}
+          <a class="poster-card" href="/search?q={{ item.title|urlencode }}" data-category="{{ item.category }}" aria-label="搜索 {{ item.title }}"{% if item.category != '总榜' %} hidden{% endif %}>
+            <div class="poster-image">
+              <img src="/themes/cinema/assets/posters/{{ item.poster }}.webp" alt="{{ item.title }}海报" loading="lazy">
+              <span class="poster-type">{{ item.metadata.split(' / ')[0] if item.metadata else item.category }}</span>
+              {% if item.heat %}<span class="poster-score"><b>热</b> {{ item.heat }}</span>{% endif %}
+              <span class="poster-play" aria-hidden="true">▶</span>
+              <span class="poster-shade"></span>
+            </div>
+            <div class="poster-meta">
+              <h3>{{ item.title }}</h3>
+              <span>{{ item.metadata or item.year or '光影热播精选' }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        <div class="no-results" id="no-results" hidden>这个分类暂时没有内容，看看其他分类吧。</div>
+        <div class="library-footnote"><span class="footnote-mark">✦</span> 点击影片卡片，立即搜索相关网盘资源</div>
+      </section>
+
+      <section class="resource-hall section-block" id="resource-hall" aria-labelledby="resource-hall-title">
+        <div class="section-heading library-heading">
+          <div>
+            <div class="section-kicker">FEATURED RESOURCES</div>
+            <h2 id="resource-hall-title">资源大厅 <span class="heading-pill">精选资源</span></h2>
+            <p>已收录的优质分享，打开即可保存</p>
+          </div>
+          {% if resource_hall_items %}<span class="resource-count">共 {{ resource_hall_items|length }} 条精选资源</span>{% endif %}
+        </div>
+        {% if resource_hall_items %}
+        <div class="resource-grid">
+          {% for item in resource_hall_items %}
+          <a class="resource-card" href="{{ item.share_link }}" target="_blank" rel="noopener noreferrer">
+            <div class="resource-cover">
+              <img src="{{ item.cover_url or '/themes/cinema/assets/posters/7K9722Z5ATF5ZKB6RBY5WBP2PG.webp' }}" alt="{{ item.name }}封面" loading="lazy">
+              <span class="resource-open" aria-hidden="true">↗</span>
+            </div>
+            <div class="resource-info">
+              <h3>{{ item.name }}</h3>
+              <span>{{ item.cloud_name or item.type or '网盘资源' }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="resource-empty"><span>✦</span><div><strong>资源正在整理中</strong><p>收录到“我的资源”的内容会展示在这里。</p></div></div>
+        {% endif %}
+      </section>
+
+      <section class="bottom-search">
+        <div><span class="section-kicker">YOUR NEXT FAVORITE</span><h2>没找到想看的？</h2><p>换个关键词，再发现一些好内容。</p></div>
+        <a href="#search-box">返回搜索 <span aria-hidden="true">↑</span></a>
+        <span class="bottom-spark" aria-hidden="true">✳</span>
+      </section>
+    </div>
+  </main>
+  {% include "cinema/templates/_footer.html" %}
+  <script src="/themes/cinema/assets/js/theme.js?v=1.1.0" defer></script>
+</body>
+</html>

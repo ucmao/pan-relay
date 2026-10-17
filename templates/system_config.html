@@ -485,18 +485,19 @@
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span class="font-semibold text-slate-800 text-sm">标题匹配模式</span>
                                     <span class="help-tooltip"
-                                        data-tooltip="智能匹配：搜索词需在资源标题中命中；关闭二次过滤：仅输出网盘原始搜索结果，不做相关性筛选">
+                                        data-tooltip="严格匹配：按空格拆分关键词，标题必须包含全部关键词；智能匹配：使用宽松的标题相关性判断；关闭过滤：保留网盘原始搜索结果（广告黑名单仍生效）">
                                         <i class="far fa-circle-question text-xs"></i>
                                     </span>
                                 </div>
-                                <p class="text-xs text-slate-500">对搜索结果按标题相关性二次过滤</p>
+                                <p class="text-xs text-slate-500">控制搜索结果按标题相关性筛选的严格程度</p>
                             </div>
                             <div class="flex items-center flex-shrink-0">
                                 <select id="titleFilterModeSelect"
                                     class="form-select form-select-sm text-xs font-semibold w-40"
                                     onchange="saveAdFilterConfig()">
+                                    <option value="strict">严格匹配</option>
                                     <option value="loose">智能匹配 (推荐)</option>
-                                    <option value="off">关闭二次过滤</option>
+                                    <option value="off">关闭过滤</option>
                                 </select>
                             </div>
                         </div>

@@ -32,11 +32,13 @@ from src.services.system_config_service import (
     save_pc_qr_code_config,
     get_frontend_github_config,
     get_frontend_disclaimer_text,
+    get_frontend_copyright_text,
     get_frontend_seo_config,
     is_frontend_github_enabled,
     save_frontend_github_config,
     save_frontend_footer_text,
     save_frontend_disclaimer_text,
+    save_frontend_copyright_text,
     get_frontend_link_check_config,
 
     get_frontend_display_netdisk_config,
@@ -215,7 +217,7 @@ def frontend_config_page():
         get_site_name,
         is_resource_request_enabled,
         is_hot_searches_enabled,
-        get_hot_search_words,
+        get_hot_searches_config,
     )
 
     tab = request.args.get("tab", "appearance")
@@ -228,7 +230,8 @@ def frontend_config_page():
     dynamic_transfer_config = get_dynamic_transfer_netdisk_config()
     allow_excel = get_allow_excel_download_config()
     frontend_link_mode = get_frontend_link_mode()
-    hot_words = get_hot_search_words()
+    hot_search_config = get_hot_searches_config()
+    hot_words = hot_search_config["words"]
     return render_template(
         "admin_frontend_config.html",
         frontend_netdisk_options=FRONTEND_DISPLAY_NETDISK_OPTIONS,
@@ -243,10 +246,13 @@ def frontend_config_page():
         enable_pc_qr_code=is_pc_qr_code_enabled(),
         enable_frontend_github=is_frontend_github_enabled(),
         frontend_disclaimer_text=get_frontend_disclaimer_text(),
+        frontend_copyright_text=get_frontend_copyright_text(),
         enable_resource_request=is_resource_request_enabled(),
         enable_hot_searches=is_hot_searches_enabled(),
         hot_search_words=hot_words,
         hot_search_words_text="\n".join(hot_words),
+        use_top_hot_searches=hot_search_config["use_top_searches"],
+        hot_search_top_limit=hot_search_config["top_limit"],
         frontend_link_mode=frontend_link_mode if isinstance(frontend_link_mode, str) else frontend_link_mode.get("mode", "view"),
         active_page="config_frontend",
         current_tab=tab,
@@ -312,13 +318,22 @@ def api_save_hot_searches_config():
     from src.services.system_config_service import save_hot_searches_config
     data = request.get_json() or {}
     enabled = bool(data.get("enabled", True))
+    use_top_searches = bool(data.get("use_top_searches", False))
+    top_limit = data.get("top_limit", 10)
     words = data.get("words", [])
     if isinstance(words, str):
         words = [w.strip() for w in words.replace("\r", "\n").split("\n") if w.strip()]
     elif isinstance(words, list):
         words = [str(w).strip() for w in words if str(w).strip()]
-    if save_hot_searches_config(enabled, words):
-        return jsonify({"success": True, "message": "热搜词配置已保存", "enabled": enabled, "words": words})
+    if save_hot_searches_config(enabled, words, use_top_searches, top_limit):
+        return jsonify({
+            "success": True,
+            "message": "热搜词配置已保存",
+            "enabled": enabled,
+            "words": words,
+            "use_top_searches": use_top_searches,
+            "top_limit": top_limit,
+        })
     return jsonify({"success": False, "message": "保存热搜词配置失败"}), 500
 
 
@@ -504,11 +519,31 @@ def update_frontend_disclaimer_api():
     if not isinstance(data, dict) or not isinstance(data.get("disclaimer_text"), str):
         return jsonify({"success": False, "message": "免责声明必须是文本"}), 400
     disclaimer_text = data["disclaimer_text"]
-    if len(disclaimer_text) > 5000:
-        return jsonify({"success": False, "message": "免责声明不能超过 5000 个字符"}), 400
+    if len(disclaimer_text) > 1000:
+        return jsonify({"success": False, "message": "免责声明不能超过 1000 个字符"}), 400
     if not save_frontend_disclaimer_text(disclaimer_text):
         return jsonify({"success": False, "message": "免责声明保存失败"}), 400
     return jsonify({"success": True, "message": "免责声明已保存"})
+
+
+@system_config_bp.route("/admin/api/frontend-copyright-config", methods=["GET"])
+@token_required
+def get_frontend_copyright_api():
+    return jsonify({"success": True, "copyright_text": get_frontend_copyright_text()})
+
+
+@system_config_bp.route("/admin/api/frontend-copyright-config", methods=["PUT"])
+@token_required
+def update_frontend_copyright_api():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or not isinstance(data.get("copyright_text"), str):
+        return jsonify({"success": False, "message": "版权信息必须是文本"}), 400
+    copyright_text = data["copyright_text"]
+    if len(copyright_text) > 100:
+        return jsonify({"success": False, "message": "版权信息不能超过 100 个字符"}), 400
+    if not save_frontend_copyright_text(copyright_text):
+        return jsonify({"success": False, "message": "版权信息保存失败"}), 400
+    return jsonify({"success": True, "message": "版权信息已保存"})
 
 
 @system_config_bp.route("/admin/api/frontend-seo-config", methods=["GET"])
@@ -548,6 +583,42 @@ def update_frontend_seo_api():
                 return jsonify({"success": False, "message": "搜索页收录开关格式无效"}), 400
             clean_page["allow_indexing"] = allow_indexing
         clean_config[page_type] = clean_page
+
+    existing_seo_config = get_frontend_seo_config()
+    existing_friend_links = existing_seo_config.get("friend_links", {"enabled": False, "items": []})
+    friend_links = data.get("friend_links", existing_friend_links)
+    if not isinstance(friend_links, dict) or not isinstance(friend_links.get("enabled"), bool):
+        return jsonify({"success": False, "message": "友情链接开关格式无效"}), 400
+    items = friend_links.get("items", [])
+    if not isinstance(items, list) or len(items) > 50:
+        return jsonify({"success": False, "message": "友情链接最多配置 50 条"}), 400
+    clean_items = []
+    from urllib.parse import urlparse
+    for item in items:
+        if not isinstance(item, dict) or not isinstance(item.get("name"), str) or not isinstance(item.get("url"), str):
+            return jsonify({"success": False, "message": "友情链接格式无效"}), 400
+        name, url = item["name"].strip(), item["url"].strip()
+        if not name and not url:
+            continue
+        parsed_url = urlparse(url)
+        if not name or len(name) > 50 or len(url) > 500 or parsed_url.scheme not in ("http", "https") or not parsed_url.netloc:
+            return jsonify({"success": False, "message": "友情链接名称或网址无效（网址需以 http:// 或 https:// 开头）"}), 400
+        clean_items.append({"name": name, "url": url})
+    clean_config["friend_links"] = {"enabled": friend_links["enabled"], "items": clean_items}
+
+    existing_announcement = existing_seo_config.get(
+        "announcement", {"enabled": True, "text": "每日持续更新，热门影视与网盘资源一站搜索。"}
+    )
+    announcement = data.get("announcement", existing_announcement)
+    if not isinstance(announcement, dict) or not isinstance(announcement.get("enabled"), bool):
+        return jsonify({"success": False, "message": "站点公告开关格式无效"}), 400
+    announcement_text = announcement.get("text", "")
+    if not isinstance(announcement_text, str) or len(announcement_text.strip()) > 1000:
+        return jsonify({"success": False, "message": "站点公告最多 1000 个字符"}), 400
+    clean_config["announcement"] = {
+        "enabled": announcement["enabled"],
+        "text": announcement_text.strip(),
+    }
 
     if not save_frontend_seo_config(clean_config):
         return jsonify({"success": False, "message": "SEO 配置保存失败"}), 500

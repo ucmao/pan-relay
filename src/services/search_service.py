@@ -268,15 +268,25 @@ def is_title_matched_loose(title: str, keyword: str) -> bool:
     return (matched_chars / len(kw_chars)) >= 0.4
 
 
+def is_title_matched_strict(title: str, keyword: str) -> bool:
+    """严格模式：按空白拆分关键词，标题必须包含每个关键词。"""
+    terms = str(keyword or "").split()
+    if not terms:
+        return True
+
+    normalized_title = str(title or "").casefold()
+    return all(term.casefold() in normalized_title for term in terms)
+
+
 def filter_results_by_title(results: List[Any], keyword: str) -> List[SearchResultItem]:
     """
-    根据后台配置的标题匹配模式 (loose / exact / off) 过滤搜索结果。
+    根据后台配置的标题匹配模式 (strict / loose / off) 过滤搜索结果。
     统一拦截广告/黑名单词。
     """
     if not results:
         return []
 
-    mode = get_title_filter_mode()  # 'loose' (默认) | 'exact' | 'off'
+    mode = get_title_filter_mode()  # 'strict' | 'loose' (默认) | 'off'
     matched_results = []
 
     for item in results:
@@ -294,6 +304,9 @@ def filter_results_by_title(results: List[Any], keyword: str) -> List[SearchResu
         # 2. 根据模式判断标题匹配
         if mode == "off":
             matched_results.append(typed_item)
+        elif mode == "strict":
+            if is_title_matched_strict(title, keyword):
+                matched_results.append(typed_item)
         else:
             # loose 智能匹配模式（默认开启）
             if is_title_matched_loose(title, keyword):

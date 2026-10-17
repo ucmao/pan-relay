@@ -28,9 +28,12 @@ FRONTEND_LINK_CHECK_CONFIG_KEY = "frontend_link_check_config"
 SECURITY_CONFIG_KEY = "security_config"
 ENABLE_PC_QR_CODE_KEY = "enable_pc_qr_code"
 ENABLE_FRONTEND_GITHUB_KEY = "enable_frontend_github"
-DEFAULT_FRONTEND_FOOTER_TEXT = "Pan-Relay 聚合分发中枢 · 极速流式引擎"
+DEFAULT_FRONTEND_FOOTER_TEXT = "Pan-Relay 发现海量网盘资源"
+LEGACY_DEFAULT_FRONTEND_FOOTER_TEXT = "Pan-Relay 聚合分发中枢 · 极速流式引擎"
 FRONTEND_DISCLAIMER_TEXT_KEY = "frontend_disclaimer_text"
 DEFAULT_FRONTEND_DISCLAIMER_TEXT = "您的请求将通过第三方搜索引擎（如 Google、Bing、百度）获取原始数据，页面内容由系统自动整理与美化生成。本站不产生、不存储任何资源内容，亦未参与录制或上传。若相关结果侵犯您的合法权益，请联系我们，我们将在核实后尽快处理。"
+FRONTEND_COPYRIGHT_TEXT_KEY = "frontend_copyright_text"
+DEFAULT_FRONTEND_COPYRIGHT_TEXT = "© 2026 PAN-RELAY. All rights reserved."
 ENABLE_RESOURCE_REQUEST_KEY = "enable_resource_request"
 HOT_SEARCHES_CONFIG_KEY = "hot_searches_config"
 
@@ -285,6 +288,8 @@ def get_frontend_github_config() -> Dict[str, Any]:
     footer_text = parsed.get("footer_text", DEFAULT_FRONTEND_FOOTER_TEXT)
     if not isinstance(footer_text, str):
         footer_text = DEFAULT_FRONTEND_FOOTER_TEXT
+    elif footer_text == LEGACY_DEFAULT_FRONTEND_FOOTER_TEXT:
+        footer_text = DEFAULT_FRONTEND_FOOTER_TEXT
     return {"enabled": bool(parsed.get("enabled", True)), "footer_text": footer_text}
 
 
@@ -329,6 +334,28 @@ def save_frontend_disclaimer_text(disclaimer_text: str) -> bool:
     )
 
 
+def get_frontend_copyright_text() -> str:
+    raw_value = get_config_value(FRONTEND_COPYRIGHT_TEXT_KEY)
+    if raw_value is None:
+        return DEFAULT_FRONTEND_COPYRIGHT_TEXT
+    try:
+        parsed = json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("前台版权信息配置格式无效，已回退到默认值")
+        return DEFAULT_FRONTEND_COPYRIGHT_TEXT
+    if not isinstance(parsed, dict) or not isinstance(parsed.get("text"), str):
+        logger.warning("前台版权信息配置格式无效，已回退到默认值")
+        return DEFAULT_FRONTEND_COPYRIGHT_TEXT
+    return parsed["text"]
+
+
+def save_frontend_copyright_text(copyright_text: str) -> bool:
+    return set_config_value(
+        FRONTEND_COPYRIGHT_TEXT_KEY,
+        {"text": str(copyright_text or "").strip()},
+    )
+
+
 def get_resource_request_config() -> Dict[str, bool]:
     raw_value = get_config_value(ENABLE_RESOURCE_REQUEST_KEY)
     if not raw_value:
@@ -359,6 +386,8 @@ def get_hot_searches_config() -> Dict[str, Any]:
     default_config = {
         "enabled": True,
         "words": DEFAULT_HOT_SEARCH_WORDS.copy(),
+        "use_top_searches": False,
+        "top_limit": 10,
     }
     if not raw_value:
         return default_config
@@ -378,6 +407,8 @@ def get_hot_searches_config() -> Dict[str, Any]:
         return {
             "enabled": bool(parsed.get("enabled", True)),
             "words": words,
+            "use_top_searches": bool(parsed.get("use_top_searches", False)),
+            "top_limit": _normalize_hot_search_top_limit(parsed.get("top_limit", 10)),
         }
     except (TypeError, json.JSONDecodeError):
         logger.warning("热搜词配置格式无效，已回退到默认值")
@@ -389,10 +420,40 @@ def is_hot_searches_enabled() -> bool:
 
 
 def get_hot_search_words() -> List[str]:
+    config = get_hot_searches_config()
+    if config["use_top_searches"]:
+        try:
+            from src.db.logs import get_top_hot_keywords
+
+            top_words = [
+                item["keyword"]
+                for item in get_top_hot_keywords(days=7, limit=config["top_limit"])
+                if item.get("keyword")
+            ]
+            return top_words
+        except Exception as err:
+            logger.warning("获取前台真实热搜词失败，将回退到人工配置: %s", err)
+    return config["words"]
+
+
+def get_manual_hot_search_words() -> List[str]:
+    """返回后台人工维护的热搜词，不受真实搜索 Top 词模式影响。"""
     return get_hot_searches_config()["words"]
 
 
-def save_hot_searches_config(enabled: bool, words: List[str]) -> bool:
+def _normalize_hot_search_top_limit(value: Any) -> int:
+    try:
+        return max(1, min(50, int(value)))
+    except (TypeError, ValueError):
+        return 10
+
+
+def save_hot_searches_config(
+    enabled: bool,
+    words: List[str],
+    use_top_searches: bool = False,
+    top_limit: int = 10,
+) -> bool:
     cleaned_words = []
     if isinstance(words, list):
         for w in words:
@@ -407,6 +468,8 @@ def save_hot_searches_config(enabled: bool, words: List[str]) -> bool:
         {
             "enabled": bool(enabled),
             "words": cleaned_words,
+            "use_top_searches": bool(use_top_searches),
+            "top_limit": _normalize_hot_search_top_limit(top_limit),
         },
     )
 
@@ -566,7 +629,7 @@ def get_ad_filter_config() -> Dict[str, Any]:
             keywords = default_config["keywords"]
 
         title_filter_mode = str(parsed.get("title_filter_mode", "loose")).strip().lower()
-        if title_filter_mode not in ("loose", "off"):
+        if title_filter_mode not in ("strict", "loose", "off"):
             title_filter_mode = "loose"
 
         return {
@@ -594,7 +657,7 @@ def save_ad_filter_config(config_data: Dict[str, Any]) -> bool:
         keywords = current["keywords"]
 
     title_filter_mode = str(config_data.get("title_filter_mode", current.get("title_filter_mode", "loose"))).strip().lower()
-    if title_filter_mode not in ("loose", "off"):
+    if title_filter_mode not in ("strict", "loose", "off"):
         title_filter_mode = "loose"
 
     unique_keywords = list(dict.fromkeys(keywords))
@@ -607,10 +670,10 @@ def save_ad_filter_config(config_data: Dict[str, Any]) -> bool:
 
 
 def get_title_filter_mode() -> str:
-    """获取当前标题匹配过滤模式 ('loose' | 'off')"""
+    """获取当前标题匹配过滤模式 ('strict' | 'loose' | 'off')"""
     config = get_ad_filter_config()
     mode = config.get("title_filter_mode", "loose")
-    return mode if mode in ("loose", "off") else "loose"
+    return mode if mode in ("strict", "loose", "off") else "loose"
 
 
 
@@ -1290,20 +1353,22 @@ def remove_ip_from_blacklist(ip: str) -> bool:
 
 
 ACTIVE_THEME_KEY = "active_theme"
-DEFAULT_THEME = "default"
-VALID_THEMES = {"default", "aurora", "sougs"}
+DEFAULT_THEME = "classic"
+VALID_THEMES = {"classic", "aurora", "cinema"}
 
 
 def get_active_theme() -> str:
-    """获取当前启用的前台主题标识，默认 default"""
+    """获取当前启用的前台主题标识，默认 classic"""
     raw_value = get_config_value(ACTIVE_THEME_KEY)
     if not raw_value:
         return DEFAULT_THEME
     try:
         parsed = json.loads(raw_value)
         theme = str(parsed.get("theme", DEFAULT_THEME)).strip().lower()
-        if theme == "sougs":
-            theme = "aurora"
+        migrated_theme = {"default": "classic", "glow-select": "cinema", "sougs": "aurora"}.get(theme, theme)
+        if migrated_theme != theme and migrated_theme in VALID_THEMES:
+            set_config_value(ACTIVE_THEME_KEY, {"theme": migrated_theme})
+        theme = migrated_theme
         return theme if theme in VALID_THEMES else DEFAULT_THEME
     except Exception:
         return DEFAULT_THEME
@@ -1312,8 +1377,6 @@ def get_active_theme() -> str:
 def save_active_theme(theme_id: str) -> bool:
     """保存当前启用的前台主题"""
     clean_id = (theme_id or "").strip().lower()
-    if clean_id == "sougs":
-        clean_id = "aurora"
     if clean_id not in VALID_THEMES:
         logger.warning(f"尝试设置未知的主题: {clean_id}，忽略")
         return False
@@ -1336,6 +1399,14 @@ DEFAULT_FRONTEND_SEO_CONFIG = {
         "description": "搜索「{query}」相关的公开网盘资源，聚合多网盘结果并支持快捷筛选。",
         "keywords": "{query},网盘搜索,资源检索",
         "allow_indexing": True,
+    },
+    "friend_links": {
+        "enabled": False,
+        "items": [],
+    },
+    "announcement": {
+        "enabled": True,
+        "text": "每日持续更新，热门影视与网盘资源一站搜索。",
     },
 }
 
@@ -1364,6 +1435,23 @@ def get_frontend_seo_config() -> Dict[str, Any]:
                 config[page_type][field] = page_config[field]
     if isinstance(parsed.get("search"), dict) and isinstance(parsed["search"].get("allow_indexing"), bool):
         config["search"]["allow_indexing"] = parsed["search"]["allow_indexing"]
+    friend_links = parsed.get("friend_links")
+    if isinstance(friend_links, dict):
+        if isinstance(friend_links.get("enabled"), bool):
+            config["friend_links"]["enabled"] = friend_links["enabled"]
+        if isinstance(friend_links.get("items"), list):
+            config["friend_links"]["items"] = [
+                item for item in friend_links["items"]
+                if isinstance(item, dict)
+                and isinstance(item.get("name"), str)
+                and isinstance(item.get("url"), str)
+            ]
+    announcement = parsed.get("announcement")
+    if isinstance(announcement, dict):
+        if isinstance(announcement.get("enabled"), bool):
+            config["announcement"]["enabled"] = announcement["enabled"]
+        if isinstance(announcement.get("text"), str):
+            config["announcement"]["text"] = announcement["text"][:1000]
     return config
 
 

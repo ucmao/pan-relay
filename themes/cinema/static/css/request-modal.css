@@ -1,0 +1,129 @@
+.cinema-request-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10010;
+  background: rgba(18, 21, 29, .62);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.cinema-request-modal {
+  position: fixed;
+  z-index: 10011;
+  top: 50%;
+  left: 50%;
+  width: min(540px, calc(100vw - 32px));
+  padding: 28px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, .75);
+  border-radius: 12px;
+  color: #292c33;
+  background: #fff;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .28);
+}
+
+.cinema-request-modal[hidden],
+.cinema-request-backdrop[hidden] { display: none; }
+
+.cinema-request-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.cinema-request-modal__eyebrow {
+  color: #e05250;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+}
+
+.cinema-request-modal__header h2 {
+  margin: 7px 0 5px;
+  color: #252831;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -.4px;
+}
+
+.cinema-request-modal__header p {
+  margin: 0;
+  color: #9297a1;
+  font-size: 12px;
+}
+
+.cinema-request-modal__close {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid #eceef2;
+  border-radius: 50%;
+  color: #858a94;
+  background: #fff;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cinema-request-modal__close:hover { color: #d7353a; background: #fff5f4; }
+
+.cinema-request-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cinema-request-field { display: grid; gap: 7px; min-width: 0; color: #454953; font-size: 12px; font-weight: 700; }
+.cinema-request-field > span b { color: #e34b49; }
+.cinema-request-field small { margin-left: 5px; color: #a1a5ad; font-size: 10px; font-weight: 500; }
+.cinema-request-field--note { grid-column: 1 / -1; }
+.cinema-request-field input,
+.cinema-request-field textarea {
+  width: 100%;
+  border: 1px solid #e7e9ee;
+  border-radius: 7px;
+  outline: 0;
+  color: #343740;
+  background: #fafbfc;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  transition: border-color .18s, box-shadow .18s, background .18s;
+}
+.cinema-request-field input { height: 43px; padding: 0 12px; }
+.cinema-request-field textarea { min-height: 90px; padding: 11px 12px; line-height: 1.6; resize: vertical; }
+.cinema-request-field input::placeholder,
+.cinema-request-field textarea::placeholder { color: #adb1b9; }
+.cinema-request-field input:focus,
+.cinema-request-field textarea:focus { border-color: #ef9996; background: #fff; box-shadow: 0 0 0 3px rgba(240, 68, 69, .09); }
+
+.cinema-request-modal__footer { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 9px; margin-top: 8px; }
+.cinema-request-modal__footer button { min-width: 82px; height: 40px; padding: 0 16px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.cinema-request-modal__cancel { border: 1px solid #e7e9ee; color: #777c86; background: #fff; }
+.cinema-request-modal__cancel:hover { background: #f7f8fa; }
+.cinema-request-modal__submit { border: 1px solid #e04443; color: #fff; background: #f04445; }
+.cinema-request-modal__submit:hover { border-color: #d7353a; background: #d7353a; }
+.cinema-request-modal__submit:disabled { opacity: .65; cursor: wait; }
+
+.cinema-request-toast {
+  position: fixed;
+  z-index: 10020;
+  bottom: 24px;
+  left: 50%;
+  max-width: calc(100vw - 32px);
+  padding: 10px 18px;
+  transform: translate(-50%, 16px);
+  border-radius: 6px;
+  color: #fff;
+  background: rgba(30, 33, 40, .94);
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.cinema-request-toast.is-visible { transform: translate(-50%, 0); opacity: 1; }
+
+@media (max-width: 560px) {
+  .cinema-request-modal { padding: 22px 18px; }
+  .cinema-request-form { grid-template-columns: 1fr; gap: 14px; }
+  .cinema-request-field--note,
+  .cinema-request-modal__footer { grid-column: 1; }
+  .cinema-request-modal__footer button { flex: 1; }
+}

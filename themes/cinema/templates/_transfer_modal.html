@@ -1,0 +1,23 @@
+<div class="cinema-transfer-backdrop" id="cinemaTransferBackdrop" hidden></div>
+<section class="cinema-transfer-modal" id="cinemaTransferModal" hidden role="dialog" aria-modal="true" aria-labelledby="cinemaTransferTitle">
+  <header class="cinema-transfer-modal__heading">
+    <h2>获取资源</h2>
+    <button type="button" data-cinema-transfer-close aria-label="关闭">×</button>
+  </header>
+  <div id="cinemaTransferLoading" class="cinema-transfer-loading">
+    <span class="cinema-transfer-spinner" aria-hidden="true"></span>
+    <p>正在准备资源链接，请稍候…</p>
+  </div>
+  <div id="cinemaTransferContent" class="cinema-transfer-content" style="display:none">
+    <h3 id="cinemaTransferTitle"></h3>
+    <div id="cinemaTransferQrContainer" class="cinema-transfer-qr" style="display:none">
+      <p>使用手机网盘 App 扫码保存</p>
+      <img id="cinemaTransferQrImg" src="" alt="资源二维码">
+    </div>
+    <p class="cinema-transfer-link-row">资源地址：<a id="cinemaTransferLink" href="#" target="_blank" rel="noopener"></a></p>
+    <footer class="cinema-transfer-modal__actions">
+      <button type="button" id="cinemaTransferCopyBtn">复制链接</button>
+      <button type="button" id="cinemaTransferOpenBtn">打开资源</button>
+    </footer>
+  </div>
+</section>

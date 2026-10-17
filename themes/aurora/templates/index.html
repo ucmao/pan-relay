@@ -220,10 +220,20 @@
         </button>
       </form>
     </section>
+
+    {% if frontend_announcement.enabled and frontend_announcement.text %}
+    <aside class="site-announcement" role="status">
+      <span class="site-announcement__icon" aria-hidden="true">✦</span>
+      <strong>站点公告</strong>
+      <span>{{ frontend_announcement.text }}</span>
+    </aside>
+    {% endif %}
   </main>
 
   <footer class="footer">
-    {{ frontend_footer_text }}
+    {% include "_friend_links.html" %}
+    <p>{{ frontend_footer_text }}</p>
+    {% if frontend_copyright_text %}<p class="frontend-copyright-text">{{ frontend_copyright_text }}</p>{% endif %}
   </footer>
 
   {% include "aurora/templates/_request_modal.html" %}

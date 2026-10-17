@@ -1,5 +1,7 @@
+import json
 import logging
 import os
+from datetime import datetime
 from src.configs.logging_setup import setup_logging
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -37,6 +39,8 @@ from src.services.system_config_service import (
     is_hot_searches_enabled,
     get_hot_search_words,
     get_frontend_disclaimer_text,
+    get_frontend_copyright_text,
+    get_frontend_seo_config,
 )
 from src.services.theme_service import theme_static_bp
 from src.utils.netdisk_utils import get_netdisk_drive_type
@@ -70,9 +74,11 @@ FRONTEND_NETDISK_ICONS = {
 }
 
 
-def get_frontend_theme_netdisks():
-    """准备模板二使用的前台网盘标签，遵循后台配置顺序并最多展示九项。"""
-    enabled_netdisks = get_frontend_display_netdisk_config().get("enabled_netdisks", [])[:9]
+def get_frontend_theme_netdisks(limit=9, include_icons=True):
+    """按后台配置顺序准备前台网盘标签；默认最多展示九项。"""
+    enabled_netdisks = get_frontend_display_netdisk_config().get("enabled_netdisks", [])
+    if limit is not None:
+        enabled_netdisks = enabled_netdisks[:limit]
     result = []
     for name in enabled_netdisks:
         label = name
@@ -80,7 +86,7 @@ def get_frontend_theme_netdisks():
             if label.endswith(suffix):
                 label = label[:-len(suffix)]
                 break
-        icon = FRONTEND_NETDISK_ICONS.get(name)
+        icon = FRONTEND_NETDISK_ICONS.get(name) if include_icons else None
         result.append({
             "name": name,
             "label": label or name,
@@ -132,15 +138,20 @@ def inject_login_status():
         except Exception:
             pass
 
+    frontend_seo_config = get_frontend_seo_config()
     return {
         'is_logged_in': is_logged_in,
         'enable_frontend_github': is_frontend_github_enabled(),
-        'frontend_footer_text': get_frontend_github_config().get('footer_text', 'Pan-Relay 聚合分发中枢 · 极速流式引擎'),
+        'frontend_footer_text': get_frontend_github_config().get('footer_text', 'Pan-Relay 发现海量网盘资源'),
         'frontend_disclaimer_text': get_frontend_disclaimer_text(),
+        'frontend_copyright_text': get_frontend_copyright_text(),
+        'frontend_friend_links': frontend_seo_config.get('friend_links', {'enabled': False, 'items': []}),
+        'frontend_announcement': frontend_seo_config.get('announcement', {'enabled': True, 'text': '每日持续更新，热门影视与网盘资源一站搜索。'}),
         'is_default_admin_password': is_default_pwd,
         'admin_username': admin_name,
         'site_logo': get_site_logo(),
         'site_name': get_site_name(),
+        'current_year': datetime.now().year,
         'enable_resource_request': is_resource_request_enabled(),
         'enable_hot_searches': is_hot_searches_enabled(),
         'hot_search_words': get_hot_search_words(),
@@ -177,16 +188,30 @@ def search_index():
         'enabled_dynamic_transfer_pans': dynamic_transfer_config.get("enabled_netdisks", []),
         'enable_pc_qr_code': is_pc_qr_code_enabled(),
         'enable_frontend_github': is_frontend_github_enabled(),
-        'frontend_footer_text': get_frontend_github_config().get('footer_text', 'Pan-Relay 聚合分发中枢 · 极速流式引擎'),
+        'frontend_footer_text': get_frontend_github_config().get('footer_text', 'Pan-Relay 发现海量网盘资源'),
         'enable_resource_request': is_resource_request_enabled(),
         'enable_hot_searches': is_hot_searches_enabled(),
         'hot_search_words': get_hot_search_words(),
-        'frontend_theme_netdisks': get_frontend_theme_netdisks(),
+        'frontend_theme_netdisks': (
+            get_frontend_theme_netdisks(limit=None, include_icons=False)
+            if active_theme == "cinema"
+            else get_frontend_theme_netdisks()
+        ),
     }
 
-    if active_theme in ("aurora", "sougs"):
+    if active_theme == "cinema":
+        from src.db.resources import get_resource_hall_items
+
+        catalog_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'themes', 'cinema', 'catalog.json')
+        with open(catalog_path, 'r', encoding='utf-8') as catalog_file:
+            discovery_catalog = json.load(catalog_file)
+        ctx['discovery_categories'] = discovery_catalog.get('categories', [])
+        ctx['discovery_items'] = discovery_catalog.get('items', [])
+        ctx['resource_hall_items'] = get_resource_hall_items(limit=8)
+        return render_template('cinema/templates/index.html', **ctx)
+    if active_theme == "aurora":
         return render_template('aurora/templates/index.html', **ctx)
-    return render_template('default/templates/index.html', **ctx)
+    return render_template('classic/templates/index.html', **ctx)
 
 
 # 搜索结果页 (主要用于 aurora 主题或独立搜索 URL)
@@ -200,7 +225,23 @@ def search_page():
     link_mode = get_frontend_link_mode()
     link_check_config = get_frontend_link_check_config()
 
-    if active_theme in ("aurora", "sougs"):
+    if active_theme == "cinema":
+        # 模板三的侧栏应完整遵循后台勾选项，不受模板二的九项上限影响。
+        netdisks = get_frontend_theme_netdisks(limit=None, include_icons=False)
+        return render_template(
+            'cinema/templates/search.html',
+            query=q,
+            seo_meta=build_frontend_seo_meta('search', q),
+            frontend_link_mode=link_mode,
+            enable_link_check=link_check_config.get("enable_link_check", True),
+            enabled_check_pans=link_check_config.get("enabled_check_pans", []),
+            enable_pc_qr_code=is_pc_qr_code_enabled(),
+            enable_resource_request=is_resource_request_enabled(),
+            enable_hot_searches=is_hot_searches_enabled(),
+            hot_search_words=get_hot_search_words(),
+            frontend_theme_netdisks=netdisks,
+        )
+    if active_theme == "aurora":
         return render_template(
             'aurora/templates/search.html',
             query=q,

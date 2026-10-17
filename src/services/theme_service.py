@@ -14,12 +14,12 @@ THEMES_DIR = os.path.join(BASE_DIR, "themes")
 # 预置主题元信息
 THEMES_METADATA = [
     {
-        "id": "default",
+        "id": "classic",
         "name": "模板 1 · 经典聚合风",
         "version": "1.2.0",
         "author": "Pan-Relay",
         "description": "系统经典网盘搜索聚合页面，支持高级筛选与快捷转存。",
-        "preview": "/themes/default/assets/preview.webp",
+        "preview": "/themes/classic/assets/preview.webp",
         "tags": ["经典聚合", "功能全面"],
     },
     {
@@ -30,6 +30,15 @@ THEMES_METADATA = [
         "description": "现代极简双模流式主题，带3D动态热词球与网盘极速分类Tab。",
         "preview": "/themes/aurora/assets/preview.webp",
         "tags": ["极简极速", "暗黑双模"],
+    },
+    {
+        "id": "cinema",
+        "name": "模板 3 · 影视精选风",
+        "version": "1.1.0",
+        "author": "Pan-Relay",
+        "description": "影视发现式首页，内置热播分类与海报卡片，点击直达关键词搜索。",
+        "preview": "/themes/cinema/assets/preview.webp",
+        "tags": ["影视发现", "热播榜单", "关键词直搜"],
     },
 ]
 

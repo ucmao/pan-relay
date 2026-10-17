@@ -282,6 +282,39 @@ def list_resources(
         conn.close()
 
 
+def get_resource_hall_items(limit: int = 8) -> List[Dict[str, Any]]:
+    """读取前台资源大厅展示用的最近资源。"""
+    safe_limit = max(1, min(int(limit), 24))
+    sql = """
+    SELECT id, name, share_link, cloud_name, type, cover_url, created_at
+    FROM resources
+    WHERE COALESCE(share_link, '') != ''
+    ORDER BY created_at DESC, id DESC
+    LIMIT ?
+    """
+    with db_cursor() as cursor:
+        if cursor is None:
+            return []
+        cursor.execute(sql, (safe_limit,))
+        rows = cursor.fetchall()
+        items = []
+        for row in rows:
+            if isinstance(row, dict):
+                item = row
+            else:
+                item = {
+                    "id": row[0],
+                    "name": row[1],
+                    "share_link": row[2],
+                    "cloud_name": row[3],
+                    "type": row[4],
+                    "cover_url": row[5],
+                    "created_at": row[6],
+                }
+            items.append(item)
+        return items
+
+
 def get_resource_by_id(resource_id: int) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
     """根据 ID 获取单个资源详情。"""
     conn = get_db_connection()

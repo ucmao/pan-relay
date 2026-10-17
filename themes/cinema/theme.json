@@ -1,0 +1,14 @@
+{
+  "id": "cinema",
+  "name": "模板 3 · 影视精选风",
+  "version": "1.1.0",
+  "author": "Pan-Relay",
+  "description": "影视发现式首页，内置热播分类与海报卡片，点击直达关键词搜索。",
+  "preview": "/themes/cinema/assets/preview.webp",
+  "features": [
+    "光影精选风格的影视发现首页",
+    "按分类筛选内置热播卡片",
+    "卡片点击后直接进入关键词搜索",
+    "热搜榜复用站内真实搜索词"
+  ]
+}

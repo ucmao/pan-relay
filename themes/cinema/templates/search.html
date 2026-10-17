@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ seo_meta.title }}</title>
+  <meta name="description" content="{{ seo_meta.description }}">
+  {% if seo_meta.keywords %}<meta name="keywords" content="{{ seo_meta.keywords }}">{% endif %}
+  <meta name="robots" content="{{ seo_meta.robots }}">
+  <link rel="stylesheet" href="/themes/cinema/assets/css/theme.css?v=1.1.0">
+  <link rel="icon" href="/themes/cinema/assets/preview.webp" type="image/webp">
+  <link rel="stylesheet" href="/themes/cinema/assets/css/request-modal.css?v=1.0.0">
+  <link rel="stylesheet" href="/themes/cinema/assets/css/search.css?v=1.0.6">
+</head>
+<body>
+  {% set header_search_href = '#resultsSearchInput' %}
+  {% set cinema_netdisk_icons = {
+    '夸克网盘': 'quark.webp',
+    '百度网盘': 'baidu.webp',
+    '阿里云盘': 'aliyun.webp',
+    'UC网盘': 'uc.webp',
+    '迅雷网盘': 'xunlei.webp',
+    '光鸭云盘': 'guangya.webp',
+    '悟空网盘': 'wukong.webp',
+    '移动云盘': 'mobile.webp',
+    '123云盘': '123.webp',
+    '115网盘': '115.webp',
+    '天翼云盘': 'tianyi.webp',
+    '联通云盘': 'unicom.webp',
+    '蓝奏云': 'lanzou.webp',
+    '城通网盘': 'ctfile.webp',
+    '腾讯微云': 'weiyun.webp',
+    '坚果云': 'jianguoyun.webp',
+    '快兔网盘': 'kuaidu.webp',
+    'TeraBox': 'terabox.webp',
+    'Google Drive': 'googledrive.webp',
+    'MEGA': 'mega.webp',
+    'GoFile': 'gofile.webp',
+    'OneDrive': 'onedrive.webp',
+    'PikPak': 'pikpak.webp',
+    '磁力链接': 'magnet.webp',
+    '迅雷链接': 'xunlei.webp',
+    '电驴链接': 'ed2k.webp',
+    '其他': 'all.webp'
+  } %}
+  {% include "cinema/templates/_header.html" %}
+
+  <main class="yp-search-page">
+    <section class="yp-searchbar-wrap" aria-label="站内搜索">
+      <form id="resultsSearchForm" class="yp-searchbar" action="/search" method="get">
+        <svg class="yp-searchbar__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+        <input id="resultsSearchInput" name="q" type="search" value="{{ query }}" placeholder="搜索你想要的资源" autocomplete="off" aria-label="搜索关键词">
+        <button type="submit">搜索</button>
+      </form>
+    </section>
+
+    <div class="yp-results-layout serp-layout">
+      <aside class="yp-drive-sidebar" aria-label="网盘分类">
+        <button class="source-chip is-active" type="button" data-drive="" data-drive-key="all">
+          <span class="yp-drive-label">全部</span><span class="yp-drive-count" data-drive-count="all">0</span>
+        </button>
+        {% for disk in frontend_theme_netdisks %}
+        <button class="source-chip" type="button" data-drive="{{ disk.name }}" data-drive-key="{{ disk.drive }}">
+          {% set cinema_icon_file = cinema_netdisk_icons.get(disk.name, 'all.webp') %}
+          <img src="/themes/cinema/assets/icons/{{ cinema_icon_file }}" alt="{{ disk.label }} Logo">
+          <span class="yp-drive-label">{{ disk.label }}</span><span class="yp-drive-count" data-drive-count="{{ disk.name }}" data-drive-key="{{ disk.drive }}">0</span>
+        </button>
+        {% endfor %}
+      </aside>
+
+      <section class="yp-result-column" id="resultBoard" aria-label="搜索结果">
+        <header class="yp-results-overview" id="resultSummary">
+          <div class="yp-results-overview__heading">
+            <h1>“<span id="searchQueryHeading">{{ query }}</span>”的搜索结果</h1>
+            <p id="resultSummaryText">正在搜索，结果陆续显示...</p>
+          </div>
+          <a class="yp-back-link" href="/">返回首页 <span aria-hidden="true">→</span></a>
+          <div class="yp-result-stats" aria-label="搜索统计"><span id="countStatsValid">有效资源 0 条</span><span id="countStatsFailed" class="is-invalid">已失效 0 条</span></div>
+        </header>
+        <div id="resultsList" class="yp-results-list" aria-label="搜索结果列表"></div>
+        <nav id="serpPagination" class="serp-pagination is-hidden" aria-label="分页导航"></nav>
+      </section>
+
+      <aside class="yp-right-sidebar">
+        {% if enable_hot_searches %}
+        <section class="yp-hot-card" aria-label="热门搜索">
+          <header class="yp-hot-card__heading">
+            <span class="yp-hot-card__flame" aria-hidden="true">♨</span>
+            <h2>热门搜索</h2>
+            <a href="/#hot-search">全部 <span aria-hidden="true">→</span></a>
+          </header>
+          <p class="yp-hot-card__intro">看看大家正在寻找什么</p>
+          <ol class="yp-hot-list">
+            {% for word in hot_search_words[:10] %}
+            <li><a href="/search?q={{ word | urlencode }}"><span class="yp-hot-rank {% if loop.index <= 3 %}is-top{% endif %}">{{ loop.index }}</span><span class="yp-hot-word">{{ word }}</span>{% if loop.index <= 3 %}<span class="yp-hot-tag">热</span>{% endif %}</a></li>
+            {% else %}
+            <li class="yp-hot-empty">暂无热门搜索</li>
+            {% endfor %}
+          </ol>
+        </section>
+        {% endif %}
+        {% if enable_resource_request %}
+        <section class="yp-request-card">
+          <h2>没找到想要的资源？</h2>
+          <p>告诉我们你正在寻找什么</p>
+          <button type="button" id="sideRequestBtn">提交求片</button>
+        </section>
+        {% endif %}
+      </aside>
+    </div>
+  </main>
+
+  {% include "cinema/templates/_footer.html" %}
+
+  {% include "cinema/templates/_request_modal.html" %}
+  {% include "cinema/templates/_transfer_modal.html" %}
+
+  <script>
+    window.SEARCH_LINK_MODE = {{ frontend_link_mode | tojson }};
+    window.SEARCH_VIEW_ACTION_LABEL = "查看资源";
+    window.SEARCH_DRIVE_ICON_RESOLVER = function (item) {
+      const name = String(item.cloud_name || "").toLowerCase();
+      const type = String(item.drive_type || "").toLowerCase();
+      const link = String(item.share_link || "").toLowerCase();
+      let file = "";
+      if (name.includes("夸克") || name.includes("quark") || type === "quark") file = "quark.webp";
+      else if (name.includes("百度") || name.includes("baidu") || type === "baidu") file = "baidu.webp";
+      else if (name.includes("迅雷") || name.includes("xunlei") || type === "xunlei") file = "xunlei.webp";
+      else if (name.includes("uc") || type === "uc") file = "uc.webp";
+      else if (name.includes("阿里") || name.includes("aliyun") || type === "ali" || type === "aliyun") file = "aliyun.webp";
+      else if (name.includes("光鸭") || type === "guangya") file = "guangya.webp";
+      else if (name.includes("悟空") || name.includes("wukong") || type === "wukong") file = "wukong.webp";
+      else if (name.includes("移动") || name.includes("彩云") || type === "yidong") file = "mobile.webp";
+      else if (name.includes("123") || type === "123pan") file = "123.webp";
+      else if (name.includes("115") || type === "115") file = "115.webp";
+      else if (name.includes("天翼") || type === "tianyi") file = "tianyi.webp";
+      else if (name.includes("联通") || name.includes("unicom") || type === "unicom") file = "unicom.webp";
+      else if (name.includes("蓝奏") || name.includes("lanzou") || type === "lanzou") file = "lanzou.webp";
+      else if (name.includes("城通") || name.includes("ctfile") || type === "ctfile") file = "ctfile.webp";
+      else if (name.includes("微云") || name.includes("weiyun") || type === "weiyun") file = "weiyun.webp";
+      else if (name.includes("坚果") || name.includes("jianguoyun") || type === "jianguoyun") file = "jianguoyun.webp";
+      else if (name.includes("快兔") || name.includes("diskyun") || type === "kuaidu") file = "kuaidu.webp";
+      else if (name.includes("terabox") || type === "terabox") file = "terabox.webp";
+      else if (name.includes("google") || name.includes("谷歌") || type === "googledrive") file = "googledrive.webp";
+      else if (name.includes("mega") || type === "mega") file = "mega.webp";
+      else if (name.includes("gofile") || type === "gofile") file = "gofile.webp";
+      else if (name.includes("onedrive") || name.includes("微软") || type === "onedrive") file = "onedrive.webp";
+      else if (name.includes("pikpak") || type === "pikpak") file = "pikpak.webp";
+      else if (link.startsWith("ed2k:") || name.includes("ed2k") || name.includes("电驴")) file = "ed2k.webp";
+      else if (link.startsWith("magnet:") || name.includes("磁力") || type === "seed") file = "magnet.webp";
+      return file ? `/themes/cinema/assets/icons/${file}` : "/themes/cinema/assets/icons/all.webp";
+    };
+    window.ENABLE_LINK_CHECK = {{ 'true' if enable_link_check else 'false' }};
+    window.ENABLED_CHECK_PANS = {{ enabled_check_pans | tojson }};
+    window.ENABLE_PC_QR_CODE = {{ 'true' if enable_pc_qr_code else 'false' }};
+    window.ENABLE_RESOURCE_REQUEST = {{ 'true' if enable_resource_request else 'false' }};
+    window.ENABLE_HOT_SEARCHES = {{ 'true' if enable_hot_searches else 'false' }};
+    window.HOT_SEARCH_WORDS = {{ hot_search_words | tojson }};
+    document.getElementById('resultsSearchForm').addEventListener('submit', function () {
+      document.getElementById('searchQueryHeading').textContent = document.getElementById('resultsSearchInput').value.trim();
+    });
+    document.getElementById('topSearchLink').addEventListener('click', function () {
+      document.getElementById('resultsSearchInput').focus();
+    });
+  </script>
+  <script src="/themes/cinema/assets/js/request_modal.js?v=1.0.0"></script>
+  <script src="/themes/cinema/assets/js/search.js?v=1.0.3"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{% if frontend_friend_links.enabled and frontend_friend_links.items %}
+<nav class="frontend-friend-links" aria-label="友情链接" style="margin: 0 auto 12px; text-align: center;">
+  <span style="display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; opacity: .72;">友情链接</span>
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px;">
+    {% for item in frontend_friend_links.items %}
+    <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" style="font-size: 12px; text-decoration: none;">{{ item.name }}</a>
+    {% endfor %}
+  </div>
+</nav>
+{% endif %}

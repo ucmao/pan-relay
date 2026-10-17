@@ -395,6 +395,19 @@ body.admin-body::before {
     gap: 1rem;
 }
 
+.setting-item-row .frontend-inline-setting-control {
+    width: 100%;
+    max-width: 36rem;
+}
+
+@media (min-width: 640px) {
+    .setting-item-row .frontend-inline-setting-control {
+        flex: 0 0 min(36rem, 50%);
+        width: min(36rem, 50%);
+        max-width: none;
+    }
+}
+
 @media (min-width: 640px) {
     .setting-item-row {
         flex-direction: row;

@@ -1,0 +1,33 @@
+{% if enable_resource_request %}
+<div class="cinema-request-backdrop" id="cinemaRequestBackdrop" hidden></div>
+<section class="cinema-request-modal" id="cinemaRequestModal" hidden role="dialog" aria-modal="true" aria-labelledby="cinemaRequestTitle">
+  <header class="cinema-request-modal__header">
+    <div>
+      <span class="cinema-request-modal__eyebrow">RESOURCE REQUEST</span>
+      <h2 id="cinemaRequestTitle">提交资源</h2>
+      <p>告诉我们你想找的内容，我们会尽力补充。</p>
+    </div>
+    <button type="button" class="cinema-request-modal__close" id="cinemaRequestClose" aria-label="关闭">×</button>
+  </header>
+
+  <form class="cinema-request-form" id="cinemaRequestForm" novalidate>
+    <label class="cinema-request-field" for="cinemaRequestName">
+      <span>资源名称 <b>*</b></span>
+      <input id="cinemaRequestName" type="text" maxlength="200" placeholder="例如：电影名称、剧集名称或游戏名称" autocomplete="off" required>
+    </label>
+    <label class="cinema-request-field" for="cinemaRequestContact">
+      <span>联系方式 <small>选填</small></span>
+      <input id="cinemaRequestContact" type="text" maxlength="200" placeholder="QQ、邮箱或其他联系方式" autocomplete="off">
+    </label>
+    <label class="cinema-request-field cinema-request-field--note" for="cinemaRequestNote">
+      <span>补充说明 <small>选填</small></span>
+      <textarea id="cinemaRequestNote" rows="3" maxlength="1000" placeholder="可填写年份、版本、清晰度或其他要求"></textarea>
+    </label>
+    <footer class="cinema-request-modal__footer">
+      <button type="button" class="cinema-request-modal__cancel" id="cinemaRequestCancel">取消</button>
+      <button type="submit" class="cinema-request-modal__submit" id="cinemaRequestSubmit">提交资源</button>
+    </footer>
+  </form>
+</section>
+{% endif %}
+<div class="cinema-request-toast" id="cinemaRequestToast" role="status" aria-live="polite"></div>

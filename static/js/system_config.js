@@ -421,6 +421,41 @@ async function saveFrontendFooterText() {
     }
 }
 
+async function loadFrontendCopyrightText() {
+    try {
+        const response = await fetch('/admin/api/frontend-copyright-config');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+        const input = document.getElementById('frontendCopyrightTextInput');
+        if (input) input.value = data.copyright_text || '';
+    } catch (error) {
+        console.error('加载版权信息失败:', error);
+    }
+}
+
+async function saveFrontendCopyrightText() {
+    const input = document.getElementById('frontendCopyrightTextInput');
+    const copyright_text = input ? input.value : '';
+    try {
+        const response = await fetch('/admin/api/frontend-copyright-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ copyright_text })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+        showToast(data.message || '版权信息已保存', 'success');
+    } catch (error) {
+        console.error('保存版权信息失败:', error);
+        showToast(`保存配置失败: ${error.message}`, 'danger');
+        await loadFrontendCopyrightText();
+    }
+}
+
 async function saveFrontendDisclaimerText() {
     const input = document.getElementById('frontendDisclaimerTextInput');
     const disclaimer_text = input ? input.value : '';
@@ -451,6 +486,8 @@ async function loadFrontendSeoConfig() {
         const config = data.config || {};
         const home = config.home || {};
         const search = config.search || {};
+        const friendLinks = config.friend_links || {};
+        const announcement = config.announcement || {};
         const fields = {
             seoHomeTitle: home.title,
             seoHomeDescription: home.description,
@@ -465,6 +502,19 @@ async function loadFrontendSeoConfig() {
         });
         const allowIndexing = document.getElementById('seoSearchAllowIndexing');
         if (allowIndexing) allowIndexing.checked = search.allow_indexing !== false;
+        const friendLinksEnabled = document.getElementById('seoFriendLinksEnabled');
+        if (friendLinksEnabled) friendLinksEnabled.checked = friendLinks.enabled === true;
+        const friendLinksItems = document.getElementById('seoFriendLinksItems');
+        if (friendLinksItems && Array.isArray(friendLinks.items)) {
+            friendLinksItems.value = friendLinks.items
+                .filter((item) => item && typeof item.name === 'string' && typeof item.url === 'string')
+                .map((item) => `${item.name} | ${item.url}`)
+                .join('\n');
+        }
+        const announcementEnabled = document.getElementById('seoAnnouncementEnabled');
+        if (announcementEnabled) announcementEnabled.checked = announcement.enabled !== false;
+        const announcementText = document.getElementById('seoAnnouncementText');
+        if (announcementText && typeof announcement.text === 'string') announcementText.value = announcement.text;
     } catch (error) {
         console.error('加载前台 SEO 配置失败:', error);
     }
@@ -483,6 +533,21 @@ async function saveFrontendSeoConfig() {
             description: value('seoSearchDescription'),
             keywords: value('seoSearchKeywords'),
             allow_indexing: Boolean(document.getElementById('seoSearchAllowIndexing')?.checked),
+        },
+        friend_links: {
+            enabled: Boolean(document.getElementById('seoFriendLinksEnabled')?.checked),
+            items: (document.getElementById('seoFriendLinksItems')?.value || '')
+                .split(/\r?\n/)
+                .map((line) => {
+                    const separator = line.indexOf('|');
+                    if (separator < 0) return null;
+                    return { name: line.slice(0, separator).trim(), url: line.slice(separator + 1).trim() };
+                })
+                .filter((item) => item && (item.name || item.url)),
+        },
+        announcement: {
+            enabled: Boolean(document.getElementById('seoAnnouncementEnabled')?.checked),
+            text: value('seoAnnouncementText'),
         },
     };
     try {
@@ -1671,6 +1736,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAllowExcelDownloadConfig();
     loadPcQrCodeConfig();
     loadFrontendGithubConfig();
+    loadFrontendCopyrightText();
     loadFrontendSeoConfig();
     loadFrontendLinkCheckConfig();
     loadTransferTargetDirConfig();

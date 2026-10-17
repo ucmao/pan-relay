@@ -74,6 +74,10 @@
       window.showAuroraToast(msg, duration);
       return;
     }
+    if (window.showCinemaToast) {
+      window.showCinemaToast(msg, duration);
+      return;
+    }
     if (!toastEl) return;
     toastEl.textContent = msg;
     toastEl.classList.add("is-visible");
@@ -254,8 +258,9 @@
           </div>
         `;
         const emptyBtn = document.getElementById("emptyStateRequestBtn");
-        if (emptyBtn && window.openAuroraRequestModal) {
-          emptyBtn.addEventListener("click", window.openAuroraRequestModal);
+        const openRequestModal = window.openCinemaRequestModal || window.openAuroraRequestModal;
+        if (emptyBtn && openRequestModal) {
+          emptyBtn.addEventListener("click", openRequestModal);
         }
       } else {
         resultsList.innerHTML = `
@@ -280,7 +285,9 @@
 
     let html = "";
     currentBatch.forEach((item, idx) => {
-      const iconUrl = DRIVE_ICONS[item.drive_type] || DRIVE_ICONS.all;
+      const iconUrl = (typeof window.SEARCH_DRIVE_ICON_RESOLVER === "function" && window.SEARCH_DRIVE_ICON_RESOLVER(item))
+        || DRIVE_ICONS[item.drive_type]
+        || DRIVE_ICONS.all;
       const pwdBadge = item.password
         ? `<span class="res-badge-pwd" title="提取码: ${escapeHtml(item.password)}">提取码: ${escapeHtml(item.password)}</span>`
         : "";
@@ -300,7 +307,9 @@
       const status = getStatusDisplay(item.status);
       const linkMode = window.SEARCH_LINK_MODE || "view";
       const directProtocol = /^(magnet:|ed2k:|thunder:)/i.test(item.share_link);
-      const actionLabel = linkMode === "view" && !directProtocol ? "动态转存" : "打开资源";
+      const actionLabel = linkMode === "view" && !directProtocol
+        ? (window.SEARCH_VIEW_ACTION_LABEL || "动态转存")
+        : "打开资源";
 
       html += `
         <article class="serp-item has-poster" data-index="${startIndex + idx}">
@@ -669,6 +678,19 @@
     const validCount = Math.max(0, allItems.length - failedCount);
     if (countStatsValid) countStatsValid.textContent = `有效资源 ${validCount} 条`;
     if (countStatsFailed) countStatsFailed.textContent = `已失效 ${failedCount} 条`;
+    document.querySelectorAll("[data-drive-count]").forEach((countEl) => {
+      const driveName = countEl.dataset.driveCount;
+      const driveType = countEl.dataset.driveKey || "";
+      let count = allItems.length;
+      if (driveName !== "all") {
+        if (driveType === "seed" || ["磁力链接", "迅雷链接", "电驴链接"].includes(driveName)) {
+          count = allItems.filter((item) => item.drive_type === "seed" || item.share_link.startsWith("magnet:") || item.share_link.startsWith("ed2k:")).length;
+        } else {
+          count = allItems.filter((item) => item.cloud_name === driveName || item.drive_type === driveType).length;
+        }
+      }
+      countEl.textContent = String(count);
+    });
     if (resultSummaryText && searchInput) {
       resultSummaryText.textContent = `正在搜索「${searchInput.value.trim()}」，已获取 ${allItems.length} 条资源...`;
     }

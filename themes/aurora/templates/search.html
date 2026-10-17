@@ -328,7 +328,9 @@
   </main>
 
   <footer class="serp-footer">
+    {% include "_friend_links.html" %}
     <p>{{ frontend_footer_text }}</p>
+    {% if frontend_copyright_text %}<p class="frontend-copyright-text">{{ frontend_copyright_text }}</p>{% endif %}
   </footer>
 
   {% include "aurora/templates/_request_modal.html" %}

@@ -65,6 +65,12 @@
             font-size: 0.85rem;
         }
 
+        .footer-copyright .frontend-copyright-text {
+            margin: 8px 0 0;
+            color: #94a3b8;
+            font-size: 0.75rem;
+        }
+
         .footer-copyright a {
             color: #de9f2d;
             text-decoration: none;
@@ -158,6 +164,55 @@
         .request-resource-pill:active {
             transform: translateY(0);
         }
+
+        .site-announcement-bell {
+            position: relative;
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            color: #475569;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+            cursor: pointer;
+            transition: color .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+        }
+
+        .site-announcement-bell:hover {
+            color: #b7791f;
+            border-color: rgba(222, 159, 45, 0.6);
+            box-shadow: 0 6px 18px rgba(222, 159, 45, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .site-announcement-bell i { font-size: 15px; }
+        .site-announcement-bell .announcement-dot {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 8px;
+            height: 8px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .announcement-modal-dialog { width: min(calc(100vw - 32px), 480px); }
+        .announcement-modal-content { border-radius: 18px; }
+        .announcement-modal-content .modal-header { padding: 16px 20px; }
+        .announcement-modal-title { display: flex; align-items: center; gap: 9px; }
+        .announcement-modal-title i { color: #d99a2b; }
+        .announcement-modal-body {
+            color: #475569;
+            font-size: .92rem;
+            line-height: 1.8;
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+        }
+        .announcement-modal-content .modal-footer { justify-content: flex-end; }
 
         .github-pill-right {
             display: inline-flex;
@@ -372,6 +427,13 @@
                 <!-- 预留左侧区域，保持搜索区干净居中 -->
             </div>
             <div class="public-nav-right flex items-center gap-2">
+                {% if frontend_announcement.enabled and frontend_announcement.text %}
+                <button type="button" class="site-announcement-bell" data-ui-modal-target="#siteAnnouncementModal"
+                    aria-label="查看站点公告" title="站点公告">
+                    <i class="fas fa-bell" aria-hidden="true"></i>
+                    <span class="announcement-dot" aria-hidden="true"></span>
+                </button>
+                {% endif %}
                 {% if enable_resource_request %}
                 <button type="button" id="openResourceRequestBtn" class="request-resource-pill" title="告诉我们你想找的资源"
                     aria-label="求片 / 提交需求">
@@ -400,7 +462,9 @@
     <div class="footer-container">
         <div class="container-fluid-custom">
             <div class="footer-copyright">
+                {% include "_friend_links.html" %}
                 <a id="disclaimerLink" role="button">{{ frontend_footer_text }}</a>
+                {% if frontend_copyright_text %}<p class="frontend-copyright-text">{{ frontend_copyright_text }}</p>{% endif %}
             </div>
         </div>
     </div>
@@ -425,6 +489,27 @@
             </div>
         </div>
     </div>
+
+    {% if frontend_announcement.enabled and frontend_announcement.text %}
+    <div class="modal fade" id="siteAnnouncementModal" tabindex="-1" aria-labelledby="siteAnnouncementModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered announcement-modal-dialog">
+            <div class="modal-content announcement-modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title announcement-modal-title" id="siteAnnouncementModalLabel">
+                        <i class="fas fa-bell" aria-hidden="true"></i>站点公告
+                    </h5>
+                    <button type="button" class="btn-close" data-ui-dismiss="modal" aria-label="关闭"></button>
+                </div>
+                <div class="modal-body announcement-modal-body">{{ frontend_announcement.text }}</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm disclaimer-confirm-btn"
+                        data-ui-dismiss="modal">知道了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
     {% if enable_frontend_github %}

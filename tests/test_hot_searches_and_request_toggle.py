@@ -19,14 +19,14 @@ class HotSearchesAndResourceRequestTestCase(unittest.TestCase):
         self.client.set_cookie("token", self.token)
         self.auth_headers = {"Authorization": f"Bearer {self.token}"}
         from src.services.system_config_service import save_active_theme
-        save_active_theme("default")
+        save_active_theme("classic")
 
     def tearDown(self):
         # Restore default settings
         save_resource_request_config(True)
         save_hot_searches_config(True, DEFAULT_HOT_SEARCH_WORDS)
         from src.services.system_config_service import save_active_theme
-        save_active_theme("default")
+        save_active_theme("classic")
 
     def test_system_config_service_defaults(self):
         # By default, both should be enabled and default words match
@@ -156,7 +156,7 @@ class HotSearchesAndResourceRequestTestCase(unittest.TestCase):
             self.assertNotIn("sideRequestBtn", html)
             self.assertNotIn("hotSearchList", html)
         finally:
-            save_active_theme("default")
+            save_active_theme("classic")
 
 if __name__ == "__main__":
     unittest.main()
