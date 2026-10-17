@@ -72,45 +72,8 @@
         {% endif %}
       </section>
 
-      <section class="library section-block" id="library" aria-labelledby="library-title">
-        <div class="section-heading library-heading">
-          <div>
-            <div class="section-kicker">PICK YOUR NEXT WATCH</div>
-            <h2 id="library-title">热播榜 <span class="heading-pill">本周精选</span></h2>
-            <p>从热门榜单里，发现下一部好内容</p>
-          </div>
-          <a class="more-link" href="#library-grid">探索全部 <span aria-hidden="true">→</span></a>
-        </div>
-        <div class="filter-row" role="tablist" aria-label="影视分类">
-          {% for category in discovery_categories %}
-          {% if category != '热搜' %}
-          <button class="filter-chip{% if category == '总榜' %} selected{% endif %}" type="button" role="tab" aria-selected="{{ 'true' if category == '总榜' else 'false' }}" data-category="{{ category }}">{{ category }}</button>
-          {% endif %}
-          {% endfor %}
-        </div>
-        <div class="poster-grid" id="library-grid">
-          {% for item in discovery_items %}
-          <a class="poster-card" href="/search?q={{ item.title|urlencode }}" data-category="{{ item.category }}" aria-label="搜索 {{ item.title }}"{% if item.category != '总榜' %} hidden{% endif %}>
-            <div class="poster-image">
-              <img src="/themes/cinema/assets/posters/{{ item.poster }}.webp" alt="{{ item.title }}海报" loading="lazy">
-              <span class="poster-type">{{ item.metadata.split(' / ')[0] if item.metadata else item.category }}</span>
-              {% if item.heat %}<span class="poster-score"><b>热</b> {{ item.heat }}</span>{% endif %}
-              <span class="poster-play" aria-hidden="true">▶</span>
-              <span class="poster-shade"></span>
-            </div>
-            <div class="poster-meta">
-              <h3>{{ item.title }}</h3>
-              <span>{{ item.metadata or item.year or '光影热播精选' }}</span>
-            </div>
-          </a>
-          {% endfor %}
-        </div>
-        <div class="no-results" id="no-results" hidden>这个分类暂时没有内容，看看其他分类吧。</div>
-        <div class="library-footnote"><span class="footnote-mark">✦</span> 点击影片卡片，立即搜索相关网盘资源</div>
-      </section>
-
       <section class="resource-hall section-block" id="resource-hall" aria-labelledby="resource-hall-title">
-        <div class="section-heading library-heading">
+        <div class="section-heading">
           <div>
             <div class="section-kicker">FEATURED RESOURCES</div>
             <h2 id="resource-hall-title">资源大厅 <span class="heading-pill">精选资源</span></h2>
@@ -123,7 +86,7 @@
           {% for item in resource_hall_items %}
           <a class="resource-card" href="{{ item.share_link }}" target="_blank" rel="noopener noreferrer">
             <div class="resource-cover">
-              <img src="{{ item.cover_url or '/themes/cinema/assets/posters/7K9722Z5ATF5ZKB6RBY5WBP2PG.webp' }}" alt="{{ item.name }}封面" loading="lazy">
+              {% if item.cover_url %}<img src="{{ item.cover_url }}" alt="{{ item.name }}封面" loading="lazy">{% else %}<span class="resource-cover-placeholder" aria-hidden="true">✦</span>{% endif %}
               <span class="resource-open" aria-hidden="true">↗</span>
             </div>
             <div class="resource-info">
@@ -146,6 +109,5 @@
     </div>
   </main>
   {% include "cinema/templates/_footer.html" %}
-  <script src="/themes/cinema/assets/js/theme.js?v=1.1.0" defer></script>
 </body>
 </html>

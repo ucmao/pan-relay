@@ -202,11 +202,6 @@ def search_index():
     if active_theme == "cinema":
         from src.db.resources import get_resource_hall_items
 
-        catalog_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'themes', 'cinema', 'catalog.json')
-        with open(catalog_path, 'r', encoding='utf-8') as catalog_file:
-            discovery_catalog = json.load(catalog_file)
-        ctx['discovery_categories'] = discovery_catalog.get('categories', [])
-        ctx['discovery_items'] = discovery_catalog.get('items', [])
         ctx['resource_hall_items'] = get_resource_hall_items(limit=8)
         return render_template('cinema/templates/index.html', **ctx)
     if active_theme == "aurora":

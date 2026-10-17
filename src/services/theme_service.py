@@ -36,9 +36,9 @@ THEMES_METADATA = [
         "name": "模板 3 · 影视精选风",
         "version": "1.1.0",
         "author": "Pan-Relay",
-        "description": "影视发现式首页，内置热播分类与海报卡片，点击直达关键词搜索。",
+        "description": "影视资源搜索首页，展示热搜词与站长精选资源。",
         "preview": "/themes/cinema/assets/preview.webp",
-        "tags": ["影视发现", "热播榜单", "关键词直搜"],
+        "tags": ["影视搜索", "热搜榜单", "精选资源"],
     },
 ]
 
