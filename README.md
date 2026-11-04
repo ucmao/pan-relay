@@ -7,6 +7,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/) [![Framework](https://img.shields.io/badge/Framework-Flask-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/) [![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](#-部署指南) [![REST API](https://img.shields.io/badge/REST__API-v1.0-purple.svg)](#-开放-rest-api-与无头部署) [![Support](https://img.shields.io/badge/Support-8%20Major%20Clouds-brightgreen.svg)](#-支持的网盘矩阵)
 
 <p align="center">
+  <a href="#-交流群">交流群</a> •
   <a href="#-为什么需要-pan-relay">核心价值</a> •
   <a href="#-支持的网盘矩阵">支持网盘</a> •
   <a href="#-部署指南">部署指南</a> •
@@ -18,6 +19,13 @@
 Pan-Relay 是一款专为网盘推广员、资源站长打造的**全自动化收益与聚合分发系统**。
 
 通过“资源聚合 → 智能号池调度 → 自动转存 → 换链变现 → 优先分发”全链路闭环，将全网外部公开资源高效转换为您的专属收益链接，成倍放大拉新与转存收益。
+
+<br>
+
+<div id="-交流群">
+  <img src="static/images/wechat-qrcode.jpg" width="180" alt="微信交流二维码"><br>
+  <sub>💬 <b>扫码添加作者微信</b>（备注 <code>pan-relay</code> 拉你入群交流）</sub>
+</div>
 
 </div>
 
@@ -184,7 +192,12 @@ X-API-Key: your_transfer_key
 
 ## 📩 联系作者
 
-如果您在安装、使用过程中遇到问题，或有定制需求，请通过以下方式联系：
+如果您在安装、使用过程中遇到问题，或有交流与定制需求，请通过以下方式联系：
+
+<div align="center">
+  <img src="static/images/wechat-qrcode.jpg" width="160" alt="微信二维码"><br>
+  <sub>💬 <b>扫码添加作者微信</b>（备注 <code>pan-relay</code> 拉你入群交流）</sub>
+</div>
 
 * **微信**：csdnxr
 * **QQ**：294323976
