@@ -159,17 +159,26 @@ class TestFourPansStoreVerification(unittest.TestCase):
         with patch.object(client, "_request_api") as mock_api, \
              patch.object(client, "add_ad"):
             mock_api.side_effect = [
-                # 1. detail
-                {"code": 0, "pass_code_token": "tok_1", "files": [{"id": "ext_fid_999", "name": "movie.mkv"}]},
-                # 2. restore
-                {"code": 0, "file_ids": ["my_saved_fid_123"]},
-                # 3. create share
-                {"code": 0, "data": {"share_url": "https://www.guangyapan.com/s/new_gy"}},
+                # 1. get_share_access_token
+                {"code": 0, "msg": "success", "data": {"accessToken": "share_tok_1"}},
+                # 2. get_share_page_files_list
+                {"code": 0, "msg": "success", "data": {"list": [{"fileId": "ext_fid_999", "fileName": "movie.mkv"}]}},
+                # 3. list_dir (before restore)
+                {"code": 0, "msg": "success", "data": {"list": [], "total": 0}},
+                # 4. restore_share
+                {"code": 0, "msg": "success", "data": {"taskId": "task_999"}},
+                # 5. get_task_status
+                {"code": 0, "msg": "success", "data": {"status": 2}},
+                # 6. list_dir (after restore)
+                {"code": 0, "msg": "success", "data": {"list": [{"fileId": "my_saved_fid_123", "fileName": "movie.mkv"}], "total": 1}},
+                # 7. create share
+                {"code": 0, "msg": "success", "data": {"shareUrl": "https://www.guangyapan.com/s/new_gy"}},
             ]
-            fid, name, url = client.store("https://www.guangyapan.com/s/gy123")
-            share_payload = mock_api.call_args_list[2][1]["payload"]
-            self.assertEqual(share_payload.get("file_ids"), ["my_saved_fid_123"])
+            fid, name, url = client.store("https://www.guangyapan.com/s/gy123?pwd=6666", password="6666")
+            share_payload = mock_api.call_args_list[6][1]["payload"]
+            self.assertEqual(share_payload.get("fileIds"), ["my_saved_fid_123"])
             self.assertEqual(url, "https://www.guangyapan.com/s/new_gy")
+            self.assertEqual(name, "movie.mkv")
 
 
 if __name__ == "__main__":
