@@ -30,9 +30,9 @@ class UcPanClient(BasePanClient):
         )
 
     def store(
-        self, share_url: str, to_dir: str = "0"
+        self, share_url: str, to_dir: str = "0", password: Optional[str] = None
     ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        pwd_id = self._extract_pwd_id(share_url)
+        pwd_id, passcode = self._parse_share_url(share_url, password=password)
         if not pwd_id:
             logger.error("UC 网盘链接解析失败: %s", share_url)
             return None, None, None
@@ -40,7 +40,7 @@ class UcPanClient(BasePanClient):
         stoken_data = self._request(
             "POST",
             "https://pc-api.uc.cn/1/clouddrive/share/sharepage/v2/detail",
-            {"passcode": "", "pwd_id": pwd_id},
+            {"passcode": passcode, "pwd_id": pwd_id},
             params={"pr": "UCBrowser", "fr": "pc"},
         )
         if not stoken_data or stoken_data.get("status") != 200:
@@ -130,8 +130,8 @@ class UcPanClient(BasePanClient):
         # 广告过滤与净化
         cleaned_top_fids = self._clean_ad_files_and_folders(save_as_top_fids)
         if not cleaned_top_fids:
-            logger.warning("UC 网盘转存内容全为广告，已删除并终止分享")
-            return None, None, None
+            logger.info("UC 网盘清理后无剩余文件或全部为顶级广告，回退使用原始转存文件")
+            cleaned_top_fids = save_as_top_fids
 
         # 尝试植入个人自定义引流广告 (若已配置并启用)
         for top_fid in cleaned_top_fids:
@@ -472,5 +472,22 @@ class UcPanClient(BasePanClient):
 
     @staticmethod
     def _extract_pwd_id(url: str) -> str:
+        pwd_id, _ = UcPanClient._parse_share_url(url)
+        return pwd_id
+
+    @staticmethod
+    def _parse_share_url(url: str, password: Optional[str] = None) -> Tuple[str, str]:
+        """从 UC 网盘分享链接中解析 pwd_id 与访问码 passcode"""
+        if not url:
+            return "", ""
         match = re.search(r"/s/([a-zA-Z0-9]+)", url)
-        return match.group(1) if match else ""
+        pwd_id = match.group(1) if match else ""
+
+        passcode = (password or "").strip()
+        if not passcode:
+            pwd_match = re.search(r"(?:[?&]pwd=|提取码[:：=\s]*|密码[:：=\s]*)([a-zA-Z0-9]{4,6})", url, re.IGNORECASE)
+            if not pwd_match:
+                pwd_match = re.search(r"pwd=([a-zA-Z0-9]+)", url)
+            passcode = pwd_match.group(1) if pwd_match else ""
+
+        return pwd_id, passcode

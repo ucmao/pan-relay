@@ -18,6 +18,7 @@ _CLIENT_ID = "Xp6vsxz_7IYVw2BB"
 _CLIENT_SECRET = "Xp6vsy4tN9toTVdMSpomVdXpRmES"
 _CLIENT_VERSION = "8.31.0.9726"
 _PACKAGE_NAME = "com.xunlei.downloadprovider"
+_DEVICE_ID = "c24ecadc44c643637d127fb847dbe36d"
 _USER_AGENT = (
     "ANDROID-com.xunlei.downloadprovider/8.31.0.9726 netWorkType/5G appid/40 "
     "deviceName/Xiaomi_M2004j7ac deviceModel/M2004J7AC OSVersion/12 "
@@ -91,10 +92,10 @@ class XunleiPanClient(BasePanClient):
         self.access_token = ""
 
     def store(
-        self, share_url: str, to_dir: str = ""
+        self, share_url: str, to_dir: str = "", password: Optional[str] = None
     ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """执行完整转存换链流程：解析分享 -> 转存 -> 轮询等待任务完成 -> 创建专属分享"""
-        share_id, pwd = self._parse_share_url(share_url)
+        share_id, pwd = self._parse_share_url(share_url, password=password)
         if not share_id:
             logger.error("迅雷网盘链接解析失败: %s", share_url)
             return None, None, None
@@ -173,7 +174,15 @@ class XunleiPanClient(BasePanClient):
 
         # 3. 轮询等待转存异步任务完成
         task_result = self._wait_task(task_id)
-        if not task_result or task_result.get("progress") != 100:
+        is_task_done = False
+        if task_result:
+            p_val = task_result.get("progress")
+            s_val = str(task_result.get("status") or "").upper()
+            ph_val = str(task_result.get("phase") or "").upper()
+            if p_val == 100 or str(p_val) == "100" or "COMPLETE" in s_val or "COMPLETE" in ph_val or "SUCCESS" in s_val:
+                is_task_done = True
+
+        if not task_result or not is_task_done:
             err_msg = (task_result or {}).get("message") or "转存任务未完成或超时"
             logger.error("迅雷网盘转存任务失败: %s", err_msg)
             return None, None, None
@@ -451,21 +460,23 @@ class XunleiPanClient(BasePanClient):
         except Exception:
             pass
 
-        if self.client_id == "YBJdb1UyFQJwh_nS":
-            meta = meta_fallback or {
-                "client_version": self.client_version,
-                "package_name": self.package_name,
-                "user_id": self.user_id,
-                "timestamp": "1790587491.046402",
-                "captcha_sign": "1.09b150b2b79b7beffd6ba99afcf2351e",
-            }
+        req_client_id = self.client_id
+        req_device_id = self.device_id
+        req_user_agent = self.user_agent
+
+        if self.client_id == "YBJdb1UyFQJwh_nS" and meta_fallback:
+            meta = meta_fallback
         else:
+            # 无论何种客户端 ID，在无本地合规签名时，均降级切换为成熟稳定的 Android 移动端签名体系
+            req_client_id = _CLIENT_ID
+            req_device_id = _DEVICE_ID
+            req_user_agent = _USER_AGENT
             ts = str(int(now * 1000))
-            sign = _calc_captcha_sign(self.client_id, self.client_version, self.package_name, self.device_id, ts)
+            sign = _calc_captcha_sign(_CLIENT_ID, _CLIENT_VERSION, _PACKAGE_NAME, _DEVICE_ID, ts)
             meta = {
-                "client_version": self.client_version,
-                "package_name": self.package_name,
-                "user_id": self.user_id,
+                "client_version": _CLIENT_VERSION,
+                "package_name": _PACKAGE_NAME,
+                "user_id": self.user_id or "",
                 "timestamp": ts,
                 "captcha_sign": sign,
             }
@@ -476,16 +487,16 @@ class XunleiPanClient(BasePanClient):
                 json={
                     "action": action,
                     "captcha_token": "",
-                    "client_id": self.client_id,
-                    "device_id": self.device_id,
+                    "client_id": req_client_id,
+                    "device_id": req_device_id,
                     "redirect_uri": "xlaccsdk01://xunlei.com/callback?state=harbor",
                     "meta": meta,
                 },
                 headers={
                     "Content-Type": "application/json",
-                    "User-Agent": self.user_agent,
-                    "x-client-id": self.client_id,
-                    "x-device-id": self.device_id,
+                    "User-Agent": req_user_agent,
+                    "x-client-id": req_client_id,
+                    "x-device-id": req_device_id,
                 },
                 timeout=20,
             )
@@ -515,8 +526,12 @@ class XunleiPanClient(BasePanClient):
                 f"https://api-pan.xunlei.com/drive/v1/tasks/{task_id}",
                 action="GET:/drive/v1/tasks",
             )
-            if result and not result.get("error_code") and result.get("progress") == 100:
-                return result
+            if result and not result.get("error_code"):
+                progress = result.get("progress")
+                status = str(result.get("status") or "").upper()
+                phase = str(result.get("phase") or "").upper()
+                if progress == 100 or str(progress) == "100" or "COMPLETE" in status or "COMPLETE" in phase:
+                    return result
             time.sleep(1)
         return result if "result" in locals() else None
 
@@ -587,10 +602,17 @@ class XunleiPanClient(BasePanClient):
         return info
 
     @staticmethod
-    def _parse_share_url(url: str) -> Tuple[str, str]:
+    def _parse_share_url(url: str, password: Optional[str] = None) -> Tuple[str, str]:
+        if not url:
+            return "", ""
         share_match = re.search(r"/s/([^?#/]+)", url)
-        pwd_match = re.search(r"pwd=([a-zA-Z0-9]+)", url)
+        pwd = (password or "").strip()
+        if not pwd:
+            pwd_match = re.search(r"(?:[?&]pwd=|提取码[:：=\s]*|密码[:：=\s]*)([a-zA-Z0-9]{4,6})", url, re.IGNORECASE)
+            if not pwd_match:
+                pwd_match = re.search(r"pwd=([a-zA-Z0-9]+)", url)
+            pwd = pwd_match.group(1) if pwd_match else ""
         return (
             share_match.group(1) if share_match else "",
-            pwd_match.group(1) if pwd_match else "",
+            pwd,
         )

@@ -38,26 +38,32 @@ class AliyunPanClient(BasePanClient):
         self._refresh_access_token()
 
     def store(
-        self, share_url: str, to_dir: str = "root"
+        self, share_url: str, to_dir: str = "root", password: Optional[str] = None
     ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-        share_id = self._extract_share_id(share_url)
+        share_id, pwd, folder_id = self._parse_share_url(share_url, password=password)
         if not share_id:
             logger.error("阿里云盘链接解析失败: %s", share_url)
             return None, None, None
 
+        anon_payload: Dict[str, Any] = {"share_id": share_id}
+        if pwd:
+            anon_payload["share_pwd"] = pwd
         share_info = self._post_anonymous(
             "https://api.aliyundrive.com/adrive/v3/share_link/get_share_by_anonymous",
-            {"share_id": share_id},
+            anon_payload,
         )
         if not share_info or not share_info.get("file_infos"):
             err_msg = (share_info or {}).get("message") or (share_info or {}).get("code") or "分享链接无效或已过期"
             logger.error("阿里云盘获取分享信息失败: %s (share_id=%s)", err_msg, share_id)
             return None, None, None
 
+        token_payload: Dict[str, Any] = {"share_id": share_id}
+        if pwd:
+            token_payload["share_pwd"] = pwd
         share_token_data = self._request(
             "POST",
             "https://api.aliyundrive.com/v2/share_link/get_share_token",
-            {"share_id": share_id},
+            token_payload,
         )
         share_token = (share_token_data or {}).get("share_token")
         if not share_token:
@@ -125,6 +131,10 @@ class AliyunPanClient(BasePanClient):
             except Exception:
                 pass
 
+        # 广告过滤与净化
+        cleaned_file_ids = self._clean_ad_files_and_folders(new_file_ids)
+        if not cleaned_file_ids:
+            cleaned_file_ids = new_file_ids
 
         share_result = self._request(
             "POST",
@@ -419,6 +429,32 @@ class AliyunPanClient(BasePanClient):
 
     @staticmethod
     def _extract_share_id(url: str) -> str:
-        match = re.search(r"/s/([a-zA-Z0-9]+)", url)
-        return match.group(1) if match else ""
+        share_id, _, _ = AliyunPanClient._parse_share_url(url)
+        return share_id
+
+    @staticmethod
+    def _parse_share_url(url: str, password: Optional[str] = None) -> Tuple[str, str, str]:
+        """
+        从阿里云盘链接中提取 share_id、提取码 pwd 以及子目录 folder_id。
+        支持格式：
+        - https://www.alipan.com/s/abcdef123
+        - https://www.alipan.com/s/abcdef123/folder/60d...
+        - https://www.alipan.com/s/abcdef123?pwd=1234
+        - https://www.alipan.com/s/abcdef123 提取码: 1234
+        """
+        if not url:
+            return "", "", ""
+
+        share_match = re.search(r"/s/([a-zA-Z0-9]+)", url)
+        share_id = share_match.group(1) if share_match else ""
+
+        folder_match = re.search(r"/folder/([a-zA-Z0-9]+)", url)
+        folder_id = folder_match.group(1) if folder_match else ""
+
+        pwd = (password or "").strip()
+        if not pwd:
+            pwd_match = re.search(r"(?:[?&]pwd=|提取码[:：=\s]*|密码[:：=\s]*)([a-zA-Z0-9]{4,6})", url, re.IGNORECASE)
+            pwd = pwd_match.group(1) if pwd_match else ""
+
+        return share_id, pwd, folder_id
 

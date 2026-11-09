@@ -126,27 +126,32 @@ class GuangyaPanClient(BasePanClient):
             logger.error(f"光鸭云盘 API 请求异常: {exc}")
             return None
 
-    def _parse_share_url(self, share_url: str) -> Tuple[Optional[str], Optional[str]]:
+    def _parse_share_url(self, share_url: str, password: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
         """从分享 URL 中解析出 share_id 与提取码"""
         if not share_url:
             return None, None
         
         match = re.search(r"guangyapan\.com/s/([a-zA-Z0-9_-]+)", share_url, re.IGNORECASE)
         if not match:
-            return None, None
+            # 兼容非完整域名情况
+            match = re.search(r"/s/([a-zA-Z0-9_-]+)", share_url, re.IGNORECASE)
+            if not match:
+                return None, None
         
         share_id = match.group(1)
-        pwd_match = re.search(r"(?:[?&]pwd=|提取码[:：=\s]*|密码[:：=\s]*)([a-zA-Z0-9]{4,6})", share_url, re.IGNORECASE)
-        pwd = pwd_match.group(1) if pwd_match else None
+        pwd = (password or "").strip()
+        if not pwd:
+            pwd_match = re.search(r"(?:[?&]pwd=|提取码[:：=\s]*|密码[:：=\s]*)([a-zA-Z0-9]{4,6})", share_url, re.IGNORECASE)
+            pwd = pwd_match.group(1) if pwd_match else None
         return share_id, pwd
 
     def store(
-        self, share_url: str, to_pdir_path: str = "/"
+        self, share_url: str, to_pdir_path: str = "/", password: Optional[str] = None
     ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """
         转存光鸭云盘分享文件并在个人网盘中生成新分享链接。
         """
-        share_id, pwd = self._parse_share_url(share_url)
+        share_id, pwd = self._parse_share_url(share_url, password=password)
         if not share_id:
             logger.error(f"光鸭云盘分享链接解析失败: {share_url}")
             return None, None, None
@@ -191,8 +196,39 @@ class GuangyaPanClient(BasePanClient):
         saved_file_ids = (
             restore_res.get("file_ids")
             or restore_res.get("data", {}).get("file_ids")
-            or file_ids
         )
+        # 若转存返回任务 ID 或对象中包含 items
+        if not saved_file_ids:
+            task_id = restore_res.get("task_id") or restore_res.get("data", {}).get("task_id")
+            if task_id:
+                # 轮询异步转存任务
+                for _ in range(10):
+                    time.sleep(1)
+                    task_info = self._request_api("GET", f"/drive/v1/tasks/{task_id}")
+                    if task_info:
+                        t_data = task_info.get("data") or task_info
+                        if t_data.get("progress") == 100 or t_data.get("status") in ("COMPLETE", "SUCCESS"):
+                            saved_file_ids = t_data.get("file_ids") or [t_data.get("file_id")]
+                            break
+
+        if not saved_file_ids:
+            # 尝试根据目标目录查询最新文件，避免误用外部分享的原始 ID
+            try:
+                list_res = self._request_api(
+                    "GET",
+                    "/drive/v1/files",
+                    params={"parent_id": to_pdir_path if to_pdir_path not in ("/", "") else "0", "limit": 20},
+                )
+                cur_files = (list_res or {}).get("files", [])
+                matched_ids = [str(f.get("id")) for f in cur_files if f.get("name") == file_name]
+                if matched_ids:
+                    saved_file_ids = matched_ids
+            except Exception:
+                pass
+
+        if not saved_file_ids:
+            logger.error("光鸭云盘未能解析转存后个人网盘内的文件 ID，终止创建分享")
+            return None, None, None
 
         # 尝试植入个人自定义引流广告 (若已配置并启用)
         for fid in saved_file_ids:
@@ -200,7 +236,6 @@ class GuangyaPanClient(BasePanClient):
                 self.add_ad(fid)
             except Exception:
                 pass
-
 
         # 3. 创建新分享链接
         share_res = self._request_api(

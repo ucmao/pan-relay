@@ -130,9 +130,14 @@ def _parse_file_id(file_id: Any) -> Any:
 
 # --- 核心逻辑：通用网盘操作处理器 ---
 
-def _execute_store(client, share_url, to_pdir_path: str = '/'):
+def _execute_store(client, share_url, to_pdir_path: str = '/', password: str = None):
     """执行单个客户端转存与分享操作"""
-    new_file_id, file_name, new_share_url = client.store(share_url, to_pdir_path)
+    import inspect
+    sig = inspect.signature(client.store)
+    if "password" in sig.parameters:
+        new_file_id, file_name, new_share_url = client.store(share_url, to_pdir_path, password=password)
+    else:
+        new_file_id, file_name, new_share_url = client.store(share_url, to_pdir_path)
     if not new_file_id or not new_share_url:
         logger.error(f"[{client.__class__.__name__}] 转存或分享接口返回空数据")
         return None, None, None
@@ -157,7 +162,7 @@ def _execute_delete(client, file_id: Any) -> bool:
 
 
 def _handle_netdisk_operation(client_class, client_credential, share_url, to_pdir_path: str = '/', 
-                              operation: str = 'store', file_id: str = None):
+                              operation: str = 'store', file_id: str = None, password: str = None):
     """
     通用网盘操作处理器（转存或删除，兼容直接传入 client 实例或 class+credential，方便测试 Mock）。
     """
@@ -167,7 +172,7 @@ def _handle_netdisk_operation(client_class, client_credential, share_url, to_pdi
         client = client_class(client_credential)
     try:
         if operation == 'store':
-            return _execute_store(client, share_url, to_pdir_path)
+            return _execute_store(client, share_url, to_pdir_path, password=password)
         elif operation == 'delete':
             return _execute_delete(client, file_id)
     except Exception as e:
@@ -292,15 +297,15 @@ def create_share(share_data):
                     return existing
 
             # 3.1 前置免登录测活检查 (避免死链无效提交给网盘造成风控或报错)
-            check_res = check_link(share_url, password=share_data.get("password"), disk_type=netdisk_type)
+            resolved_pwd = share_data.get("password") or extract_password_from_url(share_url)
+            check_res = check_link(share_url, password=resolved_pwd, disk_type=netdisk_type)
             if check_res.get("state") == STATE_BAD:
                 logger.warning(
                     f"[{netdisk_type}] 转存前检测到链接已失效/违规，终止转存: {check_res.get('summary')} ({share_url})"
                 )
                 return None
             if check_res.get("state") == STATE_LOCKED:
-                pwd = share_data.get("password") or extract_password_from_url(share_url)
-                if not pwd:
+                if not resolved_pwd:
                     logger.warning(
                         f"[{netdisk_type}] 转存前检测到链接需要提取码但未提供密码，终止转存 ({share_url})"
                     )
@@ -317,7 +322,7 @@ def create_share(share_data):
                 try:
                     target_pdir = _resolve_target_dir(client, target_dir_name=target_dir_name)
                     f_id, f_name, s_url = _handle_netdisk_operation(
-                        client.__class__, client, share_url, to_pdir_path=target_pdir, operation="store"
+                        client.__class__, client, share_url, to_pdir_path=target_pdir, operation="store", password=resolved_pwd
                     )
                     if s_url and f_id:
                         new_file_id, file_name, new_share_url = f_id, f_name, s_url
