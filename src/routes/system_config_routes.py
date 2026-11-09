@@ -980,6 +980,35 @@ def trigger_keepalive_api():
     })
 
 
+@system_config_bp.route("/admin/api/accounts/keepalive-config", methods=["GET"])
+@token_required
+def get_keepalive_config_api():
+    """获取网盘多账号池自动保活配置"""
+    from src.services.system_config_service import get_account_keepalive_config
+    return jsonify({
+        "success": True,
+        "config": get_account_keepalive_config(),
+    })
+
+
+@system_config_bp.route("/admin/api/accounts/keepalive-config", methods=["POST"])
+@token_required
+def save_keepalive_config_api():
+    """保存网盘多账号池自动保活配置"""
+    from src.services.system_config_service import save_account_keepalive_config
+    data = request.get_json(silent=True) or {}
+    success = save_account_keepalive_config(data)
+    if success:
+        return jsonify({
+            "success": True,
+            "message": "账号池自动保活与续期配置已更新",
+        })
+    return jsonify({
+        "success": False,
+        "message": "保存账号池保活配置失败",
+    }), 400
+
+
 @system_config_bp.route("/admin/api/accounts/export-csv", methods=["GET"])
 @token_required
 def export_accounts_csv_api():

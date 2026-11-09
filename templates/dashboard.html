@@ -198,7 +198,7 @@
                         id="stat-today-duration-badge">
                         <span class="w-1.5 h-1.5 rounded-full mr-1.5 bg-blue-500"></span>
                         均耗 <strong class="ml-1 font-mono font-bold" id="stat-today-avg-dur">{{
-                            summary.logs.today_avg_duration_ms }}</strong> ms
+                            '%.1f'|format(summary.logs.today_avg_duration_ms / 1000) if (summary.logs.today_avg_duration_ms or 0) >= 1000 else (summary.logs.today_avg_duration_ms or 0) }}</strong> <span id="stat-today-avg-dur-unit">{{ 's' if (summary.logs.today_avg_duration_ms or 0) >= 1000 else 'ms' }}</span>
                     </span>
                 </div>
             </div>
@@ -1381,7 +1381,17 @@
                         const todaySearchEl = document.getElementById('stat-today-search');
                         if (todaySearchEl) todaySearchEl.textContent = l.today_search || 0;
                         const todayAvgDurEl = document.getElementById('stat-today-avg-dur');
-                        if (todayAvgDurEl) todayAvgDurEl.textContent = l.today_avg_duration_ms || 0;
+                        const todayAvgDurUnitEl = document.getElementById('stat-today-avg-dur-unit');
+                        const dur = l.today_avg_duration_ms || 0;
+                        if (todayAvgDurEl) {
+                            if (dur >= 1000) {
+                                todayAvgDurEl.textContent = (dur / 1000).toFixed(1);
+                                if (todayAvgDurUnitEl) todayAvgDurUnitEl.textContent = 's';
+                            } else {
+                                todayAvgDurEl.textContent = dur;
+                                if (todayAvgDurUnitEl) todayAvgDurUnitEl.textContent = 'ms';
+                            }
+                        }
 
                         const todayTransferEl = document.getElementById('stat-transfer-total');
                         if (todayTransferEl) todayTransferEl.textContent = l.today_transfer || 0;

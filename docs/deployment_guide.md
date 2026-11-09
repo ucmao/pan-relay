@@ -137,5 +137,5 @@ find "$BACKUP_DIR" -type f -name "pan_relay_*.db" -mtime +30 -delete
 | :--- | :--- | :--- |
 | **`cleanup_expired_temp_shares`** | 每 30 分钟 | 扫描并物理删除已过期的动态转存临时分享链接 |
 | **`cleanup_all_storage`** | 每 12 小时 | 根据后台设置的超期保留策略，自动批量清理旧转存落盘资源 |
-| **`scheduled_account_keepalive_job`** | 每 24 小时 | 对多账号池中所有有效账号执行静默保活与 Token 自动续期 |
+| **`scheduled_account_keepalive_job`** | 默认每 24 小时（后台可配置） | 对多账号池中所有有效账号执行静默保活、Token 自动轮转与容量探测 |
 | **`scheduled_resource_health_audit_job`** | 每 24 小时 | 对库内存量资源进行免登录批量健康巡检，标记死链与失效状态 |

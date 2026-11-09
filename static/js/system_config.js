@@ -2060,6 +2060,15 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+function formatBytesParts(bytes) {
+    if (!bytes || bytes <= 0) return { val: '0', unit: 'B' };
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const val = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+    return { val, unit: sizes[i] };
+}
+
 async function loadCloudAccounts(cloud = null) {
     const tableBody = document.getElementById('accountsTableBody');
     if (!tableBody) return;
@@ -2091,17 +2100,27 @@ async function loadCloudAccounts(cloud = null) {
         const badgeEl = document.getElementById('accountsTabBadge');
 
         if (totalEl) totalEl.textContent = summary.total_count || 0;
-        if (validEl) validEl.textContent = `${summary.valid_count || 0} / ${summary.total_count || 0}`;
+        if (validEl) {
+            const valid = summary.valid_count || 0;
+            const total = summary.total_count || 0;
+            validEl.innerHTML = `${valid} <span class="text-xs font-normal text-slate-400 dark:text-slate-500">/ ${total}</span>`;
+        }
         if (badgeEl) badgeEl.textContent = summary.total_count || 0;
 
         if (storageEl) {
-            const used = formatBytes(summary.used_space_bytes || 0);
-            const total = summary.total_space_bytes ? formatBytes(summary.total_space_bytes) : '不限量';
-            storageEl.textContent = `${used} / ${total}`;
+            const usedParts = formatBytesParts(summary.used_space_bytes || 0);
+            if (summary.total_space_bytes && summary.total_space_bytes > 0) {
+                const totalParts = formatBytesParts(summary.total_space_bytes);
+                storageEl.innerHTML = `${usedParts.val} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">${usedParts.unit}</span> <span class="text-xs font-normal text-slate-400 dark:text-slate-500 mx-0.5">/</span> <span class="text-xs font-normal text-slate-400 dark:text-slate-500">${totalParts.val} ${totalParts.unit}</span>`;
+            } else {
+                storageEl.innerHTML = `${usedParts.val} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">${usedParts.unit}</span> <span class="text-xs font-normal text-slate-400 dark:text-slate-500 mx-0.5">/</span> <span class="text-xs font-normal text-slate-400 dark:text-slate-500">不限量</span>`;
+            }
         }
 
         const totalTransfers = _accountsData.reduce((acc, cur) => acc + (cur.transferred_count || 0), 0);
-        if (transfersEl) transfersEl.textContent = `${totalTransfers} 次`;
+        if (transfersEl) {
+            transfersEl.innerHTML = `${totalTransfers} <span class="text-xs font-normal text-slate-500 dark:text-slate-400">次</span>`;
+        }
 
         renderAccountsTable(_accountsData);
     } catch (err) {
@@ -2592,13 +2611,102 @@ async function deleteAccount(accountId) {
     }
 }
 
-async function triggerKeepaliveAll() {
-    const btn = document.getElementById('btnKeepaliveAccounts');
+function openAccountKeepaliveModal() {
+    const modal = document.getElementById('accountKeepaliveModal');
+    if (!modal) return;
+
+    const resultBox = document.getElementById('keepaliveExecutionResult');
+    if (resultBox) {
+        resultBox.className = 'hidden';
+        resultBox.innerHTML = '';
+    }
+
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    loadAccountKeepaliveConfig();
+}
+
+function closeAccountKeepaliveModal() {
+    const modal = document.getElementById('accountKeepaliveModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+async function loadAccountKeepaliveConfig() {
+    const toggle = document.getElementById('modalAccountKeepaliveToggle');
+    const select = document.getElementById('modalAccountKeepaliveIntervalSelect');
+    if (!toggle || !select) return;
+
+    try {
+        const res = await fetch('/admin/api/accounts/keepalive-config', { credentials: 'same-origin' });
+        const data = await res.json();
+        if (data.success && data.config) {
+            const cfg = data.config;
+            toggle.checked = Boolean(cfg.enabled);
+            select.value = String(cfg.interval_hours || 24);
+            select.disabled = !toggle.checked;
+        }
+    } catch (err) {
+        console.warn('加载账号池自动保活配置失败:', err);
+    }
+}
+
+async function saveAccountKeepaliveConfig() {
+    const toggle = document.getElementById('modalAccountKeepaliveToggle');
+    const select = document.getElementById('modalAccountKeepaliveIntervalSelect');
+    if (!toggle || !select) return;
+
+    select.disabled = !toggle.checked;
+
+    const payload = {
+        enabled: toggle.checked,
+        interval_hours: parseInt(select.value, 10) || 24,
+    };
+
+    const saveBtn = document.getElementById('btnSaveKeepaliveConfigModal');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 保存中...';
+    }
+
+    try {
+        const res = await fetch('/admin/api/accounts/keepalive-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(payload.enabled ? `已更新后台自动巡检（每 ${payload.interval_hours} 小时）` : '已停用后台自动巡检', 'success');
+        } else {
+            showToast('保存策略失败: ' + (data.message || '未知异常'), 'warning');
+        }
+    } catch (err) {
+        showToast('保存策略网络异常: ' + err.message, 'danger');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-floppy-disk mr-1"></i> 保存自动策略';
+        }
+    }
+}
+
+async function triggerKeepaliveNowInModal() {
+    const btn = document.getElementById('btnTriggerKeepaliveNow');
+    const resultBox = document.getElementById('keepaliveExecutionResult');
+
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> 续期保活中...';
     }
-    showToast('正在遍历网盘账号池执行静默续期与保活...', 'info');
+
+    if (resultBox) {
+        resultBox.className = 'p-3 rounded-xl border border-indigo-200 bg-indigo-50/70 dark:border-indigo-900/50 dark:bg-indigo-950/20 text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-2';
+        resultBox.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在遍历全账号池执行静默续期与容量探测，请稍候...';
+    }
+
     try {
         const res = await fetch('/admin/api/accounts/keepalive', {
             method: 'POST',
@@ -2607,18 +2715,38 @@ async function triggerKeepaliveAll() {
         const data = await res.json();
         if (data.success) {
             const r = data.result || {};
-            const msg = `续期完成: 检查 ${r.total_checked || 0} 个账号，成功刷新 ${r.refreshed || 0} 个，失败 ${r.failed || 0} 个`;
-            showToast(msg, 'success');
+            const total = r.total_checked || 0;
+            const refreshed = r.refreshed || 0;
+            const failed = r.failed || 0;
+
+            if (resultBox) {
+                if (failed > 0) {
+                    resultBox.className = 'p-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 text-xs text-amber-800 dark:text-amber-300 space-y-1';
+                    resultBox.innerHTML = `<div class="font-bold flex items-center gap-1.5"><i class="fas fa-circle-exclamation"></i> 巡检完成（部分异常）</div><div>共自检 <strong>${total}</strong> 个启用账号，成功刷新 <strong>${refreshed}</strong> 个，失败/失效 <strong>${failed}</strong> 个。请检查标红账号凭据。</div>`;
+                } else {
+                    resultBox.className = 'p-3 rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/20 text-xs text-emerald-800 dark:text-emerald-300 space-y-1';
+                    resultBox.innerHTML = `<div class="font-bold flex items-center gap-1.5"><i class="fas fa-circle-check"></i> 全盘续期成功</div><div>共自检 <strong>${total}</strong> 个启用账号，全部凭证有效，最新存储配额已同步就绪。</div>`;
+                }
+            }
+            showToast(`续期自检完成: 成功 ${refreshed} 个，失败 ${failed} 个`, failed > 0 ? 'warning' : 'success');
             loadCloudAccounts();
         } else {
+            if (resultBox) {
+                resultBox.className = 'p-3 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/20 text-xs text-rose-800 dark:text-rose-300';
+                resultBox.innerHTML = `<i class="fas fa-circle-xmark mr-1"></i> 保活失败: ${escapeHtml(data.message || '未知异常')}`;
+            }
             showToast('保活失败: ' + (data.message || '未知异常'), 'warning');
         }
     } catch (err) {
+        if (resultBox) {
+            resultBox.className = 'p-3 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/50 dark:bg-rose-950/20 text-xs text-rose-800 dark:text-rose-300';
+            resultBox.innerHTML = `<i class="fas fa-circle-xmark mr-1"></i> 网络请求异常: ${escapeHtml(err.message)}`;
+        }
         showToast('保活请求异常: ' + err.message, 'danger');
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-rotate"></i> 一键全盘续期';
+            btn.innerHTML = '<i class="fas fa-rotate mr-1"></i> 立即全盘续期';
         }
     }
 }
@@ -2885,7 +3013,36 @@ function initAccountPoolEvents() {
     }
 
     const btnKeepalive = document.getElementById('btnKeepaliveAccounts');
-    if (btnKeepalive) btnKeepalive.addEventListener('click', triggerKeepaliveAll);
+    if (btnKeepalive) btnKeepalive.addEventListener('click', openAccountKeepaliveModal);
+
+    const btnCloseKeepalive = document.getElementById('btnCloseAccountKeepaliveModal');
+    if (btnCloseKeepalive) btnCloseKeepalive.addEventListener('click', closeAccountKeepaliveModal);
+
+    const btnCancelKeepalive = document.getElementById('btnCancelAccountKeepaliveModal');
+    if (btnCancelKeepalive) btnCancelKeepalive.addEventListener('click', closeAccountKeepaliveModal);
+
+    const keepaliveModal = document.getElementById('accountKeepaliveModal');
+    if (keepaliveModal) {
+        keepaliveModal.addEventListener('click', (e) => {
+            if (e.target === keepaliveModal) {
+                closeAccountKeepaliveModal();
+            }
+        });
+    }
+
+    const modalToggle = document.getElementById('modalAccountKeepaliveToggle');
+    if (modalToggle) {
+        modalToggle.addEventListener('change', () => {
+            const sel = document.getElementById('modalAccountKeepaliveIntervalSelect');
+            if (sel) sel.disabled = !modalToggle.checked;
+        });
+    }
+
+    const btnSaveKeepalive = document.getElementById('btnSaveKeepaliveConfigModal');
+    if (btnSaveKeepalive) btnSaveKeepalive.addEventListener('click', saveAccountKeepaliveConfig);
+
+    const btnTriggerKeepalive = document.getElementById('btnTriggerKeepaliveNow');
+    if (btnTriggerKeepalive) btnTriggerKeepalive.addEventListener('click', triggerKeepaliveNowInModal);
 
     // 导出与导入 CSV 按钮
     const btnExport = document.getElementById('btnExportAccounts');

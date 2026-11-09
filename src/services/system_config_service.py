@@ -1571,3 +1571,66 @@ def save_site_name(site_name: str) -> bool:
     """保存全局站点名称"""
     clean_name = (site_name or "").strip()
     return set_config_value(SITE_NAME_KEY, {"name": clean_name})
+
+
+ACCOUNT_KEEPALIVE_CONFIG_KEY = "account_keepalive_config"
+
+DEFAULT_ACCOUNT_KEEPALIVE_CONFIG: Dict[str, Any] = {
+    "enabled": True,
+    "interval_hours": 24,
+}
+
+
+def get_account_keepalive_config() -> Dict[str, Any]:
+    """获取网盘多账号池自动保活与静默续期配置"""
+    default_config = DEFAULT_ACCOUNT_KEEPALIVE_CONFIG.copy()
+    raw_value = get_config_value(ACCOUNT_KEEPALIVE_CONFIG_KEY)
+    if not raw_value:
+        return default_config
+    try:
+        parsed = json.loads(raw_value)
+        if not isinstance(parsed, dict):
+            return default_config
+        enabled = bool(parsed.get("enabled", default_config["enabled"]))
+        interval_hours = int(parsed.get("interval_hours", default_config["interval_hours"]))
+        if interval_hours < 1:
+            interval_hours = 1
+        elif interval_hours > 720:
+            interval_hours = 720
+        return {
+            "enabled": enabled,
+            "interval_hours": interval_hours,
+        }
+    except Exception as e:
+        logger.warning(f"读取账号池保活配置失败，回退默认配置: {e}")
+        return default_config
+
+
+def save_account_keepalive_config(config_data: Dict[str, Any]) -> bool:
+    """保存网盘多账号池自动保活与静默续期配置，并触发调度任务重载"""
+    if not isinstance(config_data, dict):
+        return False
+    current = get_account_keepalive_config()
+    enabled = bool(config_data.get("enabled", current["enabled"]))
+    try:
+        interval_hours = int(config_data.get("interval_hours", current["interval_hours"]))
+        if interval_hours < 1:
+            interval_hours = 1
+        elif interval_hours > 720:
+            interval_hours = 720
+    except (ValueError, TypeError):
+        interval_hours = current["interval_hours"]
+
+    new_config = {
+        "enabled": enabled,
+        "interval_hours": interval_hours,
+    }
+    success = set_config_value(ACCOUNT_KEEPALIVE_CONFIG_KEY, new_config)
+    if success:
+        try:
+            from src.services.scheduler_service import reload_account_keepalive_job
+            reload_account_keepalive_job()
+        except Exception as e:
+            logger.warning(f"触发重载网盘账号保活定时任务失败: {e}")
+    return success
+

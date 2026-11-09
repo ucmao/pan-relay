@@ -52,6 +52,35 @@ def reload_storage_cleanup_job():
         logger.error(f"重载存储清理定时任务异常: {exc}")
 
 
+def reload_account_keepalive_job():
+    """重新载入网盘账号池自动保活与静默续期定时任务"""
+    global _scheduler
+    if not _scheduler:
+        return
+    try:
+        from src.services.system_config_service import get_account_keepalive_config
+
+        config = get_account_keepalive_config()
+        if not config.get("enabled", True):
+            if _scheduler.get_job("keepalive_cloud_accounts"):
+                _scheduler.remove_job("keepalive_cloud_accounts")
+                logger.info("已移除网盘账号池定时保活任务（已停用）")
+            return
+
+        hours = max(1, int(config.get("interval_hours", 24)))
+        _scheduler.add_job(
+            scheduled_account_keepalive_job,
+            trigger="interval",
+            hours=hours,
+            id="keepalive_cloud_accounts",
+            max_instances=1,
+            replace_existing=True,
+        )
+        logger.info(f"已更新网盘账号池定时保活任务: 每 {hours} 小时执行一次")
+    except Exception as exc:
+        logger.error(f"重载网盘账号池定时保活任务异常: {exc}")
+
+
 def start_scheduler():
     global _scheduler
 
@@ -92,18 +121,27 @@ def start_scheduler():
         replace_existing=True,
     )
 
-    # 每日自动执行一次多网盘账号池凭证保活与续期任务
-    scheduler.add_job(
-        scheduled_account_keepalive_job,
-        trigger="interval",
-        hours=24,
-        id="keepalive_cloud_accounts",
-        max_instances=1,
-        replace_existing=True,
-    )
+    # 动态载入多网盘账号池凭证保活与续期任务
+    from src.services.system_config_service import get_account_keepalive_config
+
+    keepalive_cfg = get_account_keepalive_config()
+    keepalive_desc = "已停用"
+    if keepalive_cfg.get("enabled", True):
+        k_hours = max(1, int(keepalive_cfg.get("interval_hours", 24)))
+        scheduler.add_job(
+            scheduled_account_keepalive_job,
+            trigger="interval",
+            hours=k_hours,
+            id="keepalive_cloud_accounts",
+            max_instances=1,
+            replace_existing=True,
+        )
+        keepalive_desc = f"每{k_hours}小时"
+    else:
+        logger.info("网盘多账号池定时保活未开启，跳过注册")
 
     scheduler.start()
-    logger.info(f"定时任务已启动: 每30分钟清理过期动态分享, {desc}清理存储, 每24小时执行资源健康巡检与多账号保活")
+    logger.info(f"定时任务已启动: 每30分钟清理过期动态分享, {desc}清理存储, 每24小时资源健康巡检, 账号池保活({keepalive_desc})")
     _scheduler = scheduler
     return _scheduler
 

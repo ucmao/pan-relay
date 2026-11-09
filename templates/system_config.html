@@ -661,7 +661,7 @@
                     </div>
                     <div>
                         <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">健康就绪账号</div>
-                        <div class="text-xl font-bold text-slate-800 dark:text-white" id="statValidAccounts">0</div>
+                        <div class="text-xl font-bold text-slate-800 dark:text-white" id="statValidAccounts">0 <span class="text-xs font-normal text-slate-400 dark:text-slate-500">/ 0</span></div>
                     </div>
                 </div>
                 <div
@@ -683,7 +683,7 @@
                     </div>
                     <div>
                         <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">账号池分流转存</div>
-                        <div class="text-xl font-bold text-slate-800 dark:text-white" id="statTransfers">0 次</div>
+                        <div class="text-xl font-bold text-slate-800 dark:text-white" id="statTransfers">0 <span class="text-xs font-normal text-slate-500 dark:text-slate-400">次</span></div>
                     </div>
                 </div>
             </div>
@@ -702,13 +702,13 @@
                             title="导出当前网盘账号配置为 CSV">
                             <i class="fas fa-file-export"></i> 导出 CSV
                         </button>
-                        <button class="btn btn-outline-primary btn-sm" id="btnImportAccounts" type="button"
+                        <button class="btn btn-outline-secondary btn-sm" id="btnImportAccounts" type="button"
                             title="从 CSV 文件批量导入网盘账号">
                             <i class="fas fa-file-import"></i> 导入 CSV
                         </button>
                         <button class="btn btn-outline-secondary btn-sm" id="btnKeepaliveAccounts" type="button"
-                            title="对所有需要续期的账号执行一次静默刷新">
-                            <i class="fas fa-rotate"></i> 一键全盘续期
+                            title="管理账号池静默保活策略或立即执行全盘续期">
+                            <i class="fas fa-rotate"></i> 全盘续期与保活
                         </button>
                         <button class="btn btn-primary btn-sm" id="btnAddAccount" type="button">
                             <i class="fas fa-plus"></i> 添加网盘账号
@@ -903,6 +903,69 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 全盘续期与自动化保活 Modal -->
+    <div id="accountKeepaliveModal"
+        class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200"
+        style="display: none;" aria-hidden="true">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-rotate text-indigo-600"></i> 全盘续期与自动化保活
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm"
+                    id="btnCloseAccountKeepaliveModal" type="button">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4 text-xs">
+                <!-- 自动化策略配置卡片 -->
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-800 dark:text-slate-200 text-sm">后台定时静默保活</span>
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">自动化引擎</span>
+                        </div>
+                        <label class="plugin-switch scale-90">
+                            <input type="checkbox" id="modalAccountKeepaliveToggle" checked>
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mb-0">
+                        系统将在后台自动轮转 Token（阿里云盘、迅雷、光鸭、移动云盘等），探测 Cookie 活性并同步网盘空间配额。
+                    </p>
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                        <span class="text-slate-600 dark:text-slate-400 font-medium">定时巡检周期:</span>
+                        <select id="modalAccountKeepaliveIntervalSelect" class="form-select form-select-sm text-xs font-semibold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1 px-2.5">
+                            <option value="6">每 6 小时</option>
+                            <option value="12">每 12 小时</option>
+                            <option value="24" selected>每 24 小时 (推荐)</option>
+                            <option value="48">每 48 小时</option>
+                            <option value="72">每 72 小时</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 手动即时执行状态/结果展示区 (动态显示) -->
+                <div id="keepaliveExecutionResult" class="hidden p-3.5 rounded-xl border text-xs space-y-1.5 transition-all">
+                </div>
+
+                <!-- 底部操作栏 -->
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSaveKeepaliveConfigModal">
+                        <i class="fas fa-floppy-disk mr-1"></i> 保存自动策略
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnCancelAccountKeepaliveModal">关闭</button>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnTriggerKeepaliveNow">
+                            <i class="fas fa-rotate mr-1"></i> 立即全盘续期
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

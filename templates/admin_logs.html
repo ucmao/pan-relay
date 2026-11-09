@@ -54,17 +54,22 @@
 
     .log-duration-fast {
         color: #059669;
-        font-weight: 600;
+        font-weight: 500;
+    }
+
+    .log-duration-normal {
+        color: #475569;
+        font-weight: 500;
     }
 
     .log-duration-medium {
         color: #d97706;
-        font-weight: 600;
+        font-weight: 500;
     }
 
     .log-duration-slow {
-        color: #dc2626;
-        font-weight: 600;
+        color: #e11d48;
+        font-weight: 500;
     }
 
     /* Batch Select Dropdown */
@@ -221,7 +226,7 @@
                     </span>
                 </div>
                 <div class="text-xl font-black text-slate-900 mt-2"><span id="searchKpiAvgDuration">0</span> <span
-                        class="text-xs font-normal text-slate-500">ms</span></div>
+                        id="searchKpiAvgDurationUnit" class="text-xs font-normal text-slate-500">ms</span></div>
                 <div class="text-[11px] text-slate-400 mt-0.5">全链路聚合平均响应</div>
             </div>
         </div>
@@ -441,7 +446,7 @@
                     </span>
                 </div>
                 <div class="text-xl font-black text-slate-900 mt-2"><span id="kpiTodayAvgDuration">0</span> <span
-                        class="text-xs font-normal text-slate-500">ms</span></div>
+                        id="kpiTodayAvgDurationUnit" class="text-xs font-normal text-slate-500">ms</span></div>
                 <div class="text-[11px] text-slate-400 mt-0.5">全链路平均耗时</div>
             </div>
         </div>
@@ -768,6 +773,36 @@
         selectMode: 'page', // 'page' or 'all'
     };
 
+    // --- 耗时友好格式化与状态分级 (降低视觉焦虑) ---
+    function formatLogDuration(ms) {
+        if (ms === null || ms === undefined || ms === '') return '-';
+        const val = Number(ms);
+        if (isNaN(val) || val <= 0) return '0 ms';
+        if (val < 1000) return `${val} ms`;
+        if (val < 60000) {
+            return `${(val / 1000).toFixed(1)} s`;
+        }
+        const min = Math.floor(val / 60000);
+        const remSec = ((val % 60000) / 1000).toFixed(0);
+        return `${min}m ${remSec}s`;
+    }
+
+    function getDurationClass(ms, logType = 'search') {
+        const val = Number(ms) || 0;
+        // 搜索（包含聚合多源插件与TG频道）及转存属于长链路I/O，3s~30s 属于完全正常的合理耗时范围
+        if (logType === 'search' || logType === 'transfer') {
+            if (val <= 3000) return 'log-duration-fast';
+            if (val <= 30000) return 'log-duration-normal';
+            if (val <= 45000) return 'log-duration-medium';
+            return 'log-duration-slow';
+        }
+        // 普通接口请求
+        if (val <= 1000) return 'log-duration-fast';
+        if (val <= 5000) return 'log-duration-normal';
+        if (val <= 15000) return 'log-duration-medium';
+        return 'log-duration-slow';
+    }
+
     // --- TAB 切换逻辑 ---
     function switchLogTab(targetTab, updateUrl = true) {
         activeLogTab = targetTab === 'audit' ? 'audit' : 'analytics';
@@ -827,7 +862,19 @@
             document.getElementById('searchKpiTodayApi').textContent = stats.today_api_searches || 0;
             document.getElementById('searchKpiHitRate').textContent = `${stats.today_hit_rate || 100}%`;
             document.getElementById('searchKpiZeroTotal').textContent = stats.today_zero_searches || 0;
-            document.getElementById('searchKpiAvgDuration').textContent = stats.today_avg_duration_ms || 0;
+
+            const avgDur = stats.today_avg_duration_ms || 0;
+            const avgDurEl = document.getElementById('searchKpiAvgDuration');
+            const avgDurUnitEl = document.getElementById('searchKpiAvgDurationUnit');
+            if (avgDurEl) {
+                if (avgDur >= 1000) {
+                    avgDurEl.textContent = (avgDur / 1000).toFixed(1);
+                    if (avgDurUnitEl) avgDurUnitEl.textContent = 's';
+                } else {
+                    avgDurEl.textContent = avgDur;
+                    if (avgDurUnitEl) avgDurUnitEl.textContent = 'ms';
+                }
+            }
         } catch (err) {
             console.error('加载搜索分析统计失败:', err);
         }
@@ -948,9 +995,8 @@
                 resultBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">0 条</span>`;
             }
 
-            let durationClass = 'log-duration-fast';
-            if (log.duration_ms > 1500) durationClass = 'log-duration-slow';
-            else if (log.duration_ms > 800) durationClass = 'log-duration-medium';
+            let durationClass = getDurationClass(log.duration_ms, 'search');
+            const formattedDuration = formatLogDuration(log.duration_ms);
 
             const cloudTag = log.cloud_name ? `<span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-100 text-slate-600 border border-slate-200">${escapeHtml(log.cloud_name)}</span>` : '';
 
@@ -974,8 +1020,8 @@
                     <td class="px-3 py-3 text-center whitespace-nowrap">
                         ${resultBadge}
                     </td>
-                    <td class="px-3 py-3 text-right font-mono text-xs whitespace-nowrap ${durationClass}">
-                        ${log.duration_ms} ms
+                    <td class="px-3 py-3 text-right font-mono text-xs whitespace-nowrap ${durationClass}" title="原始耗时: ${log.duration_ms} ms">
+                        ${formattedDuration}
                     </td>
                     <td class="px-3 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                         ${escapeHtml(log.client_ip)}
@@ -1232,7 +1278,19 @@
                 document.getElementById('kpiTodayTransfer').textContent = stats.today_transfer || 0;
                 document.getElementById('kpiTodaySuccessRate').textContent = `${stats.today_success_rate || 100}%`;
                 document.getElementById('kpiTodayErrors').textContent = stats.today_errors || 0;
-                document.getElementById('kpiTodayAvgDuration').textContent = stats.today_avg_duration_ms || 0;
+
+                const avgDur = stats.today_avg_duration_ms || 0;
+                const avgDurEl = document.getElementById('kpiTodayAvgDuration');
+                const avgDurUnitEl = document.getElementById('kpiTodayAvgDurationUnit');
+                if (avgDurEl) {
+                    if (avgDur >= 1000) {
+                        avgDurEl.textContent = (avgDur / 1000).toFixed(1);
+                        if (avgDurUnitEl) avgDurUnitEl.textContent = 's';
+                    } else {
+                        avgDurEl.textContent = avgDur;
+                        if (avgDurUnitEl) avgDurUnitEl.textContent = 'ms';
+                    }
+                }
             }
         } catch (err) {
             console.error('加载系统 KPI 统计失败:', err);
@@ -1343,9 +1401,8 @@
             else if (log.log_type === 'transfer') typeBadgeClass = 'log-badge-transfer';
             else if (log.log_type === 'api') typeBadgeClass = 'log-badge-api';
 
-            let durationClass = 'log-duration-fast';
-            if (log.duration_ms > 1500) durationClass = 'log-duration-slow';
-            else if (log.duration_ms > 800) durationClass = 'log-duration-medium';
+            let durationClass = getDurationClass(log.duration_ms, log.log_type);
+            const formattedDuration = formatLogDuration(log.duration_ms);
 
             const querySnippet = escapeHtml(log.query_text || '-');
             const errorSnippet = log.error_message ? `<span class="text-rose-600 block text-[11px] truncate max-w-xs" title="${escapeHtml(log.error_message)}"><i class="fas fa-circle-exclamation mr-1"></i>${escapeHtml(log.error_message)}</span>` : '';
@@ -1373,8 +1430,8 @@
                             ${log.status_code}
                         </span>
                     </td>
-                    <td class="px-3 py-3 text-right font-mono text-xs whitespace-nowrap ${durationClass}">
-                        ${log.duration_ms} ms
+                    <td class="px-3 py-3 text-right font-mono text-xs whitespace-nowrap ${durationClass}" title="原始耗时: ${log.duration_ms} ms">
+                        ${formattedDuration}
                     </td>
                     <td class="px-3 py-3 text-center font-mono text-xs text-slate-600 whitespace-nowrap">
                         ${log.result_count !== null ? log.result_count : '-'}
@@ -1811,7 +1868,8 @@
                 ${log.status_code} (${isSuccess ? '成功' : '失败'})
             </span>
         `;
-        document.getElementById('modalLogDuration').textContent = `${log.duration_ms} ms`;
+        const durVal = log.duration_ms || 0;
+        document.getElementById('modalLogDuration').textContent = durVal >= 1000 ? `${(durVal / 1000).toFixed(1)} s (${durVal} ms)` : `${durVal} ms`;
         document.getElementById('modalLogCount').textContent = log.result_count !== null ? `${log.result_count} 条` : '-';
         document.getElementById('modalLogAction').textContent = log.action || '-';
         document.getElementById('modalLogQuery').textContent = log.query_text || '(无请求入参)';
