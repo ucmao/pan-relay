@@ -436,7 +436,7 @@
                     <span class="announcement-dot" aria-hidden="true"></span>
                 </button>
                 {% endif %}
-                {% if enable_resource_request %}
+                {% if enable_resource_request and not hide_resource_request %}
                 <button type="button" id="openResourceRequestBtn" class="request-resource-pill" title="告诉我们你想找的资源"
                     aria-label="求片 / 提交需求">
                     <i class="fas fa-comment-dots text-amber-500"></i>

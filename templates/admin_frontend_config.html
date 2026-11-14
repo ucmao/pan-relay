@@ -415,6 +415,53 @@
                         </div>
                     </div>
                 </div>
+                <div class="rounded-xl border border-slate-200 p-4 space-y-4 mb-5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800">资源详情页与站点地图</h3>
+                            <p class="text-xs text-slate-500 mt-1">为「我的资源」中<b>永久保留</b>的资源生成独立详情页，并输出站点地图供搜索引擎收录。</p>
+                            <ul class="mt-2 space-y-1 text-[11px] text-slate-500 leading-relaxed list-disc pl-4">
+                                <li>详情页地址 <code>/r/资源ID</code>，站点地图 <code>/sitemap.xml</code></li>
+                                <li>临时中转资源与实时搜索结果不生成详情页</li>
+                                <li>体检失效的资源返回 410，并从站点地图移除</li>
+                            </ul>
+                        </div>
+                        <div class="flex items-center gap-3 flex-shrink-0">
+                            <span class="text-xs text-slate-500 font-medium">启用详情页</span>
+                            <label class="plugin-switch" title="切换资源详情页与站点地图">
+                                <input type="checkbox" id="seoDetailEnabled" onchange="toggleDetailPageState()" {% if frontend_seo_config.detail.enabled %}checked{% endif %}>
+                                <span class="plugin-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="seoDetailFields" class="grid grid-cols-1 lg:grid-cols-3 gap-3 transition-opacity {% if not frontend_seo_config.detail.enabled %}opacity-50{% endif %}">
+                        <div>
+                            <label for="seoDetailTitle" class="block text-xs font-semibold text-slate-700 mb-1">标题模板</label>
+                            <input id="seoDetailTitle" maxlength="200"
+                                class="form-control text-xs bg-white border-slate-300"
+                                value="{{ frontend_seo_config.detail.title }}"
+                                oninput="scheduleSeoConfigSave()">
+                        </div>
+                        <div>
+                            <label for="seoDetailDescription" class="block text-xs font-semibold text-slate-700 mb-1">描述模板</label>
+                            <input id="seoDetailDescription" maxlength="500"
+                                class="form-control text-xs bg-white border-slate-300"
+                                value="{{ frontend_seo_config.detail.description }}"
+                                oninput="scheduleSeoConfigSave()">
+                        </div>
+                        <div>
+                            <label for="seoDetailKeywords" class="block text-xs font-semibold text-slate-700 mb-1">关键词模板（可选）</label>
+                            <input id="seoDetailKeywords" maxlength="500"
+                                class="form-control text-xs bg-white border-slate-300"
+                                value="{{ frontend_seo_config.detail.keywords }}"
+                                oninput="scheduleSeoConfigSave()">
+                        </div>
+                    </div>
+                    <div class="space-y-1 text-[11px] text-slate-500 leading-relaxed">
+                        <p>可用变量：<code>{name}</code>、<code>{cloud_name}</code>、<code>{type}</code>、<code>{site_name}</code></p>
+                        <p>简介取自资源备注（不含系统自动生成的「转存自」备注），封面取自资源封面。</p>
+                    </div>
+                </div>
                 <div class="rounded-xl border border-slate-200 p-4 space-y-3 mb-5">
                     <div class="flex items-center justify-between gap-4">
                         <div>
@@ -769,7 +816,7 @@
 {% block scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/utils.js') }}?v=2.0.7"></script>
-<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.8"></script>
+<script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.0.9"></script>
 <script>
     function switchFrontendTab(targetTab) {
         if (!targetTab) targetTab = 'appearance';

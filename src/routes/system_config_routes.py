@@ -610,11 +610,11 @@ def update_frontend_seo_api():
     existing_seo_config = get_frontend_seo_config()
 
     clean_config = {}
-    for page_type in ("home", "search"):
+    for page_type in ("home", "search", "detail"):
         existing_page = existing_seo_config.get(page_type, {})
         page_config = data.get(page_type, existing_page)
         if not isinstance(page_config, dict):
-            return jsonify({"success": False, "message": "请完整填写首页和搜索页 SEO 配置"}), 400
+            return jsonify({"success": False, "message": "请完整填写首页、搜索页和详情页 SEO 配置"}), 400
         clean_page = {}
         for field, max_length in (("title", 200), ("description", 500), ("keywords", 500)):
             value = page_config.get(field, existing_page.get(field, ""))
@@ -631,6 +631,11 @@ def update_frontend_seo_api():
             if not isinstance(allow_indexing, bool):
                 allow_indexing = True
             clean_page["allow_indexing"] = allow_indexing
+        if page_type == "detail":
+            detail_enabled = page_config.get("enabled", existing_page.get("enabled", False))
+            if not isinstance(detail_enabled, bool):
+                return jsonify({"success": False, "message": "资源详情页开关格式无效"}), 400
+            clean_page["enabled"] = detail_enabled
         clean_config[page_type] = clean_page
 
     existing_friend_links = existing_seo_config.get("friend_links", {"enabled": False, "items": []})

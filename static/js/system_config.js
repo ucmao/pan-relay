@@ -653,6 +653,7 @@ async function loadFrontendSeoConfig() {
         const home = config.home || {};
         const search = config.search || {};
         const friendLinks = config.friend_links || {};
+        const detail = config.detail || {};
         const announcement = config.announcement || {};
         const fields = {
             seoHomeTitle: home.title,
@@ -661,11 +662,19 @@ async function loadFrontendSeoConfig() {
             seoSearchTitle: search.title,
             seoSearchDescription: search.description,
             seoSearchKeywords: search.keywords,
+            seoDetailTitle: detail.title,
+            seoDetailDescription: detail.description,
+            seoDetailKeywords: detail.keywords,
         };
         Object.entries(fields).forEach(([id, value]) => {
             const input = document.getElementById(id);
             if (input && typeof value === 'string') input.value = value;
         });
+        const detailEnabled = document.getElementById('seoDetailEnabled');
+        if (detailEnabled) {
+            detailEnabled.checked = detail.enabled === true;
+            updateDetailPageState(detailEnabled.checked);
+        }
         const friendLinksEnabled = document.getElementById('seoFriendLinksEnabled');
         if (friendLinksEnabled) {
             friendLinksEnabled.checked = friendLinks.enabled === true;
@@ -704,6 +713,19 @@ function toggleAnnouncementState() {
     updateAnnouncementState(enabled);
     saveFrontendSeoConfig(true);
     showToast(enabled ? '站点公告已启用' : '站点公告已停用', 'success');
+}
+
+function updateDetailPageState(enabled) {
+    const fields = document.getElementById('seoDetailFields');
+    if (fields) fields.classList.toggle('opacity-50', !enabled);
+}
+
+function toggleDetailPageState() {
+    const toggle = document.getElementById('seoDetailEnabled');
+    const enabled = toggle ? toggle.checked : false;
+    updateDetailPageState(enabled);
+    saveFrontendSeoConfig(true);
+    showToast(enabled ? '资源详情页与站点地图已启用' : '资源详情页与站点地图已停用', 'success');
 }
 
 function updateFriendLinksState(enabled) {
@@ -750,6 +772,12 @@ async function saveFrontendSeoConfig(isSilent = false) {
             description: value('seoSearchDescription'),
             keywords: value('seoSearchKeywords'),
             allow_indexing: true,
+        },
+        detail: {
+            enabled: Boolean(document.getElementById('seoDetailEnabled')?.checked),
+            title: value('seoDetailTitle'),
+            description: value('seoDetailDescription'),
+            keywords: value('seoDetailKeywords'),
         },
         friend_links: {
             enabled: Boolean(document.getElementById('seoFriendLinksEnabled')?.checked),
@@ -2271,14 +2299,14 @@ function renderAccountsTable(accounts) {
         // 状态徽章
         let statusBadge = '';
         if (isTesting) {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center gap-1 w-max"><i class="fas fa-spinner fa-spin text-[9px]"></i>测活中...</span>';
+            statusBadge = '<span class="w-16 shrink-0 justify-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 flex items-center gap-1"><i class="fas fa-spinner fa-spin text-[9px]"></i>测活中...</span>';
         } else if (!isActive) {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400">已停用</span>';
+            statusBadge = '<span class="inline-flex items-center w-16 shrink-0 justify-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400">已停用</span>';
         } else if (isValid) {
-            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1 w-max"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>正常就绪</span>';
+            statusBadge = '<span class="w-16 shrink-0 justify-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>正常</span>';
         } else {
             const reason = acc.invalid_reason ? escapeHtml(acc.invalid_reason) : '凭据失效';
-            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 flex items-center gap-1 w-max cursor-help" title="${reason}"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>失效</span>`;
+            statusBadge = `<span class="w-16 shrink-0 justify-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400 flex items-center gap-1 cursor-help" title="${reason}"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>失效</span>`;
         }
 
         html += `

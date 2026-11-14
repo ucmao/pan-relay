@@ -1494,6 +1494,12 @@ DEFAULT_FRONTEND_SEO_CONFIG = {
         "keywords": "{query},网盘搜索,资源检索",
         "allow_indexing": True,
     },
+    "detail": {
+        "enabled": False,
+        "title": "{name} - {cloud_name}资源 - {site_name}",
+        "description": "{name}，{cloud_name}分享资源，由{site_name}收录整理。",
+        "keywords": "{name},{cloud_name},网盘资源",
+    },
     "friend_links": {
         "enabled": False,
         "items": [],
@@ -1520,7 +1526,7 @@ def get_frontend_seo_config() -> Dict[str, Any]:
     config = json.loads(json.dumps(DEFAULT_FRONTEND_SEO_CONFIG))
     if not isinstance(parsed, dict):
         return config
-    for page_type in ("home", "search"):
+    for page_type in ("home", "search", "detail"):
         page_config = parsed.get(page_type)
         if not isinstance(page_config, dict):
             continue
@@ -1529,6 +1535,8 @@ def get_frontend_seo_config() -> Dict[str, Any]:
                 config[page_type][field] = page_config[field]
     if isinstance(parsed.get("search"), dict) and isinstance(parsed["search"].get("allow_indexing"), bool):
         config["search"]["allow_indexing"] = parsed["search"]["allow_indexing"]
+    if isinstance(parsed.get("detail"), dict) and isinstance(parsed["detail"].get("enabled"), bool):
+        config["detail"]["enabled"] = parsed["detail"]["enabled"]
     friend_links = parsed.get("friend_links")
     if isinstance(friend_links, dict):
         if isinstance(friend_links.get("enabled"), bool):
@@ -1576,6 +1584,34 @@ def build_frontend_seo_meta(page_type: str, query: str = "") -> Dict[str, str]:
         "robots": "index,follow" if selected_type == "home" or config["search"]["allow_indexing"] else "noindex,follow",
     }
     return result
+
+
+def is_resource_detail_enabled() -> bool:
+    """资源详情页与站点地图是否开启（默认关闭）。"""
+    return bool(get_frontend_seo_config()["detail"].get("enabled", False))
+
+
+def build_resource_detail_seo_meta(resource: Dict[str, Any], indexable: bool = True) -> Dict[str, str]:
+    """为私有资源库中的单条资源生成详情页 SEO 文本。"""
+    page_config = get_frontend_seo_config()["detail"]
+    replacements = {
+        "{site_name}": get_site_name(),
+        "{name}": str(resource.get("name") or "网盘资源").strip()[:120],
+        "{cloud_name}": str(resource.get("cloud_name") or "网盘").strip()[:30],
+        "{type}": str(resource.get("type") or "").strip()[:30],
+    }
+
+    def apply_tokens(value: str) -> str:
+        for token, replacement in replacements.items():
+            value = value.replace(token, replacement)
+        return value.strip()
+
+    return {
+        "title": apply_tokens(page_config["title"]),
+        "description": apply_tokens(page_config["description"]),
+        "keywords": apply_tokens(page_config["keywords"]),
+        "robots": "index,follow" if indexable else "noindex,follow",
+    }
 
 
 def get_site_logo() -> str:

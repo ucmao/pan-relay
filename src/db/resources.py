@@ -292,11 +292,67 @@ def list_resources(
         conn.close()
 
 
+# 可公开生成详情页的资源：永久保留（与定时清理条件互斥，不会被物理删除）。
+# 临时中转资源 (origin_type='relay' 或 is_replaced=1) 到期即删，生成页面只会留下死链。
+PUBLIC_RESOURCE_CONDITION = "COALESCE(origin_type, 'relay') != 'relay' AND COALESCE(is_replaced, 0) = 0"
+
+
+def get_public_resource(resource_id: int) -> Optional[Dict[str, Any]]:
+    """读取可展示为前台详情页的资源；临时中转资源或不存在时返回 None。"""
+    sql = f"""
+    SELECT id, name, share_link, cloud_name, type, remarks, cover_url,
+           health_status, created_at, updated_at
+    FROM resources
+    WHERE id = ? AND {PUBLIC_RESOURCE_CONDITION} AND COALESCE(share_link, '') != ''
+    """
+    with db_cursor() as cursor:
+        if cursor is None:
+            return None
+        cursor.execute(sql, (int(resource_id),))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        keys = ("id", "name", "share_link", "cloud_name", "type", "remarks", "cover_url",
+                "health_status", "created_at", "updated_at")
+        item = dict(row) if isinstance(row, dict) else dict(zip(keys, row))
+        for key in ("created_at", "updated_at"):
+            if item.get(key) is not None:
+                item[key] = str(item[key])
+        return item
+
+
+def list_sitemap_resources(limit: int = 50000) -> List[Dict[str, Any]]:
+    """站点地图用：列出可公开且未判定失效的资源 ID 与更新时间。"""
+    safe_limit = max(1, min(int(limit), 50000))
+    sql = f"""
+    SELECT id, COALESCE(updated_at, created_at) AS lastmod
+    FROM resources
+    WHERE {PUBLIC_RESOURCE_CONDITION}
+      AND COALESCE(share_link, '') != ''
+      AND COALESCE(health_status, 'unknown') != 'bad'
+    ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+    LIMIT ?
+    """
+    with db_cursor() as cursor:
+        if cursor is None:
+            return []
+        cursor.execute(sql, (safe_limit,))
+        rows = cursor.fetchall() or []
+        items = []
+        for row in rows:
+            item = dict(row) if isinstance(row, dict) else {"id": row[0], "lastmod": row[1]}
+            if item.get("lastmod") is not None:
+                item["lastmod"] = str(item["lastmod"])
+            items.append(item)
+        return items
+
+
 def get_resource_hall_items(limit: int = 8) -> List[Dict[str, Any]]:
     """读取前台资源大厅展示用的最近资源。"""
     safe_limit = max(1, min(int(limit), 24))
-    sql = """
-    SELECT id, name, share_link, cloud_name, type, cover_url, created_at
+    sql = f"""
+    SELECT id, name, share_link, cloud_name, type, cover_url, created_at,
+           CASE WHEN {PUBLIC_RESOURCE_CONDITION} THEN 1 ELSE 0 END AS is_public
     FROM resources
     WHERE COALESCE(share_link, '') != ''
     ORDER BY created_at DESC, id DESC
@@ -320,6 +376,7 @@ def get_resource_hall_items(limit: int = 8) -> List[Dict[str, Any]]:
                     "type": row[4],
                     "cover_url": row[5],
                     "created_at": row[6],
+                    "is_public": row[7],
                 }
             items.append(item)
         return items

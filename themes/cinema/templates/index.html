@@ -86,7 +86,7 @@
         {% if resource_hall_items %}
         <div class="resource-grid">
           {% for item in resource_hall_items %}
-          <a class="resource-card" href="{{ item.share_link }}" target="_blank" rel="noopener noreferrer">
+          {% if resource_detail_enabled and item.is_public %}<a class="resource-card" href="{{ url_for('seo.resource_detail', resource_id=item.id) }}">{% else %}<a class="resource-card" href="{{ item.share_link }}" target="_blank" rel="noopener noreferrer">{% endif %}
             <div class="resource-cover">
               {% if item.cover_url %}<img src="{{ item.cover_url }}" alt="{{ item.name }}封面" loading="lazy">{% else %}<span class="resource-cover-placeholder" aria-hidden="true">✦</span>{% endif %}
               <span class="resource-open" aria-hidden="true">↗</span>

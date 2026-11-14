@@ -1,0 +1,134 @@
+{% extends "public_layout.html" %}
+
+{% block head %}
+<title>{{ seo_meta.title }}</title>
+<meta name="description" content="{{ seo_meta.description }}">
+{% if seo_meta.keywords %}<meta name="keywords" content="{{ seo_meta.keywords }}">{% endif %}
+<meta name="robots" content="{{ seo_meta.robots }}">
+<link rel="canonical" href="{{ canonical_url }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ seo_meta.title }}">
+<meta property="og:description" content="{{ seo_meta.description }}">
+<meta property="og:url" content="{{ canonical_url }}">
+{% if resource.cover_url %}<meta property="og:image" content="{{ resource.cover_url }}">{% endif %}
+<style>
+    .rd-wrap { max-width: 860px; margin: 12px auto 48px; }
+    .rd-breadcrumb { font-size: 0.8rem; color: #64748b; margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .rd-breadcrumb a { color: #64748b; text-decoration: none; }
+    .rd-breadcrumb a:hover { color: #b7791f; }
+    .rd-card { background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(148, 163, 184, 0.24); border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06); padding: 24px; display: flex; gap: 24px; }
+    .rd-cover { flex: 0 0 180px; aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden; background: #f1f5f9;
+        display: flex; align-items: center; justify-content: center; color: #cbd5e1; font-size: 2.4rem; }
+    .rd-cover img { width: 100%; height: 100%; object-fit: cover; }
+    .rd-main { flex: 1; min-width: 0; }
+    .rd-title { font-size: 1.45rem; font-weight: 700; line-height: 1.4; margin: 0 0 12px; word-break: break-word; }
+    .rd-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .rd-tag { font-size: 0.75rem; padding: 3px 10px; border-radius: 999px; background: #f1f5f9; color: #475569; }
+    .rd-tag.is-ok { background: #ecfdf5; color: #047857; }
+    .rd-tag.is-dead { background: #fef2f2; color: #b91c1c; }
+    .rd-remarks { white-space: pre-line; font-size: 0.88rem; color: #334155; line-height: 1.75; margin: 0 0 18px;
+        padding: 12px 14px; background: #f8fafc; border-radius: 10px; }
+    .rd-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .rd-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 10px; font-size: 0.88rem;
+        font-weight: 600; text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: all .18s ease; }
+    .rd-btn-primary { background: #de9f2d; color: #fff; }
+    .rd-btn-primary:hover { background: #b7791f; }
+    .rd-btn-ghost { background: #fff; color: #334155; border-color: #cbd5e1; }
+    .rd-btn-ghost:hover { border-color: #de9f2d; color: #b7791f; }
+    .rd-dead-note { font-size: 0.88rem; color: #b91c1c; margin: 0 0 16px; }
+    @media (max-width: 640px) {
+        .rd-card { flex-direction: column; padding: 18px; }
+        .rd-cover { flex-basis: auto; width: 100%; max-width: 220px; align-self: center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="container-fluid-custom">
+    <div class="rd-wrap">
+        <nav class="rd-breadcrumb" aria-label="面包屑">
+            <a href="{{ url_for('search_index') }}">{{ site_name }}</a>
+            <span aria-hidden="true">/</span>
+            {% if resource.cloud_name %}
+            <a href="{{ url_for('search_index', keyword=resource.cloud_name) }}">{{ resource.cloud_name }}</a>
+            <span aria-hidden="true">/</span>
+            {% endif %}
+            <span>{{ resource.name }}</span>
+        </nav>
+
+        <article class="rd-card">
+            <div class="rd-cover">
+                {% if resource.cover_url %}
+                <img src="{{ resource.cover_url }}" alt="{{ resource.name }}封面" loading="lazy">
+                {% else %}
+                <i class="fas fa-folder-open" aria-hidden="true"></i>
+                {% endif %}
+            </div>
+            <div class="rd-main">
+                <h1 class="rd-title">{{ resource.name }}</h1>
+                <div class="rd-tags">
+                    {% if resource.cloud_name %}<span class="rd-tag"><i class="fas fa-cloud"></i> {{ resource.cloud_name }}</span>{% endif %}
+                    {% if resource.type %}<span class="rd-tag">{{ resource.type }}</span>{% endif %}
+                    {% if resource.created_at %}<span class="rd-tag">收录于 {{ resource.created_at[:10] }}</span>{% endif %}
+                    {% if is_dead %}
+                    <span class="rd-tag is-dead">链接已失效</span>
+                    {% elif resource.health_status == 'ok' %}
+                    <span class="rd-tag is-ok">链接有效</span>
+                    {% endif %}
+                </div>
+
+                {% if resource.public_remarks %}
+                <p class="rd-remarks">{{ resource.public_remarks }}</p>
+                {% endif %}
+
+                {% if is_dead %}
+                <p class="rd-dead-note">该资源分享链接已失效，可以搜索同名资源查找其他可用分享。</p>
+                <div class="rd-actions">
+                    <a class="rd-btn rd-btn-primary" href="{{ url_for('search_index', keyword=resource.name) }}">
+                        <i class="fas fa-magnifying-glass"></i> 搜索同名资源
+                    </a>
+                </div>
+                {% else %}
+                <div class="rd-actions">
+                    <a class="rd-btn rd-btn-primary" href="{{ resource.share_link }}" target="_blank" rel="nofollow noopener noreferrer">
+                        <i class="fas fa-arrow-up-right-from-square"></i> 打开网盘链接
+                    </a>
+                    <button type="button" class="rd-btn rd-btn-ghost" id="rdCopyBtn" data-link="{{ resource.share_link }}">
+                        <i class="fas fa-copy"></i> 复制链接
+                    </button>
+                    <a class="rd-btn rd-btn-ghost" href="{{ url_for('search_index', keyword=resource.name) }}">
+                        <i class="fas fa-magnifying-glass"></i> 搜索同名资源
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </article>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('rdCopyBtn');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            const link = btn.getAttribute('data-link') || '';
+            try {
+                await navigator.clipboard.writeText(link);
+            } catch (e) {
+                const input = document.createElement('textarea');
+                input.value = link;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                input.remove();
+            }
+            btn.innerHTML = '<i class="fas fa-check"></i> 已复制';
+            setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> 复制链接'; }, 2000);
+        });
+    });
+</script>
+{% endblock %}

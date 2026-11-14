@@ -17,6 +17,7 @@ from src.routes.search_sources_routes import search_sources_bp
 from src.routes.dashboard_routes import dashboard_bp
 from src.routes.api_v1_routes import api_v1_bp
 from src.routes.log_routes import log_bp
+from src.routes.seo_routes import seo_bp
 from src.configs.app_config import SECRET_KEY
 from src.db.connection import init_sqlite_db
 from src.services.scheduler_service import start_scheduler
@@ -44,6 +45,7 @@ from src.services.system_config_service import (
     is_frontend_footer_text_enabled,
     is_frontend_disclaimer_enabled,
     is_frontend_copyright_enabled,
+    is_resource_detail_enabled,
 )
 from src.services.theme_service import theme_static_bp
 from src.utils.netdisk_utils import get_netdisk_drive_type
@@ -117,6 +119,7 @@ app.register_blueprint(plugin_bp)
 app.register_blueprint(search_sources_bp)
 app.register_blueprint(api_v1_bp)
 app.register_blueprint(log_bp)
+app.register_blueprint(seo_bp)
 start_scheduler()
 
 # 上下文处理器，将登录状态传递给所有模板
@@ -209,6 +212,7 @@ def search_index():
         from src.db.resources import get_resource_hall_items
 
         ctx['resource_hall_items'] = get_resource_hall_items(limit=8)
+        ctx['resource_detail_enabled'] = is_resource_detail_enabled()
         return render_template('cinema/templates/index.html', **ctx)
     if active_theme == "aurora":
         return render_template('aurora/templates/index.html', **ctx)
