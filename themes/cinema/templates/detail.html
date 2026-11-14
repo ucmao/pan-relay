@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% include "_detail_seo_head.html" %}
+  <link rel="stylesheet" href="/themes/cinema/assets/css/theme.css?v=1.1.1">
+  <link rel="stylesheet" href="/themes/cinema/assets/css/search.css?v=1.0.7">
+  <style>
+    .cd-page { width: min(960px, calc(100% - 48px)); margin: 0 auto; padding: 26px 0 56px; min-height: calc(100vh - 200px); }
+    .cd-crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-bottom: 18px; color: #9a9fa8; font-size: 12px; }
+    .cd-crumb a { color: #858a94; transition: color .18s; }
+    .cd-crumb a:hover { color: var(--red); }
+
+    .cd-card { display: flex; gap: 28px; padding: 26px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 26px rgba(25, 29, 38, .05); }
+    .cd-cover { position: relative; flex: 0 0 190px; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 7px; background: #252a37; }
+    .cd-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cd-cover-placeholder { display: grid; width: 100%; height: 100%; place-items: center; color: #ed8b83; font-size: 34px; }
+    .cd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+    .cd-kicker { color: #adb1ba; font-size: 9px; letter-spacing: 1.55px; font-weight: 700; margin-bottom: 8px; }
+    .cd-title { margin: 0 0 14px; font-size: 26px; line-height: 1.35; font-weight: 800; letter-spacing: -.6px; word-break: break-word; }
+    .cd-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .cd-tag { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 4px; background: #f4f5f7; color: #6f7480; font-size: 12px; font-weight: 600; }
+    .cd-tag.is-drive { background: #fff1f0; color: var(--red); }
+    .cd-tag.is-ok { background: #ecf8f2; color: #2f9e6b; }
+    .cd-tag.is-dead { background: #fdeeee; color: var(--red-dark); }
+
+    .cd-remarks { margin: 0 0 22px; padding: 14px 16px; border-left: 3px solid #f4c4c3; background: var(--canvas); border-radius: 0 7px 7px 0; color: #4a4e57; font-size: 13.5px; line-height: 1.8; white-space: pre-line; }
+    .cd-dead { margin: 0 0 18px; color: var(--red-dark); font-size: 13px; }
+
+    .cd-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; }
+    .cd-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 44px; padding: 0 22px; border-radius: 7px; border: 1px solid #eaebef; background: #fff; color: #4a4e57; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .2s, border-color .2s, color .2s, transform .2s; }
+    .cd-btn:hover { border-color: #f2a6a7; background: #fff7f6; color: var(--red); }
+    .cd-btn-primary { border-color: var(--red); background: var(--red); color: #fff; }
+    .cd-btn-primary:hover { border-color: var(--red-dark); background: var(--red-dark); color: #fff; transform: translateY(-1px); }
+
+    @media (max-width: 680px) {
+      .cd-page { width: calc(100% - 32px); padding-top: 18px; }
+      .cd-card { flex-direction: column; padding: 18px; gap: 18px; }
+      .cd-cover { flex-basis: auto; width: 150px; }
+      .cd-title { font-size: 21px; }
+      .cd-btn { flex: 1 1 auto; }
+    }
+  </style>
+</head>
+<body>
+  {% set header_search_href = '/search' %}
+  {% include "cinema/templates/_header.html" %}
+
+  <main class="cd-page">
+    <nav class="cd-crumb" aria-label="面包屑">
+      <a href="/">首页</a><span aria-hidden="true">/</span>
+      <a href="/#resource-hall">资源大厅</a><span aria-hidden="true">/</span>
+      <span>{{ resource.name }}</span>
+    </nav>
+
+    <article class="cd-card">
+      <div class="cd-cover">
+        {% if resource.cover_url %}
+        <img src="{{ resource.cover_url }}" alt="{{ resource.name }}封面" loading="lazy">
+        {% else %}
+        <span class="cd-cover-placeholder" aria-hidden="true">✦</span>
+        {% endif %}
+      </div>
+      <div class="cd-main">
+        <div class="cd-kicker">RESOURCE DETAIL</div>
+        <h1 class="cd-title">{{ resource.name }}</h1>
+        <div class="cd-tags">
+          {% if resource.cloud_name %}<span class="cd-tag is-drive">{{ resource.cloud_name }}</span>{% endif %}
+          {% if resource.type %}<span class="cd-tag">{{ resource.type }}</span>{% endif %}
+          {% if resource.created_at %}<span class="cd-tag">收录于 {{ resource.created_at[:10] }}</span>{% endif %}
+          {% if is_dead %}<span class="cd-tag is-dead">链接已失效</span>
+          {% elif resource.health_status == 'ok' %}<span class="cd-tag is-ok">链接有效</span>{% endif %}
+        </div>
+
+        {% if resource.public_remarks %}<p class="cd-remarks">{{ resource.public_remarks }}</p>{% endif %}
+
+        {% if is_dead %}
+        <p class="cd-dead">该资源分享链接已失效，可以搜索同名资源查找其他可用分享。</p>
+        <div class="cd-actions">
+          <a class="cd-btn cd-btn-primary" href="/search?q={{ resource.name | urlencode }}">搜索同名资源 <span aria-hidden="true">→</span></a>
+        </div>
+        {% else %}
+        <div class="cd-actions">
+          <a class="cd-btn cd-btn-primary" href="{{ resource.share_link }}" target="_blank" rel="nofollow noopener noreferrer">打开网盘链接 <span aria-hidden="true">↗</span></a>
+          <button class="cd-btn" type="button" id="detailCopyBtn" data-link="{{ resource.share_link }}">复制链接</button>
+          <a class="cd-btn" href="/search?q={{ resource.name | urlencode }}">搜索同名资源</a>
+        </div>
+        {% endif %}
+      </div>
+    </article>
+  </main>
+
+  {% include "cinema/templates/_footer.html" %}
+  {% include "_detail_copy_script.html" %}
+</body>
+</html>

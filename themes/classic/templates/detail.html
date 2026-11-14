@@ -1,0 +1,112 @@
+{% extends "public_layout.html" %}
+
+{% block head %}
+{% include "_detail_seo_head.html" %}
+<style>
+    .cl-wrap { width: min(880px, 100%); margin: 8px auto 52px; }
+
+    .cl-search { display: flex; align-items: center; gap: 8px; padding: 8px; margin: 0 auto 26px; width: min(640px, 100%);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.88));
+        border: 1px solid rgba(148, 163, 184, 0.16); border-radius: 20px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 14px 34px rgba(15, 23, 42, 0.07); }
+    .cl-search input { flex: 1; min-width: 0; height: 44px; border: 0; outline: 0; background: transparent; padding-left: 14px; font-size: 0.95rem; color: #0f172a; }
+    .cl-search button { width: 46px; height: 44px; border: 0; border-radius: 14px; cursor: pointer; color: #4A3728;
+        background: linear-gradient(135deg, #f8ca72, #eeaf46); box-shadow: 0 10px 22px rgba(245, 191, 96, 0.28); transition: transform .2s ease, box-shadow .2s ease; }
+    .cl-search button:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(245, 191, 96, 0.36); }
+
+    .cl-crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 14px; font-size: 0.8rem; color: #94a3b8; }
+    .cl-crumb a { color: #64748b; text-decoration: none; }
+    .cl-crumb a:hover { color: #b7791f; }
+
+    .cl-card { display: flex; gap: 24px; padding: 24px; border-radius: 24px; background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(148, 163, 184, 0.18); box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07); backdrop-filter: blur(10px); }
+    .cl-cover { flex: 0 0 170px; aspect-ratio: 3 / 4; border-radius: 16px; overflow: hidden; background: #f1f5f9;
+        display: flex; align-items: center; justify-content: center; color: #e2b766; font-size: 2.2rem; }
+    .cl-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .cl-main { flex: 1; min-width: 0; }
+
+    .cl-title { margin: 2px 0 12px; font-size: 1.4rem; line-height: 1.45; font-weight: 700; color: #0f172a; word-break: break-word; }
+    .cl-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .cl-tag { display: inline-flex; align-items: center; gap: 5px; padding: 3px 11px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; background: #f1f5f9; color: #475569; }
+    .cl-tag.is-drive { background: #fdf3df; color: #b7791f; }
+    .cl-tag.is-ok { background: #ecfdf5; color: #047857; }
+    .cl-tag.is-dead { background: #fef2f2; color: #b91c1c; }
+
+    .cl-remarks { margin: 0 0 18px; padding: 12px 14px; border-radius: 14px; background: #f8fafc; color: #334155; font-size: 0.88rem; line-height: 1.75; white-space: pre-line; }
+    .cl-dead { margin: 0 0 16px; color: #b91c1c; font-size: 0.88rem; }
+
+    .cl-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .cl-btn { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 18px; border-radius: 14px; font-size: 0.88rem; font-weight: 600;
+        text-decoration: none; cursor: pointer; border: 1px solid #e2e8f0; background: #fff; color: #334155; transition: all .2s ease; }
+    .cl-btn:hover { border-color: rgba(222, 159, 45, 0.55); color: #b7791f; }
+    .cl-btn-primary { border: 0; color: #4A3728; background: linear-gradient(135deg, #f8ca72, #eeaf46); box-shadow: 0 12px 26px rgba(245, 191, 96, 0.3); }
+    .cl-btn-primary:hover { color: #4A3728; transform: translateY(-1px); box-shadow: 0 16px 32px rgba(245, 191, 96, 0.38); }
+
+    @media (max-width: 640px) {
+        .cl-card { flex-direction: column; padding: 18px; border-radius: 20px; }
+        .cl-cover { flex-basis: auto; width: 150px; align-self: center; }
+        .cl-title { font-size: 1.2rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="container-fluid-custom">
+    <div class="cl-wrap">
+        <form class="cl-search" action="/" method="get" role="search">
+            <input type="text" name="keyword" placeholder="搜索资源 电影 电视剧 音乐 软件..." aria-label="搜索关键词" required>
+            <button type="submit" aria-label="开始搜索"><i class="fas fa-paper-plane"></i></button>
+        </form>
+
+        <nav class="cl-crumb" aria-label="面包屑">
+            <a href="/">{{ site_name }}</a>
+            {% if resource.cloud_name %}
+            <span aria-hidden="true">/</span>
+            <a href="/?keyword={{ resource.cloud_name | urlencode }}">{{ resource.cloud_name }}</a>
+            {% endif %}
+            <span aria-hidden="true">/</span>
+            <span>资源详情</span>
+        </nav>
+
+        <article class="cl-card">
+            <div class="cl-cover">
+                {% if resource.cover_url %}
+                <img src="{{ resource.cover_url }}" alt="{{ resource.name }}封面" loading="lazy">
+                {% else %}
+                <i class="fas fa-folder-open" aria-hidden="true"></i>
+                {% endif %}
+            </div>
+            <div class="cl-main">
+                <h1 class="cl-title">{{ resource.name }}</h1>
+                <div class="cl-tags">
+                    {% if resource.cloud_name %}<span class="cl-tag is-drive"><i class="fas fa-cloud"></i>{{ resource.cloud_name }}</span>{% endif %}
+                    {% if resource.type %}<span class="cl-tag">{{ resource.type }}</span>{% endif %}
+                    {% if resource.created_at %}<span class="cl-tag">收录于 {{ resource.created_at[:10] }}</span>{% endif %}
+                    {% if is_dead %}<span class="cl-tag is-dead">链接已失效</span>
+                    {% elif resource.health_status == 'ok' %}<span class="cl-tag is-ok">链接有效</span>{% endif %}
+                </div>
+
+                {% if resource.public_remarks %}<p class="cl-remarks">{{ resource.public_remarks }}</p>{% endif %}
+
+                {% if is_dead %}
+                <p class="cl-dead">该资源分享链接已失效，可以搜索同名资源查找其他可用分享。</p>
+                <div class="cl-actions">
+                    <a class="cl-btn cl-btn-primary" href="/?keyword={{ resource.name | urlencode }}"><i class="fas fa-magnifying-glass"></i> 搜索同名资源</a>
+                </div>
+                {% else %}
+                <div class="cl-actions">
+                    <a class="cl-btn cl-btn-primary" href="{{ resource.share_link }}" target="_blank" rel="nofollow noopener noreferrer"><i class="fas fa-arrow-up-right-from-square"></i> 打开网盘链接</a>
+                    <button class="cl-btn" type="button" id="detailCopyBtn" data-link="{{ resource.share_link }}"><i class="fas fa-copy"></i> 复制链接</button>
+                    <a class="cl-btn" href="/?keyword={{ resource.name | urlencode }}"><i class="fas fa-magnifying-glass"></i> 搜索同名资源</a>
+                </div>
+                {% endif %}
+            </div>
+        </article>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% include "_detail_copy_script.html" %}
+{% endblock %}

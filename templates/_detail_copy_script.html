@@ -1,0 +1,24 @@
+<script>
+  (function () {
+    var btn = document.getElementById('detailCopyBtn');
+    if (!btn) return;
+    var label = btn.innerHTML;
+    btn.addEventListener('click', function () {
+      var link = btn.getAttribute('data-link') || '';
+      var done = function () {
+        btn.textContent = '已复制';
+        setTimeout(function () { btn.innerHTML = label; }, 1800);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(link).then(done, function () { fallback(); done(); });
+      } else { fallback(); done(); }
+      function fallback() {
+        var t = document.createElement('textarea');
+        t.value = link; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+        document.body.appendChild(t); t.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        t.remove();
+      }
+    });
+  })();
+</script>

@@ -1,0 +1,12 @@
+<title>{{ seo_meta.title }}</title>
+<meta name="description" content="{{ seo_meta.description }}">
+{% if seo_meta.keywords %}<meta name="keywords" content="{{ seo_meta.keywords }}">{% endif %}
+<meta name="robots" content="{{ seo_meta.robots }}">
+<link rel="canonical" href="{{ canonical_url }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ seo_meta.title }}">
+<meta property="og:description" content="{{ seo_meta.description }}">
+<meta property="og:url" content="{{ canonical_url }}">
+{% if resource.cover_url %}<meta property="og:image" content="{{ resource.cover_url }}">{% endif %}
+<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+<link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    // 与主题其它页面共用夜间模式记忆，渲染前设置避免闪烁
+    try { document.documentElement.setAttribute('data-theme', localStorage.getItem('theme_mode') || 'light'); } catch (e) {}
+  </script>
+  {% include "_detail_seo_head.html" %}
+  <link rel="stylesheet" href="/themes/aurora/assets/css/theme.css?v=1.0.1">
+  <link rel="stylesheet" href="/themes/aurora/assets/css/results.css?v=1.0.4">
+  <style>
+    .topbar-main {
+      display: grid !important;
+      grid-template-columns: calc(var(--serp-left) - 32px) minmax(360px, var(--search-width)) minmax(120px, 1fr) !important;
+      align-items: center !important;
+      gap: 0 !important;
+    }
+    .topbar-brand { display: inline-flex !important; align-items: center !important; padding-right: 14px; }
+    .topbar-brand img { width: auto !important; max-width: calc(var(--serp-left) - 44px) !important; height: 46px !important; object-fit: contain !important; display: block !important; }
+    @media (max-width: 1120px) {
+      .topbar-main { grid-template-columns: minmax(96px, 128px) minmax(260px, 1fr) auto !important; gap: 12px !important; }
+      .topbar-brand img { max-width: 110px !important; height: 38px !important; }
+    }
+    @media (max-width: 720px) {
+      .topbar-main { grid-template-columns: 66px minmax(128px, 1fr) auto !important; gap: 6px !important; }
+      .topbar-brand img { max-width: 64px !important; height: 32px !important; }
+    }
+
+    .ad-page { width: min(var(--result-width) + var(--serp-left), calc(100% - 40px)); margin: 28px auto 0; padding-left: var(--serp-left); }
+    @media (max-width: 1120px) { .ad-page { padding-left: 0; width: min(720px, calc(100% - 32px)); } }
+
+    .ad-crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+    .ad-crumb a { color: var(--muted); text-decoration: none; }
+    .ad-crumb a:hover { color: var(--blue); }
+    .ad-crumb span[aria-hidden] { opacity: .5; }
+
+    .ad-card { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 24px; padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); box-shadow: 0 8px 26px rgba(19, 24, 35, .05); }
+    .ad-card.no-poster { grid-template-columns: 1fr; }
+    .ad-poster { width: 120px; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: var(--tab-soft); }
+    .ad-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .ad-title { margin: 0 0 10px; font-size: 22px; line-height: 1.45; font-weight: 600; color: var(--ink); word-break: break-word; }
+    .ad-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .ad-chip { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; background: var(--tab-soft); color: var(--muted); }
+    .ad-chip.is-drive { background: var(--blue-soft); color: var(--blue); }
+    .ad-chip.is-ok { background: rgba(16, 185, 129, .12); color: #059669; }
+    .ad-chip.is-dead { background: rgba(239, 68, 68, .12); color: #dc2626; }
+
+    .ad-remarks { margin: 0 0 18px; font-size: 14px; line-height: 1.8; color: var(--ink); opacity: .82; white-space: pre-line; }
+    .ad-dead { margin: 0 0 16px; font-size: 14px; color: #dc2626; }
+
+    .ad-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .ad-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 18px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--ink); transition: background .15s, border-color .15s, transform .15s; }
+    .ad-btn:hover { background: var(--action-hover); }
+    .ad-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .ad-btn-primary { background: var(--brand-action); border-color: var(--brand-action); color: #fff; box-shadow: 0 8px 20px var(--brand-action-shadow); }
+    .ad-btn-primary:hover { background: var(--brand-action-hover); transform: translateY(-1px); }
+
+    @media (max-width: 600px) {
+      .ad-card { grid-template-columns: 1fr; padding: 18px; }
+      .ad-poster { width: 140px; grid-row: 1; }
+      .ad-title { font-size: 19px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="result-topbar">
+    <div class="topbar-main">
+      <a class="topbar-brand" href="/" aria-label="返回首页">
+        <img src="{{ site_logo }}" alt="{{ site_name }}">
+      </a>
+      <form class="serp-search" action="/search" method="get" autocomplete="off">
+        <div class="serp-search__shell">
+          <svg class="serp-search__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5"></circle>
+            <path d="m16 16 4 4"></path>
+          </svg>
+          <input id="detailSearchInput" name="q" type="text" aria-label="搜索关键词" placeholder="搜索网盘资源..." required>
+          <button class="serp-clear" type="button" aria-label="清空搜索"
+            onclick="document.getElementById('detailSearchInput').value='';">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10"></path><path d="m17 7-10 10"></path></svg>
+          </button>
+          <button class="serp-search__submit" type="submit">搜索</button>
+        </div>
+      </form>
+      <nav class="topbar-actions" aria-label="快捷操作">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换夜间模式" aria-pressed="false">
+          <span class="theme-toggle__track">
+            <svg class="theme-toggle__sun" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2.5v2"></path><path d="M12 19.5v2"></path>
+              <path d="M4.57 4.57 6 6"></path><path d="m18 18 1.43 1.43"></path>
+              <path d="M2.5 12h2"></path><path d="M19.5 12h2"></path>
+              <path d="M4.57 19.43 6 18"></path><path d="m18 6 1.43-1.43"></path>
+            </svg>
+            <svg class="theme-toggle__moon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20.3 14.4A7.8 7.8 0 0 1 9.6 3.7 8.7 8.7 0 1 0 20.3 14.4Z"></path>
+            </svg>
+          </span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="ad-page">
+    <nav class="ad-crumb" aria-label="面包屑">
+      <a href="/">首页</a>
+      {% if resource.cloud_name %}
+      <span aria-hidden="true">›</span>
+      <a href="/search?q={{ resource.cloud_name | urlencode }}">{{ resource.cloud_name }}</a>
+      {% endif %}
+      <span aria-hidden="true">›</span>
+      <span>资源详情</span>
+    </nav>
+
+    <article class="ad-card {% if not resource.cover_url %}no-poster{% endif %}">
+      <div>
+        <h1 class="ad-title">{{ resource.name }}</h1>
+        <div class="ad-meta">
+          {% if resource.cloud_name %}<span class="ad-chip is-drive">{{ resource.cloud_name }}</span>{% endif %}
+          {% if resource.type %}<span class="ad-chip">{{ resource.type }}</span>{% endif %}
+          {% if resource.created_at %}<span class="ad-chip">收录于 {{ resource.created_at[:10] }}</span>{% endif %}
+          {% if is_dead %}<span class="ad-chip is-dead">链接已失效</span>
+          {% elif resource.health_status == 'ok' %}<span class="ad-chip is-ok">链接有效</span>{% endif %}
+        </div>
+
+        {% if resource.public_remarks %}<p class="ad-remarks">{{ resource.public_remarks }}</p>{% endif %}
+
+        {% if is_dead %}
+        <p class="ad-dead">该资源分享链接已失效，可以搜索同名资源查找其他可用分享。</p>
+        <div class="ad-actions">
+          <a class="ad-btn ad-btn-primary" href="/search?q={{ resource.name | urlencode }}">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>搜索同名资源
+          </a>
+        </div>
+        {% else %}
+        <div class="ad-actions">
+          <a class="ad-btn ad-btn-primary" href="{{ resource.share_link }}" target="_blank" rel="nofollow noopener noreferrer">
+            <svg viewBox="0 0 24 24"><path d="M14 4h6v6"></path><path d="M20 4 10 14"></path><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"></path></svg>打开网盘链接
+          </a>
+          <button class="ad-btn" type="button" id="detailCopyBtn" data-link="{{ resource.share_link }}">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a1 1 0 0 1 1-1h10"></path></svg>复制链接
+          </button>
+          <a class="ad-btn" href="/search?q={{ resource.name | urlencode }}">搜索同名资源</a>
+        </div>
+        {% endif %}
+      </div>
+      {% if resource.cover_url %}
+      <div class="ad-poster"><img src="{{ resource.cover_url }}" alt="{{ resource.name }}封面" loading="lazy"></div>
+      {% endif %}
+    </article>
+  </main>
+
+  <footer class="serp-footer">
+    {% include "_friend_links.html" %}
+    {% if enable_frontend_footer_text and frontend_footer_text %}<p>{{ frontend_footer_text }}</p>{% endif %}
+    {% if enable_frontend_copyright and frontend_copyright_text %}<p class="frontend-copyright-text">{{ frontend_copyright_text }}</p>{% endif %}
+  </footer>
+
+  {% include "_detail_copy_script.html" %}
+  <script>
+    (function () {
+      var toggle = document.getElementById('themeToggle');
+      if (!toggle) return;
+      toggle.setAttribute('aria-pressed', String(document.documentElement.getAttribute('data-theme') === 'dark'));
+      toggle.addEventListener('click', function () {
+        var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme_mode', next); } catch (e) {}
+        toggle.setAttribute('aria-pressed', String(next === 'dark'));
+      });
+    })();
+  </script>
+</body>
+
+</html>
