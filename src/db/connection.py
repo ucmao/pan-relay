@@ -98,45 +98,6 @@ class SQLiteConnectionWrapper:
 _db_initialized = False
 
 
-def _migrate_schema_columns(conn: sqlite3.Connection):
-    """确保 resources 与 temp_share 包含必要的字段结构"""
-    try:
-        # 1. 检查 resources 字段
-        res_cols = [row[1] for row in conn.execute("PRAGMA table_info(resources);").fetchall()]
-        if res_cols:
-            if "account_id" not in res_cols:
-                conn.execute("ALTER TABLE resources ADD COLUMN account_id INTEGER DEFAULT NULL;")
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_resources_account ON resources(account_id);")
-            if "origin_type" not in res_cols:
-                conn.execute("ALTER TABLE resources ADD COLUMN origin_type TEXT NOT NULL DEFAULT 'manual';")
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_resources_origin ON resources(origin_type);")
-            if "cover_url" not in res_cols:
-                conn.execute("ALTER TABLE resources ADD COLUMN cover_url TEXT DEFAULT NULL;")
-
-        # 2. 检查 temp_share 是否有 account_id
-        temp_cols = [row[1] for row in conn.execute("PRAGMA table_info(temp_share);").fetchall()]
-        if temp_cols and "account_id" not in temp_cols:
-            conn.execute("ALTER TABLE temp_share ADD COLUMN account_id INTEGER DEFAULT NULL;")
-
-        # 3. 检查 resource_requests 表
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS resource_requests (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              resource_name TEXT NOT NULL,
-              contact TEXT DEFAULT NULL,
-              note TEXT DEFAULT NULL,
-              status TEXT NOT NULL DEFAULT 'pending',
-              client_ip TEXT DEFAULT NULL,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_res_requests_created ON resource_requests(created_at DESC);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_res_requests_status ON resource_requests(status);")
-    except Exception as e:
-        logger.warning(f"表结构字段校验异常: {e}")
-
-
 def init_sqlite_db():
     """初始化 SQLite 数据库，自动建表与填充默认配置。"""
     global _db_initialized
@@ -153,12 +114,17 @@ def init_sqlite_db():
         raw_conn.execute("PRAGMA synchronous=NORMAL;")
 
         if os.path.exists(schema_file):
-            _migrate_schema_columns(raw_conn)
+            from src.db.migrations import prepare_for_schema, run_migrations
+
+            # 1. 版本落后时先备份，并补齐 schema 索引依赖的历史列
+            backup_path = prepare_for_schema(raw_conn)
+            # 2. 新库建表；老库对已存在的表是 no-op（CREATE ... IF NOT EXISTS）
             with open(schema_file, "r", encoding="utf-8") as f:
                 schema_sql = f.read()
             raw_conn.executescript(schema_sql)
-            _migrate_schema_columns(raw_conn)
-            logger.info("SQLite 数据库初始化与表结构校验完成。")
+            # 3. 按 PRAGMA user_version 执行未完成的迁移
+            version = run_migrations(raw_conn, backup_path=backup_path)
+            logger.info(f"SQLite 数据库初始化与迁移完成（结构版本 v{version}）。")
         else:
             logger.error(f"未找到数据库初始化脚本: {schema_file}")
 

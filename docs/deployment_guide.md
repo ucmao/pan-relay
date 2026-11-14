@@ -129,6 +129,53 @@ find "$BACKUP_DIR" -type f -name "pan_relay_*.db" -mtime +30 -delete
 
 ---
 
+## 🔄 版本升级与回滚
+
+### 升级步骤
+
+```bash
+cd /opt/pan-relay
+git pull
+docker compose up -d --build
+docker compose logs -f --tail=100
+```
+
+服务启动时会自动检查数据库结构版本，需要升级时：
+
+1. 先在 `./data/` 下生成升级前快照，例如 `pan_relay.db.bak-v0-20261114-221000`（最多保留最近 5 份）；
+2. 再依次执行数据库迁移，日志中可以看到：
+
+```text
+检测到数据库需要升级（v0 → v2），已备份至: /app/data/pan_relay.db.bak-v0-20261114-221000
+数据库迁移 v1 完成：基线：补齐历史字段与求片工单表
+旧版凭据迁移：导入 3 个网盘账号，跳过 0 个（账号池中已存在该网盘账号）。
+数据库迁移 v2 完成：旧版 cookie_config 凭据导入账号池
+SQLite 数据库初始化与迁移完成（结构版本 v2）。
+```
+
+> 💡 从账号池之前的老版本升级时，原来配置的网盘凭据会自动导入账号池（每个网盘一个「网盘名-账号」）。如果你已经在账号池里手动重新添加过某个网盘，该网盘会被跳过，不会重复。
+
+### 升级失败 / 需要回滚
+
+迁移失败时服务不会启动，日志会提示 `数据库迁移 vX 失败，已回滚，升级前备份位于 ...`。此时数据库停留在上一个成功的版本，数据完好。可以把日志提交到 Issue，或按下面的步骤回到旧版本：
+
+```bash
+docker compose down
+# 1. 用升级前快照还原数据库（先把当前库留一份）
+mv data/pan_relay.db data/pan_relay.db.failed
+rm -f data/pan_relay.db-wal data/pan_relay.db-shm
+cp data/pan_relay.db.bak-v0-20261114-221000 data/pan_relay.db
+# 2. 切回升级前的代码版本
+git checkout <旧版本 tag 或 commit>
+docker compose up -d --build
+```
+
+> ⚠️ 新版本迁移过的数据库不保证能被旧版本代码使用，回滚时请务必同时还原数据库快照。
+
+开发者新增或修改表结构时，请遵循 [数据库迁移开发约定](database_migrations.md)。
+
+---
+
 ## ⏰ 内置后台定时任务说明
 
 服务启动时，内置的 `APScheduler` 调度器会自动在后台并发执行以下定时工作：
