@@ -841,6 +841,43 @@ async function loadFrontendLinkCheckConfig() {
     }
 }
 
+async function loadLinkCheckProxyConfig() {
+    const input = document.getElementById('linkCheckProxyInput');
+    if (!input) return;
+    try {
+        const response = await fetch('/admin/api/link-check-proxy-config');
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+        input.value = data.proxy || '';
+    } catch (error) {
+        console.error('加载测活代理配置失败:', error);
+        showToast(`加载测活代理配置失败: ${error.message}`, 'danger');
+    }
+}
+
+async function saveLinkCheckProxyConfig() {
+    const input = document.getElementById('linkCheckProxyInput');
+    if (!input) return;
+    try {
+        const response = await fetch('/admin/api/link-check-proxy-config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proxy: input.value.trim() })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        }
+        input.value = data.proxy || '';
+        showToast(data.message || '测活代理配置已保存', 'success');
+    } catch (error) {
+        console.error('保存测活代理配置失败:', error);
+        showToast(`保存测活代理配置失败: ${error.message}`, 'danger');
+    }
+}
+
 function updateLinkCheckPanelState() {
     const checkToggle = document.getElementById('enableFrontendLinkCheckToggle');
     const wrapper = document.getElementById('linkCheckNetdisksWrapper');
@@ -1988,6 +2025,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFrontendDisclaimerText();
     loadFrontendSeoConfig();
     loadFrontendLinkCheckConfig();
+    loadLinkCheckProxyConfig();
     loadTransferTargetDirConfig();
     loadFrontendDisplayNetdisks();
     loadFrontendLinkMode();

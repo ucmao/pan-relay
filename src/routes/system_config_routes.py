@@ -57,6 +57,7 @@ from src.services.system_config_service import (
     get_custom_ad_injection_config,
     get_storage_cleanup_config,
     get_search_scheduler_config,
+    get_link_check_proxy,
     get_api_mode_config,
     save_api_mode_config,
     get_security_config,
@@ -76,6 +77,7 @@ from src.services.system_config_service import (
     save_custom_ad_injection_config,
     save_storage_cleanup_config,
     save_search_scheduler_config,
+    save_link_check_proxy,
 )
 from src.services.telegram_channel_service import (
     add_tg_channel,
@@ -753,6 +755,31 @@ def update_frontend_link_check_route():
     })
 
 
+@system_config_bp.route("/admin/api/link-check-proxy-config", methods=["GET"])
+@token_required
+def get_link_check_proxy_route():
+    return jsonify({"success": True, "proxy": get_link_check_proxy()})
+
+
+@system_config_bp.route("/admin/api/link-check-proxy-config", methods=["PUT"])
+@token_required
+def update_link_check_proxy_route():
+    data = request.get_json() or {}
+    try:
+        saved = save_link_check_proxy(data.get("proxy", ""))
+    except ValueError as err:
+        return jsonify({"success": False, "message": str(err)}), 400
+    if not saved:
+        return jsonify({"success": False, "message": "测活代理配置保存失败"}), 400
+
+    proxy = get_link_check_proxy()
+    return jsonify({
+        "success": True,
+        "message": "测活代理已启用" if proxy else "测活代理已关闭，测活请求将直连",
+        "proxy": proxy,
+    })
+
+
 @system_config_bp.route("/admin/api/credential-config", methods=["GET"])
 @token_required
 def get_credential_config():
@@ -1083,7 +1110,10 @@ def get_search_scheduler_config_api():
 @token_required
 def update_search_scheduler_config_api():
     data = request.get_json() or {}
-    success = save_search_scheduler_config(data)
+    try:
+        success = save_search_scheduler_config(data)
+    except ValueError as err:
+        return jsonify({"success": False, "message": f"API 网络代理：{err}"}), 400
     if not success:
         return jsonify({"success": False, "message": "搜索调度配置保存失败"}), 400
 

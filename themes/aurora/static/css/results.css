@@ -2749,7 +2749,7 @@ html[data-theme="dark"] .result-topbar .theme-toggle__track::before {
   }
 }
 
-/* 搜索结果卡片与 sou.gs 列表布局对齐 */
+/* 搜索结果卡片列表布局 */
 @media (min-width: 1100px) {
   .result-topbar {
     min-height: 80px;

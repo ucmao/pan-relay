@@ -40,9 +40,13 @@ TG_SEARCH_TIMEOUT = _get_int_env("TG_SEARCH_TIMEOUT", 10)
 TG_SEARCH_MAX_WORKERS = _get_int_env("TG_SEARCH_MAX_WORKERS", 4)
 TG_PROXY = os.getenv("TG_PROXY", "").strip()
 API_SEARCH_TIMEOUT = _get_int_env("API_SEARCH_TIMEOUT", 10)
+API_PROXY = os.getenv("API_PROXY", "").strip()
 API_SEARCH_MAX_WORKERS = _get_int_env("API_SEARCH_MAX_WORKERS", 8)
 PLUGIN_SEARCH_TIMEOUT = _get_int_env("PLUGIN_SEARCH_TIMEOUT", 10)
 PLUGIN_SEARCH_MAX_WORKERS = _get_int_env("PLUGIN_SEARCH_MAX_WORKERS", 6)
+
+# 网盘链接测活代理（前台测活、资源库巡检、开放 API 测活统一生效；留空直连）
+LINK_CHECK_PROXY = os.getenv("LINK_CHECK_PROXY", "").strip()
 
 # SQLite 数据库配置
 default_db_path = os.path.join(BASE_DIR, "data", "pan_relay.db")

@@ -22,7 +22,6 @@
 | Quark4K (`quark4k`) | 有结果 | 仙逆 | 1 | 0 | 1 | 1 | 0 | discussion、post、tags |
 | 夸克搜 (`quarksoo`) | 本轮无匹配 | — | 0 | — | — | — | — | — |
 | 闪电资源 (`shandian`) | 有结果 | 仙逆 | 2 | 0 | 0 | 2 | 2 | description、keywords、provider、search_card_text |
-| 搜网盘 (`sougs`) | 有结果 | 仙逆 | 2 | 1 | 2 | 2 | 2 | category、category_id、created_at、desc、description、detailURL、detail_url、disk_name、disk_type、drive_type、file_count、hot、id、link、magnet、pan_type、poster、resource_id、routes、share_link、share_time、size、slug、source、sourceLabel、source_label、source_type、status、title、updated_at |
 | 77听资源 (`ting77`) | 错误/不可达 | — | 0 | — | — | — | — | — |
 | U3C3 磁力 (`u3c3`) | 本轮无匹配 | — | 0 | — | — | — | — | — |
 | 6V 电影 (`xb6v`) | 错误/不可达 | — | 0 | — | — | — | — | — |

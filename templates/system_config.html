@@ -26,7 +26,7 @@
         </button>
         <button class="source-tab-btn {% if current_tab == 'security' %}is-active{% endif %}"
             data-system-tab-target="security" type="button">
-            <i class="fas fa-filter"></i> 搜索过滤
+            <i class="fas fa-shield-halved"></i> 搜索与风控
         </button>
         <button class="source-tab-btn {% if current_tab == 'accounts' %}is-active{% endif %}"
             data-system-tab-target="accounts" type="button">
@@ -419,54 +419,9 @@
         </div>
 
 
-        <!-- TAB 3: 搜索过滤 -->
+        <!-- TAB 3: 搜索与风控（内部标识沿用 security，保持 ?tab=security 链接可用） -->
         <div id="tab-pane-security"
             class="system-tab-pane {% if current_tab == 'security' %}is-active{% endif %} space-y-6">
-
-            <!-- 管理员密码与账号凭据 -->
-            <section class="admin-panel">
-                <div class="admin-panel-header">
-                    <div class="admin-panel-title-area">
-                        <h2 class="admin-panel-title">
-                            <i class="fas fa-key text-blue-600"></i> 管理员凭据与密码安全
-                        </h2>
-                        <p class="admin-panel-desc">管理后台管理员登录凭据，支持在线直接修改且免重启服务即时生效</p>
-                    </div>
-                </div>
-                <div class="admin-panel-body">
-                    <div class="divide-y divide-slate-100">
-                        <div class="setting-item-row">
-                            <div class="space-y-1 min-w-0 pr-4">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="font-semibold text-slate-800 text-sm">当前管理员账号</span>
-                                    <span
-                                        class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 font-mono">{{
-                                        admin_username|default('admin') }}</span>
-                                </div>
-                                <p class="text-xs text-slate-500">
-                                    {% if is_default_admin_password %}
-                                    <span class="text-amber-600 font-semibold inline-flex items-center gap-1">
-                                        <i class="fas fa-triangle-exclamation"></i>
-                                        当前仍在使用系统初始弱口令 (admin123)，极易受攻击，请立即修改！
-                                    </span>
-                                    {% else %}
-                                    <span class="text-emerald-600 font-semibold inline-flex items-center gap-1">
-                                        <i class="fas fa-circle-check"></i>
-                                        已设置自定义管理密码，安全状态良好
-                                    </span>
-                                    {% endif %}
-                                </p>
-                            </div>
-                            <div class="flex items-center flex-shrink-0">
-                                <button type="button" class="btn btn-primary btn-sm px-3.5"
-                                    onclick="openChangePasswordModal()">
-                                    <i class="fas fa-lock text-[10px]"></i> 修改密码
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
 
             <!-- 标题匹配模式（顶部独立行） -->
             <section class="admin-panel">
@@ -501,6 +456,67 @@
                                 </select>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 敏感词过滤与风控 -->
+            <section class="admin-panel">
+
+                <div class="admin-panel-header">
+                    <div class="admin-panel-title-area">
+                        <h2 class="admin-panel-title">
+                            <i class="fas fa-shield-alt text-red-600"></i> 敏感词过滤与风控
+                        </h2>
+                        <p class="admin-panel-desc">拦截违规搜索关键词并净化输出结果，两个开关共用同一敏感词黑名单</p>
+                    </div>
+                </div>
+                <div class="admin-panel-body space-y-4">
+                    <!-- 2 个开关卡片 -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <!-- 搜索输入拦截 -->
+                        <div
+                            class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px]">
+                            <div class="min-w-0 pr-1">
+                                <span class="font-bold text-slate-800 text-xs block truncate">搜索输入拦截</span>
+                                <span class="text-[10px] text-slate-500 block truncate">实时拒绝违规搜索请求</span>
+                            </div>
+                            <label class="plugin-switch shrink-0">
+                                <input type="checkbox" id="sensitiveWordsInputToggle"
+                                    onchange="saveSensitiveWordsConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- 输出结果净化 -->
+                        <div
+                            class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px]">
+                            <div class="min-w-0 pr-1">
+                                <span class="font-bold text-slate-800 text-xs block truncate">输出结果净化</span>
+                                <span class="text-[10px] text-slate-500 block truncate">自动剔除违规脏数据</span>
+                            </div>
+                            <label class="plugin-switch shrink-0">
+                                <input type="checkbox" id="sensitiveWordsOutputToggle"
+                                    onchange="saveSensitiveWordsConfig()">
+                                <span class="plugin-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 敏感词词库 -->
+                    <div id="sensitiveWordsBody" class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label for="sensitiveWordsTextarea"
+                                class="form-label font-bold text-slate-800 text-xs mb-0">
+                                敏感词黑名单词库 (每行一个词)
+                            </label>
+                            <span class="text-xs text-slate-500">当前词数：<strong id="sensitiveWordsCount"
+                                    class="text-blue-600">0</strong> 条</span>
+                        </div>
+                        <textarea class="form-control font-mono text-xs" id="sensitiveWordsTextarea"
+                            style="height: 240px; min-height: 240px;" placeholder="请输入敏感词，每行一个（例如：外挂、博彩、破解工具等）"
+                            onblur="saveSensitiveWordsConfig()"></textarea>
+                        <p class="text-[11px] text-slate-400 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                     </div>
                 </div>
             </section>
@@ -574,66 +590,44 @@
                 </div>
             </section>
 
-            <!-- 敏感词过滤与风控 -->
-            <section class="admin-panel">
-
+            <!-- 测活网络代理（前台与 API 两层共用） -->
+            <section class="admin-panel" id="linkCheckProxyPanel">
                 <div class="admin-panel-header">
                     <div class="admin-panel-title-area">
                         <h2 class="admin-panel-title">
-                            <i class="fas fa-shield-alt text-red-600"></i> 敏感词过滤与风控
+                            <i class="fas fa-network-wired text-emerald-600"></i> 测活网络代理
                         </h2>
-                        <p class="admin-panel-desc">拦截违规搜索关键词并净化输出结果，两个开关共用同一敏感词黑名单</p>
+                        <p class="admin-panel-desc">网盘链接测活统一经此代理发出，前台与 API 两层共用：前台实时测活、开放 API 测活、转存前置测活与资源库定时巡检均生效</p>
                     </div>
                 </div>
-                <div class="admin-panel-body space-y-4">
-                    <!-- 2 个开关卡片 -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <!-- 搜索输入拦截 -->
-                        <div
-                            class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px]">
-                            <div class="min-w-0 pr-1">
-                                <span class="font-bold text-slate-800 text-xs block truncate">搜索输入拦截</span>
-                                <span class="text-[10px] text-slate-500 block truncate">实时拒绝违规搜索请求</span>
+                <div class="admin-panel-body">
+                    <div class="divide-y divide-slate-100">
+                        <div class="setting-item-row">
+                            <div class="space-y-1 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-semibold text-slate-800 text-sm">测活代理地址</span>
+                                    <span class="help-tooltip"
+                                        data-tooltip="支持 http / https / socks5 / socks5h。使用住宅代理网关时，每次检测都会新建连接以获取新的出口 IP。代理不可用时检测结果记为“不确定”，不会回退直连，也不会把链接误判为失效">
+                                        <i class="far fa-circle-question text-xs"></i>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500">留空则直连；网盘转存与账号保活不走此代理</p>
                             </div>
-                            <label class="plugin-switch shrink-0">
-                                <input type="checkbox" id="sensitiveWordsInputToggle"
-                                    onchange="saveSensitiveWordsConfig()">
-                                <span class="plugin-switch-slider"></span>
-                            </label>
-                        </div>
-
-                        <!-- 输出结果净化 -->
-                        <div
-                            class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/60 h-[58px]">
-                            <div class="min-w-0 pr-1">
-                                <span class="font-bold text-slate-800 text-xs block truncate">输出结果净化</span>
-                                <span class="text-[10px] text-slate-500 block truncate">自动剔除违规脏数据</span>
+                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                <input type="text" id="linkCheckProxyInput"
+                                    class="form-control form-control-sm text-xs font-mono"
+                                    style="min-width: 260px;" placeholder="http://用户名:密码@代理主机:端口"
+                                    autocomplete="off" spellcheck="false">
+                                <button type="button" class="btn btn-primary btn-sm px-3"
+                                    onclick="saveLinkCheckProxyConfig()">
+                                    <i class="fas fa-check text-[10px]"></i> 保存
+                                </button>
                             </div>
-                            <label class="plugin-switch shrink-0">
-                                <input type="checkbox" id="sensitiveWordsOutputToggle"
-                                    onchange="saveSensitiveWordsConfig()">
-                                <span class="plugin-switch-slider"></span>
-                            </label>
                         </div>
-                    </div>
-
-                    <!-- 敏感词词库 -->
-                    <div id="sensitiveWordsBody" class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <label for="sensitiveWordsTextarea"
-                                class="form-label font-bold text-slate-800 text-xs mb-0">
-                                敏感词黑名单词库 (每行一个词)
-                            </label>
-                            <span class="text-xs text-slate-500">当前词数：<strong id="sensitiveWordsCount"
-                                    class="text-blue-600">0</strong> 条</span>
-                        </div>
-                        <textarea class="form-control font-mono text-xs" id="sensitiveWordsTextarea"
-                            style="height: 240px; min-height: 240px;" placeholder="请输入敏感词，每行一个（例如：外挂、博彩、破解工具等）"
-                            onblur="saveSensitiveWordsConfig()"></textarea>
-                        <p class="text-[11px] text-slate-400 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                     </div>
                 </div>
             </section>
+
 
         </div>
 
@@ -1055,5 +1049,5 @@
     {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/utils.js') }}?v=2.1.5"></script>
-    <script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.1.5"></script>
+    <script src="{{ url_for('static', filename='js/system_config.js') }}?v=2.1.6"></script>
     {% endblock %}

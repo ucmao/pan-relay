@@ -194,11 +194,6 @@ X-API-Key: your_transfer_key
 
 如果您在安装、使用过程中遇到问题，或有交流与定制需求，请通过以下方式联系：
 
-<div align="center">
-  <img src="static/images/wechat-qrcode.jpg" width="160" alt="微信二维码"><br>
-  <sub>💬 <b>扫码添加作者微信</b>（备注 <code>pan-relay</code> 拉你入群交流）</sub>
-</div>
-
 * **微信**：csdnxr
 * **QQ**：294323976
 * **邮箱**：leoucmao@gmail.com

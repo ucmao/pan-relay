@@ -97,19 +97,24 @@ def _response_indicates_no_data(response_text, extracted_data):
 
 def _request_api(api_config):
     """按配置发起一次测试请求。"""
+    from src.services.system_config_service import get_api_proxy
+    from src.utils.proxy_utils import to_requests_proxies
+
     method = api_config["method"].lower()
     url = api_config.get("url", "未知 URL")
     request_body = api_config.get("request", "{}")
+    # 与正式搜索使用同一个 API 代理，代理地址无效时抛出 ValueError，由调用方记为测试失败
+    proxies = to_requests_proxies(get_api_proxy())
 
     if method == "get":
         try:
             request_params = json.loads(request_body)
-            return requests.get(url, params=request_params, verify=False, timeout=5)
+            return requests.get(url, params=request_params, verify=False, timeout=5, proxies=proxies)
         except json.JSONDecodeError:
-            return requests.get(url, verify=False, timeout=5)
+            return requests.get(url, verify=False, timeout=5, proxies=proxies)
     if method == "post":
         headers = {"Content-Type": "application/json"}
-        return requests.post(url, data=request_body, headers=headers, verify=False, timeout=5)
+        return requests.post(url, data=request_body, headers=headers, verify=False, timeout=5, proxies=proxies)
     raise ValueError(f"不支持的 HTTP 方法: {method}")
 
 

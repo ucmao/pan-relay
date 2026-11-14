@@ -633,6 +633,8 @@
             if (proxyEl) proxyEl.value = tgConfig.proxy || '';
             if (timeoutEl) timeoutEl.value = tgConfig.timeout || 10;
             if (workersEl) workersEl.value = tgConfig.max_workers || 4;
+            const apiProxyEl = document.getElementById('apiProxyInput');
+            if (apiProxyEl) apiProxyEl.value = scheduler.api?.proxy || '';
             const apiTimeoutEl = document.getElementById('apiTimeoutInput');
             const apiWorkersEl = document.getElementById('apiMaxWorkersInput');
             const pluginTimeoutEl = document.getElementById('pluginTimeoutInput');
@@ -653,7 +655,7 @@
     async function saveTgSearchConfig() {
         const button = document.getElementById('saveTgSearchConfigBtn');
         if (button) button.disabled = true;
-        const payload = { api: { timeout: parseInt(document.getElementById('apiTimeoutInput')?.value || '10', 10), max_workers: parseInt(document.getElementById('apiMaxWorkersInput')?.value || '8', 10) }, tg: { enabled: true, proxy: (document.getElementById('tgProxyInput')?.value || '').trim(), timeout: parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10), max_workers: parseInt(document.getElementById('tgMaxWorkersInput')?.value || '4', 10) }, plugin: { timeout: parseInt(document.getElementById('pluginTimeoutInput')?.value || '10', 10), max_workers: parseInt(document.getElementById('pluginMaxWorkersInput')?.value || '6', 10) } };
+        const payload = { api: { proxy: (document.getElementById('apiProxyInput')?.value || '').trim(), timeout: parseInt(document.getElementById('apiTimeoutInput')?.value || '10', 10), max_workers: parseInt(document.getElementById('apiMaxWorkersInput')?.value || '8', 10) }, tg: { enabled: true, proxy: (document.getElementById('tgProxyInput')?.value || '').trim(), timeout: parseInt(document.getElementById('tgTimeoutInput')?.value || '10', 10), max_workers: parseInt(document.getElementById('tgMaxWorkersInput')?.value || '4', 10) }, plugin: { timeout: parseInt(document.getElementById('pluginTimeoutInput')?.value || '10', 10), max_workers: parseInt(document.getElementById('pluginMaxWorkersInput')?.value || '6', 10) } };
         try {
             const data = await readJson(await fetch('/admin/api/search-scheduler-config', {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),

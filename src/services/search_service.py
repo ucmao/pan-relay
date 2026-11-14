@@ -15,10 +15,11 @@ from src.db.resources import search_resources_by_title_terms, search_resources_a
 from src.models.search_item import SearchResultItem
 from src.services.plugin_manager import plugin_manager
 from src.services.sensitive_word_service import check_input_keyword, filter_search_results
-from src.services.system_config_service import get_allowed_frontend_netdisks, get_title_filter_mode
+from src.services.system_config_service import get_allowed_frontend_netdisks, get_api_proxy, get_title_filter_mode
 from src.services.ad_filter_service import is_ad_filename
 from src.services.telegram_search_service import search_telegram_channel
 from src.db.telegram_channels import get_enabled_channel_names
+from src.utils.proxy_utils import mask_proxy_url, to_requests_proxies
 from src.utils.netdisk_utils import (
     match_netdisk_link,
     extract_canonical_resource_key,
@@ -126,11 +127,19 @@ def fetch_data(url, method, request_data, timeout=10):
 
     response = None
 
+    raw_proxy = get_api_proxy()
     try:
+        proxies = to_requests_proxies(raw_proxy)
+    except ValueError as e:
+        logger.error(f"API 网络代理地址无效（{mask_proxy_url(raw_proxy)}），已跳过请求 {url}: {e}")
+        return None
+
+    try:
+        # 配置了 API 代理时强制经代理发出，代理不可用直接失败，不回退直连
         if method.upper() == "GET":
-            response = requests.get(url, headers=headers, params=data_obj, timeout=timeout)
+            response = requests.get(url, headers=headers, params=data_obj, timeout=timeout, proxies=proxies)
         elif method.upper() == "POST":
-            response = requests.post(url, headers=headers, json=data_obj, timeout=timeout)
+            response = requests.post(url, headers=headers, json=data_obj, timeout=timeout, proxies=proxies)
         else:
             raise requests.exceptions.RequestException(f"不支持的 HTTP 方法: {method}")
 

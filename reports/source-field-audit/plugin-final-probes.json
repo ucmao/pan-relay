@@ -5,8 +5,8 @@
     "逆袭",
     "总裁"
   ],
-  "total": 26,
-  "nonempty_count": 14,
+  "total": 25,
+  "nonempty_count": 13,
   "results": [
     {
       "plugin": "clxiong",
@@ -498,61 +498,6 @@
         "keywords",
         "provider",
         "search_card_text"
-      ],
-      "source_types": [
-        "plugin"
-      ],
-      "errors": []
-    },
-    {
-      "plugin": "sougs",
-      "display_name": "搜网盘",
-      "enabled": true,
-      "success": true,
-      "latency_ms": 5906,
-      "keyword": "仙逆",
-      "count": 2,
-      "field_counts": {
-        "password": 1,
-        "datetime": 2,
-        "description": 2,
-        "cover_url": 2,
-        "source_type": 2,
-        "source_id": 2,
-        "source_name": 2
-      },
-      "metadata_result_count": 2,
-      "metadata_keys": [
-        "category",
-        "category_id",
-        "created_at",
-        "desc",
-        "description",
-        "detailURL",
-        "detail_url",
-        "disk_name",
-        "disk_type",
-        "drive_type",
-        "file_count",
-        "hot",
-        "id",
-        "link",
-        "magnet",
-        "pan_type",
-        "poster",
-        "resource_id",
-        "routes",
-        "share_link",
-        "share_time",
-        "size",
-        "slug",
-        "source",
-        "sourceLabel",
-        "source_label",
-        "source_type",
-        "status",
-        "title",
-        "updated_at"
       ],
       "source_types": [
         "plugin"

@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
+from src.utils.proxy_utils import mask_proxy_url, new_proxy_session, normalize_proxy_url
 from src.utils.netdisk_utils import (
     extract_canonical_resource_key,
     extract_password_from_url,
@@ -19,12 +20,24 @@ from .constants import (
     CACHE_TTL_OTHER,
     STATE_BAD,
     STATE_OK,
+    STATE_UNCERTAIN,
     STATE_UNSUPPORTED,
 )
 from .detectors import ALL_DETECTORS
 from .models import CheckResult
 
 logger = logging.getLogger(__name__)
+
+
+def _get_link_check_proxy() -> str:
+    """读取测活代理配置（后台优先，其次 LINK_CHECK_PROXY 环境变量）。"""
+    try:
+        from src.services.system_config_service import get_link_check_proxy
+
+        return get_link_check_proxy()
+    except Exception as exc:
+        logger.error(f"读取测活代理配置失败，本次按直连处理: {exc}")
+        return ""
 
 
 class LinkCheckEngine:
@@ -52,6 +65,25 @@ class LinkCheckEngine:
         self._inflight_results: Dict[str, Dict[str, Any]] = {}
         self._inflight_lock = threading.Lock()
         self._session = requests.Session()
+
+    def _run_detector(self, detector, url: str, pwd: Optional[str]) -> Dict[str, Any]:
+        """
+        执行探测器。配置了测活代理时，每次检测新建一个经代理的 Session：
+        新连接让住宅代理网关分配新的出口 IP，同一次检测内的多步请求共用该连接。
+        代理不可用时不回退直连，探测器会把请求异常归为"不确定"，不会误判为失效。
+        """
+        raw_proxy = _get_link_check_proxy()
+        if not raw_proxy:
+            return detector.check(url, password=pwd, session=self._session)
+
+        try:
+            proxy_url = normalize_proxy_url(raw_proxy)
+        except ValueError as exc:
+            logger.error(f"测活代理地址无效（{mask_proxy_url(raw_proxy)}）：{exc}")
+            return {"state": STATE_UNCERTAIN, "summary": f"测活代理地址无效：{exc}"}
+
+        with new_proxy_session(proxy_url) as session:
+            return detector.check(url, password=pwd, session=session)
 
     def clear_cache(self):
         """清空内存缓存（便于测试与热重载）"""
@@ -139,7 +171,7 @@ class LinkCheckEngine:
                     break
 
             if matched_detector:
-                raw_res = matched_detector.check(url, password=pwd, session=self._session)
+                raw_res = self._run_detector(matched_detector, url, pwd)
             else:
                 raw_res = {
                     "state": STATE_UNSUPPORTED,

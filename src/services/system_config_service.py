@@ -1022,6 +1022,7 @@ PLUGIN_SETTINGS_KEY = "plugin_settings"
 def get_search_scheduler_config() -> Dict[str, Any]:
     """获取三类搜索源的调度参数。"""
     from src.configs.app_config import (
+        API_PROXY,
         API_SEARCH_MAX_WORKERS,
         API_SEARCH_TIMEOUT,
         PLUGIN_SEARCH_MAX_WORKERS,
@@ -1033,7 +1034,7 @@ def get_search_scheduler_config() -> Dict[str, Any]:
     )
 
     default_config = {
-        "api": {"timeout": API_SEARCH_TIMEOUT, "max_workers": API_SEARCH_MAX_WORKERS},
+        "api": {"proxy": API_PROXY or "", "timeout": API_SEARCH_TIMEOUT, "max_workers": API_SEARCH_MAX_WORKERS},
         "tg": {"enabled": TG_SEARCH_ENABLED, "proxy": TG_PROXY or "", "timeout": TG_SEARCH_TIMEOUT, "max_workers": TG_SEARCH_MAX_WORKERS},
         "plugin": {"timeout": PLUGIN_SEARCH_TIMEOUT, "max_workers": PLUGIN_SEARCH_MAX_WORKERS},
     }
@@ -1043,7 +1044,7 @@ def get_search_scheduler_config() -> Dict[str, Any]:
     try:
         parsed = json.loads(raw_value)
         return {
-            "api": {"timeout": max(int(parsed["api"].get("timeout", default_config["api"]["timeout"])), 1), "max_workers": max(int(parsed["api"].get("max_workers", default_config["api"]["max_workers"])), 1)},
+            "api": {"proxy": str(parsed["api"].get("proxy", default_config["api"]["proxy"])).strip(), "timeout": max(int(parsed["api"].get("timeout", default_config["api"]["timeout"])), 1), "max_workers": max(int(parsed["api"].get("max_workers", default_config["api"]["max_workers"])), 1)},
             "tg": {"enabled": bool(parsed["tg"].get("enabled", default_config["tg"]["enabled"])), "proxy": str(parsed["tg"].get("proxy", default_config["tg"]["proxy"])).strip(), "timeout": max(int(parsed["tg"].get("timeout", default_config["tg"]["timeout"])), 1), "max_workers": max(int(parsed["tg"].get("max_workers", default_config["tg"]["max_workers"])), 1)},
             "plugin": {"timeout": max(int(parsed["plugin"].get("timeout", default_config["plugin"]["timeout"])), 1), "max_workers": max(int(parsed["plugin"].get("max_workers", default_config["plugin"]["max_workers"])), 1)},
         }
@@ -1053,10 +1054,52 @@ def get_search_scheduler_config() -> Dict[str, Any]:
 
 
 def save_search_scheduler_config(data: Dict[str, Any]) -> bool:
-    """保存三类搜索源的调度参数。"""
+    """
+    保存三类搜索源的调度参数。
+    API 代理地址格式无效时抛出 ValueError（由调用方返回给前端）。
+    """
     if not isinstance(data, dict):
         return False
+    api_config = data.get("api")
+    if isinstance(api_config, dict) and "proxy" in api_config:
+        from src.utils.proxy_utils import normalize_proxy_url
+
+        data = {**data, "api": {**api_config, "proxy": normalize_proxy_url(api_config.get("proxy"))}}
     return set_config_value(SEARCH_SCHEDULER_CONFIG_KEY, data)
+
+
+def get_api_proxy() -> str:
+    """API 接口搜索源使用的代理地址（后台配置优先，未配置时取 API_PROXY 环境变量），空串表示直连。"""
+    return get_search_scheduler_config()["api"].get("proxy", "")
+
+
+LINK_CHECK_PROXY_CONFIG_KEY = "link_check_proxy_config"
+
+
+def get_link_check_proxy() -> str:
+    """
+    网盘链接测活使用的代理地址，空串表示直连。
+    后台保存过（包括保存为空）则以后台为准，否则取 LINK_CHECK_PROXY 环境变量。
+    """
+    from src.configs.app_config import LINK_CHECK_PROXY
+
+    raw_value = get_config_value(LINK_CHECK_PROXY_CONFIG_KEY)
+    if not raw_value:
+        return LINK_CHECK_PROXY or ""
+    try:
+        parsed = json.loads(raw_value)
+        if isinstance(parsed, dict) and "proxy" in parsed:
+            return str(parsed.get("proxy") or "").strip()
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("测活代理配置格式无效，已回退到环境变量")
+    return LINK_CHECK_PROXY or ""
+
+
+def save_link_check_proxy(proxy: Any) -> bool:
+    """保存测活代理地址，格式无效时抛出 ValueError。"""
+    from src.utils.proxy_utils import normalize_proxy_url
+
+    return set_config_value(LINK_CHECK_PROXY_CONFIG_KEY, {"proxy": normalize_proxy_url(proxy)})
 
 
 def get_plugin_settings() -> Dict[str, Dict[str, Any]]:
@@ -1416,7 +1459,7 @@ def get_active_theme() -> str:
     try:
         parsed = json.loads(raw_value)
         theme = str(parsed.get("theme", DEFAULT_THEME)).strip().lower()
-        migrated_theme = {"default": "classic", "glow-select": "cinema", "sougs": "aurora"}.get(theme, theme)
+        migrated_theme = {"default": "classic", "glow-select": "cinema"}.get(theme, theme)
         if migrated_theme != theme and migrated_theme in VALID_THEMES:
             set_config_value(ACTIVE_THEME_KEY, {"theme": migrated_theme})
         theme = migrated_theme
