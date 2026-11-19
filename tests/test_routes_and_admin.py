@@ -305,7 +305,7 @@ class SystemConfigPagesTest(unittest.TestCase):
         self.assertTrue(data.get("success"))
         self.assertIn("home", data.get("config", {}))
 
-        # 2. 更新公告与友情链接开关状态（即使不传递 allow_indexing 也应默认 True 且成功）
+        # 2. 更新公告与友情链接开关状态
         update_payload = {
             "announcement": {
                 "enabled": False,
@@ -328,7 +328,8 @@ class SystemConfigPagesTest(unittest.TestCase):
         self.assertFalse(cfg.get("announcement", {}).get("enabled"))
         self.assertEqual("测试站点公告内容", cfg.get("announcement", {}).get("text"))
         self.assertTrue(cfg.get("friend_links", {}).get("enabled"))
-        self.assertTrue(cfg.get("search", {}).get("allow_indexing"))
+        # 搜索页固定 noindex，不再提供收录开关
+        self.assertNotIn("allow_indexing", cfg.get("search", {}))
 
     def test_frontend_footer_copyright_disclaimer_switches(self):
         self.client.set_cookie("token", self.token)

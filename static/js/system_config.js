@@ -665,6 +665,7 @@ async function loadFrontendSeoConfig() {
             seoDetailTitle: detail.title,
             seoDetailDescription: detail.description,
             seoDetailKeywords: detail.keywords,
+            seoDetailSiteUrl: detail.site_url,
         };
         Object.entries(fields).forEach(([id, value]) => {
             const input = document.getElementById(id);
@@ -771,13 +772,13 @@ async function saveFrontendSeoConfig(isSilent = false) {
             title: value('seoSearchTitle'),
             description: value('seoSearchDescription'),
             keywords: value('seoSearchKeywords'),
-            allow_indexing: true,
         },
         detail: {
             enabled: Boolean(document.getElementById('seoDetailEnabled')?.checked),
             title: value('seoDetailTitle'),
             description: value('seoDetailDescription'),
             keywords: value('seoDetailKeywords'),
+            site_url: value('seoDetailSiteUrl'),
         },
         friend_links: {
             enabled: Boolean(document.getElementById('seoFriendLinksEnabled')?.checked),

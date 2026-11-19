@@ -347,6 +347,63 @@ def list_sitemap_resources(limit: int = 50000) -> List[Dict[str, Any]]:
         return items
 
 
+# 可被内链引用的详情页：可公开且未判定失效（失效页返回 410，不应再被链接）
+_LINKABLE_RESOURCE_CONDITION = (
+    f"{PUBLIC_RESOURCE_CONDITION} AND COALESCE(share_link, '') != '' "
+    "AND COALESCE(health_status, 'unknown') != 'bad'"
+)
+
+
+def _link_rows(cursor) -> List[Dict[str, Any]]:
+    items = []
+    for row in cursor.fetchall() or []:
+        item = dict(row) if isinstance(row, dict) else {"id": row[0], "name": row[1], "cloud_name": row[2]}
+        items.append({"id": item["id"], "name": item.get("name") or "网盘资源", "cloud_name": item.get("cloud_name") or ""})
+    return items
+
+
+def list_recent_public_resources(limit: int = 12) -> List[Dict[str, Any]]:
+    """首页「最近收录」内链：最新的可公开资源。"""
+    safe_limit = max(1, min(int(limit), 50))
+    sql = f"""
+    SELECT id, name, cloud_name FROM resources
+    WHERE {_LINKABLE_RESOURCE_CONDITION}
+    ORDER BY id DESC
+    LIMIT ?
+    """
+    with db_cursor() as cursor:
+        if cursor is None:
+            return []
+        cursor.execute(sql, (safe_limit,))
+        return _link_rows(cursor)
+
+
+def list_nearby_public_resources(resource_id: int, each_side: int = 6) -> List[Dict[str, Any]]:
+    """详情页「更多资源」内链：按 ID 取前后相邻的可公开资源。
+
+    每页都链接到两侧邻居，所有详情页因此串成一条链，
+    爬虫从首页任意入口出发即可逐页抓到全部资源，而不只是最新几条。
+    """
+    safe_n = max(1, min(int(each_side), 20))
+    rid = int(resource_id)
+    with db_cursor() as cursor:
+        if cursor is None:
+            return []
+        cursor.execute(
+            f"SELECT id, name, cloud_name FROM resources WHERE {_LINKABLE_RESOURCE_CONDITION} AND id > ? "
+            "ORDER BY id ASC LIMIT ?",
+            (rid, safe_n),
+        )
+        newer = _link_rows(cursor)
+        cursor.execute(
+            f"SELECT id, name, cloud_name FROM resources WHERE {_LINKABLE_RESOURCE_CONDITION} AND id < ? "
+            "ORDER BY id DESC LIMIT ?",
+            (rid, safe_n),
+        )
+        older = _link_rows(cursor)
+    return list(reversed(newer)) + older
+
+
 def get_resource_hall_items(limit: int = 8) -> List[Dict[str, Any]]:
     """读取前台资源大厅展示用的最近资源。"""
     safe_limit = max(1, min(int(limit), 24))
@@ -478,7 +535,7 @@ def update_resource_basic_info(resource_id: int, resource_data: Dict[str, Any]) 
 
         sql = """
         UPDATE resources
-        SET name = ?, share_link = ?, cloud_name = ?, type = ?, remarks = ?
+        SET name = ?, share_link = ?, cloud_name = ?, type = ?, remarks = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
         """
         params = (
@@ -752,7 +809,11 @@ def count_expired_resources(days: Optional[int] = None, minutes: Optional[int] =
 def update_resource_health(
     resource_id: int, health_status: str, health_message: Optional[str] = None
 ) -> bool:
-    """更新单个资源的健康状态与检测信息"""
+    """更新单个资源的健康状态与检测信息。
+
+    只记录 checked_at，不改 updated_at：updated_at 代表资源内容变更，
+    是站点地图 <lastmod> 的来源，定时体检若刷新它会让 lastmod 失去可信度。
+    """
     conn = get_db_connection()
     if not conn:
         return False
@@ -760,7 +821,7 @@ def update_resource_health(
         cursor = conn.cursor()
         sql = """
         UPDATE resources
-        SET health_status = ?, health_message = ?, checked_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        SET health_status = ?, health_message = ?, checked_at = CURRENT_TIMESTAMP
         WHERE id = ?
         """
         cursor.execute(sql, (health_status, health_message, resource_id))

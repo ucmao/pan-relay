@@ -626,16 +626,16 @@ def update_frontend_seo_api():
             if len(value) > max_length:
                 return jsonify({"success": False, "message": f"{field} 最多 {max_length} 个字符"}), 400
             clean_page[field] = value
-        if page_type == "search":
-            allow_indexing = page_config.get("allow_indexing", existing_page.get("allow_indexing", True))
-            if not isinstance(allow_indexing, bool):
-                allow_indexing = True
-            clean_page["allow_indexing"] = allow_indexing
         if page_type == "detail":
             detail_enabled = page_config.get("enabled", existing_page.get("enabled", False))
             if not isinstance(detail_enabled, bool):
                 return jsonify({"success": False, "message": "资源详情页开关格式无效"}), 400
             clean_page["enabled"] = detail_enabled
+            from src.services.system_config_service import normalize_site_url
+            site_url = normalize_site_url(page_config.get("site_url", existing_page.get("site_url", "")))
+            if site_url is None:
+                return jsonify({"success": False, "message": "站点根地址无效（需以 http:// 或 https:// 开头，不含参数）"}), 400
+            clean_page["site_url"] = site_url
         clean_config[page_type] = clean_page
 
     existing_friend_links = existing_seo_config.get("friend_links", {"enabled": False, "items": []})

@@ -1492,10 +1492,11 @@ DEFAULT_FRONTEND_SEO_CONFIG = {
         "title": "{query} 网盘资源搜索 - {site_name}",
         "description": "搜索「{query}」相关的公开网盘资源，聚合多网盘结果并支持快捷筛选。",
         "keywords": "{query},网盘搜索,资源检索",
-        "allow_indexing": True,
     },
     "detail": {
         "enabled": False,
+        # 站点根地址（如 https://pan.example.com），用于 canonical / 站点地图；留空则按请求推断
+        "site_url": "",
         "title": "{name} - {cloud_name}资源 - {site_name}",
         "description": "{name}，{cloud_name}分享资源，由{site_name}收录整理。",
         "keywords": "{name},{cloud_name},网盘资源",
@@ -1533,10 +1534,10 @@ def get_frontend_seo_config() -> Dict[str, Any]:
         for field in ("title", "description", "keywords"):
             if isinstance(page_config.get(field), str):
                 config[page_type][field] = page_config[field]
-    if isinstance(parsed.get("search"), dict) and isinstance(parsed["search"].get("allow_indexing"), bool):
-        config["search"]["allow_indexing"] = parsed["search"]["allow_indexing"]
     if isinstance(parsed.get("detail"), dict) and isinstance(parsed["detail"].get("enabled"), bool):
         config["detail"]["enabled"] = parsed["detail"]["enabled"]
+    if isinstance(parsed.get("detail"), dict) and isinstance(parsed["detail"].get("site_url"), str):
+        config["detail"]["site_url"] = normalize_site_url(parsed["detail"]["site_url"]) or ""
     friend_links = parsed.get("friend_links")
     if isinstance(friend_links, dict):
         if isinstance(friend_links.get("enabled"), bool):
@@ -1581,9 +1582,33 @@ def build_frontend_seo_meta(page_type: str, query: str = "") -> Dict[str, str]:
         "title": apply_tokens(page_config["title"]),
         "description": apply_tokens(page_config["description"]),
         "keywords": apply_tokens(page_config["keywords"]),
-        "robots": "index,follow" if selected_type == "home" or config["search"]["allow_indexing"] else "noindex,follow",
+        # 搜索结果由前端 JS 加载，爬虫看到的是空壳且 URL 无限，固定不收录（链接仍可跟进）
+        "robots": "index,follow" if selected_type == "home" else "noindex,follow",
     }
     return result
+
+
+def normalize_site_url(value: Any) -> Optional[str]:
+    """规范化站点根地址：仅保留 scheme://host[:port][/path]，去掉末尾斜杠。
+
+    空串返回 ""；格式非法返回 None。
+    """
+    from urllib.parse import urlparse
+
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    parsed = urlparse(text)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc or parsed.query or parsed.fragment:
+        return None
+    if any(ch.isspace() for ch in text) or "@" in parsed.netloc:
+        return None
+    return f"{parsed.scheme}://{parsed.netloc.lower()}{parsed.path.rstrip('/')}"
+
+
+def get_site_base_url() -> str:
+    """后台配置的站点根地址，未配置返回空串。"""
+    return get_frontend_seo_config()["detail"].get("site_url", "") or ""
 
 
 def is_resource_detail_enabled() -> bool:

@@ -11,10 +11,11 @@ from xml.sax.saxutils import escape
 
 from flask import Blueprint, Response, abort, redirect, render_template, request, url_for
 
-from src.db.resources import get_public_resource, list_sitemap_resources
+from src.db.resources import get_public_resource, list_nearby_public_resources, list_sitemap_resources
 from src.services.system_config_service import (
     build_resource_detail_seo_meta,
     get_active_theme,
+    get_site_base_url,
     is_frontend_enabled,
     is_resource_detail_enabled,
 )
@@ -34,10 +35,18 @@ def _public_remarks(remarks) -> str:
 
 
 def _absolute_url(endpoint: str, **values) -> str:
-    """生成绝对地址；反向代理（HTTPS 终止）场景下优先采用 X-Forwarded-Proto / Host。"""
+    """生成绝对地址。
+
+    优先使用后台配置的站点根地址，保证 canonical / 站点地图不随访问域名、协议漂移；
+    未配置时按请求推断（反向代理场景下采用 X-Forwarded-Proto / Host）。
+    """
+    path = url_for(endpoint, **values)
+    base = get_site_base_url()
+    if base:
+        return f"{base}{path}"
     scheme = (request.headers.get("X-Forwarded-Proto") or request.scheme).split(",")[0].strip() or "http"
     host = (request.headers.get("X-Forwarded-Host") or request.host).split(",")[0].strip()
-    return f"{scheme}://{host}{url_for(endpoint, **values)}"
+    return f"{scheme}://{host}{path}"
 
 
 def _lastmod_date(value) -> str:
@@ -60,13 +69,14 @@ def resource_detail(resource_id: int):
     resource["public_remarks"] = _public_remarks(resource.get("remarks"))
     theme = get_active_theme()
     html = render_template(
-        # 主题可提供 themes/<theme>/templates/detail.html 覆盖通用模板
-        [f"{theme}/templates/detail.html", "resource_detail.html"],
+        # 主题自带 detail.html 优先，缺省回退到 classic 主题的详情页
+        [f"{theme}/templates/detail.html", "classic/templates/detail.html"],
         resource=resource,
         is_dead=is_dead,
         hide_resource_request=True,  # 求片弹窗由首页脚本驱动，详情页不展示该入口
         seo_meta=build_resource_detail_seo_meta(resource, indexable=not is_dead),
         canonical_url=_absolute_url("seo.resource_detail", resource_id=resource_id),
+        resource_links=list_nearby_public_resources(resource_id),
     )
     # 已判定失效的资源返回 410，提示搜索引擎移除收录
     return html, (410 if is_dead else 200)

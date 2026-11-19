@@ -202,6 +202,8 @@
     </div>
 </div>
 
+{% with resource_links_title = "最近收录" %}{% include "_resource_links.html" %}{% endwith %}
+
 {% if enable_resource_request %}
 <!-- 用户求片/提交需求模态框 (对齐竞品图 3) -->
 <div class="modal fade" id="requestResourceModal" tabindex="-1" aria-labelledby="requestResourceModalLabel" aria-hidden="true">

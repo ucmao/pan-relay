@@ -153,6 +153,7 @@
       <div class="ad-poster"><img src="{{ resource.cover_url }}" alt="{{ resource.name }}封面" loading="lazy"></div>
       {% endif %}
     </article>
+    {% with resource_links_title = "更多资源" %}{% include "_resource_links.html" %}{% endwith %}
   </main>
 
   <footer class="serp-footer">

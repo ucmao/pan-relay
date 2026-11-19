@@ -214,6 +214,11 @@ def search_index():
         ctx['resource_hall_items'] = get_resource_hall_items(limit=8)
         ctx['resource_detail_enabled'] = is_resource_detail_enabled()
         return render_template('cinema/templates/index.html', **ctx)
+    if is_resource_detail_enabled():
+        from src.db.resources import list_recent_public_resources
+
+        # 服务端渲染的详情页内链，爬虫不执行 JS 也能发现资源
+        ctx['resource_links'] = list_recent_public_resources(limit=12)
     if active_theme == "aurora":
         return render_template('aurora/templates/index.html', **ctx)
     return render_template('classic/templates/index.html', **ctx)

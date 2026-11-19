@@ -1,0 +1,14 @@
+{#- 详情页内链列表（服务端渲染，供爬虫发现详情页）。
+    参数：resource_links = [{id, name, cloud_name}]，resource_links_title = 标题 -#}
+{% if resource_links %}
+<nav class="resource-links" aria-label="{{ resource_links_title or '更多资源' }}" style="width: min(880px, calc(100% - 32px)); margin: 28px auto 20px; font-size: 13px; line-height: 1.6;">
+  <h2 style="margin: 0 0 10px; font-size: 14px; font-weight: 700; opacity: .8;">{{ resource_links_title or '更多资源' }}</h2>
+  <ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 18px;">
+    {% for item in resource_links %}
+    <li style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      <a href="{{ url_for('seo.resource_detail', resource_id=item.id) }}" title="{{ item.name }}" style="color: inherit; text-decoration: none; opacity: .78;">{{ item.name }}</a>{% if item.cloud_name %}<span style="opacity: .45; font-size: 12px;"> · {{ item.cloud_name }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endif %}
