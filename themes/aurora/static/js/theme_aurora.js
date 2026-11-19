@@ -645,7 +645,7 @@
     resultsList.innerHTML = `
       <div class="loading-state" style="padding: 40px 0; text-align: center;">
         <div class="aurora-spinner"></div>
-        <p style="color: var(--text-muted, #94a3b8); font-size: 14px;">正在跨网盘并发检索「${escapeHtml(kw)}」公开资源，请稍等...</p>
+        <p style="color: var(--text-muted, #94a3b8); font-size: 14px;">正在跨网盘并发搜索「${escapeHtml(kw)}」公开资源，请稍等...</p>
       </div>
     `;
     if (resultSummaryText) resultSummaryText.textContent = `正在搜索「${kw}」...`;
@@ -727,7 +727,7 @@
     // 零结果时替换掉开始搜索时放置的加载动画，显示空状态
     if (allItems.length === 0) renderResults();
     if (resultSummaryText) {
-      resultSummaryText.textContent = `已完成「${kw}」搜索，共检索到 ${allItems.length} 个结果`;
+      resultSummaryText.textContent = `已完成「${kw}」搜索，共找到 ${allItems.length} 个结果`;
     }
   }
 

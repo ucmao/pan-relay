@@ -302,13 +302,13 @@
                                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                                     <div class="flex items-center gap-1.5" id="batchReadyCloudsSummary">
                                         <span class="text-slate-500 font-medium">就绪转存平台：</span>
-                                        <span class="text-slate-400 text-[11px]">检测中...</span>
+                                        <span class="text-slate-400 text-xs">检测中...</span>
                                     </div>
-                                    <a href="{{ url_for('system_config.system_config_page') }}" target="_blank" class="text-blue-600 hover:underline text-[11px]">
-                                        去配置凭证 &rarr;
+                                    <a href="{{ url_for('system_config.cloud_accounts_page') }}" target="_blank" class="text-blue-600 hover:underline text-xs">
+                                        去配置账号 &rarr;
                                     </a>
                                 </div>
-                                <div class="text-[11px] text-slate-400">
+                                <div class="text-xs text-slate-400">
                                     未就绪或未支持平台的链接将自动按原样直接入库。
                                 </div>
                         {% endcall %}

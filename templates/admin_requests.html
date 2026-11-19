@@ -52,7 +52,7 @@
         <!-- 表格容器 -->
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-600">
-                <thead class="bg-slate-50/70 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
+                <thead class="bg-slate-50/70 border-b border-slate-100 text-slate-500 font-semibold">
                     <tr>
                         <th class="py-3 px-4 w-16">ID</th>
                         <th class="py-3 px-4 min-w-[200px]">资源名称</th>
@@ -126,11 +126,11 @@
         }
 
         tbody.innerHTML = items.map(item => {
-            let statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">待处理</span>';
+            let statusBadge = '<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">待处理</span>';
             if (item.status === 'completed') {
-                statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">已满足</span>';
+                statusBadge = '<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">已满足</span>';
             } else if (item.status === 'ignored') {
-                statusBadge = '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">已忽略</span>';
+                statusBadge = '<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">已忽略</span>';
             }
 
             const safeName = escapeHtml(item.resource_name);
@@ -144,7 +144,7 @@
                     <td class="py-3 px-4 font-bold text-slate-900 break-all">
                         <div class="flex items-center gap-1.5">
                             <span>${safeName}</span>
-                            <a href="${searchUrl}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs ml-1" title="在聚合搜索中检索该资源">
+                            <a href="${searchUrl}" target="_blank" class="text-blue-500 hover:text-blue-700 text-xs ml-1" title="在前台搜索该资源">
                                 <i class="fas fa-arrow-up-right-from-square"></i>
                             </a>
                         </div>
@@ -152,16 +152,16 @@
                     <td class="py-3 px-4 font-mono text-slate-700">${safeContact}</td>
                     <td class="py-3 px-4 text-slate-600 max-w-xs break-all">${safeNote}</td>
                     <td class="py-3 px-4">${statusBadge}</td>
-                    <td class="py-3 px-4 font-mono text-slate-400 text-[11px]">${item.created_at || '-'}</td>
+                    <td class="py-3 px-4 font-mono text-slate-400 text-xs">${item.created_at || '-'}</td>
                     <td class="py-3 px-4 text-right whitespace-nowrap">
                         <div class="inline-flex items-center gap-1">
                             ${item.status !== 'completed' ? `
-                                <button type="button" onclick="updateStatus(${item.id}, 'completed')" class="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-semibold transition" title="标记为已满足">
+                                <button type="button" onclick="updateStatus(${item.id}, 'completed')" class="px-2 py-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition" title="标记为已满足">
                                     <i class="fas fa-check"></i> 满足
                                 </button>
                             ` : ''}
                             ${item.status !== 'ignored' ? `
-                                <button type="button" onclick="updateStatus(${item.id}, 'ignored')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] transition" title="标记为已忽略">
+                                <button type="button" onclick="updateStatus(${item.id}, 'ignored')" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs transition" title="标记为已忽略">
                                     忽略
                                 </button>
                             ` : ''}

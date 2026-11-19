@@ -237,7 +237,7 @@ body.admin-body::before {
     height: 18px;
     padding: 0 5px;
     border-radius: var(--admin-radius-full);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     background: #e2e8f0;
     color: var(--admin-slate-600);
@@ -542,10 +542,8 @@ body.admin-body::before {
 .table thead tr {
     background: rgba(248, 250, 252, 0.85);
     color: var(--admin-slate-500);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     border-bottom: 1px solid #f1f5f9;
 }
 
@@ -607,7 +605,7 @@ body.admin-body::before {
     height: 25px !important;
     min-height: 25px !important;
     padding: 1px 7px !important;
-    font-size: 0.6875rem !important; /* 11px */
+    font-size: 0.75rem !important; /* 12px */
     font-weight: 500 !important;
     line-height: 1.2 !important;
     border-radius: 6px !important;
@@ -779,7 +777,7 @@ body.admin-body::before {
     justify-content: center;
     padding: 2px 8px;
     border-radius: 9999px;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     line-height: 1.2;
     white-space: nowrap;
@@ -803,7 +801,7 @@ body.admin-body::before {
     gap: 4px;
     padding: 2px 8px;
     border-radius: 9999px;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     line-height: 1.2;
     white-space: nowrap;
@@ -887,7 +885,7 @@ body.admin-body::before {
     gap: 4px;
     padding: 2px 8px;
     border-radius: var(--admin-radius-full);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 600;
     line-height: 1.3;
     white-space: nowrap;
@@ -1351,7 +1349,7 @@ textarea.form-control.font-mono {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     font-weight: 400;
     color: #64748b;
     white-space: nowrap;

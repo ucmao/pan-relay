@@ -427,7 +427,7 @@ function renderPluginTable() {
                             <button class="btn btn-sm ${toggleClass}" onclick="togglePlugin('${escapeHtml(p.name)}', ${nextEnabled})" title="点击切换状态">
                                 <i class="fas ${toggleIcon}"></i> ${toggleText}
                             </button>
-                            <button class="btn btn-sm btn-info" onclick="openTestModal('${escapeHtml(p.name)}', '${escapeHtml(p.display_name || p.name)}', ${p.timeout || 6.0})" title="在线检索测试">
+                            <button class="btn btn-sm btn-info" onclick="openTestModal('${escapeHtml(p.name)}', '${escapeHtml(p.display_name || p.name)}', ${p.timeout || 6.0})" title="在线搜索测试">
                                 <i class="fas fa-vial"></i> 测试
                             </button>
                         </div>
@@ -689,7 +689,7 @@ async function runPluginTest() {
     if (btn) {
         btn.disabled = true;
         originalBtnHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 检索中...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> 搜索中...';
     }
     if (resultArea) resultArea.classList.remove('hidden');
     if (statusAlert) {

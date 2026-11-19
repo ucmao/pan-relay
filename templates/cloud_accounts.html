@@ -1,0 +1,425 @@
+{% extends "admin_layout.html" %}
+{% set active_page = 'accounts' %}
+
+{% block title %}网盘账号 - Pan-Relay Console{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 class="text-xl font-bold tracking-tight text-slate-900">网盘账号</h1>
+    </div>
+
+    <!-- 账号池统计概览与全局操作 -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3.5">
+            <div
+                class="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-lg">
+                <i class="fas fa-users"></i>
+            </div>
+            <div>
+                <div class="text-xs font-medium text-slate-400">总账号数</div>
+                <div class="text-xl font-bold text-slate-800 dark:text-white" id="statTotalAccounts">0</div>
+            </div>
+        </div>
+        <div
+            class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3.5">
+            <div
+                class="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
+                <i class="fas fa-circle-check"></i>
+            </div>
+            <div>
+                <div class="text-xs font-medium text-slate-400">健康就绪账号</div>
+                <div class="text-xl font-bold text-slate-800 dark:text-white" id="statValidAccounts">0 <span class="text-xs font-normal text-slate-400 dark:text-slate-500">/ 0</span></div>
+            </div>
+        </div>
+        <div
+            class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3.5">
+            <div
+                class="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+                <i class="fas fa-hard-drive"></i>
+            </div>
+            <div>
+                <div class="text-xs font-medium text-slate-400">托管存储空间</div>
+                <div class="text-xl font-bold text-slate-800 dark:text-white" id="statStorageSpace">--</div>
+            </div>
+        </div>
+        <div
+            class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200/80 dark:border-slate-700 shadow-xs flex items-center gap-3.5">
+            <div
+                class="w-10 h-10 rounded-lg bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-lg">
+                <i class="fas fa-share-nodes"></i>
+            </div>
+            <div>
+                <div class="text-xs font-medium text-slate-400">账号池分流转存</div>
+                <div class="text-xl font-bold text-slate-800 dark:text-white" id="statTransfers">0 <span class="text-xs font-normal text-slate-500 dark:text-slate-400">次</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 账号池列表管理面板 -->
+    <section class="admin-panel">
+        <div class="admin-panel-header flex-wrap gap-3">
+            <div class="admin-panel-title-area">
+                <h2 class="admin-panel-title">
+                    <i class="fas fa-layer-group text-indigo-600"></i> 账号列表
+                </h2>
+                <p class="admin-panel-desc">同一平台可添加多个账号，转存时按剩余容量、优先级与加权轮询自动调度</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="btn btn-outline-secondary btn-sm" id="btnExportAccounts" type="button"
+                    title="导出当前网盘账号配置为 CSV">
+                    <i class="fas fa-file-export"></i> 导出 CSV
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="btnImportAccounts" type="button"
+                    title="从 CSV 文件批量导入网盘账号">
+                    <i class="fas fa-file-import"></i> 导入 CSV
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="btnKeepaliveAccounts" type="button"
+                    title="管理账号静默保活策略或立即执行全盘续期">
+                    <i class="fas fa-rotate"></i> 全盘续期与保活
+                </button>
+                <button class="btn btn-primary btn-sm" id="btnAddAccount" type="button">
+                    <i class="fas fa-plus"></i> 添加网盘账号
+                </button>
+            </div>
+        </div>
+
+        <div class="admin-panel-body space-y-4">
+            <!-- 平台过滤胶囊标签 -->
+            <div class="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-100 dark:border-slate-700/60"
+                id="accountPlatformFilter">
+                <button class="account-filter-btn is-active" data-cloud="ALL" type="button">全部平台</button>
+                <button class="account-filter-btn" data-cloud="夸克网盘" type="button">夸克网盘</button>
+                <button class="account-filter-btn" data-cloud="百度网盘" type="button">百度网盘</button>
+                <button class="account-filter-btn" data-cloud="阿里云盘" type="button">阿里云盘</button>
+                <button class="account-filter-btn" data-cloud="UC网盘" type="button">UC网盘</button>
+                <button class="account-filter-btn" data-cloud="迅雷网盘" type="button">迅雷网盘</button>
+                <button class="account-filter-btn" data-cloud="光鸭云盘" type="button">光鸭云盘</button>
+                <button class="account-filter-btn" data-cloud="悟空网盘" type="button">悟空网盘</button>
+                <button class="account-filter-btn" data-cloud="移动云盘" type="button">移动云盘</button>
+            </div>
+
+            <!-- 账号数据表格 -->
+            <div
+                class="account-table-wrap overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700 shadow-2xs">
+                <table class="w-full text-left text-xs border-collapse min-w-[1000px]">
+                    <thead
+                        class="bg-slate-50/90 dark:bg-slate-800/90 text-slate-500 font-semibold border-b border-slate-200/80 dark:border-slate-700">
+                        <tr>
+                            <th class="p-3.5 pl-4 whitespace-nowrap">网盘平台</th>
+                            <th class="p-3.5 whitespace-nowrap">账号备注</th>
+                            <th class="p-3.5 whitespace-nowrap">用户名</th>
+                            <th class="p-3.5 whitespace-nowrap">状态</th>
+                            <th class="p-3.5 whitespace-nowrap">存储空间</th>
+                            <th class="p-3.5 whitespace-nowrap">调度策略</th>
+                            <th class="p-3.5 text-center whitespace-nowrap">累计转存</th>
+                            <th class="p-3.5 whitespace-nowrap">最近活动</th>
+                            <th class="p-3.5 pr-4 text-right account-table-sticky-col whitespace-nowrap">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50" id="accountsTableBody">
+                        <tr>
+                            <td colspan="9" class="p-8 text-center text-slate-400">
+                                <i class="fas fa-spinner fa-spin text-base mr-2"></i> 加载账号池中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+    <!-- 添加/编辑账号 Modal -->
+    <div id="accountModal"
+        class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200"
+        style="display: none;" aria-hidden="true">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2"
+                    id="accountModalTitle">
+                    <i class="fas fa-user-plus text-indigo-600"></i> 添加网盘账号
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm"
+                    id="btnCloseAccountModal" type="button">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <form id="accountForm" class="p-6 space-y-4 text-xs">
+                <input type="hidden" id="modalAccountId" value="">
+                <div>
+                    <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">网盘平台 *</label>
+                    <select id="modalCloudName" class="form-control w-80 max-w-full" required>
+                        <option value="夸克网盘">夸克网盘 (Cookie)</option>
+                        <option value="百度网盘">百度网盘 (Cookie)</option>
+                        <option value="阿里云盘">阿里云盘 (Refresh Token)</option>
+                        <option value="UC网盘">UC网盘 (Cookie)</option>
+                        <option value="迅雷网盘">迅雷网盘 (Refresh Token / JSON)</option>
+                        <option value="光鸭云盘">光鸭云盘 (Token)</option>
+                        <option value="悟空网盘">悟空网盘 (Cookie)</option>
+                        <option value="移动云盘">移动云盘 (Authorization)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">账号别名/备注 *</label>
+                    <input type="text" id="modalAccountName" class="form-control" placeholder="如：夸克-主盘-01、百度2号"
+                        required>
+                </div>
+                <div>
+                    <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">凭证内容 (Cookie / Token)
+                        *</label>
+                    <textarea id="modalCredential" rows="4" class="form-control font-mono"
+                        placeholder="请粘贴网盘 Cookie 或 Refresh Token..." required></textarea>
+                    <p class="text-xs text-slate-400 mt-1" id="modalCredHint">系统保存时将自动清洗首尾空白与换行符</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">优先级 (越小越优先)</label>
+                        <input type="number" id="modalPriority" class="form-control" value="0" min="0" max="100">
+                    </div>
+                    <div>
+                        <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1">轮询权重 (1~100)</label>
+                        <input type="number" id="modalWeight" class="form-control" value="10" min="1" max="100">
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <label
+                        class="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
+                        <input type="checkbox" id="modalIsActive"
+                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked>
+                        <span>启用此账号参与转存分流</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-slate-500 text-xs">
+                        <input type="checkbox" id="modalAutoTest"
+                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked>
+                        <span>保存后即刻测活</span>
+                    </label>
+                </div>
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnCancelAccountModal">取消</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitAccountModal">
+                        <i class="fas fa-check"></i> 保存账号
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 批量导入账号 CSV Modal -->
+    <div id="accountImportModal"
+        class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200"
+        style="display: none;" aria-hidden="true">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-file-csv text-indigo-600"></i> 批量导入网盘账号 (CSV)
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm"
+                    id="btnCloseAccountImportModal" type="button">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <form id="accountImportForm" class="p-6 space-y-4 text-xs">
+                <!-- 模板下载引导与格式提示 -->
+                <div
+                    class="p-3 bg-indigo-50/60 dark:bg-indigo-950/30 rounded-xl border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between gap-3">
+                    <div class="text-indigo-900 dark:text-indigo-300 min-w-0">
+                        <span class="font-semibold block mb-0.5">需要标准 CSV 模板？</span>
+                        <span class="text-xs text-indigo-600/80 dark:text-indigo-400 block">支持 8
+                            大网盘、批量多账号、权重及优先级定义</span>
+                    </div>
+                    <a href="/admin/api/accounts/template-csv" class="btn btn-outline-primary btn-xs shrink-0"
+                        download="网盘账号导入模板.csv">
+                        <i class="fas fa-download mr-1"></i> 下载模板
+                    </a>
+                </div>
+
+                <!-- 文件上传拖拽/选择区 -->
+                <div>
+                    <label class="block text-slate-700 dark:text-slate-300 font-semibold mb-1.5">选择 CSV 文件 *</label>
+                    <div id="accountCsvDropZone"
+                        class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors cursor-pointer bg-slate-50/50 dark:bg-slate-900/30">
+                        <input type="file" id="accountCsvFileInput" accept=".csv,text/csv" class="hidden">
+                        <i class="fas fa-cloud-arrow-up text-3xl text-indigo-500 mb-2 block" id="accountCsvIcon"></i>
+                        <div class="text-xs font-medium text-slate-700 dark:text-slate-300" id="accountCsvFileName">
+                            点击选择或将 CSV 文件拖拽至此处</div>
+                        <p class="text-xs text-slate-400 mt-1 mb-0" id="accountCsvFileHint">支持 UTF-8, GBK 编码格式 CSV
+                            文件</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1">
+                    <label
+                        class="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
+                        <input type="checkbox" id="accountImportAutoTest"
+                            class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked>
+                        <span>导入完成后自动发起账号测活与容量探测</span>
+                    </label>
+                </div>
+
+                <!-- 导入结果状态展示区 (初始隐藏) -->
+                <div id="accountImportResult"
+                    class="hidden p-3 rounded-xl border text-xs max-h-40 overflow-y-auto space-y-1.5"></div>
+
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnCancelAccountImportModal">取消</button>
+                    <button type="submit" class="btn btn-primary btn-sm" id="btnSubmitAccountImport">
+                        <i class="fas fa-upload mr-1"></i> 开始导入
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 全盘续期与自动化保活 Modal -->
+    <div id="accountKeepaliveModal"
+        class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 transition-all duration-200"
+        style="display: none;" aria-hidden="true">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-rotate text-indigo-600"></i> 全盘续期与自动化保活
+                </h3>
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm"
+                    id="btnCloseAccountKeepaliveModal" type="button">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4 text-xs">
+                <!-- 自动化策略配置卡片 -->
+                <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-800 dark:text-slate-200 text-sm">后台定时静默保活</span>
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">自动化引擎</span>
+                        </div>
+                        <label class="plugin-switch scale-90">
+                            <input type="checkbox" id="modalAccountKeepaliveToggle" checked>
+                            <span class="plugin-switch-slider"></span>
+                        </label>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-0">
+                        系统将在后台自动轮转 Token（阿里云盘、迅雷、光鸭、移动云盘等），探测 Cookie 活性并同步网盘空间配额。
+                    </p>
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                        <span class="text-slate-600 dark:text-slate-400 font-medium">定时巡检周期:</span>
+                        <select id="modalAccountKeepaliveIntervalSelect" class="form-select form-select-sm text-xs font-semibold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md py-1 px-2.5">
+                            <option value="6">每 6 小时</option>
+                            <option value="12">每 12 小时</option>
+                            <option value="24" selected>每 24 小时 (推荐)</option>
+                            <option value="48">每 48 小时</option>
+                            <option value="72">每 72 小时</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 手动即时执行状态/结果展示区 (动态显示) -->
+                <div id="keepaliveExecutionResult" class="hidden p-3.5 rounded-xl border text-xs space-y-1.5 transition-all">
+                </div>
+
+                <!-- 底部操作栏 -->
+                <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSaveKeepaliveConfigModal">
+                        <i class="fas fa-floppy-disk mr-1"></i> 保存自动策略
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="btn btn-secondary btn-sm" id="btnCancelAccountKeepaliveModal">关闭</button>
+                        <button type="button" class="btn btn-primary btn-sm" id="btnTriggerKeepaliveNow">
+                            <i class="fas fa-rotate mr-1"></i> 立即全盘续期
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <style>
+        .account-filter-btn {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 9999px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            background: #f8fafc;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .account-filter-btn:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .account-filter-btn.is-active {
+            background: #4f46e5 !important;
+            border-color: #4f46e5 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+
+        .dark .account-filter-btn {
+            background: #1e293b;
+            border-color: #334155;
+            color: #94a3b8;
+        }
+
+        .dark .account-filter-btn:hover {
+            background: #334155;
+            color: #f1f5f9;
+        }
+
+        .dark .account-filter-btn.is-active {
+            background: #6366f1 !important;
+            border-color: #6366f1 !important;
+            color: #ffffff !important;
+        }
+
+        /* 账号池表格固定列与横向滚动样式 */
+        .account-table-wrap {
+            position: relative;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .account-table-sticky-col {
+            position: sticky !important;
+            right: 0;
+            background-color: #ffffff;
+            box-shadow: -6px 0 10px -4px rgba(15, 23, 42, 0.05);
+        }
+
+        .dark .account-table-sticky-col {
+            background-color: #1e293b;
+            box-shadow: -6px 0 10px -4px rgba(0, 0, 0, 0.35);
+        }
+
+        thead th.account-table-sticky-col {
+            z-index: 20;
+            background-color: #f8fafc;
+        }
+
+        .dark thead th.account-table-sticky-col {
+            background-color: #1e293b;
+        }
+
+        tr:hover td.account-table-sticky-col {
+            background-color: #f8fafc;
+        }
+
+        .dark tr:hover td.account-table-sticky-col {
+            background-color: #334155;
+        }
+    </style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/utils.js') }}?v=2.1.5"></script>
+<script src="{{ url_for('static', filename='js/cloud_accounts.js') }}?v=1.0.0"></script>
+{% endblock %}

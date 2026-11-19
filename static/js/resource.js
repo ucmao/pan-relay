@@ -164,8 +164,8 @@ function renderBatchReadySummary() {
         return;
     }
 
-    const readyBadges = readyClouds.map(c => `<span class="px-1.5 py-0.5 rounded-md bg-emerald-100/80 text-emerald-700 font-medium text-[11px]">${c.name}</span>`).join(' ');
-    const extraHint = invalidClouds.length > 0 ? `<span class="text-amber-600 text-[10px] ml-1">(${invalidClouds.map(c => c.short).join('、')}凭证失效)</span>` : '';
+    const readyBadges = readyClouds.map(c => `<span class="px-1.5 py-0.5 rounded-md bg-emerald-100/80 text-emerald-700 font-medium text-xs">${c.name}</span>`).join(' ');
+    const extraHint = invalidClouds.length > 0 ? `<span class="text-amber-600 text-xs ml-1">(${invalidClouds.map(c => c.short).join('、')}凭证失效)</span>` : '';
 
     summaryEl.innerHTML = `
         <span class="text-slate-600 font-medium whitespace-nowrap">就绪转存平台 (${readyClouds.length}/8)：</span>
@@ -209,7 +209,7 @@ function updateSingleLinkTransferHint() {
                 <i class="fas fa-info-circle text-rose-500 flex-shrink-0"></i>
                 <span class="truncate">已识别到 <strong>${cloudName}</strong> 链接，但账号池中未配置可用账号，将按原始链接入库。</span>
             </div>
-            <a href="/admin/system-config#accounts" target="_blank" class="text-rose-700 underline font-medium text-xs whitespace-nowrap ml-2 flex-shrink-0">去添加账号 &rarr;</a>
+            <a href="/admin/cloud-accounts" target="_blank" class="text-rose-700 underline font-medium text-xs whitespace-nowrap ml-2 flex-shrink-0">去添加账号 &rarr;</a>
         `;
         opts.classList.remove('hidden');
     }
@@ -755,7 +755,7 @@ function showResourceDeleteConfirmModal(message, title = '确认删除资源') {
                                 <input type="checkbox" id="deleteNetdiskCheckbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500 w-4 h-4">
                                 <span class="font-medium">同步删除物理网盘中的文件/转存文件夹</span>
                             </label>
-                            <p class="text-[11px] text-slate-400 mt-1 pl-6">勾选后将尝试通过网盘 API 物理清除对应的网盘文件，取消勾选将仅删除系统数据库内的索引记录。</p>
+                            <p class="text-xs text-slate-400 mt-1 pl-6">勾选后将尝试通过网盘 API 物理清除对应的网盘文件，取消勾选将仅删除系统数据库内的索引记录。</p>
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
@@ -1541,7 +1541,7 @@ function initResourcePage() {
 
     if (cleanupDeadResourcesBtn) {
         cleanupDeadResourcesBtn.addEventListener('click', async function () {
-            const confirmPrompt = '确定要清理资源库中所有检测为失效 (bad) 的死链资源吗？此操作将同时清理网盘物理文件并删除数据库记录。';
+            const confirmPrompt = '确定要清理资源库中所有检测为失效 的死链资源吗？此操作将同时清理网盘物理文件并删除数据库记录。';
             const ok = window.confirmModal
                 ? await window.confirmModal({
                     title: '清理失效死链确认',

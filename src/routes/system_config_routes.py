@@ -1,4 +1,4 @@
-from flask import Blueprint, Response, jsonify, render_template, request
+from flask import Blueprint, Response, jsonify, redirect, render_template, request, url_for
 import concurrent.futures
 import datetime
 import json
@@ -183,7 +183,7 @@ def _build_dynamic_transfer_statuses():
                 "credential_type": credential_type,
                 "status": "invalid",
                 "title": "待检/失效",
-                "description": f"已添加 {len(active_invalid)} 个账号但已被标记失效，建议前往「网盘账号池」重新测活或更新凭证。",
+                "description": f"已添加 {len(active_invalid)} 个账号但已被标记失效，建议前往「网盘账号」重新测活或更新凭证。",
             }
         else:
             status = {
@@ -385,12 +385,23 @@ def api_upload_site_logo():
 @token_required
 def system_config_page():
     tab = request.args.get("tab", "storage")
+    # 网盘账号池已独立为单独页面；广告管理已并入转存管理
+    if tab == "accounts":
+        return redirect(url_for("system_config.cloud_accounts_page"))
+    if tab == "ads":
+        tab = "storage"
     return render_template(
         "system_config.html",
         frontend_netdisk_options=FRONTEND_DISPLAY_NETDISK_OPTIONS,
         active_page="config_system",
         current_tab=tab,
     )
+
+
+@system_config_bp.route("/admin/cloud-accounts", methods=["GET"])
+@token_required
+def cloud_accounts_page():
+    return render_template("cloud_accounts.html", active_page="accounts")
 
 
 @system_config_bp.route("/admin/api/frontend-display-netdisks", methods=["GET"])
@@ -1342,7 +1353,7 @@ def test_batch_tg_channels_api():
 @system_config_bp.route("/admin/api/tg-search-config/test", methods=["POST"])
 @token_required
 def test_tg_search_api():
-    """测试指定 Telegram 公开频道的检索与连通性"""
+    """测试指定 Telegram 公开频道的搜索与连通性"""
     data = request.get_json() or {}
     channel = str(data.get("channel", "")).strip()
     keyword = str(data.get("keyword", "")).strip() or None
@@ -1509,7 +1520,7 @@ def get_api_mode_config_api():
 @system_config_bp.route("/admin/api/api-mode-config", methods=["PUT", "POST"])
 @token_required
 def update_api_mode_config_api():
-    """更新 API 模式、前台 UI 开关、检索默认参数与安全转存 Key 配置"""
+    """更新 API 模式、前台 UI 开关、搜索默认参数与安全转存 Key 配置"""
     data = request.get_json() or {}
     api_only = data.get("api_only", False)
     enable_frontend = data.get("enable_frontend", True)
@@ -1533,7 +1544,7 @@ def update_api_mode_config_api():
 
     return jsonify({
         "success": True,
-        "message": "API 模式与默认检索配置保存成功",
+        "message": "API 模式与默认搜索配置保存成功",
         "config": get_api_mode_config(),
     })
 

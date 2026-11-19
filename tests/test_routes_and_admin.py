@@ -365,6 +365,27 @@ class SystemConfigPagesTest(unittest.TestCase):
         response = self.client.get("/admin/system-config")
         self.assertEqual(200, response.status_code)
         self.assertIn("系统配置", response.text)
+        # 广告管理已并入转存管理，账号池已独立
+        self.assertIn('id="tab-pane-storage"', response.text)
+        self.assertIn("自定义引流文件植入", response.text)
+        self.assertNotIn('id="tab-pane-ads"', response.text)
+        self.assertNotIn('id="tab-pane-accounts"', response.text)
+
+    def test_cloud_accounts_page_renders(self):
+        response = self.client.get("/admin/cloud-accounts")
+        self.assertEqual(200, response.status_code)
+        self.assertIn("网盘账号", response.text)
+        self.assertIn('id="accountsTableBody"', response.text)
+        self.assertIn("cloud_accounts.js", response.text)
+
+    def test_legacy_system_config_tabs_redirect(self):
+        resp = self.client.get("/admin/system-config?tab=accounts")
+        self.assertEqual(302, resp.status_code)
+        self.assertTrue(resp.headers["Location"].endswith("/admin/cloud-accounts"))
+
+        resp = self.client.get("/admin/system-config?tab=ads")
+        self.assertEqual(200, resp.status_code)
+        self.assertIn('id="tab-pane-storage"', resp.text)
 
 
 if __name__ == "__main__":

@@ -884,7 +884,7 @@ function renderResults(reset = false) {
     if (filteredResults.length === 0) {
         if (reset || resultContainer.children.length === 0) {
             resultContainer.innerHTML = isSearchRunning
-                ? '<div class="text-center p-5"><div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div><p class="text-muted">正在持续检索，暂未发现匹配项...</p></div>'
+                ? '<div class="text-center p-5"><div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div><p class="text-muted">正在持续搜索，暂未发现匹配项...</p></div>'
                 : `<div class="text-center p-5"><p class="text-muted">在 ${escapeHtml(currentFilter)} 中未找到相关结果</p></div>`;
         }
         loadingMore.classList.add('hidden');
@@ -1248,7 +1248,7 @@ const windowScrollHandler = () => {
 window.addEventListener('scroll', windowScrollHandler, { passive: true });
 
 function loadNextPage() {
-    // 没有待渲染的结果（含搜索中暂无结果）时不触发下拉加载，避免与列表中的检索动画叠加
+    // 没有待渲染的结果（含搜索中暂无结果）时不触发下拉加载，避免与列表中的搜索动画叠加
     if (renderedResultCount >= getFilteredResults().length) return;
     isLoadingNextBatch = true;
     loadingMore.classList.remove('hidden');
@@ -1666,7 +1666,7 @@ function applyAdvancedFilter() {
 }
 
 /**
- * 页面加载时自动解析 URL 参数（如 ?keyword=... / ?q=... / ?kw=...）并填入搜索框（不自动触发检索，节省资源）
+ * 页面加载时自动解析 URL 参数（如 ?keyword=... / ?q=... / ?kw=...）并填入搜索框（不自动触发搜索，节省资源）
  */
 function initSearchFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);

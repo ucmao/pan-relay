@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pan-relay-dev",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["app.py"],
+      "env": {"PORT": "5055"},
+      "port": 5055
+    }
+  ]
+}

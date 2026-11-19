@@ -10,7 +10,7 @@ class YingpanshePlugin(HttpPlugin):
 
     name = "yingpanshe"
     display_name = "影盘社"
-    description = "影盘社网盘资源检索"
+    description = "影盘社网盘资源搜索"
     version = "1.0.0"
     author = "pan-relay"
     priority = 130

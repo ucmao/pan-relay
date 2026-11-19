@@ -592,7 +592,7 @@ def test_telegram_connection(
     timeout: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
-    在线测试指定 Telegram 公开频道的连通性与检索解析能力。
+    在线测试指定 Telegram 公开频道的连通性与搜索解析能力。
     返回耗时、状态、抓取条数及前 10 条样本数据。
     """
     import time

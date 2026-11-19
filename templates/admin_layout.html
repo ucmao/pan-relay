@@ -91,7 +91,7 @@
             </span>
             <div class="text-xs font-bold text-amber-900 flex items-center gap-2 truncate">
                 <span class="truncate">安全风险警告：当前仍在使用默认初始密码（admin123）</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200/70 text-amber-800 shrink-0">极高风险</span>
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-200/70 text-amber-800 shrink-0">极高风险</span>
             </div>
         </div>
         <div class="flex items-center gap-2 shrink-0">
@@ -139,9 +139,9 @@
 
             <!-- Navigation Links -->
             <nav class="admin-sidebar-nav flex-1 px-3 py-4 space-y-4 overflow-y-auto">
-                <!-- 核心工作区 -->
+                <!-- 运营 -->
                 <div class="space-y-1">
-                    <div class="px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">核心工作区</div>
+                    <div class="px-3 pb-1 text-xs font-semibold text-slate-400">运营</div>
                     <a href="{{ url_for('dashboard.dashboard_page') }}"
                         class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'dashboard' else '' }}">
                         <i
@@ -160,12 +160,16 @@
                             class="fas fa-comment-dots w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'requests' else '' }}"></i>
                         <span>求片需求</span>
                     </a>
+                    <a href="{{ url_for('logs.logs_page') }}"
+                        class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'logs' else '' }}">
+                        <i
+                            class="fas fa-clock-rotate-left w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'logs' else '' }}"></i>
+                        <span>运行日志</span>
+                    </a>
                 </div>
-
-                <!-- 对外服务通道 -->
+                <!-- 服务通道 -->
                 <div class="space-y-1">
-                    <div class="px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">对外服务通道
-                    </div>
+                    <div class="px-3 pb-1 text-xs font-semibold text-slate-400">服务通道</div>
                     <a href="{{ url_for('system_config.frontend_config_page') }}"
                         class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'config_frontend' else '' }}">
                         <i
@@ -179,28 +183,26 @@
                         <span>开放 API 配置</span>
                     </a>
                 </div>
-
-                <!-- 通用配置与系统 -->
+                <!-- 基础设置 -->
                 <div class="space-y-1">
-                    <div class="px-3 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">通用配置与系统
-                    </div>
+                    <div class="px-3 pb-1 text-xs font-semibold text-slate-400">基础设置</div>
+                    <a href="{{ url_for('search_sources.sources_page') }}"
+                        class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'sources' else '' }}">
+                        <i
+                            class="fas fa-satellite-dish w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'sources' else '' }}"></i>
+                        <span>搜索源</span>
+                    </a>
+                    <a href="{{ url_for('system_config.cloud_accounts_page') }}"
+                        class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'accounts' else '' }}">
+                        <i
+                            class="fas fa-users-gear w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'accounts' else '' }}"></i>
+                        <span>网盘账号</span>
+                    </a>
                     <a href="{{ url_for('system_config.system_config_page') }}"
                         class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'config_system' else '' }}">
                         <i
                             class="fas fa-sliders-h w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'config_system' else '' }}"></i>
                         <span>系统配置</span>
-                    </a>
-                    <a href="{{ url_for('search_sources.sources_page') }}"
-                        class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'sources' else '' }}">
-                        <i
-                            class="fas fa-satellite-dish w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'sources' else '' }}"></i>
-                        <span>搜索源管理</span>
-                    </a>
-                    <a href="{{ url_for('logs.logs_page') }}"
-                        class="flex items-center px-3.5 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-colors {{ 'sidebar-item-active' if active_page == 'logs' else '' }}">
-                        <i
-                            class="fas fa-clock-rotate-left w-5 mr-2.5 text-slate-400 group-hover:text-slate-600 {{ 'text-blue-600' if active_page == 'logs' else '' }}"></i>
-                        <span>运行日志</span>
                     </a>
                 </div>
             </nav>
@@ -216,10 +218,7 @@
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="text-xs font-semibold text-slate-900 truncate" id="sidebarAdminUsername">{{ admin_username|default('Admin') }}</div>
-                            <div class="text-[11px] text-slate-500 truncate flex items-center">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
-                                <span>系统在线</span>
-                            </div>
+                            <div class="text-xs text-slate-500 truncate">管理员</div>
                         </div>
                     </div>
                     <div class="flex items-center space-x-1">
@@ -264,7 +263,7 @@
             </div>
 
             <footer class="mt-auto py-4 text-center text-xs text-slate-400 border-t border-slate-200/60">
-                &copy; 2026 Pan-Relay · 网盘聚合检索系统
+                &copy; 2026 Pan-Relay · 网盘聚合搜索系统
             </footer>
         </main>
     </div>

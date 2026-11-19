@@ -95,7 +95,7 @@ def toggle_admin_plugin_api(plugin_name):
 @token_required
 def test_admin_plugin_api(plugin_name):
     """
-    在线测试单个插件检索 (管理员接口)
+    在线测试单个插件搜索 (管理员接口)
     """
     return test_plugin_api(plugin_name)
 

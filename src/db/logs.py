@@ -572,7 +572,7 @@ def query_search_logs(
             action = r.get("action") or ""
             is_api = action.startswith("search.api")
             channel_type = "api" if is_api else "web"
-            channel_label = "开放 API" if is_api else "Web 前台"
+            channel_label = "开放 API" if is_api else "前台 Web"
 
             raw_query = (r.get("query_text") or "").strip()
             keyword = raw_query
@@ -1019,9 +1019,9 @@ def get_platform_distribution(days: int = 7) -> Dict[str, Any]:
         sql = (
             "SELECT "
             "  CASE "
-            "    WHEN action LIKE 'search.web%' THEN 'Web 前台搜索' "
-            "    WHEN action LIKE 'search.api%' THEN 'API 开放接口' "
-            "    ELSE '其他检索调用' "
+            "    WHEN action LIKE 'search.web%' THEN '前台 Web 搜索' "
+            "    WHEN action LIKE 'search.api%' THEN '开放 API' "
+            "    ELSE '其他搜索' "
             "  END as platform_name, "
             "  COUNT(*) as calls, "
             "  SUM(CASE WHEN result_count > 0 AND status_code < 400 THEN 1 ELSE 0 END) as successes "

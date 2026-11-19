@@ -1485,13 +1485,13 @@ DEFAULT_SITE_NAME = "Pan-Relay"
 DEFAULT_FRONTEND_SEO_CONFIG = {
     "home": {
         "title": "网盘资源搜索与聚合分发 - {site_name}",
-        "description": "聚合夸克、百度、阿里云盘等主流网盘公开资源，支持多网盘检索与快捷筛选。",
-        "keywords": "网盘搜索,夸克网盘,百度网盘,阿里云盘,资源检索",
+        "description": "聚合夸克、百度、阿里云盘等主流网盘公开资源，支持多网盘搜索与快捷筛选。",
+        "keywords": "网盘搜索,夸克网盘,百度网盘,阿里云盘,资源搜索",
     },
     "search": {
         "title": "{query} 网盘资源搜索 - {site_name}",
         "description": "搜索「{query}」相关的公开网盘资源，聚合多网盘结果并支持快捷筛选。",
-        "keywords": "{query},网盘搜索,资源检索",
+        "keywords": "{query},网盘搜索,资源搜索",
     },
     "detail": {
         "enabled": False,

@@ -179,13 +179,13 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5">
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日搜索总量</span>
+                    <span class="text-xs font-semibold text-slate-400">今日搜索总量</span>
                     <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
                         <i class="fas fa-magnifying-glass"></i>
                     </span>
                 </div>
                 <div class="text-xl font-black text-slate-900 mt-2" id="searchKpiTodayTotal">0</div>
-                <div class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
+                <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-2">
                     <span>Web: <strong class="text-blue-600" id="searchKpiTodayWeb">0</strong></span>
                     <span>|</span>
                     <span>API: <strong class="text-purple-600" id="searchKpiTodayApi">0</strong></span>
@@ -194,30 +194,30 @@
 
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">搜索命中率</span>
+                    <span class="text-xs font-semibold text-slate-400">搜索命中率</span>
                     <span
                         class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
                         <i class="fas fa-bullseye"></i>
                     </span>
                 </div>
                 <div class="text-xl font-black text-emerald-600 mt-2" id="searchKpiHitRate">100%</div>
-                <div class="text-[11px] text-slate-400 mt-0.5">有结果搜索 / 总搜索</div>
+                <div class="text-xs text-slate-400 mt-0.5">有结果搜索 / 总搜索</div>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">零结果告警 (需补库)</span>
+                    <span class="text-xs font-semibold text-slate-400">零结果告警 (需补库)</span>
                     <span class="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-xs">
                         <i class="fas fa-triangle-exclamation"></i>
                     </span>
                 </div>
                 <div class="text-xl font-black text-rose-600 mt-2" id="searchKpiZeroTotal">0</div>
-                <div class="text-[11px] text-slate-400 mt-0.5">今日搜空次数</div>
+                <div class="text-xs text-slate-400 mt-0.5">今日搜空次数</div>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">平均搜索耗时</span>
+                    <span class="text-xs font-semibold text-slate-400">平均搜索耗时</span>
                     <span
                         class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs">
                         <i class="fas fa-stopwatch"></i>
@@ -225,7 +225,7 @@
                 </div>
                 <div class="text-xl font-black text-slate-900 mt-2"><span id="searchKpiAvgDuration">0</span> <span
                         id="searchKpiAvgDurationUnit" class="text-xs font-normal text-slate-500">ms</span></div>
-                <div class="text-[11px] text-slate-400 mt-0.5">全链路聚合平均响应</div>
+                <div class="text-xs text-slate-400 mt-0.5">全链路聚合平均响应</div>
             </div>
         </div>
 
@@ -286,7 +286,7 @@
             <div class="overflow-x-auto rounded-xl border border-slate-200/80 min-h-[300px] relative">
                 <table class="w-full min-w-[860px] text-left text-xs border-collapse" id="searchLogsTable">
                     <thead
-                        class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider select-none">
+                        class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold select-none">
                         <tr>
                             <th class="w-10 px-3 py-3 text-center">
                                 <div class="batch-select-dropdown" id="searchBatchSelectDropdown">
@@ -387,31 +387,31 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日总请求量</span>
+                    <span class="text-xs font-semibold text-slate-400">今日总请求量</span>
                     <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
                         <i class="fas fa-bolt"></i>
                     </span>
                 </div>
                 <div class="text-xl font-black text-slate-900 mt-2" id="kpiTodayTotal">0</div>
-                <div class="text-[11px] text-slate-400 mt-0.5">历史总计: <span id="kpiTotalLogs">0</span> 条</div>
+                <div class="text-xs text-slate-400 mt-0.5">历史总计: <span id="kpiTotalLogs">0</span> 条</div>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日成功率</span>
+                    <span class="text-xs font-semibold text-slate-400">今日成功率</span>
                     <span
                         class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
                         <i class="fas fa-circle-check"></i>
                     </span>
                 </div>
                 <div class="text-xl font-black text-emerald-600 mt-2" id="kpiTodaySuccessRate">100%</div>
-                <div class="text-[11px] text-slate-400 mt-0.5">今日异常: <span id="kpiTodayErrors"
+                <div class="text-xs text-slate-400 mt-0.5">今日异常: <span id="kpiTodayErrors"
                         class="text-rose-500 font-semibold">0</span> 次</div>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">平均响应耗时</span>
+                    <span class="text-xs font-semibold text-slate-400">平均响应耗时</span>
                     <span
                         class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xs">
                         <i class="fas fa-stopwatch"></i>
@@ -419,7 +419,7 @@
                 </div>
                 <div class="text-xl font-black text-slate-900 mt-2"><span id="kpiTodayAvgDuration">0</span> <span
                         id="kpiTodayAvgDurationUnit" class="text-xs font-normal text-slate-500">ms</span></div>
-                <div class="text-[11px] text-slate-400 mt-0.5">全链路平均耗时</div>
+                <div class="text-xs text-slate-400 mt-0.5">全链路平均耗时</div>
             </div>
         </div>
 
@@ -482,7 +482,7 @@
             <div class="overflow-x-auto rounded-xl border border-slate-200/80 min-h-[320px] relative">
                 <table class="w-full min-w-[960px] text-left text-xs border-collapse" id="logsTable">
                     <thead
-                        class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider select-none">
+                        class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold select-none">
                         <tr>
                             <th class="w-10 px-3 py-3 text-center">
                                 <div class="batch-select-dropdown" id="auditBatchSelectDropdown">
@@ -618,7 +618,7 @@
                 </span>
                 <h3 class="font-bold text-slate-900 text-sm">日志记录详情</h3>
                 <span id="modalLogIdBadge"
-                    class="text-[11px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">#0</span>
+                    class="text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">#0</span>
             </div>
             <button type="button" onclick="closeLogModal()"
                 class="text-slate-400 hover:text-slate-600 text-base leading-none p-1">
@@ -628,19 +628,19 @@
         <div class="p-5 space-y-4 overflow-y-auto text-xs text-slate-700">
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-100">
                 <div>
-                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">状态</span>
+                    <span class="text-slate-400 block text-xs font-semibold">状态</span>
                     <span id="modalLogStatus" class="font-bold mt-0.5 inline-block">-</span>
                 </div>
                 <div>
-                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">耗时</span>
+                    <span class="text-slate-400 block text-xs font-semibold">耗时</span>
                     <span id="modalLogDuration" class="font-bold mt-0.5 inline-block text-slate-800">-</span>
                 </div>
                 <div>
-                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">命中数</span>
+                    <span class="text-slate-400 block text-xs font-semibold">命中数</span>
                     <span id="modalLogCount" class="font-bold mt-0.5 inline-block text-slate-800">-</span>
                 </div>
                 <div>
-                    <span class="text-slate-400 block text-[10px] uppercase font-semibold">客户端 IP</span>
+                    <span class="text-slate-400 block text-xs font-semibold">客户端 IP</span>
                     <span id="modalLogIP" class="font-mono mt-0.5 inline-block text-slate-800">-</span>
                 </div>
             </div>
@@ -649,7 +649,7 @@
                 <div class="flex items-center justify-between">
                     <span class="font-semibold text-slate-700">调用动作 / 接口:</span>
                     <button type="button" onclick="copyModalText('modalLogAction')"
-                        class="text-blue-600 hover:text-blue-700 text-[11px]">复制</button>
+                        class="text-blue-600 hover:text-blue-700 text-xs">复制</button>
                 </div>
                 <div id="modalLogAction"
                     class="p-2.5 rounded-lg bg-slate-50 font-mono text-slate-800 text-xs border border-slate-200/60 break-all select-all">
@@ -660,7 +660,7 @@
                 <div class="flex items-center justify-between">
                     <span class="font-semibold text-slate-700">请求入参 / 关键词 / 目标资源:</span>
                     <button type="button" onclick="copyModalText('modalLogQuery')"
-                        class="text-blue-600 hover:text-blue-700 text-[11px]">复制</button>
+                        class="text-blue-600 hover:text-blue-700 text-xs">复制</button>
                 </div>
                 <div id="modalLogQuery"
                     class="p-2.5 rounded-lg bg-slate-50 font-mono text-slate-800 text-xs border border-slate-200/60 break-all max-h-36 overflow-y-auto select-all">
@@ -671,14 +671,14 @@
                 <div class="flex items-center justify-between">
                     <span class="font-semibold text-rose-700">异常堆栈 / 错误原因:</span>
                     <button type="button" onclick="copyModalText('modalLogError')"
-                        class="text-rose-600 hover:text-rose-700 text-[11px]">复制</button>
+                        class="text-rose-600 hover:text-rose-700 text-xs">复制</button>
                 </div>
                 <div id="modalLogError"
                     class="p-2.5 rounded-lg bg-rose-50/70 font-mono text-rose-900 text-xs border border-rose-200/80 break-all max-h-48 overflow-y-auto select-all">
                 </div>
             </div>
 
-            <div class="text-[11px] text-slate-400 pt-2 flex items-center justify-between border-t border-slate-100">
+            <div class="text-xs text-slate-400 pt-2 flex items-center justify-between border-t border-slate-100">
                 <span>记录生成时间: <strong id="modalLogTime" class="font-normal text-slate-600">-</strong></span>
             </div>
         </div>
@@ -962,22 +962,22 @@
                 : '<span class="log-badge log-badge-transfer"><i class="fas fa-plug text-[10px] mr-1"></i> 开放 API</span>';
 
             const resultCount = log.result_count || 0;
-            let resultBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">${resultCount} 条</span>`;
+            let resultBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">${resultCount} 条</span>`;
             if (resultCount === 0) {
-                resultBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">0 条</span>`;
+                resultBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">0 条</span>`;
             }
 
             let durationClass = getDurationClass(log.duration_ms, 'search');
             const formattedDuration = formatLogDuration(log.duration_ms);
 
-            const cloudTag = log.cloud_name ? `<span class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-normal bg-slate-100 text-slate-600 border border-slate-200">${escapeHtml(log.cloud_name)}</span>` : '';
+            const cloudTag = log.cloud_name ? `<span class="ml-1.5 px-1.5 py-0.5 rounded text-xs font-normal bg-slate-100 text-slate-600 border border-slate-200">${escapeHtml(log.cloud_name)}</span>` : '';
 
             return `
                 <tr class="hover:bg-slate-50/80 transition ${isSelected ? 'bg-blue-50/30' : ''}">
                     <td class="px-3 py-3 text-center">
                         <input type="checkbox" onchange="toggleSelectSearchLog(${log.id}, this.checked)" ${isSelected ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer">
                     </td>
-                    <td class="px-3 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                    <td class="px-3 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
                         ${escapeHtml(log.created_at)}
                     </td>
                     <td class="px-3 py-3 whitespace-nowrap">
@@ -995,14 +995,14 @@
                     <td class="px-3 py-3 text-right font-mono text-xs whitespace-nowrap ${durationClass}" title="原始耗时: ${log.duration_ms} ms">
                         ${formattedDuration}
                     </td>
-                    <td class="px-3 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                    <td class="px-3 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
                         ${escapeHtml(log.client_ip)}
                     </td>
                     <td class="px-3 py-3 text-center whitespace-nowrap">
-                        <a href="/?keyword=${encodeURIComponent(log.keyword)}" target="_blank" class="px-2 py-1 rounded-lg text-[11px] text-blue-600 hover:bg-blue-50 font-semibold transition" title="前往前台验证此搜索">
+                        <a href="/?keyword=${encodeURIComponent(log.keyword)}" target="_blank" class="px-2 py-1 rounded-lg text-xs text-blue-600 hover:bg-blue-50 font-semibold transition" title="前往前台验证此搜索">
                             前台试搜
                         </a>
-                        <button type="button" onclick="blockIpFromLogs('${escapeHtml(log.client_ip || '')}')" class="px-2 py-1 rounded-lg text-[11px] text-rose-600 hover:bg-rose-50 font-semibold transition ml-1" title="快捷将此 IP 加入黑名单封禁">
+                        <button type="button" onclick="blockIpFromLogs('${escapeHtml(log.client_ip || '')}')" class="px-2 py-1 rounded-lg text-xs text-rose-600 hover:bg-rose-50 font-semibold transition ml-1" title="快捷将此 IP 加入黑名单封禁">
                             封禁 IP
                         </button>
                     </td>
@@ -1372,20 +1372,20 @@
             const formattedDuration = formatLogDuration(log.duration_ms);
 
             const querySnippet = escapeHtml(log.query_text || '-');
-            const errorSnippet = log.error_message ? `<span class="text-rose-600 block text-[11px] truncate max-w-xs" title="${escapeHtml(log.error_message)}"><i class="fas fa-circle-exclamation mr-1"></i>${escapeHtml(log.error_message)}</span>` : '';
+            const errorSnippet = log.error_message ? `<span class="text-rose-600 block text-xs truncate max-w-xs" title="${escapeHtml(log.error_message)}"><i class="fas fa-circle-exclamation mr-1"></i>${escapeHtml(log.error_message)}</span>` : '';
 
             return `
                 <tr class="hover:bg-slate-50/80 transition ${isSelected ? 'bg-blue-50/30' : ''}">
                     <td class="px-3 py-3 text-center">
                         <input type="checkbox" onchange="toggleSelectLog(${log.id}, this.checked)" ${isSelected ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer">
                     </td>
-                    <td class="px-3 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                    <td class="px-3 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
                         ${escapeHtml(log.created_at)}
                     </td>
                     <td class="px-3 py-3 whitespace-nowrap">
                         <span class="log-badge ${typeBadgeClass}">${escapeHtml(log.log_type || 'system')}</span>
                     </td>
-                    <td class="px-3 py-3 font-mono text-[11px] text-slate-700 whitespace-nowrap">
+                    <td class="px-3 py-3 font-mono text-xs text-slate-700 whitespace-nowrap">
                         ${escapeHtml(log.action || '-')}
                     </td>
                     <td class="px-3 py-3 max-w-xs">
@@ -1393,7 +1393,7 @@
                         ${errorSnippet}
                     </td>
                     <td class="px-3 py-3 text-center whitespace-nowrap">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold ${statusClass}">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold ${statusClass}">
                             ${log.status_code}
                         </span>
                     </td>
@@ -1403,7 +1403,7 @@
                     <td class="px-3 py-3 text-center font-mono text-xs text-slate-600 whitespace-nowrap">
                         ${log.result_count !== null ? log.result_count : '-'}
                     </td>
-                    <td class="px-3 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                    <td class="px-3 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
                         ${escapeHtml(log.client_ip || '-')}
                     </td>
                     <td class="px-3 py-3 text-center whitespace-nowrap">
@@ -1831,7 +1831,7 @@
         document.getElementById('modalLogIdBadge').textContent = `#${log.id}`;
         const isSuccess = log.status_code >= 200 && log.status_code < 400;
         document.getElementById('modalLogStatus').innerHTML = `
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold ${isSuccess ? 'log-status-200' : 'log-status-error'}">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold ${isSuccess ? 'log-status-200' : 'log-status-error'}">
                 ${log.status_code} (${isSuccess ? '成功' : '失败'})
             </span>
         `;
