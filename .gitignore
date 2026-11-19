@@ -47,3 +47,4 @@ Thumbs.db
 
 # AI 助手私有配置与技能
 .agents/
+/.claude/

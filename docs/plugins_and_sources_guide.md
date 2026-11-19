@@ -5,6 +5,8 @@
 2. **Telegram 公开频道免凭证抓取源**
 3. **Python 本地搜索插件（Plugins）**
 
+2026 年 10 月对 API、Telegram 频道和插件的字段探测结果汇总在[来源字段审计报告](source-field-audit/README.md)。
+
 ---
 
 ## 🔌 渠道一：第三方 API 接口源配置
@@ -40,20 +42,27 @@
 
 系统支持通过编写独立的 Python 插件来对接任何复杂的网页搜索、需要加密签名的爬虫或专有网盘搜索站。
 
-所有插件均放置于 [`src/plugins/`](file:///Users/leo/Projects/pan-relay/src/plugins/) 目录下。
+将自动加载的插件放在 [`src/plugins/`](../src/plugins/) 目录下，文件名以 `_plugin.py` 结尾。
 
 ### 插件开发模板
 
-在 `src/plugins/` 下新建一个 Python 文件，例如 `my_custom_search.py`：
+在 `src/plugins/` 下新建 `my_custom_search_plugin.py`。插件继承 `BasePlugin` 并实现 `search(keyword)`，返回 `SearchResultItem` 列表。
 
 ```python
-# src/plugins/my_custom_search.py
+# src/plugins/my_custom_search_plugin.py
 
-from typing import Any, Dict, List
+import logging
+from typing import List
+
 import requests
-from src.plugins.base import BaseSearchPlugin
 
-class MyCustomSearchPlugin(BaseSearchPlugin):
+from src.models.search_item import SearchResultItem
+from src.plugins.base_plugin import BasePlugin
+
+logger = logging.getLogger(__name__)
+
+
+class MyCustomSearchPlugin(BasePlugin):
     """
     自定义搜索插件示例
     """
@@ -63,38 +72,35 @@ class MyCustomSearchPlugin(BaseSearchPlugin):
     author = "Developer"               # 作者信息
     description = "抓取某特定影视资源站的网盘链接"
 
-    def search(self, keyword: str, page: int = 1, page_size: int = 20) -> List[Dict[str, Any]]:
-        """
-        核心搜索执行方法。
-        
-        返回值规范：必须返回标准字典列表，包含以下字段：
-        - title (str, 必填): 资源标题
-        - url (str, 必填): 网盘分享 URL
-        - netdisk_name (str, 可选): 网盘名称（如 夸克网盘、百度网盘 等，不填会自动识别）
-        - password (str, 可选): 提取码
-        - datetime (str, 可选): 资源发布时间
-        """
-        results = []
-        target_api = f"https://example.com/api/search?q={keyword}&p={page}"
-        
+    def search(self, keyword: str) -> List[SearchResultItem]:
         try:
-            resp = requests.get(target_api, timeout=8, headers={"User-Agent": "Mozilla/5.0"})
-            if resp.status_code == 200:
-                data = resp.json()
-                for item in data.get("items", []):
-                    results.append({
-                        "title": item.get("title", ""),
-                        "url": item.get("share_link", ""),
-                        "netdisk_name": "夸克网盘",
-                        "password": item.get("pwd", ""),
-                        "datetime": item.get("create_time", ""),
-                    })
-        except Exception as exc:
-            self.logger.error(f"插件搜索异常: {exc}")
+            response = requests.get(
+                "https://example.com/api/search",
+                params={"q": keyword},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            items = response.json().get("items", [])
+        except (requests.RequestException, ValueError) as exc:
+            logger.warning("插件搜索失败：%s", exc)
+            return []
 
-        return results
+        return [
+            SearchResultItem(
+                source=f"plugin:{self.name}",
+                title=item["title"],
+                share_link=item["share_link"],
+                cloud_name="夸克网盘",
+                password=item.get("pwd"),
+                datetime=item.get("create_time"),
+            )
+            for item in items
+            if item.get("title") and item.get("share_link")
+        ]
 ```
 
-### 插件生命周期与热加载
-* **自动注册**：将写好的 `.py` 脚本放入 `src/plugins/` 目录后，服务启动或重启时会自动加载并注册。
+将示例 URL、响应字段和网盘名称替换成实际数据源的值。HTML 解析可参考[仓库中的示例插件](../src/plugins/examples/sample_scraper_plugin.py)。
+
+### 插件加载与管理
+* **自动注册**：服务启动时会加载 `src/plugins/` 下符合命名规则的插件。新增文件后重启服务即可加载。
 * **后台统一管控**：可在管理后台（**搜索源 → 插件扩展**）中随时开启、停用、执行联调测试与查看响应延迟。
