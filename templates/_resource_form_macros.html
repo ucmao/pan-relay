@@ -1,0 +1,31 @@
+{# 资源入库表单共用组件：仪表盘快速入库、我的资源单条/批量入库共用 #}
+
+{% set resource_types = ['电影', '电视剧', '音乐', '软件', '图片', '游戏', '素材', '教程', '文档', '其他'] %}
+
+{% macro resource_type_select(id, default_value='', class_name='form-control') %}
+    <select class="{{ class_name }}" id="{{ id }}">
+        <option value="">请选择类型（可选）</option>
+        {% for t in resource_types %}
+        <option value="{{ t }}" {% if default_value == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+    </select>
+{% endmacro %}
+
+{# 自动转存开关；caller() 渲染开启后展开的提示区域 #}
+{% macro transfer_toggle(toggle_id, onchange, options_id, options_class='') %}
+    <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5">
+        <div class="flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-700 block">自动转存至我的网盘</span>
+                <span class="text-[11px] text-slate-400 font-normal">开启后将自动转存到已配置凭证的网盘并生成专属链接</span>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
+                <input type="checkbox" id="{{ toggle_id }}" onchange="{{ onchange }}" class="sr-only peer">
+                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+        </div>
+        <div id="{{ options_id }}" class="hidden pt-2.5 border-t border-slate-200/60 {{ options_class }}">
+            {{ caller() }}
+        </div>
+    </div>
+{% endmacro %}

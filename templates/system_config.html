@@ -10,7 +10,6 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <h1 class="text-xl font-bold tracking-tight text-slate-900">系统配置</h1>
-            <p class="text-xs text-slate-500 mt-0.5">管理网盘转存目录、引流植入、存储周期清理、敏感词风控与云盘自动转存凭证</p>
         </div>
     </div>
 
@@ -49,7 +48,6 @@
                         <h2 class="admin-panel-title">
                             <i class="fas fa-folder-tree text-indigo-600"></i> 网盘转存目标目录
                         </h2>
-                        <p class="admin-panel-desc">转存成功后的资源将统一存入指定网盘文件夹</p>
                     </div>
                 </div>
                 <div class="admin-panel-body">
@@ -91,7 +89,7 @@
                         <h2 class="admin-panel-title">
                             <i class="fas fa-recycle text-amber-600"></i> 存储优化与超期转存清理
                         </h2>
-                        <p class="admin-panel-desc">定时自动从网盘物理删除超期转存资源并取消关联分享，释放网盘容量</p>
+                        <p class="admin-panel-desc">定时删除超期转存资源并取消分享，释放网盘容量</p>
                     </div>
                     <div class="flex items-center space-x-3">
                         <div
@@ -173,7 +171,6 @@
                         <h2 class="admin-panel-title">
                             <i class="fas fa-bullhorn text-indigo-600"></i> 自定义引流文件植入
                         </h2>
-                        <p class="admin-panel-desc">转存时自动在生成的分享目录中附带专属宣传文件 (全面支持 8 大主流及特色网盘)</p>
                     </div>
                 </div>
                 <div class="admin-panel-body">
@@ -373,7 +370,6 @@
                         <h2 class="admin-panel-title">
                             <i class="fas fa-filter text-emerald-600"></i> 转存广告文件净化
                         </h2>
-                        <p class="admin-panel-desc">转存时按关键词库自动识别并丢弃宣传、导流文件，保持分享目录整洁</p>
                     </div>
                 </div>
                 <div class="admin-panel-body">
@@ -410,7 +406,6 @@
                                 style="height: 240px; min-height: 240px;"
                                 placeholder="请输入广告关键词，每行一个（例如：公众号、防失联、福利群、更新地址等）"
                                 onblur="saveAdFilterConfig()"></textarea>
-                            <p class="text-[11px] text-slate-400 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                         </div>
                     </div>
                 </div>
@@ -430,7 +425,6 @@
                         <h2 class="admin-panel-title">
                             <i class="fas fa-sliders text-blue-600"></i> 搜索结果精准度
                         </h2>
-                        <p class="admin-panel-desc">控制搜索词与资源标题之间的二次相关性过滤策略</p>
                     </div>
                 </div>
                 <div class="admin-panel-body">
@@ -468,7 +462,7 @@
                         <h2 class="admin-panel-title">
                             <i class="fas fa-shield-alt text-red-600"></i> 敏感词过滤与风控
                         </h2>
-                        <p class="admin-panel-desc">拦截违规搜索关键词并净化输出结果，两个开关共用同一敏感词黑名单</p>
+                        <p class="admin-panel-desc">两个开关共用同一份敏感词列表</p>
                     </div>
                 </div>
                 <div class="admin-panel-body space-y-4">
@@ -516,7 +510,6 @@
                         <textarea class="form-control font-mono text-xs" id="sensitiveWordsTextarea"
                             style="height: 240px; min-height: 240px;" placeholder="请输入敏感词，每行一个（例如：外挂、博彩、破解工具等）"
                             onblur="saveSensitiveWordsConfig()"></textarea>
-                        <p class="text-[11px] text-slate-400 mb-0">离开输入框后系统将自动保存并即时生效。</p>
                     </div>
                 </div>
             </section>
@@ -528,7 +521,6 @@
                         <h2 class="admin-panel-title">
                             <i class="fas fa-user-shield text-indigo-600"></i> 安全防御与 IP 频控
                         </h2>
-                        <p class="admin-panel-desc">限制单 IP 限速、并发数上限、最小搜索字符数与 IP 封禁黑名单</p>
                     </div>
                 </div>
                 <div class="admin-panel-body space-y-4">
@@ -585,7 +577,6 @@
                             style="height: 140px; min-height: 140px;"
                             placeholder="请输入需封禁的客户端 IP 地址，每行一个（例如：182.149.235.13）"
                             onblur="saveSecurityConfig()"></textarea>
-                        <p class="text-[11px] text-slate-400 mb-0">修改数值或离开输入框后系统将自动保存并即时生效。</p>
                     </div>
                 </div>
             </section>
@@ -597,7 +588,7 @@
                         <h2 class="admin-panel-title">
                             <i class="fas fa-network-wired text-emerald-600"></i> 测活网络代理
                         </h2>
-                        <p class="admin-panel-desc">网盘链接测活统一经此代理发出，前台与 API 两层共用：前台实时测活、开放 API 测活、转存前置测活与资源库定时巡检均生效</p>
+                        <p class="admin-panel-desc">前台测活、开放 API 测活、转存前置测活与定时巡检均经此代理发出</p>
                     </div>
                 </div>
                 <div class="admin-panel-body">
@@ -689,7 +680,7 @@
                         <h2 class="admin-panel-title">
                             <i class="fas fa-layer-group text-indigo-600"></i> 网盘多账号矩阵与智能分流池
                         </h2>
-                        <p class="admin-panel-desc">同一平台支持添加多个账号，转存时根据剩余容量、优先级与加权轮询自动调度并防封分流</p>
+                        <p class="admin-panel-desc">同一平台可添加多个账号，转存时按剩余容量、优先级与加权轮询自动调度</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button class="btn btn-outline-secondary btn-sm" id="btnExportAccounts" type="button"

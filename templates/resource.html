@@ -1,36 +1,21 @@
 {% extends "admin_layout.html" %}
 {% set active_page = 'resources' %}
 
+{% block title %}我的资源 - Pan-Relay Console{% endblock %}
+
 {% block head %}
     {{ super() }}
-    <title>Pan-Relay - 我的资源管理</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/resource.css') }}?v=2.1.3">
 {% endblock %}
 
 {% block content %}
-    {% macro resource_type_select(id, default_value='') %}
-        <select class="form-control" id="{{ id }}">
-            <option value="">请选择类型（可选）</option>
-            <option value="电影" {% if default_value == '电影' %}selected{% endif %}>电影</option>
-            <option value="电视剧" {% if default_value == '电视剧' %}selected{% endif %}>电视剧</option>
-            <option value="音乐" {% if default_value == '音乐' %}selected{% endif %}>音乐</option>
-            <option value="软件" {% if default_value == '软件' %}selected{% endif %}>软件</option>
-            <option value="图片" {% if default_value == '图片' %}selected{% endif %}>图片</option>
-            <option value="游戏" {% if default_value == '游戏' %}selected{% endif %}>游戏</option>
-            <option value="素材" {% if default_value == '素材' %}selected{% endif %}>素材</option>
-            <option value="教程" {% if default_value == '教程' %}selected{% endif %}>教程</option>
-            <option value="文档" {% if default_value == '文档' %}selected{% endif %}>文档</option>
-            <option value="其他" {% if default_value == '其他' %}selected{% endif %}>其他</option>
-        </select>
-    {% endmacro %}
-
+    {% from "_resource_form_macros.html" import resource_type_select, transfer_toggle %}
     <div class="admin-container">
         <!-- Page Header (ucmao admin_modern style) -->
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-                <h1 class="text-xl font-bold tracking-tight text-slate-900">我的资源管理</h1>
-                <p class="text-xs text-slate-500 mt-0.5">维护私有入库资源池，支持分页检索、一键复制、批量导入与自动转存</p>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">我的资源</h1>
             </div>
             <div class="flex items-center space-x-2.5 flex-wrap">
                 <div class="stats-bar">
@@ -53,7 +38,6 @@
                     <h2 class="admin-panel-title">
                         <i class="fas fa-list-ul text-slate-400"></i> 资源列表
                     </h2>
-                    <p class="admin-panel-desc">按关键词检索、单条维护或批量导出清理已有入库资源。</p>
                 </div>
                 <div class="flex items-center gap-2.5 flex-wrap">
                     <div class="admin-search-wrap w-full sm:w-auto">
@@ -209,25 +193,11 @@
                             <textarea class="form-control" id="resourceRemarks" rows="2" placeholder="可选填写提取码或特别说明"></textarea>
                         </div>
 
-                        <!-- 自动转存并入库策略配置 -->
-                        <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <span class="text-xs font-semibold text-slate-700 block">自动转存至我的网盘</span>
-                                    <span class="text-[11px] text-slate-400 font-normal">开启后将自动转存到已配置凭证的网盘并生成专属链接</span>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
-                                    <input type="checkbox" id="singleResourceTransferToggle" onchange="toggleSingleTransferOptions(this.checked)" class="sr-only peer">
-                                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                                </label>
+                        {% call transfer_toggle('singleResourceTransferToggle', 'toggleSingleTransferOptions(this.checked)', 'singleTransferOptions') %}
+                            <div id="singleLinkTransferHint" class="text-xs p-2.5 rounded-lg bg-blue-50/70 text-blue-700 border border-blue-100/80">
+                                <!-- 动态提示当前链接是否匹配已就绪凭证 -->
                             </div>
-
-                            <div id="singleTransferOptions" class="hidden pt-2.5 border-t border-slate-200/60">
-                                <div id="singleLinkTransferHint" class="text-xs p-2.5 rounded-lg bg-blue-50/70 text-blue-700 border border-blue-100/80">
-                                    <!-- 动态提示当前链接是否匹配已就绪凭证 -->
-                                </div>
-                            </div>
-                        </div>
+                        {% endcall %}
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -304,7 +274,7 @@
                         <div>
                             <label for="batchResourceContent" class="block text-xs font-semibold text-slate-700 mb-1">批量数据源内容 <span class="text-rose-500">*</span></label>
                             <div class="text-slate-500 text-xs mb-2">
-                                支持直接粘贴多条链接批量入库；开启下方自动转存后，已配置凭证的网盘将自动生成专属私有链接。
+                                支持直接粘贴多条链接批量入库。
                             </div>
                             <textarea class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all font-mono text-xs text-slate-800" id="batchResourceContent" rows="7" placeholder="支持两种格式：
 1）字段格式：
@@ -328,20 +298,7 @@
                             </div>
                         </div>
 
-                        <!-- 自动转存并入库策略配置 -->
-                        <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <span class="text-xs font-semibold text-slate-700 block">自动转存至我的网盘</span>
-                                    <span class="text-[11px] text-slate-400 font-normal">开启后已配置凭证的网盘将自动转存并生成专属链接</span>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
-                                    <input type="checkbox" id="batchResourceTransferToggle" onchange="toggleBatchTransferOptions(this.checked)" class="sr-only peer">
-                                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                                </label>
-                            </div>
-
-                            <div id="batchTransferOptions" class="hidden pt-2.5 border-t border-slate-200/60 space-y-2">
+                        {% call transfer_toggle('batchResourceTransferToggle', 'toggleBatchTransferOptions(this.checked)', 'batchTransferOptions', 'space-y-2') %}
                                 <div class="flex items-center justify-between text-xs flex-wrap gap-2">
                                     <div class="flex items-center gap-1.5" id="batchReadyCloudsSummary">
                                         <span class="text-slate-500 font-medium">就绪转存平台：</span>
@@ -354,8 +311,7 @@
                                 <div class="text-[11px] text-slate-400">
                                     未就绪或未支持平台的链接将自动按原样直接入库。
                                 </div>
-                            </div>
-                        </div>
+                        {% endcall %}
                     </form>
                 </div>
                 <div class="modal-footer">

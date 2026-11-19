@@ -107,7 +107,7 @@ class RoutesAndAdminTest(unittest.TestCase):
         resp = self.client.get("/admin/resources")
         self.assertEqual(200, resp.status_code)
         html = resp.get_data(as_text=True)
-        self.assertIn("我的资源管理", html)
+        self.assertIn("我的资源", html)
 
     def test_resources_api_sorting(self):
         self.client.set_cookie("token", self.token)
@@ -271,12 +271,12 @@ class SystemConfigPagesTest(unittest.TestCase):
     def test_api_config_page_renders(self):
         response = self.client.get("/admin/api-config")
         self.assertEqual(200, response.status_code)
-        self.assertIn("开放 API 服务配置", response.text)
+        self.assertIn("开放 API 配置", response.text)
 
     def test_frontend_config_page_renders(self):
         response = self.client.get("/admin/frontend-config")
         self.assertEqual(200, response.status_code)
-        self.assertIn("前台 Web 界面配置", response.text)
+        self.assertIn("前台 Web 配置", response.text)
         self.assertIn("data-frontend-tab-target=\"appearance\"", response.text)
         self.assertIn("data-frontend-tab-target=\"strategies\"", response.text)
         self.assertIn("data-frontend-tab-target=\"seo\"", response.text)

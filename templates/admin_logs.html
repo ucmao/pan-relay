@@ -2,9 +2,10 @@
 {% set active_page = 'logs' %}
 {% set current_tab = current_tab or 'analytics' %}
 
+{% block title %}运行日志 - Pan-Relay Console{% endblock %}
+
 {% block head %}
 {{ super() }}
-<title>Pan-Relay - 运行与搜索日志</title>
 <style>
     .log-badge {
         display: inline-flex;
@@ -146,10 +147,7 @@
     <!-- Page Header (ucmao admin_modern style) -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                <i class="fas fa-clock-rotate-left text-blue-600"></i> 运行与搜索日志
-            </h1>
-            <p class="text-xs text-slate-500 mt-0.5">监控用户与 API 检索明细、搜索热词排行、网盘转存及后台全量运行审计</p>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">运行日志</h1>
         </div>
         <div class="flex items-center space-x-2">
             <button type="button" onclick="refreshActiveTab()"
@@ -231,8 +229,6 @@
             </div>
         </div>
 
-
-
         <!-- 精简搜索明细列表 -->
         <section class="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 space-y-4">
             <!-- 搜索筛选栏 -->
@@ -250,7 +246,7 @@
                     <select id="searchLogsChannelFilter" onchange="handleSearchFilterChange()"
                         class="px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition bg-white text-slate-700">
                         <option value="">全部渠道</option>
-                        <option value="web">Web前台搜索</option>
+                        <option value="web">前台 Web 搜索</option>
                         <option value="api">开放API搜索</option>
                     </select>
 
@@ -388,7 +384,7 @@
     <!-- ========================================== -->
     <div id="tab-pane-audit" class="log-tab-pane {{ '' if current_tab == 'audit' else 'hidden' }} space-y-6">
         <!-- 顶部全量 KPI 卡片 -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
                 <div class="flex items-center justify-between">
                     <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日总请求量</span>
@@ -398,30 +394,6 @@
                 </div>
                 <div class="text-xl font-black text-slate-900 mt-2" id="kpiTodayTotal">0</div>
                 <div class="text-[11px] text-slate-400 mt-0.5">历史总计: <span id="kpiTotalLogs">0</span> 条</div>
-            </div>
-
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日聚合搜索</span>
-                    <span
-                        class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs">
-                        <i class="fas fa-search"></i>
-                    </span>
-                </div>
-                <div class="text-xl font-black text-slate-900 mt-2" id="kpiTodaySearch">0</div>
-                <div class="text-[11px] text-slate-400 mt-0.5">SSE 流式 + 开放检索</div>
-            </div>
-
-            <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
-                <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">今日网盘转存</span>
-                    <span
-                        class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xs">
-                        <i class="fas fa-arrow-right-arrow-left"></i>
-                    </span>
-                </div>
-                <div class="text-xl font-black text-slate-900 mt-2" id="kpiTodayTransfer">0</div>
-                <div class="text-[11px] text-slate-400 mt-0.5">夸克 / 阿里 / 百度 / UC</div>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
@@ -986,7 +958,7 @@
             const isSelected = searchLogsState.selectedIds.has(log.id);
             const isWeb = log.channel === 'web';
             const channelBadge = isWeb
-                ? '<span class="log-badge log-badge-search"><i class="fas fa-desktop text-[10px] mr-1"></i> Web 前台</span>'
+                ? '<span class="log-badge log-badge-search"><i class="fas fa-desktop text-[10px] mr-1"></i> 前台 Web</span>'
                 : '<span class="log-badge log-badge-transfer"><i class="fas fa-plug text-[10px] mr-1"></i> 开放 API</span>';
 
             const resultCount = log.result_count || 0;
@@ -1057,7 +1029,6 @@
 
         if (!ok) return;
 
-
         try {
             const response = await fetch('/admin/api/logs/block_ip', {
                 method: 'POST',
@@ -1073,8 +1044,6 @@
             showToast(`封禁失败: ${err.message}`, 'danger');
         }
     }
-
-
 
     function renderSearchPagination() {
         const container = document.getElementById('searchLogsPagination');
@@ -1274,8 +1243,6 @@
                 const stats = json.data;
                 document.getElementById('kpiTodayTotal').textContent = stats.today_total || 0;
                 document.getElementById('kpiTotalLogs').textContent = stats.total_logs_count || 0;
-                document.getElementById('kpiTodaySearch').textContent = stats.today_search || 0;
-                document.getElementById('kpiTodayTransfer').textContent = stats.today_transfer || 0;
                 document.getElementById('kpiTodaySuccessRate').textContent = `${stats.today_success_rate || 100}%`;
                 document.getElementById('kpiTodayErrors').textContent = stats.today_errors || 0;
 

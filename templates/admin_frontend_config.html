@@ -9,8 +9,7 @@
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-xl font-bold tracking-tight text-slate-900">前台 Web 界面配置</h1>
-            <p class="text-xs text-slate-500 mt-0.5">控制前台 Web 搜索界面的主题外观、品牌标识、访问开关及网盘出链规则</p>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">前台 Web 配置</h1>
         </div>
         <div class="flex items-center space-x-2.5">
             <a href="{{ url_for('search_index') }}" target="_blank" class="btn btn-outline-primary btn-sm">
@@ -45,7 +44,6 @@
                     <h2 class="admin-panel-title">
                         <i class="fas fa-palette text-indigo-600"></i> 前台主题外观模板
                     </h2>
-                    <p class="admin-panel-desc">支持即插即用的多套前台 UI 模板，一键换肤，无缝继承 SEO 标签与自动化转存</p>
                 </div>
             </div>
             <div class="admin-panel-body">
@@ -101,7 +99,6 @@
                     <h2 class="admin-panel-title">
                         <i class="fas fa-image text-emerald-600"></i> 全局品牌与站点 Logo
                     </h2>
-                    <p class="admin-panel-desc">统一管理所有前台主题的品牌 Logo 与站点名称，支持本地上传或输入外部图片 URL</p>
                 </div>
             </div>
             <div class="admin-panel-body">
@@ -152,7 +149,7 @@
                                 oninput="scheduleSiteBrandingSave()"
                                 onblur="saveSiteBranding(true)">
                         </div>
-                        <p class="text-[11px] text-slate-400">统一应用于所有前台主题导航栏，修改后自动保存，并可在 SEO 标题中使用 {site_name}</p>
+                        <p class="text-[11px] text-slate-400">统一应用于所有前台主题导航栏，可在 SEO 标题中使用 {site_name}</p>
                     </div>
                 </div>
             </div>
@@ -168,7 +165,6 @@
                     <h2 class="admin-panel-title">
                         <i class="fab fa-github text-slate-700"></i> 页面元素与品牌展示
                     </h2>
-                    <p class="admin-panel-desc">控制前台 Web 页面的开源标识、外部链接及版权信息展示</p>
                 </div>
             </div>
             <div class="admin-panel-body">
@@ -225,7 +221,7 @@
                                     <i class="far fa-circle-question text-xs"></i>
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500">此文字显示在页脚，留空时不显示，修改后自动保存</p>
+                            <p class="text-xs text-slate-500">此文字显示在页脚，留空时不显示</p>
                         </div>
                         <div class="frontend-inline-setting-control flex items-center gap-3 flex-1 max-w-xl">
                             <input type="text" id="frontendFooterTextInput"
@@ -253,7 +249,7 @@
                                     <i class="far fa-circle-question text-xs"></i>
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500">填写后显示在前台页脚；留空时保留默认版权信息，修改后自动保存</p>
+                            <p class="text-xs text-slate-500">填写后显示在前台页脚；留空时保留默认版权信息</p>
                         </div>
                         <div class="frontend-inline-setting-control flex items-center gap-3 flex-1 max-w-xl">
                             <input type="text" id="frontendCopyrightTextInput" maxlength="100"
@@ -274,7 +270,7 @@
                     <div class="setting-item-row frontend-disclaimer-setting">
                         <div class="space-y-1 min-w-0 pr-4">
                             <span class="font-semibold text-slate-800 text-sm">统一免责声明</span>
-                            <p class="text-xs text-slate-500">前台免责声明与原理提示共用此内容，支持换行，最多 1000 个字符，留空时不显示，修改后自动保存</p>
+                            <p class="text-xs text-slate-500">前台免责声明与原理提示共用此内容，支持换行，最多 1000 个字符，留空时不显示</p>
                         </div>
                         <div class="frontend-disclaimer-controls flex-1 w-full flex flex-col items-end gap-1.5">
                             <textarea id="frontendDisclaimerTextInput" rows="5" maxlength="1000"
@@ -300,7 +296,7 @@
                     <h2 class="admin-panel-title">
                         <i class="fas fa-fire-alt text-amber-500"></i> 前台热搜词推荐板块
                     </h2>
-                    <p class="admin-panel-desc">管理前台搜索推荐词。首页展示在搜索栏附近，搜索结果页展示在侧边栏</p>
+                    <p class="admin-panel-desc">首页显示在搜索栏附近，搜索结果页显示在侧边栏</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="text-xs text-slate-500 font-medium">启用展示</span>
@@ -331,7 +327,7 @@
                 <div class="setting-item-row frontend-disclaimer-setting border-t border-slate-100 pt-4">
                     <div class="space-y-1 min-w-0">
                         <label for="hotSearchesWordsInput" class="font-semibold text-slate-800 text-sm">热搜词列表</label>
-                        <p class="text-xs text-slate-500">每行输入一个关键词，修改后自动保存，用户点击将直接填入搜索</p>
+                        <p class="text-xs text-slate-500">每行输入一个关键词，用户点击将直接填入搜索</p>
                     </div>
                     <div class="frontend-disclaimer-controls flex-1 max-w-xl flex flex-col items-end gap-1.5">
                         <textarea id="hotSearchesWordsInput" rows="5"
@@ -357,7 +353,7 @@
                     <h2 class="admin-panel-title">
                         <i class="fas fa-magnifying-glass-chart text-blue-600"></i> 前台 SEO 设置
                     </h2>
-                    <p class="admin-panel-desc">按页面类型统一配置，不绑定具体模板；新增模板时可继续复用这些页面设置</p>
+                    <p class="admin-panel-desc">按页面类型配置，对所有前台主题生效</p>
                 </div>
             </div>
             <div class="admin-panel-body space-y-6">
@@ -513,7 +509,7 @@
                 </div>
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-slate-100">
                     <p class="text-[11px] text-slate-500">搜索页模板支持 <code>{query}</code> 和
-                        <code>{site_name}</code>。所有配置修改后将自动保存并实时生效。
+                        <code>{site_name}</code>。
                     </p>
                     <div class="flex items-center gap-3 flex-shrink-0">
                         <span id="seoSaveStatus" class="text-xs text-slate-400 font-medium"></span>
@@ -533,7 +529,6 @@
                     <h2 class="admin-panel-title">
                         <i class="fas fa-desktop text-blue-600"></i> 前台访问与出链策略
                     </h2>
-                    <p class="admin-panel-desc">控制前台 Web 搜索首页访问、链接提供方式与结果导出工具</p>
                 </div>
             </div>
             <div class="admin-panel-body">
@@ -698,7 +693,6 @@
                     <h2 class="admin-panel-title">
                         <i class="fas fa-heart-pulse text-emerald-600"></i> 链接测活与品质净化
                     </h2>
-                    <p class="admin-panel-desc">控制前台 Web 实时免登录测活探测与失效空资源自动过滤</p>
                 </div>
             </div>
             <div class="admin-panel-body">
@@ -781,7 +775,7 @@
                     <h2 class="admin-panel-title">
                         <i class="fas fa-filter text-blue-600"></i> 前台展示网盘类型
                     </h2>
-                    <p class="admin-panel-desc">控制前台 Web 搜索界面中允许选择与展示的网盘类型（不影响后端 API 检索），已选 <span
+                    <p class="admin-panel-desc">仅影响前台筛选与展示，不影响开放 API。已选 <span
                             id="frontendNetdiskSelectedCount" class="font-bold text-blue-600">{{ enabled_netdisks|length
                             if
                             enabled_netdisks else frontend_netdisk_options|length }}</span> / <span

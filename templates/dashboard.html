@@ -107,30 +107,21 @@
 {% endblock %}
 
 {% block content %}
+{% from "_resource_form_macros.html" import resource_type_select, transfer_toggle %}
 <div class="space-y-6 animate-fade-in">
     <!-- =========================================================================
          顶栏：欢迎与全局快捷操作
          ========================================================================= -->
-    <div
-        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white px-6 py-5 rounded-2xl border border-slate-200/80 shadow-2xs">
-        <div class="flex items-center space-x-3.5">
-            <div
-                class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg shadow-2xs">
-                <i class="fas fa-gauge-high text-base"></i>
-            </div>
-            <div>
-                <h1 class="text-xl font-bold text-slate-900 tracking-tight">系统仪表盘</h1>
-                <p class="text-xs text-slate-400 mt-0.5">全网聚合检索、网盘自动转存、私有收益沉淀与服务集群总览</p>
-            </div>
-        </div>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h1 class="text-xl font-bold text-slate-900 tracking-tight">仪表盘</h1>
         <div class="flex items-center space-x-2">
-            <!-- Web 前台服务状态 -->
+            <!-- 前台 Web服务状态 -->
             <a href="{{ url_for('system_config.frontend_config_page') }}" id="dash-header-web-badge"
                 class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs transition-colors group {{ 'text-slate-700 hover:text-slate-900' if summary.system.enable_frontend else 'text-slate-400 hover:text-slate-600' }}"
-                title="Web 前台服务 (点击前往配置 · {{ '已启用' if summary.system.enable_frontend else '已关闭' }})">
+                title="前台 Web 服务 (点击前往配置 · {{ '已启用' if summary.system.enable_frontend else '已关闭' }})">
                 <span
                     class="w-2 h-2 rounded-full mr-2 {{ 'bg-emerald-500 ring-2 ring-emerald-100' if summary.system.enable_frontend else 'bg-slate-300' }}"></span>
-                <span>Web前台</span>
+                <span>前台 Web</span>
             </a>
 
             <!-- 开放 API 接口状态 -->
@@ -139,7 +130,7 @@
                 title="开放 API 服务 (点击前往配置 · {{ '已启用' if summary.system.public_search_api_enabled else '已关闭' }})">
                 <span
                     class="w-2 h-2 rounded-full mr-2 {{ 'bg-emerald-500 ring-2 ring-emerald-100' if summary.system.public_search_api_enabled else 'bg-slate-300' }}"></span>
-                <span>公开API</span>
+                <span>开放 API</span>
             </a>
         </div>
     </div>
@@ -324,8 +315,7 @@
             <div>
                 <h2 class="text-base font-bold text-slate-900 tracking-tight">API 与 Web 搜索趋势</h2>
                 <p class="text-xs text-slate-500 mt-0.5">
-                    {% if current_days == 0 %}全部历史每日 API 接口与 Web 前台实际搜索及命中趋势{% else %}近 {{ current_days }} 天每日 API 接口与
-                    Web 前台实际搜索及命中趋势{% endif %}
+                    {% if current_days == 0 %}全部历史{% else %}近 {{ current_days }} 天{% endif %}每日搜索量与命中
                 </p>
             </div>
             <div class="flex items-center gap-4 text-xs font-semibold text-slate-600">
@@ -418,8 +408,7 @@
                     <div>
                         <h2 class="text-base font-bold text-slate-900 tracking-tight">搜索来源渠道分布</h2>
                         <p class="text-xs text-slate-500 mt-0.5">
-                            {% if current_days == 0 %}全部历史 Web 前台与 API 开放接口调用构成占比{% else %}近 {{ current_days }} 天 Web
-                            前台与 API 开放接口调用构成占比{% endif %}
+                            {% if current_days == 0 %}全部历史{% else %}近 {{ current_days }} 天{% endif %}前台 Web 与开放 API 调用占比
                         </p>
                     </div>
                 </div>
@@ -631,7 +620,6 @@
                         </div>
                         <div>
                             <h2 class="text-sm font-bold text-slate-900 tracking-tight">最新收录私有库</h2>
-                            <p class="text-[11px] text-slate-400">最新收录的私有库资源</p>
                         </div>
                     </div>
                     <a href="{{ url_for('resources.resources_page') }}"
@@ -965,20 +953,7 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">分类类型</label>
-                <select id="quick-res-type"
-                    class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 focus:bg-white transition-all">
-                    <option value="">请选择类型（可选）</option>
-                    <option value="电影">电影</option>
-                    <option value="电视剧">电视剧</option>
-                    <option value="音乐">音乐</option>
-                    <option value="软件">软件</option>
-                    <option value="图片">图片</option>
-                    <option value="游戏">游戏</option>
-                    <option value="素材">素材</option>
-                    <option value="教程">教程</option>
-                    <option value="文档">文档</option>
-                    <option value="其他">其他</option>
-                </select>
+                {{ resource_type_select('quick-res-type', class_name='w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 focus:bg-white transition-all') }}
             </div>
 
             <div>
@@ -987,29 +962,11 @@
                     class="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 focus:bg-white transition-all"></textarea>
             </div>
 
-            <!-- 自动转存并入库策略配置 -->
-            <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="text-xs font-semibold text-slate-700 block">自动转存至我的网盘</span>
-                        <span class="text-[11px] text-slate-400 font-normal">开启后将自动转存到已配置凭证的网盘并生成专属链接</span>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer ml-3 flex-shrink-0">
-                        <input type="checkbox" id="quickAddTransferToggle"
-                            onchange="toggleQuickTransferOptions(this.checked)" class="sr-only peer">
-                        <div
-                            class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600">
-                        </div>
-                    </label>
+            {% call transfer_toggle('quickAddTransferToggle', 'toggleQuickTransferOptions(this.checked)', 'quickTransferOptions') %}
+                <div id="quickLinkTransferHint" class="text-xs p-2.5 rounded-lg bg-blue-50/70 text-blue-700 border border-blue-100/80">
+                    <!-- 动态提示当前链接是否匹配已就绪凭证 -->
                 </div>
-
-                <div id="quickTransferOptions" class="hidden pt-2.5 border-t border-slate-200/60">
-                    <div id="quickLinkTransferHint"
-                        class="text-xs p-2.5 rounded-lg bg-blue-50/70 text-blue-700 border border-blue-100/80">
-                        <!-- 动态提示当前链接是否匹配已就绪凭证 -->
-                    </div>
-                </div>
-            </div>
+            {% endcall %}
 
             <div class="pt-3 flex justify-end space-x-2.5 border-t border-slate-100">
                 <button type="button" onclick="closeQuickAddModal()"
@@ -1498,7 +1455,7 @@
                         if (webBadge) {
                             const isWebOn = !!s.system.enable_frontend;
                             webBadge.className = `inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-medium bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs transition-colors group ${isWebOn ? 'text-slate-700 hover:text-slate-900' : 'text-slate-400 hover:text-slate-600'}`;
-                            webBadge.title = `Web 前台服务 (点击前往配置 · ${isWebOn ? '已启用' : '已关闭'})`;
+                            webBadge.title = `前台 Web服务 (点击前往配置 · ${isWebOn ? '已启用' : '已关闭'})`;
                             const dot = webBadge.querySelector('span:first-child');
                             if (dot) dot.className = `w-2 h-2 rounded-full mr-2 ${isWebOn ? 'bg-emerald-500 ring-2 ring-emerald-100' : 'bg-slate-300'}`;
                         }

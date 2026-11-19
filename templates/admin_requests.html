@@ -1,9 +1,10 @@
 {% extends "admin_layout.html" %}
 {% set active_page = 'requests' %}
 
+{% block title %}求片需求 - Pan-Relay Console{% endblock %}
+
 {% block head %}
     {{ super() }}
-    <title>Pan-Relay - 求片需求管理</title>
 {% endblock %}
 
 {% block content %}
@@ -11,8 +12,7 @@
     <!-- Page Header -->
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-            <h1 class="text-xl font-bold tracking-tight text-slate-900">用户求片需求</h1>
-            <p class="text-xs text-slate-500 mt-0.5">收集前台用户提交的找资源诉求，辅助扩充站内高频热搜资源库</p>
+            <h1 class="text-xl font-bold tracking-tight text-slate-900">求片需求</h1>
         </div>
         <div class="flex items-center space-x-2.5 flex-wrap">
             <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-2xs">
