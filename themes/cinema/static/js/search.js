@@ -674,6 +674,8 @@
       sseSource = null;
     }
     updateStats();
+    // 零结果时替换掉开始搜索时放置的加载动画，显示空状态
+    if (allItems.length === 0) renderResults();
     if (resultSummaryText) {
       resultSummaryText.textContent = `已完成「${kw}」搜索，共检索到 ${allItems.length} 个结果`;
     }

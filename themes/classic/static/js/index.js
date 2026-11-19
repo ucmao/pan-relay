@@ -1248,6 +1248,8 @@ const windowScrollHandler = () => {
 window.addEventListener('scroll', windowScrollHandler, { passive: true });
 
 function loadNextPage() {
+    // 没有待渲染的结果（含搜索中暂无结果）时不触发下拉加载，避免与列表中的检索动画叠加
+    if (renderedResultCount >= getFilteredResults().length) return;
     isLoadingNextBatch = true;
     loadingMore.classList.remove('hidden');
     setTimeout(() => {
